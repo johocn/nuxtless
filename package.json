@@ -10,7 +10,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
-    "deploy": "pnpm run build && wrangler deploy",
+    "deploy": "node scripts/deploy.mjs",
+    "deploy:upload": "node scripts/deploy.mjs",
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
