@@ -12,13 +12,15 @@ query GetCollection($slug: String!) {
   }
 }
 
-query GetCollectionProducts($slug: String!, $skip: Int, $take: Int) {
+query GetCollectionProducts($slug: String!, $skip: Int, $take: Int, $sort: SearchResultSortParameter, $facetValueFilters: [FacetValueFilterInput!]) {
   search(
     input: {
       collectionSlug: $slug
       groupByProduct: true
       skip: $skip
       take: $take
+      sort: $sort
+      facetValueFilters: $facetValueFilters
     }
   ) {
     totalItems
