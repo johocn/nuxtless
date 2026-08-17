@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { MenuCollections, ChildCollection } from "~~/types/collection";
+import { isSortKey, toSortParam } from "../../utils/collection-sort";
+import type { SortKey } from "../../utils/collection-sort";
 
 const route = useRoute();
 const { i18NBaseUrl } = useRuntimeConfig().public;
@@ -33,12 +35,26 @@ const childCollections = computed(() =>
 
 const { take, page, skip, to } = usePagination(12);
 
+// 排序状态（持久化到 query）
+const sort = ref<SortKey>(
+  isSortKey(route.query.sort) ? route.query.sort : "RELEVANCE",
+);
+const sortParam = computed(() => toSortParam(sort.value));
+
+// 切换排序时回到第一页并持久化到 query
+watch(sort, (val) => {
+  const query: Record<string, string> = {};
+  if (val !== "RELEVANCE") query.sort = val;
+  navigateTo({ path: route.path, query });
+});
+
 const { data: collectionProducts } = await useAsyncGql(
   "GetCollectionProducts",
   {
     slug,
     skip: skip,
     take: take,
+    sort: sortParam,
   },
 );
 
@@ -158,7 +174,9 @@ useSchemaOrg([
     <!-- Collection Products -->
     <section class="mb-8" aria-labelledby="category-products-heading">
       <h2 id="category-products-heading" class="sr-only">Products</h2>
+      <SortBar v-model="sort" />
       <div
+        v-if="products.length"
         class="grid grid-cols-1 gap-0 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4"
       >
         <ProductCard
@@ -168,6 +186,9 @@ useSchemaOrg([
           :eager="index < 4"
         />
       </div>
+      <p v-else class="py-10 text-center text-neutral-500">
+        {{ t("messages.shop.noProductsFound.title") }}
+      </p>
     </section>
 
     <nav
