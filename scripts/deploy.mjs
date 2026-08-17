@@ -52,12 +52,19 @@ function loadEnv() {
 const env = loadEnv();
 
 const SERVER_HOST = env.SERVER_HOST;
-const SERVER_USER = env.SERVER_USER || "root";
-const SERVER_PORT = env.SERVER_PORT || "22";
+const SERVER_USER = env.SERVER_USER || "";
+const SERVER_PORT = env.SERVER_PORT || "";
 const REMOTE_DIR = env.REMOTE_DIR;
 const APP_NAME = env.APP_NAME || "nshop";
 const PORT = env.PORT || "8080";
 const SKIP_BUILD = env.SKIP_BUILD === "1";
+
+// 优先把 SERVER_HOST 当 ssh 别名（如 .ssh/config 的 qing 已含 User/Port/IdentityFile）；
+// 显式给了 SERVER_USER/SERVER_PORT 时才覆盖。BatchMode=yes 避免密码/确认卡住。
+const SSH_ARGS = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=15", "-o", "StrictHostKeyChecking=accept-new"];
+if (SERVER_PORT) SSH_ARGS.push("-p", SERVER_PORT);
+if (SERVER_USER) SSH_ARGS.push("-l", SERVER_USER);
+const target = SERVER_USER ? `${SERVER_USER}@${SERVER_HOST}` : SERVER_HOST;
 
 const outputDir = resolve(cwd, ".output");
 
@@ -66,29 +73,26 @@ function fail(msg) {
   process.exit(1);
 }
 
-/** 执行本地命令（argv 数组，不经 shell，避免转义问题）。 */
+/**
+ * 执行本地命令（argv 数组，默认不经 shell 避免转义问题）。
+ * 传 opts.shellCat 时改走 shell（Windows 下 pnpm/npm 是 .cmd shim，需 shell 才能执行）。
+ */
 function run(label, argv, opts = {}) {
-  console.log(`\n[deploy] >> ${label}\n  ${argv.join(" ")}`);
-  const res = spawnSync(argv[0], argv.slice(1), {
+  const { shellCat, ...rest } = opts;
+  console.log(`\n[deploy] >> ${label}\n  ${shellCat ?? argv.join(" ")}`);
+  const res = spawnSync(shellCat ?? argv[0], shellCat ? undefined : argv.slice(1), {
     stdio: "inherit",
     cwd,
-    ...opts,
+    ...(shellCat ? { shell: true } : {}),
+    ...rest,
   });
   if (res.status !== 0) fail(`${label} 失败（exit=${res.status}）`);
   return res.stdout;
 }
 
-/** 通过 ssh 执行远端命令。 */
+/** 通过 ssh 执行远端命令（数组参数，不经 shell 避免转义）。 */
 function ssh(remoteCmd) {
-  run("远端执行", [
-    "ssh",
-    "-p",
-    SERVER_PORT,
-    "-o",
-    "StrictHostKeyChecking=accept-new",
-    `${SERVER_USER}@${SERVER_HOST}`,
-    remoteCmd,
-  ]);
+  run("远端执行", [...["ssh", ...SSH_ARGS, target, remoteCmd]]);
 }
 
 const requires = [
@@ -101,7 +105,8 @@ for (const [name, val] of requires) {
 
 // 1) 本地构建
 if (!SKIP_BUILD) {
-  run("本地构建", ["pnpm", "build"]);
+  // Windows 下 pnpm 是 .cmd shim，须经 shell 执行
+  run("本地构建", ["pnpm", "build"], { shellCat: "pnpm build" });
 } else {
   console.log("\n[deploy] 已设置 SKIP_BUILD=1，跳过本地构建。");
 }
@@ -111,22 +116,25 @@ if (!existsSync(resolve(outputDir, "server", "index.mjs"))) {
   fail(`未找到产物 ${resolve(outputDir, "server", "index.mjs")}，请先在本地执行 pnpm build。`);
 }
 
-// 3) 上传 .output/ 到服务器（先清空远端旧目录避免残留陈旧代码）
-console.log(`\n[deploy] >> 上传 .output/ 到 ${SERVER_USER}@${SERVER_HOST}:${REMOTE_DIR}`);
-run("清理远端旧目录", [
-  "ssh",
-  "-p",
-  SERVER_PORT,
-  `${SERVER_USER}@${SERVER_HOST}`,
-  `rm -rf ${REMOTE_DIR} && mkdir -p ${REMOTE_DIR}`,
-]);
-run("SCP 上传 .output/", ["scp", "-P", SERVER_PORT, "-r", outputDir, `${SERVER_USER}@${SERVER_HOST}:${REMOTE_DIR}`]);
+// 3) 上传 .output/ 到服务器
+// 目标目录多为 root 所有（如 1panel 站点），admin 无写权限但一般有免密 sudo：
+// 先 scp 到暂存区，再用 sudo 清空并拷贝进 REMOTE_DIR，避免对站点根文件的删除权限问题。
+const STAGING = "/tmp/nshop-deploy";
+console.log(`\n[deploy] >> 上传 .output/ 到 ${target}:${REMOTE_DIR}`);
+run("准备暂存目录", ["ssh", ...SSH_ARGS, target, `rm -rf ${STAGING} && mkdir -p ${STAGING}`]);
+run("SCP 上传 .output/ 到暂存区", ["scp", ...SSH_ARGS, "-r", outputDir, `${target}:${STAGING}`]);
+ssh(
+  `sudo rm -rf ${REMOTE_DIR} && sudo mkdir -p ${REMOTE_DIR} && ` +
+    `sudo cp -r ${STAGING}/.output/. ${REMOTE_DIR}/ && ` +
+    `sudo chown -R $(whoami):$(whoami) ${REMOTE_DIR} && rm -rf ${STAGING}`
+);
 
 // 4) pm2 startOrRestart（首次自动启动；服务器不安装任何依赖）
 console.log(`\n[deploy] >> 启动/重启 pm2 进程 ${APP_NAME}`);
+// 用 pm2 describe 判断进程是否存在（比 pm2 id 的退出码更可靠），不存在则 start，存在则 restart
 const restartCmd =
-  `if pm2 id ${APP_NAME} >/dev/null 2>&1; then ` +
-  `pm2 restart ${APP_NAME} --cwd ${REMOTE_DIR} --update-env; ` +
+  `if pm2 describe ${APP_NAME} >/dev/null 2>&1; then ` +
+  `cd ${REMOTE_DIR} && PORT=${PORT} NODE_ENV=production pm2 restart ${APP_NAME} --update-env; ` +
   `else cd ${REMOTE_DIR} && PORT=${PORT} NODE_ENV=production pm2 start server/index.mjs --name ${APP_NAME} --update-env -i 1; fi`;
 ssh(restartCmd);
 
@@ -134,6 +142,4 @@ ssh(restartCmd);
 ssh(`pm2 status ${APP_NAME}`);
 
 console.log(`\n[deploy] 完成。站点：http://${SERVER_HOST}:${PORT}/`);
-console.log(
-  `[deploy] 验证：ssh ${SERVER_USER}@${SERVER_HOST} "curl -s -o /dev/null -w '%{http_code}' http://localhost:${PORT}/"`
-);
+console.log(`[deploy] 验证：ssh ${target} "curl -s -o /dev/null -w '%{http_code}' http://localhost:${PORT}/"`);
