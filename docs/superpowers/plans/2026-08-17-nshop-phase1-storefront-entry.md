@@ -422,7 +422,7 @@ query GetCollectionProducts($slug: String!, $skip: Int, $take: Int, $sort: Searc
 }
 ```
 
-> `sort` 类型 `SearchResultSortParameter`、`facetValueIds` 类型 `[ID!]` 与 Vendure `search.input` schema 一致（可由本地/生产 schema 确认）。若生产 schema 中 `sort` 枚举字段名为其他（如 `name`/`price`），以 Task 0 Step 3 确认的枚举值为准。
+> **重要（已从 schema 核实）**：`$sort` 的类型 `SearchResultSortParameter` 是 INPUT_OBJECT（非枚举），字段仅 `name`/`price`，各需 `SortOrder` 枚举（`ASC`/`DESC`）。因此调用时排序写法是 `{ price: ASC }`、`{ price: DESC }`（价格升降）、`{ name: ASC }`、`{ name: DESC }`（名称/新品）；「综合」传 `null`（默认相关度）。`facetValueIds` 类型 `[ID!]` 已确认存在于 `SearchInput`。若后续想在 productName 相关度排序，以实际 schema 为准。
 
 - [ ] **Step 2: codegen**
 
@@ -450,15 +450,29 @@ Create `d:\zhao\nshop\layers\base\app\components\category\SortBar.vue`:
 
 ```vue
 <script setup lang="ts">
-const props = defineProps<{ modelValue: string }>();
-const emit = defineEmits<{ (e: "update:modelValue", v: string): void }>();
+import type { SortOrder } from "~~/.nuxt/gql/default";
 
-const options = [
+export type SortKey = "RELEVANCE" | "NAME_ASC" | "PRICE_ASC" | "PRICE_DESC";
+
+const props = defineProps<{ modelValue: SortKey }>();
+const emit = defineEmits<{ (e: "update:modelValue", v: SortKey): void }>();
+
+const options: { label: string; value: SortKey }[] = [
   { label: "综合", value: "RELEVANCE" },
-  { label: "新品", value: "NAME_DESC" },
+  { label: "新品", value: "NAME_ASC" },
   { label: "价格↑", value: "PRICE_ASC" },
   { label: "价格↓", value: "PRICE_DESC" },
 ];
+
+// 把 SortKey 映射为 search 的 sort 参数（SearchResultSortParameter 输入对象）
+export function toSortParam(key: SortKey): { price?: SortOrder } | { name?: SortOrder } | null {
+  switch (key) {
+    case "PRICE_ASC": return { price: "ASC" };
+    case "PRICE_DESC": return { price: "DESC" };
+    case "NAME_ASC": return { name: "ASC" };
+    default: return null; // 综合 → null（默认相关度）
+  }
+}
 </script>
 
 <template>
@@ -477,15 +491,17 @@ const options = [
 </template>
 ```
 
-> 排序枚举值（RELEVANCE/NAME_DESC/PRICE_ASC/PRICE_DESC）需以 Task 0 Step 3 确认的 `SearchResultSortParameter` 实际枚举为准；若不同，替换为实际值。若品牌名类 `bg-brand-600` 不存在，改用现有色板。
+> **重要（已从 schema 核实）**：排序键不是 sythem 的字符串枚举，页面状态用 `SortKey`（RELEVANCE/NAME_ASC/PRICE_ASC/PRICE_DESC），传给 GQL 时用 `toSortParam(key)` 映射成 `SearchResultSortParameter` 输入对象（综合→null，价格升→`{price:'ASC'}`，价格降→`{price:'DESC'}`，名称→`{name:'ASC'}`）。`bg-brand-600` 若不存在换成现有色板类。
 
 - [ ] **Step 2: 分类页接入排序**
 
 Modify `d:\zhao\nshop\layers\base\app\pages\category\[slug].vue`:
-- 引入 `ref`/`sort` 状态（默认 `RELEVANCE`）。
-- 把 `sort` 传入 `useAsyncGql("GetCollectionProducts", { slug, skip, take, sort })`。
+- 引入 `SortBar` 与 `toSortParam`；`const sort = ref<SortKey>("RELEVANCE")`。
+- 把 `sortValue = computed(() => toSortParam(sort.value))` 传入 `useAsyncGql("GetCollectionProducts", { slug, skip, take, sort: sortValue.value })`（注意 `useAsyncGql` 参数需传递 `{ price: 'ASC' }` 这类对象字面量，GQL input 对象直接透传）。
 - `watch(sort, () => { page.value = 1; })`（重置到第一页）。
 - 在 `<template>` 商品 `<section>` 上方插入 `<SortBar v-model="sort" />`。
+
+> 提示：`useAsyncGql` 传入 input 对象时，graphql-request 需把对象值作为变量。若 `.value` 是 `null`，Vendure search 会忽略 sort 用默认相关度，符合「综合」语义。若 `useAsyncGql` 无法接受 computed 的 `.value`（明确值而非 Ref），直接传 `sortValue.value` 即可。
 
 - [ ] **Step 3: 验证**
 
