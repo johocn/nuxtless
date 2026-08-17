@@ -73,7 +73,7 @@ export default defineNuxtConfig({
         schema: "../graphql.schema.json",
         host: process.env.GQL_HOST!,
         headers: {
-          "vendure-token": process.env.CHANNEL_TOKEN!,
+          "vendure-channel-token": process.env.CHANNEL_TOKEN!,
         },
       },
     },
