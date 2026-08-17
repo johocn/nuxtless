@@ -2,6 +2,12 @@ import type { AppLocale } from "~~/types/general";
 
 export const availableLocales: AppLocale[] = [
   { code: "en", language: "en-US", file: "en-US.ts", name: "English 🇺🇸" },
+  {
+    code: "zh-CN",
+    language: "zh-CN",
+    file: "zh-CN.ts",
+    name: "简体中文 🇨🇳",
+  },
   { code: "bg", language: "bg-BG", file: "bg-BG.ts", name: "Български 🇧🇬" },
   { code: "ru", language: "ru-RU", file: "ru-RU.ts", name: "Русский 🇷🇺" },
   {
