@@ -50,3 +50,11 @@ query SearchProducts(
     }
   }
 }
+
+query GetProductsByIds($ids: [String!]) {
+  products(options: { filter: { id: { in: $ids } } }) {
+    items {
+      ...ProductBaseFragment
+    }
+  }
+}
