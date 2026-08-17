@@ -81,7 +81,7 @@ useSeoMeta({
 });
 
 // OgImage
-defineOgImage("BlogPost.takumi", {
+defineOgImage("BlogPost.satori", {
   colorMode: ogColorMode,
   title: currentCollection?.name,
   category: t("messages.site.title"),

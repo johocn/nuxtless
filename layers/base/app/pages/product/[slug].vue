@@ -44,7 +44,7 @@ useSeoMeta({
 });
 
 // OgImage
-defineOgImage("ProductCard.takumi", {
+defineOgImage("ProductCard.satori", {
   colorMode: ogColorMode,
   productName: product.value?.name,
   price: formatPrice(selectedVariant.value?.price),

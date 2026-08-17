@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * @credits Takumi <https://takumi.kane.tw/>
+ * satori OG 模板：纯 wasm 渲染，无 native 二进制，
+ * 规避 win32 构建产物在 Linux 服务器加载失败的问题（部署铁律：服务器不安装）。
  */
 
 withDefaults(
@@ -20,6 +21,13 @@ withDefaults(
     brand: "Brand",
   },
 );
+
+// satori 要求图片 src 为绝对 URL / 以 / 开头的相对路径；补齐前导 /，避免被当作外部地址拦截
+function normSrc(src?: string) {
+  if (!src) return src;
+  if (/^(?:https?:|\/|data:)/i.test(src)) return src;
+  return `/${src}`;
+}
 </script>
 
 <template>
@@ -34,12 +42,10 @@ withDefaults(
         class="flex flex-1 items-center justify-center bg-neutral-50 p-10 dark:bg-neutral-800"
         style="border-top-left-radius: 32px; border-bottom-left-radius: 32px"
       >
-        <NuxtImg
+        <img
           v-if="image"
-          format="webp"
           class="absolute inset-0 object-cover"
-          :src="image"
-          sizes="600px"
+          :src="normSrc(image)"
         />
       </div>
       <div

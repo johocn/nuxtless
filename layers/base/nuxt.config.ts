@@ -37,12 +37,17 @@ export default defineNuxtConfig({
 
   // Global NuxtImage  Configuration
   image: {
-    domains: ["localhost"], // add prod domains
-    provider: process.env.NUXT_IMAGE_PROVIDER,
-    // Provider-specific configuration
-    // cloudflare: {
-    //   baseURL: "www.example.com",
-    // },
+    domains: ["localhost"], // passthrough 关闭域名校验，此处保留仅为兼容
+    provider: "passthrough",
+    providers: {
+      // 自定义 provider：原样返回图片 src，不做本地 sharp 处理，
+      // 规避 win32 构建产物在 Linux 服务器上加载 native 二进制失败的问题（部署铁律：服务器不安装）
+      passthrough: {
+        name: "passthrough",
+        provider: "~/image/passthrough",
+        options: {},
+      },
+    },
   },
 
   // ColorMode Settings (currently defaults)
