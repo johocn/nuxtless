@@ -8,6 +8,23 @@
 
 @theme {
   --breakpoint-2xl: 1400px;
+
+  /* ===== 品牌主色：京东红 ===== 改这里即可全局换色 */
+  --color-brand-50: #fef3f2;
+  --color-brand-100: #ffe4e3;
+  --color-brand-200: #ffc9c6;
+  --color-brand-300: #ff9e98;
+  --color-brand-400: #ff6b61;
+  --color-brand-500: #e1251b;
+  --color-brand-600: #c91e15;
+  --color-brand-700: #a71a12;
+  --color-brand-800: #8a160f;
+  --color-brand-900: #6e120c;
+  --color-brand-950: #4a0b06;
+
+  /* ===== 辅助色（D 定制项）===== 可按品牌替换 */
+  --color-accent: #ff6a3d;
+  --color-accent-deep: #e5511f;
 }
 
 @utility container {
