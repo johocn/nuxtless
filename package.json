@@ -64,5 +64,8 @@
     "typescript": "5.9.3",
     "vue-tsc": "3.2.6",
     "wrangler": "4.78.0"
+  },
+  "optionalDependencies": {
+    "@resvg/resvg-wasm": "^2.6.2"
   }
 }

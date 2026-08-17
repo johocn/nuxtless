@@ -38,6 +38,13 @@ export default defineNuxtConfig({
     security: {
       secret: process.env.OG_IMAGE_SECRET,
     },
+    compatibility: {
+      runtime: {
+        // 使用 satori 默认渲染器；resvg 强制走 WASM 运行时，
+        // 避免 win32 构建产物在 Linux 服务器上加载 @resvg/resvg-js native 二进制失败（部署铁律：服务器不构建/不安装）
+        resvg: "wasm",
+      },
+    },
   },
 
   robots: {

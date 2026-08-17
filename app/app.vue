@@ -47,7 +47,7 @@ watch(error, (val) => {
 });
 
 // OgImage
-defineOgImage("BlogPost.takumi", {
+defineOgImage("BlogPost.satori", {
   colorMode: ogColorMode,
   title: t("messages.site.tagline"),
   category: t("messages.site.title"),
