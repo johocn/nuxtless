@@ -1,0 +1,9 @@
+query GetHomeContent($position: String) {
+  publishedContent(position: $position) {
+    id
+    type
+    name
+    sort
+    data
+  }
+}
