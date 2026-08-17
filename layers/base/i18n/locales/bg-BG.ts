@@ -139,6 +139,10 @@ export default defineI18nLocale(() => ({
       noProductsFound: {
         title: "Няма намерени продукти",
       },
+      filters: "Филтри",
+      noFilters: "Няма налични филтри",
+      clearFilters: "Изчисти филтрите",
+      applyFilters: "Приложи филтрите",
     },
     billing: {
       firstName: "Първо име",

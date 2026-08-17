@@ -143,6 +143,10 @@ export default defineI18nLocale(() => ({
       noProductsFound: {
         title: "محصولی یافت نشد",
       },
+      filters: "فیلترها",
+      noFilters: "فیلتری در دسترس نیست",
+      clearFilters: "پاک کردن فیلترها",
+      applyFilters: "اعمال فیلترها",
     },
     billing: {
       firstName: "نام",

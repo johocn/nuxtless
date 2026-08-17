@@ -137,6 +137,10 @@ export default defineI18nLocale(() => ({
       noProductsFound: {
         title: "No products found",
       },
+      filters: "筛选",
+      noFilters: "暂无筛选条件",
+      clearFilters: "清空筛选",
+      applyFilters: "应用筛选",
     },
     billing: {
       firstName: "First Name",
