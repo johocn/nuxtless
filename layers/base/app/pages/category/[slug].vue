@@ -43,10 +43,66 @@ const sortParam = computed(() => toSortParam(sort.value));
 
 // 切换排序时回到第一页并持久化到 query
 watch(sort, (val) => {
-  const query: Record<string, string> = {};
-  if (val !== "RELEVANCE") query.sort = val;
-  navigateTo({ path: route.path, query });
+  navigateTo({ path: route.path, query: filterQuery(val, filterParam.value) });
 });
+
+// 筛选：筛选值 id 列表持久化到 query（逗号分隔）；映射为 facetValueFilters（各选中值 AND）
+const filterDrawerOpen = ref(false);
+const filterParam = computed<string[]>(() =>
+  route.query.filter && typeof route.query.filter === "string"
+    ? route.query.filter.split(",").filter(Boolean)
+    : [],
+);
+const appliedFilters = ref<Record<string, string[]>>({}); // 抽屉当前选中（facetId -> valueIds）
+const facetValueFilters = computed<{ and: string }[]>(() =>
+  filterParam.value.map((valueId) => ({ and: valueId })),
+);
+
+const { data: facetsData } = await useAsyncGql("GetFacets", {
+  options: { take: 100 },
+});
+const facets = computed(() => facetsData.value?.facets?.items ?? []);
+
+// 在初始筛选（query>导出的选中态）与抽屉选中同步
+const initialSelected = computed<Record<string, string[]>>(() => {
+  const selectedIds = new Set(filterParam.value);
+  const map: Record<string, string[]> = {};
+  for (const facet of facets.value) {
+    const matched = facet.values
+      .filter((v) => selectedIds.has(v.id))
+      .map((v) => v.id);
+    if (matched.length) map[facet.id] = matched;
+  }
+  return map;
+});
+
+// 应用筛选：导航（query 更新→回到第一页重新查询）
+function applyFilters(selection: Record<string, string[]>) {
+  appliedFilters.value = selection;
+  const valueIds = Object.values(selection).flat();
+  navigateTo({
+    path: route.path,
+    query: filterQuery(sort.value, valueIds),
+  });
+}
+
+// 清空筛选
+function clearFilters() {
+  appliedFilters.value = {};
+  filterDrawerOpen.value = false;
+  navigateTo({
+    path: route.path,
+    query: filterQuery(sort.value, []),
+  });
+}
+
+// 拼接查询参数对象（排序 + 筛选）
+function filterQuery(sortKey: SortKey, valueIds: string[]): Record<string, string> {
+  const query: Record<string, string> = {};
+  if (sortKey !== "RELEVANCE") query.sort = sortKey;
+  if (valueIds.length) query.filter = valueIds.join(",");
+  return query;
+}
 
 const { data: collectionProducts } = await useAsyncGql(
   "GetCollectionProducts",
@@ -55,6 +111,7 @@ const { data: collectionProducts } = await useAsyncGql(
     skip: skip,
     take: take,
     sort: sortParam,
+    facetValueFilters: facetValueFilters,
   },
 );
 
@@ -174,7 +231,22 @@ useSchemaOrg([
     <!-- Collection Products -->
     <section class="mb-8" aria-labelledby="category-products-heading">
       <h2 id="category-products-heading" class="sr-only">Products</h2>
-      <SortBar v-model="sort" />
+      <div class="mb-4 flex items-center justify-between gap-2">
+        <SortBar v-model="sort" />
+        <UButton
+          variant="outline"
+          color="neutral"
+          :icon="filterParam.length ? 'i-lucide-filter' : 'i-lucide-filter'"
+          @click="filterDrawerOpen = true"
+        >
+          {{ t("messages.shop.filters") }}
+          <span
+            v-if="filterParam.length"
+            class="ml-1 rounded-full bg-brand-600 px-1.5 text-xs text-white"
+            >{{ filterParam.length }}</span
+          >
+        </UButton>
+      </div>
       <div
         v-if="products.length"
         class="grid grid-cols-1 gap-0 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4"
@@ -186,10 +258,29 @@ useSchemaOrg([
           :eager="index < 4"
         />
       </div>
-      <p v-else class="py-10 text-center text-neutral-500">
-        {{ t("messages.shop.noProductsFound.title") }}
-      </p>
+      <div
+        v-else
+        class="py-10 text-center text-neutral-500"
+      >
+        <p>{{ t("messages.shop.noProductsFound.title") }}</p>
+        <UButton
+          v-if="filterParam.length"
+          variant="link"
+          class="mt-2"
+          @click="clearFilters"
+        >
+          {{ t("messages.shop.clearFilters") }}
+        </UButton>
+      </div>
     </section>
+
+    <FilterDrawer
+      v-model:open="filterDrawerOpen"
+      :facets="facets"
+      :initial-selection="initialSelected"
+      @apply="applyFilters"
+      @clear="clearFilters"
+    />
 
     <nav
       v-if="total > take"

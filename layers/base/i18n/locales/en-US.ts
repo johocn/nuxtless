@@ -137,6 +137,10 @@ export default defineI18nLocale(() => ({
       noProductsFound: {
         title: "No products found",
       },
+      filters: "Filters",
+      noFilters: "No filters available",
+      clearFilters: "Clear Filters",
+      applyFilters: "Apply Filters",
     },
     billing: {
       firstName: "First Name",
