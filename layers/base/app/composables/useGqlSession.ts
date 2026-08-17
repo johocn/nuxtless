@@ -28,7 +28,7 @@ export async function useGqlSession(
   }
 
   if (channelToken) {
-    headers["vendure-token"] = channelToken;
+    headers["vendure-channel-token"] = channelToken;
   }
 
   if (locale) {
