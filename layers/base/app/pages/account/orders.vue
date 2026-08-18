@@ -5,17 +5,25 @@ import { SortOrder } from "~~/types/default";
 import type { TableColumn, TableRow } from "@nuxt/ui";
 import type { OrderTableRow } from "~~/types/general";
 
+import { ORDER_TABS, tabOfState } from "../../utils/order-state";
+import type { OrderTabKey } from "../../utils/order-state";
+
 const { i18NBaseUrl } = useRuntimeConfig().public;
 const { locale, d, t } = useI18n();
 const localePath = useLocalePath();
+const router = useRouter();
 const { copy } = useClipboard();
 const toast = useToast();
 const { customer } = storeToRefs(useCustomerStore());
 const { isAuthenticated } = storeToRefs(useAuthStore());
+const { canCancel, cancelOrder, reorder, loading: actionLoading } =
+  useOrderActions();
 const loading = ref(true);
+const activeTab = ref<OrderTabKey>("ALL");
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
+const OrderStateBadge = resolveComponent("OrderStateBadge");
 
 const options = {
   sort: { createdAt: SortOrder.DESC },
@@ -33,15 +41,18 @@ const { data: orderHistory, refresh } = await useAsyncGql(
   },
 );
 
-// TODO: remove uneeded data from the GQL payload
-const orders = computed(() =>
-  (orderHistory.value.activeCustomer?.orders?.items ?? []).filter(
-    (o) => o.state !== "AddingItems",
-  ),
+const orders = computed(
+  () => orderHistory.value.activeCustomer?.orders?.items ?? [],
+);
+
+const filteredOrders = computed(() =>
+  activeTab.value === "ALL"
+    ? orders.value
+    : orders.value.filter((o) => tabOfState(o.state) === activeTab.value),
 );
 
 const tableData = computed<OrderTableRow[]>(() =>
-  orders.value.map((order, index) => ({
+  filteredOrders.value.map((order, index) => ({
     id: index + 1,
     date: d(new Date(order.orderPlacedAt)),
     status: order.state,
@@ -65,7 +76,8 @@ const columns: TableColumn<OrderTableRow>[] = [
   {
     accessorKey: "status",
     header: t("messages.general.status"),
-    cell: ({ row }) => `${row.getValue("status")}`,
+    cell: ({ row }) =>
+      h(OrderStateBadge, { state: row.getValue("status") }),
   },
   {
     accessorKey: "amount",
@@ -104,6 +116,7 @@ const columns: TableColumn<OrderTableRow>[] = [
               variant: "ghost",
               class: "ml-auto",
               "aria-label": "Actions dropdown",
+              loading: actionLoading.value,
             }),
         ),
       );
@@ -111,7 +124,13 @@ const columns: TableColumn<OrderTableRow>[] = [
   },
 ];
 
+function findOrder(code: string) {
+  return orders.value.find((o) => o.code === code);
+}
+
 function getRowItems(row: TableRow<OrderTableRow>) {
+  const code = row.original.code;
+
   return [
     {
       type: "label",
@@ -125,7 +144,7 @@ function getRowItems(row: TableRow<OrderTableRow>) {
       icon: "i-lucide-link",
       class: "items-center",
       onSelect() {
-        const path = localePath(`/order/${row.original.code}`);
+        const path = localePath(`/account/orders/${row.original.code}`);
         copy(`${i18NBaseUrl}${path}`);
 
         toast.add({
@@ -135,10 +154,38 @@ function getRowItems(row: TableRow<OrderTableRow>) {
         });
       },
     },
+    ...(canCancel(row.original.status)
+      ? [
+          {
+            label: t("order.cancel"),
+            icon: "i-lucide-x",
+            class: "items-center",
+            async onSelect() {
+              const ok = await cancelOrder(row.original.status);
+              if (ok) await refresh();
+            },
+          },
+        ]
+      : []),
+    {
+      label: t("order.reorder"),
+      icon: "i-lucide-shopping-cart",
+      class: "items-center",
+      async onSelect() {
+        const target = findOrder(code);
+        if (!target) return;
+        const lines = target.lines.map((l) => ({
+          productVariantId: l.productVariant.id,
+          quantity: l.quantity,
+        }));
+        const ok = await reorder(lines);
+        if (ok) router.push(localePath("/checkout"));
+      },
+    },
     {
       label: t("messages.general.details"),
       icon: "i-lucide-info",
-      to: localePath(`/order/${row.original.code}`),
+      to: localePath(`/account/orders/${row.original.code}`),
       class: "items-center",
     },
   ];
@@ -167,6 +214,12 @@ onMounted(async () => {
     </header>
 
     <div v-if="orders">
+      <UTabs
+        v-model="activeTab"
+        :items="ORDER_TABS.map((tb) => ({ key: tb.key, label: t(tb.labelKey) }))"
+        class="mb-6"
+      />
+
       <UTable
         sticky
         :data="tableData"
