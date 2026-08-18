@@ -74,6 +74,13 @@ onMounted(async () => {
       >
         {{ t("messages.account.addresses") }}
       </UButton>
+      <UButton
+        :to="localePath('/account/after-sales')"
+        variant="soft"
+        class="px-7"
+      >
+        {{ t("messages.account.afterSales") }}
+      </UButton>
     </section>
   </main>
 </template>

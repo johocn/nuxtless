@@ -71,6 +71,12 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
       to: localePath("/account/addresses"),
       class: "items-center",
     },
+    {
+      label: t("messages.account.afterSales"),
+      icon: "i-lucide-rotate-ccw",
+      to: localePath("/account/after-sales"),
+      class: "items-center",
+    },
   ],
   [
     {

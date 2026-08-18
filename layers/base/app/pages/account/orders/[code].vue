@@ -8,6 +8,12 @@ const code = route.params.code as string;
 const { data, error, refresh } = await useAsyncGql("GetOrderByCode", { code });
 
 const order = computed(() => data.value?.orderByCode ?? null);
+import { canApplyAfterSales } from "../../../utils/after-sales-state";
+
+const applyModalOpen = ref(false);
+const applyLine = ref<
+  NonNullable<NonNullable<typeof order.value>["lines"]>[number] | null
+>(null);
 const hasError = computed(() => !!error.value || !order.value);
 
 onMounted(async () => {
@@ -46,7 +52,20 @@ onMounted(async () => {
 
     <section class="mb-10">
       <h2 class="mb-3 text-lg font-semibold">{{ t("messages.shop.orderSummary") }}</h2>
-      <OrderItems :order="order" />
+      <OrderItems :order="order">
+        <template #line-actions="{ line, order: o }">
+          <UButton
+            v-if="canApplyAfterSales(o.state)"
+            size="xs"
+            variant="soft"
+            color="primary"
+            icon="i-lucide-receipt"
+            :label="t('afterSales.apply')"
+            class="shrink-0"
+            @click="applyLine = line; applyModalOpen = true"
+          />
+        </template>
+      </OrderItems>
     </section>
 
     <div class="mb-10 grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -60,6 +79,14 @@ onMounted(async () => {
     </section>
 
     <OrderActions :order="order" @updated="refresh" class="mb-10" />
+
+    <AfterSalesCreateModal
+      v-if="applyLine"
+      v-model:open="applyModalOpen"
+      :order-id="order.id"
+      :order-line="applyLine"
+      :max-amount="applyLine.proratedLinePrice"
+    />
   </main>
 </template>
 

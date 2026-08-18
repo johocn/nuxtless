@@ -36,6 +36,7 @@ const fmt = (amount: number) =>
         <p class="text-sm">×{{ line.quantity }}</p>
         <p class="font-semibold">{{ fmt(line.linePriceWithTax) }}</p>
       </div>
+      <slot name="line-actions" :line="line" :order="order" />
     </li>
   </ul>
 </template>
