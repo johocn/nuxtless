@@ -58,3 +58,37 @@ query GetProductsByIds($ids: [String!]) {
     }
   }
 }
+
+query VariantNearbyStock(
+  $productId: ID!
+  $variantId: ID
+  $lat: Float
+  $lng: Float
+  $city: String
+) {
+  variantNearbyStock(
+    productId: $productId
+    variantId: $variantId
+    lat: $lat
+    lng: $lng
+    city: $city
+  ) {
+    distanceKm
+    location {
+      id
+      name
+      description
+      lat
+      lng
+      serviceCities
+    }
+    variants {
+      variantId
+      variantName
+      sku
+      stockOnHand
+      stockAllocated
+      stockAvailable
+    }
+  }
+}

@@ -11,6 +11,10 @@ const ogColorMode = computed<"dark" | "light">(() =>
 const productStore = useProductStore();
 const { hasOptions, selectedVariant } = storeToRefs(productStore);
 
+const locationStore = useLocationStore();
+const { isServiceable } = useCityService();
+const productServiceable = computed(() => isServiceable(product.value));
+
 const slug = route.params.slug as string;
 
 const { data } = await useAsyncGql("GetProductDetail", {
@@ -170,13 +174,29 @@ if (product.value && selectedVariant.value) {
             <h2 id="product-add-to-cart-heading" class="sr-only">
               Add to Cart
             </h2>
-            <CartAddButton />
+            <UAlert
+              v-if="!productServiceable"
+              color="warning"
+              variant="subtle"
+              icon="i-lucide-map-pin-off"
+              class="mb-3"
+              :title="`该商品暂不支持配送至「${locationStore.cityName || '当前城市'}」`"
+              description="可切换上方城市后查看，或浏览其他商品。"
+            />
+            <CartAddButton :disabled="!productServiceable" />
           </section>
         </div>
       </div>
     </div>
 
     <hr class="mt-4 mb-8 sm:mt-0" />
+
+    <!-- Nearby Stores -->
+    <ProductNearbyStores
+      class="mb-10"
+      :product-id="product?.id"
+      :variant-id="selectedVariant?.id"
+    />
 
     <!-- Full Description -->
     <section aria-labelledby="product-description-heading">
