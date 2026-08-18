@@ -100,3 +100,21 @@ mutation ResetPassword($token: String!, $password: String!) {
     }
   }
 }
+
+mutation CreateCustomerAddress($input: CreateAddressInput!) {
+  createCustomerAddress(input: $input) {
+    id
+  }
+}
+
+mutation UpdateCustomerAddress($input: UpdateAddressInput!) {
+  updateCustomerAddress(input: $input) {
+    id
+  }
+}
+
+mutation DeleteCustomerAddress($id: ID!) {
+  deleteCustomerAddress(id: $id) {
+    success
+  }
+}
