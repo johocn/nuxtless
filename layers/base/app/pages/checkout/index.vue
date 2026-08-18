@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ActiveOrderDetail } from "~~/types/order";
 import type { CheckoutState } from "~~/types/general";
+import type { AddressRecord } from "~~/types/address";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -27,6 +28,26 @@ watch(activeOrder, async (newOrder, oldOrder) => {
 const addressForm = useTemplateRef("addressForm");
 const shippingForm = useTemplateRef("shippingForm");
 const paymentForm = useTemplateRef("paymentForm");
+
+// 地址簿选择/回填（仅登录态）
+const { isAuthenticated } = storeToRefs(useAuthStore());
+const { addresses, fetchAddresses } = useAddressBook();
+const activeAddressId = ref<string>();
+
+function applyAddress(record: AddressRecord) {
+  activeAddressId.value = record.id;
+  const checkout = useState<CheckoutState>("checkoutState");
+  const form = checkout.value.addressForm;
+  // fullName 拆分为 firstName/lastName，以与结算表单字段一致
+  const [firstName = "", ...rest] = (record.fullName ?? "").trim().split(/\s+/);
+  form.firstName = firstName;
+  form.lastName = rest.join(" ") ?? "";
+  form.streetLine1 = record.streetLine1 ?? "";
+  form.streetLine2 = record.streetLine2 ?? "";
+  form.city = record.city ?? "";
+  form.postalCode = record.postalCode ?? "";
+  form.countryCode = record.countryCode ?? countryCodeDefault;
+}
 
 useState<CheckoutState>("checkoutState", () => ({
   addressForm: {
@@ -87,6 +108,10 @@ onMounted(() => {
   isMounted.value = true;
   const checkout = useCheckout(); // recalc shipping under certain condtitions
   checkout.syncOrderLocation(); // 写入定位字段（lat/lng/city/deliveryType）
+
+  if (isAuthenticated.value) {
+    void fetchAddresses();
+  }
 });
 </script>
 
@@ -122,6 +147,14 @@ onMounted(() => {
           <h2 id="address-heading" class="mb-4 text-2xl font-semibold">
             {{ t("messages.general.shippingDetails") }}
           </h2>
+
+          <AddressPicker
+            v-if="isAuthenticated && addresses.length"
+            :addresses="addresses"
+            :default-id="activeAddressId"
+            class="mb-4"
+            @select="applyAddress"
+          />
 
           <div id="address-errors" role="status" aria-live="polite" />
 
