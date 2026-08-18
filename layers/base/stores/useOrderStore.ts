@@ -268,9 +268,8 @@ export const useOrderStore = defineStore("order", () => {
         pickupLocationId,
         pickupType,
       })).setOrderPickupLocation;
-      const res = useOrderMutation(order, result);
-      if (res.status === "error") {
-        error.value = res.message;
+      if (result) {
+        order.value = result;
       }
     } catch (err) {
       if (err instanceof Error) {
