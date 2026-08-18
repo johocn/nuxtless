@@ -1,14 +1,9 @@
 <script setup lang="ts">
-import { h } from "vue";
-
-import type { TableColumn } from "@nuxt/ui";
-import type { OrderLineRow } from "~~/types/general";
-
 definePageMeta({
   alias: ["/order/:code"],
 });
 
-const { locale, t } = useI18n();
+const { t } = useI18n();
 const localePath = useLocalePath();
 const route = useRoute();
 const router = useRouter();
@@ -85,54 +80,6 @@ async function pollOrder(maxAttempts = 20, interval = 2000) {
 
   return false;
 }
-
-const formatPrice = (amount: number) =>
-  new Intl.NumberFormat(locale.value, {
-    style: "currency",
-    currency: order.value?.currencyCode || "EUR",
-  }).format(amount / 100);
-
-const tableData = computed<OrderLineRow[]>(() =>
-  (order.value?.lines ?? []).map((line) => ({
-    name: line.productVariant?.name ?? "",
-    qty: line.quantity,
-    unitPrice: formatPrice(line.unitPriceWithTax),
-    lineTotal: formatPrice(line.linePriceWithTax),
-  })),
-);
-
-const columns: TableColumn<OrderLineRow>[] = [
-  {
-    accessorKey: "name",
-    header: t("messages.general.product"),
-  },
-  {
-    accessorKey: "qty",
-    header: t("messages.shop.quantity"),
-  },
-  {
-    accessorKey: "unitPrice",
-    header: t("messages.shop.price"),
-  },
-  {
-    accessorKey: "lineTotal",
-    header: () => h("div", { class: "text-right" }, t("messages.shop.total")),
-    footer: () => {
-      if (!order.value) return null;
-
-      const taxTotal = order.value.taxSummary?.[0]?.taxTotal ?? 0;
-      const orderTotal = formatPrice(order.value.subTotal + taxTotal);
-
-      return h(
-        "div",
-        { class: "text-right font-medium" },
-        `${t("messages.shop.total")}: ${orderTotal}`,
-      );
-    },
-    cell: ({ row }) =>
-      h("div", { class: "text-right font-medium" }, row.getValue("lineTotal")),
-  },
-];
 
 function printReceipt() {
   if (import.meta.client) {
@@ -225,7 +172,7 @@ onMounted(async () => {
     </template>
   </UError>
 
-  <main v-else class="container mt-14">
+  <main v-else-if="order" class="container mt-14">
     <!-- 1. Heading -->
     <header class="mb-14">
       <h1 class="text-2xl font-semibold">
@@ -306,7 +253,7 @@ onMounted(async () => {
       <h2 id="order-summary-heading" class="text-xl font-semibold underline">
         {{ t("messages.shop.orderSummary") }}
       </h2>
-      <UTable :data="tableData" :columns="columns" class="flex-1" />
+      <OrderItems :order="order" />
     </section>
 
     <!-- 4. Order details -->
@@ -323,17 +270,7 @@ onMounted(async () => {
       >
         <!-- Column 1: Shipping -->
         <div class="">
-          <h3 class="mb-2 font-medium">
-            {{ t("messages.general.shippingAddress") }}
-          </h3>
-          <address class="not-italic">
-            <div>{{ order?.shippingAddress?.fullName }}</div>
-            <div>{{ order?.shippingAddress?.streetLine1 }}</div>
-            <div>
-              {{ order?.shippingAddress?.city }},
-              {{ order?.shippingAddress?.postalCode }}
-            </div>
-          </address>
+          <OrderAddress :address="order?.shippingAddress ?? null" />
         </div>
 
         <!-- Column 2: Payment & Shipping method -->
@@ -354,28 +291,7 @@ onMounted(async () => {
         <!-- Column 3: Totals -->
         <div>
           <h3 class="mb-2 font-medium">{{ t("messages.general.amount") }}</h3>
-          <dl class="space-y-1">
-            <div class="flex justify-between">
-              <dt>{{ t("messages.shop.subtotal") }}</dt>
-              <dd>{{ formatPrice(order?.subTotal) }}</dd>
-            </div>
-            <div class="flex justify-between">
-              <dt>{{ t("messages.general.tax") }}</dt>
-              <dd>
-                {{ formatPrice(order?.taxSummary?.[0]?.taxTotal ?? 0) }}
-              </dd>
-            </div>
-            <div class="flex justify-between">
-              <dt>{{ t("messages.general.shipping") }}</dt>
-              <dd>{{ formatPrice(order?.shippingWithTax) }}</dd>
-            </div>
-            <div class="flex justify-between font-bold">
-              <dt>{{ t("messages.shop.total") }}</dt>
-              <dd>
-                {{ formatPrice(order?.totalWithTax) }}
-              </dd>
-            </div>
-          </dl>
+          <OrderTotals :order="order" />
         </div>
       </div>
     </section>
