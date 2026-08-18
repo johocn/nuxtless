@@ -1,0 +1,52 @@
+# 就近履约：门店/地图相关查询
+query GetPickupLocations($type: String, $lat: Float, $lng: Float) {
+  pickupLocations(type: $type, lat: $lat, lng: $lng) {
+    id
+    name
+    type
+    address
+    phoneNumber
+    businessHours
+    coordinates
+  }
+}
+
+# 自提点选择：写入订单 customFields + 同步发货地址
+mutation SetOrderPickupLocation($pickupLocationId: ID!, $pickupType: String!) {
+  setOrderPickupLocation(
+    pickupLocationId: $pickupLocationId
+    pickupType: $pickupType
+  ) {
+    ...OrderDetail
+  }
+}
+
+query GetMapSdkConfig {
+  mapSdkConfig {
+    provider
+    sdkUrl
+    hasConfigured
+  }
+}
+
+query GetMapDistricts($parentAdcode: String) {
+  mapDistricts(parentAdcode: $parentAdcode) {
+    adcode
+    name
+    level
+    center {
+      lat
+      lng
+    }
+  }
+}
+
+query GetReverseGeocode($lat: Float!, $lng: Float!) {
+  reverseGeocode(lat: $lat, lng: $lng) {
+    province
+    city
+    district
+    street
+    formattedAddress
+  }
+}

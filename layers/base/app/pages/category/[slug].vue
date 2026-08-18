@@ -119,6 +119,27 @@ const products = computed(() => collectionProducts.value?.search?.items ?? []);
 const total = computed(() => collectionProducts.value?.search?.totalItems ?? 0);
 const totalPages = computed(() => Math.ceil(total.value / take));
 
+// 列表页搜索接口返回的 SearchResult 不含 customFields（belongCity/serviceCities），
+// 无法直接判断超区。因此拉取当前页商品的 Product（含 customFields），以 productId 关联。
+const ids = computed(() =>
+  products.value.map((p) => p.productId).filter((id): id is string => !!id),
+);
+const { data: productDetails } = await useAsyncGql("GetProductsByIds", {
+  ids: ids,
+});
+const serviceInfoBySlug = computed(() => {
+  const map: Record<string, { belongCity?: string | null; serviceCities?: Array<string | null> | null }> = {};
+  for (const p of productDetails.value?.products?.items ?? []) {
+    if (p.slug) {
+      map[p.slug] = {
+        belongCity: p.customFields?.belongCity ?? null,
+        serviceCities: p.customFields?.serviceCities ?? null,
+      };
+    }
+  }
+  return map;
+});
+
 const nextUrl = computed(() =>
   page.value < totalPages.value ? `?page=${page.value + 1}` : null,
 );
@@ -255,6 +276,7 @@ useSchemaOrg([
           v-for="(product, index) in products"
           :key="product.slug"
           :product="product"
+          :service-info="serviceInfoBySlug[product.slug]"
           :eager="index < 4"
         />
       </div>

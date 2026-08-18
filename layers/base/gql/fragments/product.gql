@@ -37,6 +37,10 @@ fragment ProductBaseFragment on Product {
     currencyCode
     price
   }
+  customFields {
+    belongCity
+    serviceCities
+  }
 }
 
 fragment ProductDetailFragment on Product {
@@ -61,6 +65,7 @@ fragment ProductDetailFragment on Product {
 }
 
 fragment ProductSearchFragment on SearchResult {
+  productId
   productName
   slug
   productAsset {

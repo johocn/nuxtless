@@ -85,7 +85,8 @@ async function onSubmit() {
 
 onMounted(() => {
   isMounted.value = true;
-  useCheckout(); // recalc shipping under certain condtitions
+  const checkout = useCheckout(); // recalc shipping under certain condtitions
+  checkout.syncOrderLocation(); // 写入定位字段（lat/lng/city/deliveryType）
 });
 </script>
 
@@ -133,7 +134,7 @@ onMounted(() => {
           />
         </section>
 
-        <!-- Shipping -->
+        <!-- Shipment -->
         <section id="shipping" aria-labelledby="shipping-heading">
           <h2 id="shipping-heading" class="sr-only">Shipping</h2>
 
@@ -146,6 +147,9 @@ onMounted(() => {
             aria-describedby="shipping-errors"
             novalidate
           />
+
+          <!-- Pickup Location (门店自提) -->
+          <PickupLocationSelect class="mt-4" />
         </section>
 
         <!-- Payment -->

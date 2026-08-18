@@ -1,4 +1,4 @@
-import type { AppLocale } from "~~/types/general";
+import type { AppLocale } from "../../../types/general";
 
 export const availableLocales: AppLocale[] = [
   { code: "en", language: "en-US", file: "en-US.ts", name: "English 🇺🇸" },
