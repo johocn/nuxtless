@@ -6,6 +6,12 @@ fragment OrderBase on Order {
   totalQuantity
   totalWithTax
   currencyCode
+  customer {
+    id
+    firstName
+    lastName
+    emailAddress
+  }
   lines {
     id
     unitPriceWithTax
