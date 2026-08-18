@@ -1,0 +1,67 @@
+fragment AfterSalesFragment on AfterSalesRequest {
+  id
+  orderId
+  orderLineId
+  type
+  state
+  reason
+  description
+  evidenceImages
+  refundAmount
+  returnTrackingNo
+  returnCarrier
+  rejectReason
+  receivedQuantity
+  createdAt
+  updatedAt
+  order {
+    code
+    state
+  }
+  orderLine {
+    id
+    quantity
+    proratedLinePrice
+    productVariant {
+      id
+      name
+      featuredAsset {
+        id
+        preview
+      }
+    }
+  }
+}
+
+query MyAfterSalesRequests($options: AfterSalesRequestListOptions) {
+  myAfterSalesRequests(options: $options) {
+    items {
+      ...AfterSalesFragment
+    }
+    totalItems
+  }
+}
+
+query AfterSalesRequest($id: ID!) {
+  afterSalesRequest(id: $id) {
+    ...AfterSalesFragment
+  }
+}
+
+mutation CreateAfterSalesRequest($input: CreateAfterSalesRequestInput!) {
+  createAfterSalesRequest(input: $input) {
+    ...AfterSalesFragment
+  }
+}
+
+mutation CancelAfterSalesRequest($id: ID!) {
+  cancelAfterSalesRequest(id: $id) {
+    ...AfterSalesFragment
+  }
+}
+
+mutation UpdateReturnTracking($id: ID!, $trackingNo: String!, $carrier: String!) {
+  updateReturnTracking(id: $id, trackingNo: $trackingNo, carrier: $carrier) {
+    ...AfterSalesFragment
+  }
+}

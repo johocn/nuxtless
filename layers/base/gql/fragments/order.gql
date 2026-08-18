@@ -76,6 +76,7 @@ fragment OrderDetail on Order {
     unitPriceWithTax
     quantity
     linePriceWithTax
+    proratedLinePrice
     productVariant {
       id
       name
