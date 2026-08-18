@@ -67,6 +67,13 @@ onMounted(async () => {
       <UButton :to="localePath('/account/orders')" class="px-7">
         {{ t("messages.account.orders") }}
       </UButton>
+      <UButton
+        :to="localePath('/account/addresses')"
+        variant="soft"
+        class="px-7"
+      >
+        {{ t("messages.account.addresses") }}
+      </UButton>
     </section>
   </main>
 </template>
