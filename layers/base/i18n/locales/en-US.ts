@@ -141,6 +141,10 @@ export default defineI18nLocale(() => ({
       noFilters: "No filters available",
       clearFilters: "Clear Filters",
       applyFilters: "Apply Filters",
+      outOfArea: "Out of Area",
+      pickupInfo: "Pickup / Verification Info",
+      pickupClaimed: "Claimed",
+      pickupPending: "Pending",
     },
     billing: {
       firstName: "First Name",

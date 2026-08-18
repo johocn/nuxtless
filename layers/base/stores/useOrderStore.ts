@@ -255,6 +255,32 @@ export const useOrderStore = defineStore("order", () => {
     }
   }
 
+  // 选择自提点：写入订单 customFields（selectedPickupLocationId/pickupType/pickup坐标）+ 同步发货地址
+  async function setPickupLocation(
+    pickupLocationId: string,
+    pickupType: string,
+  ): Promise<void> {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const result = (await GqlSetOrderPickupLocation({
+        pickupLocationId,
+        pickupType,
+      })).setOrderPickupLocation;
+      const res = useOrderMutation(order, result);
+      if (res.status === "error") {
+        error.value = res.message;
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        error.value = err.message || "Failed to set pickup location";
+      }
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function getPaymentMethods(): Promise<void> {
     loading.value = true;
     error.value = null;
@@ -337,6 +363,7 @@ export const useOrderStore = defineStore("order", () => {
     setOrderShippingAddress,
     getShippingMethods,
     setShippingMethod,
+    setPickupLocation,
     getPaymentMethods,
     transitionToState,
     addPaymentToOrder,

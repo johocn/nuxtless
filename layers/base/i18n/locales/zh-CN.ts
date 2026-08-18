@@ -141,6 +141,10 @@ export default defineI18nLocale(() => ({
       noFilters: "暂无筛选条件",
       clearFilters: "清空筛选",
       applyFilters: "应用筛选",
+      outOfArea: "超区商品",
+      pickupInfo: "自提 / 核销信息",
+      pickupClaimed: "已核销",
+      pickupPending: "待核销",
     },
     billing: {
       firstName: "First Name",

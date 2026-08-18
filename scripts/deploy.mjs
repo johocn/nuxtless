@@ -30,6 +30,10 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
  * 加载 .env（轻量 dotenv，避免新增依赖）。进程环境变量优先。
  */
 function loadEnv() {
+  // 以进程环境为基准：进程环境变量优先于 .env（不做覆盖），
+  // 但 .env 内部允许后定义覆盖先定义（如顶部 PORT=3001 用于本地 dev，
+  // 底部部署段 PORT=3000 用于生产透传，后者需生效）。
+  const baseEnv = { ...process.env };
   const env = { ...process.env };
   const envPath = resolve(scriptDir, "..", ".env");
   if (existsSync(envPath)) {
@@ -43,7 +47,7 @@ function loadEnv() {
       if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
         value = value.slice(1, -1);
       }
-      if (!(key in env)) env[key] = value;
+      if (!(key in baseEnv)) env[key] = value;
     }
   }
   return env;

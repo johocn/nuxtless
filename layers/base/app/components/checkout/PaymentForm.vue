@@ -24,7 +24,6 @@ const paymentMethods = computed(
 
 const checkoutState = useState<CheckoutState>("checkoutState");
 const state = checkoutState.value.paymentForm;
-const stripeElement = useTemplateRef("stripeElementRef");
 
 async function onSubmit() {
   if (!state.code) return;
@@ -32,27 +31,16 @@ async function onSubmit() {
   orderStore.error = null;
   orderStore.loading = true;
 
-  // Note: consider a switch or a composable if more methods are added later
-  if (state.code === "standard-payment") {
-    await orderStore.transitionToState("ArrangingPayment");
-    if (orderStore.error) {
-      orderStore.loading = false;
-      return;
-    }
+  await orderStore.transitionToState("ArrangingPayment");
+  if (orderStore.error) {
+    orderStore.loading = false;
+    return;
+  }
 
-    await orderStore.addPaymentToOrder({ method: state.code, metadata: {} });
-    if (orderStore.error) {
-      orderStore.loading = false;
-      return;
-    }
-  } else if (state.code === "stripe-payment") {
-    await orderStore.transitionToState("ArrangingPayment");
-    if (orderStore.error) {
-      orderStore.loading = false;
-      return;
-    }
-
-    await stripeElement.value?.submitStripePayment();
+  await orderStore.addPaymentToOrder({ method: state.code, metadata: {} });
+  if (orderStore.error) {
+    orderStore.loading = false;
+    return;
   }
 
   orderStore.loading = false;
@@ -97,11 +85,6 @@ async function onError() {
         class="hidden lg:block"
       />
     </UFormField>
-
-    <CheckoutStripeElement
-      v-if="state.code === 'stripe-payment'"
-      ref="stripeElementRef"
-    />
   </UForm>
 </template>
 

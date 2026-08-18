@@ -15,6 +15,25 @@ export function useCheckout() {
     });
   }
 
+  // 结账时写入定位自定义字段（lat/lng/city/deliveryType），供就近履约使用
+  async function syncOrderLocation() {
+    const locationStore = useLocationStore();
+    const coords = locationStore.coords;
+    const city = locationStore.city;
+    if (!coords && !city) return;
+
+    await GqlInstance("SetOrderCustomFields", {
+      input: {
+        customFields: {
+          lat: coords?.lat ?? null,
+          lng: coords?.lng ?? null,
+          city: city?.name ?? null,
+          deliveryType: "home-delivery",
+        },
+      },
+    });
+  }
+
   watch(
     () => checkoutState.value.addressForm.postalCode,
     async (n, o) => {
@@ -29,16 +48,5 @@ export function useCheckout() {
     },
   );
 
-  watch(
-    () => checkoutState.value.paymentForm.code,
-    async (n, o) => {
-      if (n && n !== o) {
-        await GqlInstance("SetOrderCustomFields", {
-          input: { customFields: { paymentProvider: n } },
-        });
-
-        await recalcShipping();
-      }
-    },
-  );
+  return { syncOrderLocation };
 }

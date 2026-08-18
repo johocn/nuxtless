@@ -56,6 +56,7 @@ const items = computed<NavigationMenuItem[]>(
     />
 
     <template #right>
+      <HeaderCitySelector />
       <SearchModal />
       <AccountMenu />
       <CartTrigger />

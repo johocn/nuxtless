@@ -44,6 +44,22 @@ const {
 const order = computed(() => orderData.value?.orderByCode ?? null);
 const hasError = computed(() => !!error.value);
 
+// 自提/核销信息展示
+const isPickupOrder = computed(
+  () => (order.value?.customFields?.deliveryType ?? "") === "pickup",
+);
+const pickupLocation = computed(
+  () => order.value?.customFields?.selectedPickupLocationId ?? null,
+);
+const pickupClaimed = computed(
+  () => order.value?.customFields?.pickupClaimed ?? false,
+);
+// 履约状态：取任一 fulfillment 的状态作为核销展示依据
+const fulfillmentState = computed(() => {
+  const f = order.value?.fulfillments?.[0];
+  return f?.state ?? null;
+});
+
 const transitionalStates = ["AddingItems", "ArrangingPayment"];
 
 async function sleep(ms: number) {
@@ -250,6 +266,39 @@ onMounted(async () => {
           <dd>{{ order?.state }}</dd>
         </div>
       </dl>
+    </section>
+
+    <!-- 2.5 自提/核销信息 -->
+    <section
+      v-if="isPickupOrder"
+      aria-labelledby="pickup-info-heading"
+      class="mb-14"
+    >
+      <h2 id="pickup-info-heading" class="text-xl font-semibold underline mb-4">
+        {{ t("messages.shop.pickupInfo") }}
+      </h2>
+      <div class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+        <h3 class="font-medium mb-1">{{ pickupLocation?.name }}</h3>
+        <p class="text-sm text-neutral-500 mb-1">{{ pickupLocation?.address }}</p>
+        <p class="text-sm text-neutral-500 mb-3">
+          {{ pickupLocation?.businessHours }}
+        </p>
+        <div class="flex items-center gap-2">
+          <UBadge
+            :color="pickupClaimed ? 'success' : 'warning'"
+            variant="outline"
+          >
+            {{
+              pickupClaimed
+                ? t("messages.shop.pickupClaimed")
+                : t("messages.shop.pickupPending")
+            }}
+          </UBadge>
+          <span v-if="fulfillmentState" class="text-sm text-neutral-500">
+            {{ t("messages.general.status") }}: {{ fulfillmentState }}
+          </span>
+        </div>
+      </div>
     </section>
 
     <!-- 3. Order summary -->

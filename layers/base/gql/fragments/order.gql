@@ -20,6 +20,12 @@ fragment OrderBase on Order {
       preview
     }
   }
+  customFields {
+    lat
+    lng
+    city
+    deliveryType
+  }
 }
 
 fragment OrderDetail on Order {
@@ -85,5 +91,26 @@ fragment OrderDetail on Order {
   taxSummary {
     description
     taxTotal
+  }
+  fulfillments {
+    id
+    state
+    method
+  }
+  customFields {
+    lat
+    lng
+    city
+    deliveryType
+    selectedPickupLocationId {
+      id
+      name
+      type
+      address
+      phoneNumber
+      businessHours
+    }
+    pickupType
+    pickupClaimed
   }
 }
