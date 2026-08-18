@@ -65,6 +65,12 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
       to: localePath("/account/orders"),
       class: "items-center",
     },
+    {
+      label: t("messages.account.addresses"),
+      icon: "i-lucide-map-pin",
+      to: localePath("/account/addresses"),
+      class: "items-center",
+    },
   ],
   [
     {
