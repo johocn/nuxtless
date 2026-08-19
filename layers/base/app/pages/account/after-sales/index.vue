@@ -3,7 +3,7 @@ import {
   AFTER_SALES_TABS,
   tabOfAfterSales,
   type AfterSalesTabKey,
-} from "../../utils/after-sales-state";
+} from "../../../utils/after-sales-state";
 
 const { t } = useI18n();
 const localePath = useLocalePath();
@@ -38,7 +38,7 @@ onMounted(async () => {
   <BaseLoader v-if="loading || !isAuthenticated" width="sm:w-xs md:w-md" />
   <main v-else class="container">
     <header class="my-14">
-      <h1 class="text-2xl font-semibold">{{ t("afterSales.title") }}</h1>
+      <h1 class="text-2xl font-semibold">{{ t("messages.afterSales.title") }}</h1>
       <ULink :to="localePath('/account')" class="mt-2 text-sm">
         {{ t("messages.account.backToAccount") }}
       </ULink>
@@ -53,6 +53,6 @@ onMounted(async () => {
     <div v-if="filtered.length" class="flex flex-col gap-4">
       <AfterSalesCard v-for="r in filtered" :key="r.id" :request="r" />
     </div>
-    <p v-else class="py-16 text-center text-neutral-500">{{ t("afterSales.empty") }}</p>
+    <p v-else class="py-16 text-center text-neutral-500">{{ t("messages.afterSales.empty") }}</p>
   </main>
 </template>
