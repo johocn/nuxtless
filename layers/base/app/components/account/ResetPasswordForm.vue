@@ -3,9 +3,8 @@ import { ResetPasswordForm } from "~~/layers/base/validators/resetPasswordForm";
 
 import type { FormSubmitEvent } from "@nuxt/ui";
 
-const route = useRoute();
 const router = useRouter();
-const token = route.query.token as string;
+const token = useRouteQuery("token");
 const { t } = useI18n();
 const localePath = useLocalePath();
 

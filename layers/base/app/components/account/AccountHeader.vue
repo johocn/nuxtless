@@ -4,7 +4,7 @@ import type { ActiveCustomer } from "~~/types/customer";
 const { t } = useI18n();
 
 const { activeCustomer } = defineProps<{
-  activeCustomer: ActiveCustomer;
+  activeCustomer: ActiveCustomer | null;
 }>();
 
 const localePath = useLocalePath();

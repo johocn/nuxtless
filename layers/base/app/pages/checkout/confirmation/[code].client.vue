@@ -10,7 +10,7 @@ const router = useRouter();
 const toast = useToast();
 const orderStore = useOrderStore();
 
-const code = route.params.code as string;
+const code = useRouteParam("code");
 const isMounted = ref(false);
 
 const redirectStatus = computed(

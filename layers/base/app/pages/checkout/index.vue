@@ -2,6 +2,7 @@
 import type { ActiveOrderDetail } from "~~/types/order";
 import type { CheckoutState } from "~~/types/general";
 import type { AddressRecord } from "~~/types/address";
+import { isActiveOrderDetail } from "~~/types/guard";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -12,12 +13,14 @@ const orderStore = useOrderStore();
 const { order } = storeToRefs(orderStore);
 const isMounted = ref(false);
 
-if (!order.value || !("shippingWithTax" in order.value)) {
+if (!isActiveOrderDetail(order.value)) {
   await orderStore.fetchOrder("detail");
 }
 
-// Safe: We fetch with "detail" above. Order should always be ActiveCustomerDetail.
-const activeOrder = computed(() => order.value as ActiveOrderDetail);
+// fetchOrder("detail") 后 order 应为 ActiveOrderDetail；守卫类型化，模板用可选链保持 null 安全。
+const activeOrder = computed<ActiveOrderDetail | null>(() =>
+  isActiveOrderDetail(order.value) ? order.value : null,
+);
 
 watch(activeOrder, async (newOrder, oldOrder) => {
   if (newOrder?.totalWithTax !== oldOrder?.totalWithTax) {
