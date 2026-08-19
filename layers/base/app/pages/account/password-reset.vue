@@ -1,21 +1,15 @@
 <script setup lang="ts">
 definePageMeta({
   alias: ["/password-reset"],
+  middleware: "guest",
 });
 
-const route = useRoute();
-const token = route.query.token as string;
+const token = useRouteQuery("token");
 const { t } = useI18n();
 const localePath = useLocalePath();
-const { isAuthenticated } = storeToRefs(useAuthStore());
 const loading = ref(true);
 
 onMounted(() => {
-  if (isAuthenticated.value) {
-    navigateTo(localePath("/account"), { replace: true });
-    return;
-  }
-
   if (!token) {
     navigateTo(localePath("/account/request-password-reset"), {
       replace: true,

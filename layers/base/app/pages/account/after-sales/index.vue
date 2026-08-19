@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: "account" });
+
 import {
   AFTER_SALES_TABS,
   tabOfAfterSales,
@@ -7,7 +9,6 @@ import {
 
 const { t } = useI18n();
 const localePath = useLocalePath();
-const { isAuthenticated } = storeToRefs(useAuthStore());
 const activeTab = ref<AfterSalesTabKey>("ALL");
 const loading = ref(true);
 
@@ -25,17 +26,13 @@ const filtered = computed(() =>
 );
 
 onMounted(async () => {
-  if (!isAuthenticated.value) {
-    navigateTo(localePath("/account/login"), { replace: true });
-    return;
-  }
   await refresh();
   loading.value = false;
 });
 </script>
 
 <template>
-  <BaseLoader v-if="loading || !isAuthenticated" width="sm:w-xs md:w-md" />
+  <BaseLoader v-if="loading" width="sm:w-xs md:w-md" />
   <main v-else class="container">
     <header class="my-14">
       <h1 class="text-2xl font-semibold">{{ t("messages.afterSales.title") }}</h1>

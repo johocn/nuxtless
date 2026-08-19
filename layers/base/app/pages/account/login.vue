@@ -1,34 +1,23 @@
 <script setup lang="ts">
 definePageMeta({
   alias: ["/login"],
+  middleware: "guest",
 });
 
 const router = useRouter();
 const { t } = useI18n();
 const localePath = useLocalePath();
-const { isAuthenticated } = storeToRefs(useAuthStore());
 const submitted = ref(false);
-const loading = ref(true);
 
 watch(submitted, (v) => {
   if (v) {
     router.push(localePath("/account"));
   }
 });
-
-onMounted(() => {
-  if (isAuthenticated.value) {
-    navigateTo(localePath("/account"), { replace: true });
-    return;
-  }
-
-  loading.value = false;
-});
 </script>
 
 <template>
-  <BaseLoader v-if="loading" width="sm:w-xs md:w-sm" />
-  <main v-else class="container mt-14">
+  <main class="container mt-14">
     <header
       class="mb-8 flex flex-col items-center"
       aria-labelledby="login-heading"

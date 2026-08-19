@@ -1,33 +1,24 @@
 <script setup lang="ts">
-const route = useRoute();
+definePageMeta({ middleware: "account" });
+
 const { t } = useI18n();
 const localePath = useLocalePath();
-const { isAuthenticated } = storeToRefs(useAuthStore());
-const code = route.params.code as string;
+const code = useRouteParam("code");
 
 const { data, error, refresh } = await useAsyncGql("GetOrderByCode", { code });
 
 const order = computed(() => data.value?.orderByCode ?? null);
 import { canApplyAfterSales } from "../../../utils/after-sales-state";
+import type { OrderLine } from "~~/types/order";
 
 const applyModalOpen = ref(false);
-const applyLine = ref<
-  NonNullable<NonNullable<typeof order.value>["lines"]>[number] | null
->(null);
+const applyLine = ref<OrderLine | null>(null);
 const hasError = computed(() => !!error.value || !order.value);
-
-onMounted(async () => {
-  if (!isAuthenticated.value) {
-    navigateTo(localePath("/account/login"), { replace: true });
-    return;
-  }
-});
 </script>
 
 <template>
-  <BaseLoader v-if="!isAuthenticated" width="sm:w-xs md:w-md" />
   <UError
-    v-else-if="hasError"
+    v-if="hasError"
     :error="{
       statusCode: 404,
       statusMessage: t('messages.error.noOrder'),
