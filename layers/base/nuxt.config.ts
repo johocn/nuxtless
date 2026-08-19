@@ -50,6 +50,17 @@ export default defineNuxtConfig({
     },
   },
 
+  // Fonts Configuration
+  // 禁用 google / googleicons 字体 provider：构建与运行时均不访问 fonts.googleapis.com / fonts.google.com
+  // （国内网络访问 google 会超时拉慢/卡死构建）。改用 Bunny Fonts（Google Fonts 的 CDN 镜像，国内可直连）兜底。
+  fonts: {
+    providers: {
+      google: false,
+      googleicons: false,
+    },
+    priority: ["bunny", "fontsource"],
+  },
+
   // ColorMode Settings (currently defaults)
   colorMode: {
     preference: "system",
