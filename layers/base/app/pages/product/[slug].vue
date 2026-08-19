@@ -1,5 +1,4 @@
 <script setup lang="ts">
-const route = useRoute();
 const { i18NBaseUrl } = useRuntimeConfig().public;
 const colorMode = useColorMode();
 const { t, locale } = useI18n();
@@ -15,7 +14,7 @@ const locationStore = useLocationStore();
 const { isServiceable } = useCityService();
 const productServiceable = computed(() => isServiceable(product.value));
 
-const slug = route.params.slug as string;
+const slug = useRouteParam("slug");
 
 const { data } = await useAsyncGql("GetProductDetail", {
   slug,

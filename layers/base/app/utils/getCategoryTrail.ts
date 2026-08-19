@@ -2,8 +2,7 @@ import type { BreadcrumbItem } from "@nuxt/ui";
 import type { MenuCollections } from "~~/types/collection";
 
 export function getCategoryTrail(): BreadcrumbItem[] {
-  const route = useRoute();
-  const slug = route.params.slug as string;
+  const slug = useRouteParam("slug");
 
   const menuCollections = useState<MenuCollections>("menuCollections");
   const menuItems = menuCollections.value?.collections.items ?? [];

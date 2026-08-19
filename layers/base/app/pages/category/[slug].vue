@@ -15,7 +15,7 @@ const ogColorMode = computed<"dark" | "light">(() =>
 const menuCollections = useState<MenuCollections>("menuCollections");
 const menuItems = menuCollections.value?.collections.items ?? [];
 
-const slug = route.params.slug as string;
+const slug = useRouteParam("slug");
 
 const currentCollection =
   menuItems.find((top) => top.slug === slug) ??

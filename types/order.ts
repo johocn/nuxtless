@@ -27,7 +27,9 @@ export type ActiveOrderDetail = GetActiveOrderDetailQuery["activeOrder"];
 
 export type ActiveOrder = ActiveOrderBase | ActiveOrderDetail;
 
-export type OrderLine = NonNullable<ActiveOrder>["lines"][number];
+export type OrderLine = NonNullable<ActiveOrder>["lines"][number] & {
+  proratedLinePrice?: number;
+};
 
 // ─────────────────────────────────────────────────────────────
 // Status

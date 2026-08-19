@@ -4,6 +4,7 @@ import { AddressForm } from "~~/layers/base/validators/addressForm";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { ActiveCustomerDetail } from "~~/types/customer";
 import type { CheckoutState } from "~~/types/general";
+import { isActiveCustomerDetail } from "~~/types/guard";
 
 const isSubmitted = defineModel<boolean>({ default: false });
 
@@ -19,12 +20,13 @@ const { fetchCustomer } = useCustomerStore();
 const { countryCodeDefault } = useAppConfig();
 const isMounted = ref(false);
 
-if (!customer.value || !("phoneNumber" in customer.value)) {
+if (!isActiveCustomerDetail(customer.value)) {
   await fetchCustomer("detail");
 }
 
-// Safe: We fetch with "detail" above. Customer.value should always be ActiveCustomerDetail.
-const activeCustomer = computed(() => customer.value as ActiveCustomerDetail);
+const activeCustomer = computed<ActiveCustomerDetail | null>(() =>
+  isActiveCustomerDetail(customer.value) ? customer.value : null,
+);
 
 const checkoutState = useState<CheckoutState>("checkoutState");
 const state = checkoutState.value.addressForm;
