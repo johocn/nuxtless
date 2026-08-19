@@ -17,9 +17,10 @@ const {
   recordToDraft,
 } = useAddressBook();
 
-const modalRef = useTemplateRef("modalRef");
 const modalOpen = ref(false);
 const editingId = ref<string | null>(null);
+// 编辑时注入到弹窗的表单草稿；新增时为 null
+const editingDraft = ref<AddressDraft | null>(null);
 
 onMounted(async () => {
   await fetchAddresses();
@@ -27,12 +28,13 @@ onMounted(async () => {
 
 function openCreate() {
   editingId.value = null;
+  editingDraft.value = null;
   modalOpen.value = true;
 }
 
 function openEdit(record: AddressRecord) {
   editingId.value = record.id;
-  modalRef.value?.openWith(recordToDraft(record));
+  editingDraft.value = recordToDraft(record);
   modalOpen.value = true;
 }
 
@@ -89,8 +91,8 @@ async function handleDelete(id: string) {
     />
 
     <AddressFormModal
-      ref="modalRef"
       v-model="modalOpen"
+      :draft="editingDraft"
       @submit="handleSubmit"
     />
   </main>

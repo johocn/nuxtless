@@ -45,7 +45,7 @@ useSeoMeta({
           :class="{ 'pb-18 sm:pb-0': isPdp }"
           class="flex min-h-svh flex-col"
         >
-          <AppHeader class="sticky top-0" />
+          <AppHeader />
           <div class="flex-1">
             <slot />
           </div>

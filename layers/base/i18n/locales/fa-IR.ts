@@ -19,6 +19,8 @@ export default defineI18nLocale(() => ({
       },
     },
     general: {
+      cancel: 'انصراف',
+      save: 'ذخیره',
       colorMode: "حالت رنگی",
       system: "سیستم",
       light: "روشن",

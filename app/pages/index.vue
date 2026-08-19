@@ -26,9 +26,9 @@ const floors = computed<Array<FloorBlockData & { id: string; sort: number }>>(()
     <h1 class="sr-only">{{ t("messages.site.tagline") }}</h1>
 
     <template v-if="hasOperational">
-      <OperationalHero v-for="b in banners" :key="b.id" :block="b" />
-      <OperationalFloor v-for="f in floors" :key="f.id" :block="f" />
-      <FlashSalePlaceholder />
+      <HomeOperationalHero v-for="b in banners" :key="b.id" :block="b" />
+      <HomeOperationalFloor v-for="f in floors" :key="f.id" :block="f" />
+      <HomeFlashSalePlaceholder />
     </template>
 
     <!-- 兜底：无运营位时展示默认 hero + 固定三区块 -->
@@ -47,8 +47,6 @@ const floors = computed<Array<FloorBlockData & { id: string; sort: number }>>(()
             sizes="sm:100vw md:1600px"
             fetchpriority="high"
             preload
-            placeholder
-            placeholder-class="blur-xl"
           />
         </div>
       </section>

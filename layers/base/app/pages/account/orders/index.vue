@@ -56,7 +56,11 @@ const filteredOrders = computed(() =>
 const tableData = computed<OrderTableRow[]>(() =>
   filteredOrders.value.map((order, index) => ({
     id: index + 1,
-    date: d(new Date(order.orderPlacedAt)),
+    // 已取消等未完成订单的 orderPlacedAt 为 null，new Date(null) 会落到 1970-01-01，
+    // 统一用占位符展示，避免误导用户。
+    date: order.orderPlacedAt
+      ? d(new Date(order.orderPlacedAt))
+      : t("messages.general.na"),
     status: order.state,
     amount: formatMoney(order.totalWithTax, order.currencyCode, locale.value),
     currency: order.currencyCode,

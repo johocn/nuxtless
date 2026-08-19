@@ -61,7 +61,7 @@ const hasError = computed(() => !!error.value || !order.value);
 
     <div class="mb-10 grid grid-cols-1 gap-6 md:grid-cols-2">
       <OrderAddress :address="order.shippingAddress" />
-      <DeliveryInfo :order="order" />
+      <OrderDeliveryInfo :order="order" />
     </div>
 
     <section class="mb-10 max-w-md">

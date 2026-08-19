@@ -19,6 +19,8 @@ export default defineI18nLocale(() => ({
       },
     },
     general: {
+      cancel: 'Cancel',
+      save: 'Save',
       colorMode: "Color Mode",
       system: "System",
       light: "Light",
