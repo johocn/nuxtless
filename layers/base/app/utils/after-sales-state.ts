@@ -19,23 +19,23 @@ export type AfterSalesTabKey =
   | "Closed";
 
 export const AFTER_SALES_TABS: { key: AfterSalesTabKey; labelKey: string }[] = [
-  { key: "ALL", labelKey: "afterSales.tabAll" },
-  { key: "Pending", labelKey: "afterSales.tabPending" },
-  { key: "Approved", labelKey: "afterSales.tabToReturn" },
-  { key: "Returning", labelKey: "afterSales.tabReturning" },
-  { key: "Refunded", labelKey: "afterSales.tabRefunded" },
-  { key: "Rejected", labelKey: "afterSales.tabRejected" },
-  { key: "Closed", labelKey: "afterSales.tabClosed" },
+  { key: "ALL", labelKey: "messages.afterSales.tabAll" },
+  { key: "Pending", labelKey: "messages.afterSales.tabPending" },
+  { key: "Approved", labelKey: "messages.afterSales.tabToReturn" },
+  { key: "Returning", labelKey: "messages.afterSales.tabReturning" },
+  { key: "Refunded", labelKey: "messages.afterSales.tabRefunded" },
+  { key: "Rejected", labelKey: "messages.afterSales.tabRejected" },
+  { key: "Closed", labelKey: "messages.afterSales.tabClosed" },
 ];
 
 const TYPE_LABEL_KEY: Record<AfterSalesType, string> = {
-  return_refund: "afterSales.typeReturnRefund",
-  refund_only: "afterSales.typeRefundOnly",
-  exchange: "afterSales.typeExchange",
+  return_refund: "messages.afterSales.typeReturnRefund",
+  refund_only: "messages.afterSales.typeRefundOnly",
+  exchange: "messages.afterSales.typeExchange",
 };
 
 export function afterSalesTypeLabelKey(type: string): string {
-  return TYPE_LABEL_KEY[type as AfterSalesType] ?? "afterSales.typeUnknown";
+  return TYPE_LABEL_KEY[type as AfterSalesType] ?? "messages.afterSales.typeUnknown";
 }
 
 export interface AfterSalesStateInfo {
@@ -46,21 +46,21 @@ export interface AfterSalesStateInfo {
 export function afterSalesStateInfo(state: string): AfterSalesStateInfo {
   switch (state) {
     case "Pending":
-      return { labelKey: "afterSales.statePending", color: "warning" };
+      return { labelKey: "messages.afterSales.statePending", color: "warning" };
     case "Approved":
-      return { labelKey: "afterSales.stateApproved", color: "info" };
+      return { labelKey: "messages.afterSales.stateApproved", color: "info" };
     case "Rejected":
-      return { labelKey: "afterSales.stateRejected", color: "error" };
+      return { labelKey: "messages.afterSales.stateRejected", color: "error" };
     case "Returning":
-      return { labelKey: "afterSales.stateReturning", color: "info" };
+      return { labelKey: "messages.afterSales.stateReturning", color: "info" };
     case "Received":
-      return { labelKey: "afterSales.stateReceived", color: "warning" };
+      return { labelKey: "messages.afterSales.stateReceived", color: "warning" };
     case "Refunded":
-      return { labelKey: "afterSales.stateRefunded", color: "success" };
+      return { labelKey: "messages.afterSales.stateRefunded", color: "success" };
     case "Closed":
-      return { labelKey: "afterSales.stateClosed", color: "neutral" };
+      return { labelKey: "messages.afterSales.stateClosed", color: "neutral" };
     default:
-      return { labelKey: "afterSales.stateUnknown", color: "neutral" };
+      return { labelKey: "messages.afterSales.stateUnknown", color: "neutral" };
   }
 }
 

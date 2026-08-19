@@ -25,18 +25,18 @@ async function onSubmit() {
 
 <template>
   <div class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-    <h3 class="mb-3 font-medium">{{ t("afterSales.trackTitle") }}</h3>
+    <h3 class="mb-3 font-medium">{{ t("messages.afterSales.trackTitle") }}</h3>
     <div class="grid grid-cols-2 gap-3">
-      <UFormGroup :label="t('afterSales.carrier')" required>
-        <UInput v-model="carrier" :placeholder="t('afterSales.carrierPlaceholder')" />
+      <UFormGroup :label="t('messages.afterSales.carrier')" required>
+        <UInput v-model="carrier" :placeholder="t('messages.afterSales.carrierPlaceholder')" />
       </UFormGroup>
-      <UFormGroup :label="t('afterSales.trackingNo')" required>
-        <UInput v-model="trackingNo" :placeholder="t('afterSales.trackingPlaceholder')" />
+      <UFormGroup :label="t('messages.afterSales.trackingNo')" required>
+        <UInput v-model="trackingNo" :placeholder="t('messages.afterSales.trackingPlaceholder')" />
       </UFormGroup>
     </div>
     <p v-if="errorMsg" class="mt-2 text-sm text-error">{{ errorMsg }}</p>
     <UButton class="mt-3" color="primary" :loading="loading" @click="onSubmit">
-      {{ t("afterSales.submitTracking") }}
+      {{ t("messages.afterSales.submitTracking") }}
     </UButton>
   </div>
 </template>

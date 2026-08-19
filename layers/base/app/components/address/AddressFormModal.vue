@@ -64,7 +64,7 @@ defineExpose({ openWith });
 </script>
 
 <template>
-  <UModal v-model="isOpen" :title="t('messages.account.addAddress')">
+  <UModal v-model:open="isOpen" :title="t('messages.account.addAddress')">
     <template #body>
       <UForm
         ref="formRef"

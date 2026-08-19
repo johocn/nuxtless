@@ -7,7 +7,7 @@ const emit = defineEmits<{
   (e: "success"): void;
 }>();
 
-const { GQL_HOST: gqlHost, channelToken } = useRuntimeConfig().public;
+const { channelToken } = useRuntimeConfig().public;
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
 const toast = useToast();
@@ -24,7 +24,7 @@ const state = reactive({
 async function onSubmit(event: FormSubmitEvent<LoginForm>) {
   const result = await useGqlSession(
     locale.value,
-    gqlHost,
+    useGqlHostUrl(),
     channelToken,
     "login",
     {

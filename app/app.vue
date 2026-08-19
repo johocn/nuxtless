@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { GQL_HOST: gqlHost, channelToken } = useRuntimeConfig().public;
+const { channelToken } = useRuntimeConfig().public;
 const colorMode = useColorMode();
 const { t, locale } = useI18n();
 const toast = useToast();
@@ -12,7 +12,7 @@ const orderStore = useOrderStore();
 const { error } = storeToRefs(orderStore);
 
 // Set initial locale for Vendure requests
-useGqlHost(`?languageCode=${locale.value}`);
+useGqlHost(`${useGqlHostUrl()}?languageCode=${locale.value}`);
 
 // Create shared menu collections. Could be rewritten as composable.
 const { data: menuCollections } = await useAsyncGql("GetMenuCollections");
@@ -20,7 +20,7 @@ useState("menuCollections", () => menuCollections.value);
 
 // Set GQL session and fetch current order
 onBeforeMount(async () => {
-  await useGqlSession(locale.value, gqlHost, channelToken, "default");
+  await useGqlSession(locale.value, useGqlHostUrl(), channelToken, "default");
   await orderStore.fetchOrder();
 });
 
