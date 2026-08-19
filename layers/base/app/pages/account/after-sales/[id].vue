@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: "account" });
+
 import {
   afterSalesTypeLabelKey,
   afterSalesStateInfo,
@@ -9,11 +11,9 @@ import {
 } from "../../../utils/after-sales-state";
 import { formatMoney } from "../../../utils/format-money";
 
-const route = useRoute();
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
-const { isAuthenticated } = storeToRefs(useAuthStore());
-const id = route.params.id as string;
+const id = useRouteParam("id");
 
 const { data, error, refresh } = await useAsyncGql("AfterSalesRequest", { id });
 const request = computed(() => data.value?.afterSalesRequest ?? null);
@@ -39,9 +39,8 @@ async function onCancel() {
 </script>
 
 <template>
-  <BaseLoader v-if="!isAuthenticated" width="sm:w-xs md:w-md" />
   <UError
-    v-else-if="hasError"
+    v-if="hasError"
     :error="{ statusCode: 404, statusMessage: t('messages.afterSales.notFound'), message: t('messages.afterSales.notFound') }"
   />
   <main v-else-if="request" class="container mb-14">

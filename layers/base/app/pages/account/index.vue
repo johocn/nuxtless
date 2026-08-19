@@ -1,23 +1,21 @@
 <script setup lang="ts">
+definePageMeta({ middleware: "account" });
+
 import type { ActiveCustomerDetail } from "~~/types/customer";
+import { isActiveCustomerDetail } from "~~/types/guard";
 
 const { t } = useI18n();
 const localePath = useLocalePath();
 const { customer } = storeToRefs(useCustomerStore());
 const { fetchCustomer } = useCustomerStore();
-const { isAuthenticated } = storeToRefs(useAuthStore());
 const loading = ref(true);
 
-// Safe: We fetch with "detail" below. Customer.value should always be ActiveCustomerDetail.
-const activeCustomer = computed(() => customer.value as ActiveCustomerDetail);
+const activeCustomer = computed<ActiveCustomerDetail | null>(() =>
+  isActiveCustomerDetail(customer.value) ? customer.value : null,
+);
 
 onMounted(async () => {
-  if (!isAuthenticated.value) {
-    navigateTo(localePath("/account/login"), { replace: true });
-    return;
-  }
-
-  if (!customer.value || !("phoneNumber" in customer.value)) {
+  if (!isActiveCustomerDetail(customer.value)) {
     await fetchCustomer("detail");
   }
 

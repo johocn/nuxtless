@@ -1,10 +1,11 @@
 <script setup lang="ts">
+definePageMeta({ middleware: "account" });
+
 import type { AddressRecord, AddressDraft } from "~~/types/address";
 
 const { t } = useI18n();
 const localePath = useLocalePath();
 const toast = useToast();
-const { isAuthenticated } = storeToRefs(useAuthStore());
 const {
   addresses,
   defaultAddress,
@@ -21,10 +22,6 @@ const modalOpen = ref(false);
 const editingId = ref<string | null>(null);
 
 onMounted(async () => {
-  if (!isAuthenticated.value) {
-    navigateTo(localePath("/account/login"), { replace: true });
-    return;
-  }
   await fetchAddresses();
 });
 

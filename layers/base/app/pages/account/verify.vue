@@ -1,26 +1,20 @@
 <script setup lang="ts">
 definePageMeta({
   alias: ["/verify"],
+  middleware: "guest",
 });
 
-const route = useRoute();
-const token = route.query.token as string | undefined;
+const token = useRouteQuery("token") || undefined;
 const { t } = useI18n();
 const localePath = useLocalePath();
 const toast = useToast();
 
-const { isAuthenticated } = storeToRefs(useAuthStore());
 const { verify } = useCustomerStore();
 const loading = ref(true);
 const verifying = ref(true);
 const error = ref<string | null>(null);
 
 onMounted(async () => {
-  if (isAuthenticated.value) {
-    await navigateTo(localePath("/account"), { replace: true });
-    return;
-  }
-
   loading.value = false;
 
   if (!token) {

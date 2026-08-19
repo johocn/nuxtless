@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: "account" });
+
 import { h, resolveComponent } from "vue";
 import { SortOrder } from "~~/types/default";
 
@@ -7,6 +9,7 @@ import type { OrderTableRow } from "~~/types/general";
 
 import { ORDER_TABS, tabOfState } from "../../../utils/order-state";
 import type { OrderTabKey } from "../../../utils/order-state";
+import { formatMoney } from "../../../utils/format-money";
 
 const { i18NBaseUrl } = useRuntimeConfig().public;
 const { locale, d, t } = useI18n();
@@ -15,7 +18,6 @@ const router = useRouter();
 const { copy } = useClipboard();
 const toast = useToast();
 const { customer } = storeToRefs(useCustomerStore());
-const { isAuthenticated } = storeToRefs(useAuthStore());
 const { canCancel, cancelOrder, reorder, loading: actionLoading } =
   useOrderActions();
 const loading = ref(true);
@@ -56,7 +58,7 @@ const tableData = computed<OrderTableRow[]>(() =>
     id: index + 1,
     date: d(new Date(order.orderPlacedAt)),
     status: order.state,
-    amount: (order.totalWithTax / 100).toFixed(2),
+    amount: formatMoney(order.totalWithTax, order.currencyCode, locale.value),
     currency: order.currencyCode,
     code: order.code,
   })),
@@ -84,14 +86,7 @@ const columns: TableColumn<OrderTableRow>[] = [
     header: () =>
       h("div", { class: "text-right" }, t("messages.general.amount")),
     cell: ({ row }) => {
-      const amount = Number.parseFloat(row.getValue("amount"));
-
-      const formatted = new Intl.NumberFormat(locale.value, {
-        style: "currency",
-        currency: row.original.currency,
-      }).format(amount);
-
-      return h("div", { class: "text-right font-medium" }, formatted);
+      return h("div", { class: "text-right font-medium" }, row.original.amount);
     },
   },
   {
@@ -192,11 +187,6 @@ function getRowItems(row: TableRow<OrderTableRow>) {
 }
 
 onMounted(async () => {
-  if (!isAuthenticated.value) {
-    navigateTo(localePath("/account/login"), { replace: true });
-    return;
-  }
-
   await refresh();
 
   loading.value = false;
@@ -204,7 +194,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <BaseLoader v-if="loading || !isAuthenticated" width="sm:w-xs md:w-sm" />
+  <BaseLoader v-if="loading" width="sm:w-xs md:w-sm" />
   <main v-else class="container">
     <header class="my-14">
       <h1 class="text-2xl font-semibold">{{ t("messages.account.orders") }}</h1>
