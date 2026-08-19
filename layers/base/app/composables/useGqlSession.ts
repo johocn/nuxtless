@@ -1,15 +1,28 @@
-import type { LogInResult } from "~~/types/customer";
 import type { ActiveOrder } from "~~/types/order";
+import type { LogInResult } from "~~/types/customer";
 
-// TODO: Add function overloads
-
+// 统一会话入口：login 返回登录结果（CurrentUser | ErrorResult），default 返回活跃订单。
+// token 捕获依赖手写 fetch 读取 vendure-auth-token 响应头（typed client 无此能力）。
+export async function useGqlSession(
+  locale: string,
+  gqlHost: string | undefined,
+  channelToken: string,
+  queryType?: "default",
+): Promise<ActiveOrder | null>;
+export async function useGqlSession(
+  locale: string,
+  gqlHost: string | undefined,
+  channelToken: string,
+  queryType: "login",
+  variables: Record<string, unknown>,
+): Promise<LogInResult | null>;
 export async function useGqlSession(
   locale: string,
   gqlHost: string | undefined,
   channelToken: string,
   queryType: "default" | "login" = "default",
   variables?: Record<string, unknown>,
-) {
+): Promise<ActiveOrder | LogInResult | null> {
   if (!gqlHost) {
     console.error("useGqlSession: GQL_HOST is not defined");
     return null;
@@ -22,29 +35,19 @@ export async function useGqlSession(
   };
 
   const token = authStore.session?.token;
-
   if (token) {
     headers.authorization = `Bearer ${token}`;
   }
-
   if (channelToken) {
     headers["vendure-channel-token"] = channelToken;
   }
-
   if (locale) {
     headers["Accept-Language"] = locale;
   }
 
-  const defaultQuery = `
-    query ActiveOrder {
-      activeOrder {
-        id
-        state
-      }
-    }
-  `;
-
-  const loginQuery = `
+  const query =
+    queryType === "login"
+      ? `
     mutation LogInUser($emailAddress: String!, $password: String!, $rememberMe: Boolean!) {
       login(username: $emailAddress, password: $password, rememberMe: $rememberMe) {
         ... on CurrentUser {
@@ -57,15 +60,21 @@ export async function useGqlSession(
         }
       }
     }
+  `
+      : `
+    query ActiveOrder {
+      activeOrder {
+        id
+        state
+      }
+    }
   `;
-
-  const query = queryType === "login" ? loginQuery : defaultQuery;
 
   try {
     const res = await fetch(`${gqlHost}?languageCode=${locale}`, {
       method: "POST",
       credentials: "include",
-      headers: headers,
+      headers,
       body: JSON.stringify({ query, variables }),
     });
 
@@ -78,17 +87,13 @@ export async function useGqlSession(
     useGqlHeaders(headers);
 
     const json = (await res.json()) as {
-      data?: {
-        login?: unknown;
-        activeOrder?: unknown;
-      };
+      data?: { login?: LogInResult; activeOrder?: ActiveOrder };
     };
 
-    if (queryType === "login" && json.data?.login) {
-      return json.data.login as LogInResult;
-    } else if (queryType === "default" && json.data?.activeOrder) {
-      return json.data.activeOrder as ActiveOrder;
+    if (queryType === "login") {
+      return json.data?.login ?? null;
     }
+    return json.data?.activeOrder ?? null;
   } catch (error) {
     console.error("Failed to fetch session token:", error);
     return null;

@@ -1,6 +1,5 @@
 import type {
   ActiveCustomer,
-  LogInResult,
   LogOutResult,
   RegisterResult,
   VerifyResult,
@@ -29,34 +28,6 @@ export const useCustomerStore = defineStore("customer", () => {
       if (err instanceof Error) {
         error.value = err.message;
       }
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  async function login(
-    email: string,
-    password: string,
-    rememberMe = true,
-  ): Promise<LogInResult | undefined> {
-    loading.value = true;
-    error.value = null;
-
-    try {
-      const result = (
-        await GqlLogInUser({ emailAddress: email, password, rememberMe })
-      ).login;
-
-      if ("id" in result) {
-        await fetchCustomer();
-      }
-
-      return result;
-    } catch (err) {
-      if (err instanceof Error) {
-        error.value = err.message;
-      }
-      return undefined;
     } finally {
       loading.value = false;
     }
@@ -182,7 +153,6 @@ export const useCustomerStore = defineStore("customer", () => {
     loading,
     error,
     fetchCustomer,
-    login,
     logout,
     register,
     verify,
