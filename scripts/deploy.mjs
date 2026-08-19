@@ -11,7 +11,8 @@
  *   SERVER_PORT     SSH/SCP 端口（默认 22）
  *   REMOTE_DIR      服务器上 .output/ 所在目标目录（必填，例如 /opt/www/nshop）
  *   APP_NAME        pm2 进程名（默认 nshop）
- *   PORT            站点监听端口（默认 8080，透传给服务器启动）
+ *   PORT            站点监听端口（默认 8080，透传给服务器启动）。与本地 dev 端口
+ *                   解耦：部署端口读 SITE_PORT（.env 底部部署段），无则回退 PORT。
  *   SKIP_BUILD      设为 1 时跳过本地构建（仅上传+重启）
  *
  * 用法：
@@ -60,7 +61,7 @@ const SERVER_USER = env.SERVER_USER || "";
 const SERVER_PORT = env.SERVER_PORT || "";
 const REMOTE_DIR = env.REMOTE_DIR;
 const APP_NAME = env.APP_NAME || "nshop";
-const PORT = env.PORT || "8080";
+const PORT = env.SITE_PORT || env.PORT || "8080";
 const SKIP_BUILD = env.SKIP_BUILD === "1";
 
 // 优先把 SERVER_HOST 当 ssh 别名（如 .ssh/config 的 qing 已含 User/Port/IdentityFile）；

@@ -19,6 +19,8 @@ export default defineI18nLocale(() => ({
       },
     },
     general: {
+      cancel: 'Отмяна',
+      save: 'Запази',
       colorMode: "Цветови режим",
       system: "Система",
       light: "Светъл",

@@ -19,6 +19,8 @@ export default defineI18nLocale(() => ({
       },
     },
     general: {
+      cancel: '取消',
+      save: '保存',
       colorMode: "Color Mode",
       system: "System",
       light: "Light",
@@ -29,6 +31,7 @@ export default defineI18nLocale(() => ({
       getLinkSuccess: "Order link copied to clipboard!",
       citySearchHint: "Start typing to search cities…",
       date: "Date",
+      na: "—",
       status: "Status",
       amount: "Amount",
       paymentMethod: "Payment Method",

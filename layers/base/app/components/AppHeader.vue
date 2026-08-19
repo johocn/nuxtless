@@ -34,7 +34,7 @@ const items = computed<NavigationMenuItem[]>(
 </script>
 
 <template>
-  <UHeader toggle-side="left">
+  <UHeader toggle-side="left" class="sticky top-0">
     <template #left>
       <ULink
         :to="localePath('/')"

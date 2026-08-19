@@ -9,6 +9,13 @@ const emit = defineEmits<{
   (e: "submit", draft: AddressDraft): void;
 }>();
 
+// 编辑时父组件通过 draft prop 注入待编辑数据；新增时为 null（空态）。
+// 不用子组件方法（openWith + defineExpose）注入，避免 async setup 组件
+// 经 Nuxt auto-import + useTemplateRef 时暴露方法不可用的问题。
+const props = defineProps<{
+  draft?: AddressDraft | null;
+}>();
+
 const { t } = useI18n();
 const formRef = useTemplateRef("formRef");
 const submitting = ref(false);
@@ -43,24 +50,33 @@ const state = ref<InferOutput<typeof schema>>({
   phoneNumber: "",
 });
 
-function openWith(draft?: AddressDraft | null) {
-  state.value = {
-    fullName: draft?.fullName ?? "",
-    streetLine1: draft?.streetLine1 ?? "",
-    streetLine2: draft?.streetLine2 ?? "",
-    city: draft?.city ?? "",
-    postalCode: draft?.postalCode ?? "",
-    countryCode: draft?.countryCode ?? "",
-    phoneNumber: draft?.phoneNumber ?? "",
-  };
-}
+// draft 变化（打开编辑弹窗）时填充表单；新增时为 null 重置为空态
+watch(
+  () => props.draft,
+  (draft) => {
+    state.value = {
+      fullName: draft?.fullName ?? "",
+      streetLine1: draft?.streetLine1 ?? "",
+      streetLine2: draft?.streetLine2 ?? "",
+      city: draft?.city ?? "",
+      postalCode: draft?.postalCode ?? "",
+      countryCode: draft?.countryCode ?? "",
+      phoneNumber: draft?.phoneNumber ?? "",
+    };
+  },
+  { immediate: true },
+);
+
+// 提交后 submitting 置为 true，若父组件异步完成前弹窗被关闭（成功即关闭），
+// 需在关闭时复位，否则该常驻组件实例的保存按钮会一直处于 loading/禁用态。
+watch(isOpen, (open) => {
+  if (!open) submitting.value = false;
+});
 
 async function onSubmit(event: FormSubmitEvent<InferOutput<typeof schema>>) {
   submitting.value = true;
   emit("submit", { ...event.data });
 }
-
-defineExpose({ openWith });
 </script>
 
 <template>

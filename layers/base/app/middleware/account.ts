@@ -1,8 +1,6 @@
 export default defineNuxtRouteMiddleware(() => {
-  // isAuthenticated 依赖 localStorage（persistedstate），SSR 阶段恒为 false，
-  // 因此只在客户端执行守卫，避免服务端误跳转。
-  if (import.meta.server) return;
-
+  // persistedstate 默认走 cookies storage，SSR 阶段 useCookie 可读请求头 Cookie，
+  // 因此服务端即可准确判断认证状态并直接重定向，避免客户端闪烁与竞态。
   const { isAuthenticated } = storeToRefs(useAuthStore());
   if (!isAuthenticated.value) {
     return navigateTo(useLocalePath()("/account/login"), { replace: true });
