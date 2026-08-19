@@ -12,6 +12,14 @@ export default defineNuxtConfig({
 
   nitro: {
     preset: "node-server",
+    // nitro 默认 node-externals 有缓存 bug（nitrojs/nitro#2369），会导致模块反复重新解析、
+    // 内存指数增长，Windows 上 "Building Nuxt Nitro server" 卡 30-60 分钟甚至死锁。
+    // 开启 legacyExternals 可将构建从 1 小时降到约 2 分钟。
+    experimental: {
+      legacyExternals: true,
+    },
+    // Windows + extends 分层 + node-server 下，对超大 server bundle 压缩也会显著拖慢，关闭压缩。
+    minify: false,
     // 本地开发：客户端动态使用同源 /shop-api，需代理到本地 Vendure（生产由 Nginx 反代）
     devProxy: {
       "/shop-api": {
