@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from "@nuxt/ui";
 
-const { GQL_HOST: gqlHost, channelToken } = useRuntimeConfig().public;
+const { channelToken } = useRuntimeConfig().public;
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
 const colorMode = useColorMode();
@@ -103,7 +103,7 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
         await navigateTo(localePath("/"), { replace: true });
         clearSession();
         await logout();
-        await useGqlSession(locale.value, gqlHost, channelToken, "default");
+        await useGqlSession(locale.value, useGqlHostUrl(), channelToken, "default");
         await fetchOrder();
       },
     },

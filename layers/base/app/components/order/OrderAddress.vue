@@ -21,5 +21,5 @@ const address = computed(() => props.address);
       <div>{{ address.country }}</div>
     </div>
   </address>
-  <p v-else class="text-neutral-500">{{ t("order.noAddress") }}</p>
+  <p v-else class="text-neutral-500">{{ t("messages.order.noAddress") }}</p>
 </template>

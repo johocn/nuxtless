@@ -7,12 +7,12 @@ export type OrderTabKey =
   | "CANCELLED";
 
 export const ORDER_TABS: { key: OrderTabKey; labelKey: string }[] = [
-  { key: "ALL", labelKey: "order.tabAll" },
-  { key: "PAYMENT_PENDING", labelKey: "order.tabPaymentPending" },
-  { key: "TO_SHIP", labelKey: "order.tabToShip" },
-  { key: "TO_RECEIVE", labelKey: "order.tabToReceive" },
-  { key: "COMPLETED", labelKey: "order.tabCompleted" },
-  { key: "CANCELLED", labelKey: "order.tabCancelled" },
+  { key: "ALL", labelKey: "messages.order.tabAll" },
+  { key: "PAYMENT_PENDING", labelKey: "messages.order.tabPaymentPending" },
+  { key: "TO_SHIP", labelKey: "messages.order.tabToShip" },
+  { key: "TO_RECEIVE", labelKey: "messages.order.tabToReceive" },
+  { key: "COMPLETED", labelKey: "messages.order.tabCompleted" },
+  { key: "CANCELLED", labelKey: "messages.order.tabCancelled" },
 ];
 
 const PAYMENT_PENDING = new Set(["AddingItems", "ArrangingPayment"]);
@@ -43,28 +43,28 @@ export function stateBadge(state: string): StateBadge {
   switch (state) {
     case "AddingItems":
     case "ArrangingPayment":
-      return { labelKey: "order.statePaymentPending", color: "warning" };
+      return { labelKey: "messages.order.statePaymentPending", color: "warning" };
     case "PaymentAuthorized":
     case "PaymentSettled":
-      return { labelKey: "order.statePaid", color: "info" };
+      return { labelKey: "messages.order.statePaid", color: "info" };
     case "PartiallyShipped":
     case "Shipped":
-      return { labelKey: "order.stateShipped", color: "info" };
+      return { labelKey: "messages.order.stateShipped", color: "info" };
     case "PartiallyDelivered":
     case "Delivered":
-      return { labelKey: "order.stateDelivered", color: "success" };
+      return { labelKey: "messages.order.stateDelivered", color: "success" };
     case "Cancelled":
-      return { labelKey: "order.stateCancelled", color: "error" };
+      return { labelKey: "messages.order.stateCancelled", color: "error" };
     default:
-      return { labelKey: "order.stateProcessing", color: "neutral" };
+      return { labelKey: "messages.order.stateProcessing", color: "neutral" };
   }
 }
 
 export const ORDER_PROGRESS_STEPS = [
-  "order.progressPlaced",
-  "order.progressPaid",
-  "order.progressShipped",
-  "order.progressCompleted",
+  "messages.order.progressPlaced",
+  "messages.order.progressPaid",
+  "messages.order.progressShipped",
+  "messages.order.progressCompleted",
 ];
 
 export function progressIndex(state: string): number {

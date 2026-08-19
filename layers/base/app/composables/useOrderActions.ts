@@ -17,7 +17,7 @@ export function useOrderActions() {
 
   async function cancelOrder(state: string): Promise<boolean> {
     if (!canCancel(state)) {
-      toast.add({ title: t("order.cancelNotAllowed"), color: "warning" });
+      toast.add({ title: t("messages.order.cancelNotAllowed"), color: "warning" });
       return false;
     }
     loading.value = true;
@@ -30,16 +30,16 @@ export function useOrderActions() {
       ).transitionOrderToState;
       const ok = result?.__typename === "Order";
       if (ok) {
-        toast.add({ title: t("order.cancelSuccess"), color: "success" });
+        toast.add({ title: t("messages.order.cancelSuccess"), color: "success" });
         return true;
       }
       error.value =
         (result as { message?: string } | null)?.message ?? null;
-      toast.add({ title: error.value ?? t("order.cancelFailed"), color: "error" });
+      toast.add({ title: error.value ?? t("messages.order.cancelFailed"), color: "error" });
       return false;
     } catch (err) {
       error.value = err instanceof Error ? err.message : "cancel failed";
-      toast.add({ title: t("order.cancelFailed"), color: "error" });
+      toast.add({ title: t("messages.order.cancelFailed"), color: "error" });
       return false;
     } finally {
       loading.value = false;
@@ -65,12 +65,12 @@ export function useOrderActions() {
         }
       }
       if (ok > 0) {
-        toast.add({ title: t("order.reorderSuccess"), color: "success" });
+        toast.add({ title: t("messages.order.reorderSuccess"), color: "success" });
       }
       return ok > 0;
     } catch (err) {
       error.value = err instanceof Error ? err.message : "reorder failed";
-      toast.add({ title: t("order.reorderFailed"), color: "error" });
+      toast.add({ title: t("messages.order.reorderFailed"), color: "error" });
       return false;
     } finally {
       loading.value = false;

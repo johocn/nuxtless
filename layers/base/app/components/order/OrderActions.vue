@@ -39,14 +39,14 @@ async function onReorder() {
       color="error"
       variant="soft"
       :loading="loading"
-      :label="t('order.cancel')"
+      :label="t('messages.order.cancel')"
       @click="onCancel"
     />
     <UButton
       icon="i-lucide-shopping-cart"
       color="primary"
       :loading="loading"
-      :label="t('order.reorder')"
+      :label="t('messages.order.reorder')"
       @click="onReorder"
     />
     <UButton

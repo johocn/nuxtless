@@ -30,14 +30,14 @@ const pickupCode = computed<string | null>(() => null);
   <section
     class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
   >
-    <h3 class="mb-3 font-medium">{{ t("order.delivery") }}</h3>
+    <h3 class="mb-3 font-medium">{{ t("messages.order.delivery") }}</h3>
 
     <div v-if="isPickup" class="space-y-2 text-sm">
       <div class="font-medium">{{ pickupLocation?.name }}</div>
       <p class="text-neutral-500">{{ pickupLocation?.address }}</p>
       <p class="text-neutral-500">{{ pickupLocation?.businessHours }}</p>
       <p v-if="pickupType" class="text-neutral-500">
-        {{ t("order.pickupType") }}: {{ pickupType }}
+        {{ t("messages.order.pickupType") }}: {{ pickupType }}
       </p>
       <div class="flex items-center gap-2">
         <UBadge :color="pickupClaimed ? 'success' : 'warning'" variant="outline">
@@ -57,10 +57,10 @@ const pickupCode = computed<string | null>(() => null);
         {{ props.order.shippingLines?.[0]?.shippingMethod?.name }}
       </p>
       <p v-if="expressNo">
-        {{ t("order.expressNo") }}:
+        {{ t("messages.order.expressNo") }}:
         <span class="font-mono">{{ expressNo }}</span>
       </p>
-      <p v-if="expressCompany">{{ t("order.expressCompany") }}: {{ expressCompany }}</p>
+      <p v-if="expressCompany">{{ t("messages.order.expressCompany") }}: {{ expressCompany }}</p>
       <slot name="tracking" :url="trackingUrl" />
     </div>
 

@@ -35,10 +35,10 @@ export function useAfterSales() {
           refundAmount: input.refundAmount,
         },
       });
-      toast.add({ title: t("afterSales.createSuccess"), color: "success" });
+      toast.add({ title: t("messages.afterSales.createSuccess"), color: "success" });
       return { ok: true, id: createAfterSalesRequest?.id };
     } catch (e: any) {
-      const msg = e?.message ?? "create after-sales failed";
+      const msg = e?.gqlErrors?.[0]?.message ?? e?.message ?? "create after-sales failed";
       error.value = msg;
       toast.add({ title: msg, color: "error" });
       return { ok: false, message: msg };
@@ -52,10 +52,10 @@ export function useAfterSales() {
     error.value = null;
     try {
       await GqlCancelAfterSalesRequest({ id });
-      toast.add({ title: t("afterSales.cancelSuccess"), color: "success" });
+      toast.add({ title: t("messages.afterSales.cancelSuccess"), color: "success" });
       return { ok: true, id };
     } catch (e: any) {
-      const msg = e?.message ?? "cancel after-sales failed";
+      const msg = e?.gqlErrors?.[0]?.message ?? e?.message ?? "cancel after-sales failed";
       error.value = msg;
       toast.add({ title: msg, color: "error" });
       return { ok: false, message: msg };
@@ -69,10 +69,10 @@ export function useAfterSales() {
     error.value = null;
     try {
       await GqlUpdateReturnTracking({ id, trackingNo, carrier });
-      toast.add({ title: t("afterSales.trackingSuccess"), color: "success" });
+      toast.add({ title: t("messages.afterSales.trackingSuccess"), color: "success" });
       return { ok: true, id };
     } catch (e: any) {
-      const msg = e?.message ?? "update tracking failed";
+      const msg = e?.gqlErrors?.[0]?.message ?? e?.message ?? "update tracking failed";
       error.value = msg;
       toast.add({ title: msg, color: "error" });
       return { ok: false, message: msg };

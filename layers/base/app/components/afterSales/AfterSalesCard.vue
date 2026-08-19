@@ -15,7 +15,12 @@ const stateInfo = computed(() => afterSalesStateInfo(request.state));
 const typeKey = computed(() => afterSalesTypeLabelKey(request.type));
 const amount = computed(() => formatMoney(request.refundAmount, "CNY", locale.value));
 const productName = computed(() => request.orderLine?.productVariant?.name);
-const preview = computed(() => request.orderLine?.productVariant?.featuredAsset?.preview ?? "");
+const preview = computed(
+  () =>
+    request.orderLine?.featuredAsset?.preview ??
+    request.orderLine?.productVariant?.featuredAsset?.preview ??
+    "",
+);
 </script>
 
 <template>
@@ -32,7 +37,7 @@ const preview = computed(() => request.orderLine?.productVariant?.featuredAsset?
         </div>
         <p class="truncate text-sm text-neutral-500">{{ productName ?? request.id }}</p>
         <p class="text-xs text-neutral-400">
-          {{ t("afterSales.orderCode") }}: {{ request.order?.code }} · {{ t("afterSales.amount") }}: {{ amount }}
+          {{ t("messages.afterSales.orderCode") }}: {{ request.order?.code }} · {{ t("messages.afterSales.amount") }}: {{ amount }}
         </p>
       </div>
     </div>

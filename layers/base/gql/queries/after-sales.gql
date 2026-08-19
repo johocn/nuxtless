@@ -22,6 +22,10 @@ fragment AfterSalesFragment on AfterSalesRequest {
     id
     quantity
     proratedLinePrice
+    featuredAsset {
+      id
+      preview
+    }
     productVariant {
       id
       name

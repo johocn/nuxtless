@@ -12,6 +12,13 @@ export default defineNuxtConfig({
 
   nitro: {
     preset: "node-server",
+    // 本地开发：客户端动态使用同源 /shop-api，需代理到本地 Vendure（生产由 Nginx 反代）
+    devProxy: {
+      "/shop-api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+    },
   },
 
   extends: ["./layers/base"],

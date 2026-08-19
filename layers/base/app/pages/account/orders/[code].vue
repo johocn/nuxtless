@@ -60,7 +60,7 @@ onMounted(async () => {
             variant="soft"
             color="primary"
             icon="i-lucide-receipt"
-            :label="t('afterSales.apply')"
+            :label="t('messages.afterSales.apply')"
             class="shrink-0"
             @click="applyLine = line; applyModalOpen = true"
           />
