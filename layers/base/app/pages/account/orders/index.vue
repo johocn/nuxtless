@@ -5,8 +5,8 @@ import { SortOrder } from "~~/types/default";
 import type { TableColumn, TableRow } from "@nuxt/ui";
 import type { OrderTableRow } from "~~/types/general";
 
-import { ORDER_TABS, tabOfState } from "../../utils/order-state";
-import type { OrderTabKey } from "../../utils/order-state";
+import { ORDER_TABS, tabOfState } from "../../../utils/order-state";
+import type { OrderTabKey } from "../../../utils/order-state";
 
 const { i18NBaseUrl } = useRuntimeConfig().public;
 const { locale, d, t } = useI18n();
@@ -157,7 +157,7 @@ function getRowItems(row: TableRow<OrderTableRow>) {
     ...(canCancel(row.original.status)
       ? [
           {
-            label: t("order.cancel"),
+            label: t("messages.order.cancel"),
             icon: "i-lucide-x",
             class: "items-center",
             async onSelect() {
@@ -168,7 +168,7 @@ function getRowItems(row: TableRow<OrderTableRow>) {
         ]
       : []),
     {
-      label: t("order.reorder"),
+      label: t("messages.order.reorder"),
       icon: "i-lucide-shopping-cart",
       class: "items-center",
       async onSelect() {
