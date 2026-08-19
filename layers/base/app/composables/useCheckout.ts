@@ -22,13 +22,17 @@ export function useCheckout() {
     const city = locationStore.city;
     if (!coords && !city) return;
 
+    // 已选自提（deliveryType=pickup）时不得覆盖为 delivery，否则就近锚点/核销失效
+    const current = orderStore.order?.customFields?.deliveryType;
+    const deliveryType = current === "pickup" ? "pickup" : "delivery";
+
     await GqlInstance("SetOrderCustomFields", {
       input: {
         customFields: {
           lat: coords?.lat ?? null,
           lng: coords?.lng ?? null,
           city: city?.name ?? null,
-          deliveryType: "home-delivery",
+          deliveryType,
         },
       },
     });
