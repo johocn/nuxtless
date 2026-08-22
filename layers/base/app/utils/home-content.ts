@@ -50,3 +50,6 @@ export function toSearchResultCard(
     currencyCode: p.variants?.[0]?.currencyCode ?? "CNY",
   };
 }
+
+// 兼容性导出：统一 type→组件 解析（见 home-content-block.ts），旧 import 不破坏
+export type { ContentBlock, ContentBlockType } from "./home-content-block";
