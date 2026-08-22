@@ -216,6 +216,10 @@ export default defineI18nLocale(() => ({
       pickupInfo: "自提 / 核销信息",
       pickupClaimed: "已核销",
       pickupPending: "待核销",
+      packageShipping: "每包运费明细",
+      warehouse: "仓",
+      shippingAdjustmentCharge: "补收",
+      shippingAdjustmentRefund: "退还",
     },
     order: {
       tabAll: "全部",

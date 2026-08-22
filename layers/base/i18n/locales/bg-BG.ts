@@ -213,6 +213,10 @@ export default defineI18nLocale(() => ({
       noFilters: "Няма налични филтри",
       clearFilters: "Изчисти филтрите",
       applyFilters: "Приложи филтрите",
+      packageShipping: "每包运费明细",
+      warehouse: "仓",
+      shippingAdjustmentCharge: "补收",
+      shippingAdjustmentRefund: "退还",
     },
     order: {
       tabAll: "All",

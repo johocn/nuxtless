@@ -67,6 +67,7 @@ const hasError = computed(() => !!error.value || !order.value);
     <section class="mb-10 max-w-md">
       <h2 class="mb-3 text-lg font-semibold">{{ t("messages.general.amount") }}</h2>
       <OrderTotals :order="order" />
+      <OrderShippingBreakdown :order="order" />
     </section>
 
     <OrderActions :order="order" @updated="refresh" class="mb-10" />
