@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { HeroBlockData, FloorBlockData } from "../../layers/base/app/utils/home-content";
-import { isHero, isFloor } from "../../layers/base/app/utils/home-content";
+import { resolveBlockKind } from "../../layers/base/app/utils/home-content-block";
 
 const { t } = useI18n();
 const { content } = await useHomeContent();
@@ -8,17 +7,25 @@ const { content } = await useHomeContent();
 const blocks = computed(() => content.value ?? []);
 const hasOperational = computed(() => blocks.value.length > 0);
 
-const banners = computed<Array<HeroBlockData & { id: string; sort: number }>>(() =>
-  blocks.value
-    .filter((b) => isHero(b.data))
-    .map((b) => ({ ...(b.data as HeroBlockData), id: b.id, sort: b.sort })),
-);
+// 按 sort 有序渲染，并累加所有 ContentItem 类型（Banner/Recommendation/Notice/Floor/IconGrid/CategoryNav…）
+const orderedBlocks = computed(() => [...blocks.value].sort((a, b) => a.sort - b.sort));
 
-const floors = computed<Array<FloorBlockData & { id: string; sort: number }>>(() =>
-  blocks.value
-    .filter((b) => isFloor(b.data))
-    .map((b) => ({ ...(b.data as FloorBlockData), id: b.id, sort: b.sort })),
-);
+function blockComponent(t: string) {
+  return {
+    Banner: 'HomeOperationalHero',
+    Recommendation: 'HomeBlocksRecommendationRow',
+    Notice: 'HomeBlocksNoticeBar',
+    Floor: 'HomeOperationalFloor',
+    IconGrid: 'HomeBlocksIconGrid',
+    CategoryNav: 'HomeBlocksCategoryNav',
+  }[resolveBlockKind({ type: t, data: {} })] ?? 'HomeOperationalFloor';
+}
+
+// 把 data 摊平进 block：既让 Banner/Floor 组件能读到 imageUrl/title/layout/items 这些顶层字段，
+// 也保留原 data 引用供 IconGrid 等新组件经 block.data.items 使用（Vue 允许为组件传多余属性）。
+function normalizeBlock(b: { type: string; data?: any; id: string; sort: number; name?: string }) {
+  return { ...b, ...(b.data ?? {}) };
+}
 </script>
 
 <template>
@@ -26,8 +33,12 @@ const floors = computed<Array<FloorBlockData & { id: string; sort: number }>>(()
     <h1 class="sr-only">{{ t("messages.site.tagline") }}</h1>
 
     <template v-if="hasOperational">
-      <HomeOperationalHero v-for="b in banners" :key="b.id" :block="b" />
-      <HomeOperationalFloor v-for="f in floors" :key="f.id" :block="f" />
+      <component
+        :is="blockComponent(b.type)"
+        v-for="b in orderedBlocks"
+        :key="b.id"
+        :block="normalizeBlock(b)"
+      />
       <HomeFlashSalePlaceholder />
     </template>
 
