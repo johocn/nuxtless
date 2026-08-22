@@ -1,0 +1,21 @@
+/* 语义配色令牌：渠道级固定主题，只切主色，不动布局。
+   Nuxt UI v4 在本项目仅暴露唯一主色变量 --ui-primary；按 <html data-theme> 覆盖即可。 */
+:root[data-theme='jd-red'] {
+  --ui-primary: #E1251B;
+}
+
+:root[data-theme='taobao-orange'] {
+  --ui-primary: #FF5000;
+}
+
+:root[data-theme='modern-minimal'] {
+  --ui-primary: #111827;
+}
+
+:root[data-theme='brand'] {
+  --ui-primary: var(--ui-brand-color, #334155);
+}
+
+:root[data-theme='default'] {
+  --ui-primary: #134e4a;
+}

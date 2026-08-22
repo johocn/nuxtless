@@ -4,6 +4,11 @@ const colorMode = useColorMode();
 const { t, locale } = useI18n();
 const toast = useToast();
 
+const { config: themeConfig, loadTheme } = useChannelTheme();
+// 渠道级固定主题：SSR 首帧即写入 <html data-theme>，避免 FOUC
+useHead(() => ({ htmlAttrs: { "data-theme": themeConfig.value } }));
+await loadTheme();
+
 const ogColorMode = computed<"dark" | "light">(() =>
   colorMode.value === "dark" ? "dark" : "light",
 );

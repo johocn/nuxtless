@@ -30,6 +30,8 @@ export default defineNuxtConfig({
     },
   },
 
+  css: ["~/assets/css/theme.css"],
+
   // Pinia Configuration
   pinia: {
     storesDirs: ["../stores/**"],

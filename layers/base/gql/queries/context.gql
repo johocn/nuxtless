@@ -11,3 +11,11 @@ query GetChannelCountries {
     }
   }
 }
+
+query GetChannelTheme {
+  activeChannel {
+    customFields {
+      themeId
+    }
+  }
+}
