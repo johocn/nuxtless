@@ -119,5 +119,7 @@ fragment OrderDetail on Order {
     }
     pickupType
     pickupClaimed
+    packageShippingJson
+    shippingAdjustment
   }
 }

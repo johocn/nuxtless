@@ -215,6 +215,10 @@ export default defineI18nLocale(() => ({
       noFilters: "Aucun filtre disponible",
       clearFilters: "Effacer les filtres",
       applyFilters: "Appliquer les filtres",
+      packageShipping: "每包运费明细",
+      warehouse: "仓",
+      shippingAdjustmentCharge: "补收",
+      shippingAdjustmentRefund: "退还",
     },
     order: {
       tabAll: "All",

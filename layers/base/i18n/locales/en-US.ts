@@ -215,6 +215,10 @@ export default defineI18nLocale(() => ({
       pickupInfo: "Pickup / Verification Info",
       pickupClaimed: "Claimed",
       pickupPending: "Pending",
+      packageShipping: "Package Shipping",
+      warehouse: "WH",
+      shippingAdjustmentCharge: "Extra Charge",
+      shippingAdjustmentRefund: "Refund",
     },
     order: {
       tabAll: "All",
