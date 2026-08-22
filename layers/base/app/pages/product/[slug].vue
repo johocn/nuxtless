@@ -22,6 +22,18 @@ const { data } = await useAsyncGql("GetProductDetail", {
 
 const product = computed(() => data.value.product);
 
+// Display template (custom field). `standard` keeps the default layout;
+// `galleryFirst` / `rich` switch the DOM order/visibility (light switch only).
+// displayTemplate comes from the generated GraphQL types (Product.customFields).
+const displayTemplate = computed(
+  () => product.value?.customFields?.displayTemplate ?? "standard",
+);
+const displayLayout = computed(() =>
+  displayTemplate.value === "galleryFirst" || displayTemplate.value === "rich"
+    ? displayTemplate.value
+    : "standard",
+);
+
 watch(
   product,
   (p) => {
@@ -135,12 +147,18 @@ if (product.value && selectedVariant.value) {
       </header>
 
       <!-- Prouct Galley -->
-      <section aria-labelledby="product-gallery-heading">
+      <section
+        aria-labelledby="product-gallery-heading"
+        :class="displayLayout !== 'standard' ? 'sm:order-1' : ''"
+      >
         <h2 id="product-gallery-heading" class="sr-only">Product Gallery</h2>
         <ProductGallery />
       </section>
 
-      <div class="row-span-3 grid grid-rows-subgrid gap-4">
+      <div
+        class="row-span-3 grid grid-rows-subgrid gap-4"
+        :class="displayLayout !== 'standard' ? 'sm:order-2' : ''"
+      >
         <div class="row-start-2 flex flex-col sm:mt-2">
           <!-- Product Details -->
           <section aria-labelledby="product-details-heading">
@@ -153,7 +171,10 @@ if (product.value && selectedVariant.value) {
               :sku="selectedVariant?.sku"
             />
 
-            <ProductDescription class="mt-8 line-clamp-2" />
+            <ProductDescription
+              class="mt-8"
+              :class="{ 'line-clamp-2': displayLayout !== 'rich' }"
+            />
           </section>
 
           <hr class="mt-8" />
@@ -198,7 +219,10 @@ if (product.value && selectedVariant.value) {
     />
 
     <!-- Full Description -->
-    <section aria-labelledby="product-description-heading">
+    <section
+      v-if="displayLayout !== 'rich'"
+      aria-labelledby="product-description-heading"
+    >
       <h2 id="product-description-heading" class="sr-only">
         Product Description
       </h2>
