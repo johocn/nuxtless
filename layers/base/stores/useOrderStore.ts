@@ -1,5 +1,6 @@
 import type {
   ActiveOrder,
+  OrderStatus,
   ShippingMethods,
   PaymentMethods,
 } from "~~/types/order";
@@ -35,8 +36,10 @@ export const useOrderStore = defineStore("order", () => {
     }
   }
 
-  async function addItemToOrder(variantId: string, quantity: number) {
-    // TODO: Handle 'partial' status (e.g. show toast if quantity was adjusted)
+  async function addItemToOrder(
+    variantId: string,
+    quantity: number,
+  ): Promise<OrderStatus> {
     loading.value = true;
     error.value = null;
 
@@ -46,16 +49,16 @@ export const useOrderStore = defineStore("order", () => {
         quantity,
       });
 
-      if (result) {
-        const res = useOrderMutation(order, result);
-        if (res.status === "error") {
-          error.value = res.message;
-        }
-      }
+      if (!result) return { status: "error", message: "No result" };
+      const res = useOrderMutation(order, result);
+      if (res.status === "error") error.value = res.message;
+      return res;
     } catch (err) {
       if (err instanceof Error) {
         error.value = err.message || "Failed to add item to order";
+        return { status: "error", message: error.value };
       }
+      return { status: "error", message: "Failed to add item to order" };
     } finally {
       loading.value = false;
     }
