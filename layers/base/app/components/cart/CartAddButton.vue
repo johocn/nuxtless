@@ -10,11 +10,14 @@ const { addItemToOrder } = useOrderStore();
 const { selectedVariant, stockLevel } = storeToRefs(useProductStore());
 const variantId = computed(() => selectedVariant.value?.id);
 const quantity = ref(1);
-const maxStock = computed(
-  () =>
-    (selectedVariant.value as { stockOnHand?: number } | null)?.stockOnHand ??
-    99,
-);
+
+// 数量上限跟随后端真实可售库存 availableStock（未跟踪库存时后端返回极大值，钳制到上限）
+const MAX_STOCK_CAP = 999;
+const maxStock = computed(() => {
+  const available = (selectedVariant.value as { availableStock?: number | null } | null)?.availableStock;
+  if (available == null) return 99;
+  return Math.min(Math.max(0, available), MAX_STOCK_CAP);
+});
 
 const hasStock = computed(
   () => stockLevel.value === "IN_STOCK" || stockLevel.value === "LOW_STOCK",
