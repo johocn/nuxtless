@@ -6,7 +6,9 @@ import type { CheckoutState } from "~~/types/general";
 const isSubmitted = defineModel<boolean>({ default: false });
 
 const { t } = useI18n();
+const toast = useToast();
 const shippingForm = useTemplateRef("shippingForm");
+const isPickup = useIsPickup();
 const submitShipping = () => shippingForm.value?.submit();
 defineExpose({ submitShipping });
 
@@ -24,11 +26,41 @@ const shippingMethods = computed(
 
 const checkoutState = useState<CheckoutState>("checkoutState");
 const state = checkoutState.value.shippingForm as ShippingForm;
-state.shippingMethodId = shippingMethods.value[0]?.value ?? "";
-await orderStore.setShippingMethod(shippingMethods.value[0]?.value ?? "");
+const lastAppliedId = ref(shippingMethods.value[0]?.value ?? "");
+state.shippingMethodId = lastAppliedId.value;
+await orderStore.setShippingMethod(lastAppliedId.value);
+
+// 切换配送方式 → 立即 setShippingMethod；失败回退 UI 并提示
+async function onMethodChange(id: string) {
+  if (!id || id === lastAppliedId.value) return;
+  orderStore.error = null;
+  await orderStore.setShippingMethod(id);
+  if (orderStore.error) {
+    state.shippingMethodId = lastAppliedId.value;
+    toast.add({
+      title: t("messages.general.shippingSelect"),
+      description: orderStore.error,
+      color: "error",
+    });
+    return;
+  }
+  lastAppliedId.value = id;
+}
 
 async function onSubmit() {
-  if (!state.shippingMethodId) return;
+  if (isPickup.value) {
+    isSubmitted.value = true;
+    return;
+  }
+  if (!state.shippingMethodId) {
+    orderStore.error = "请选择配送方式，或切换为门店自提";
+    toast.add({
+      title: t("messages.general.shippingSelect"),
+      description: orderStore.error,
+      color: "error",
+    });
+    return;
+  }
   orderStore.error = null;
   await orderStore.setShippingMethod(state.shippingMethodId);
   if (orderStore.error) return;
@@ -49,13 +81,29 @@ async function onError() {
     @submit="onSubmit"
     @error="onError"
   >
+    <div v-if="isPickup" class="text-sm text-primary">
+      你已选择门店自提，本单无需配送方式。
+    </div>
+
+    <template v-else-if="shippingMethods.length === 0">
+      <UAlert
+        icon="i-lucide-truck"
+        color="warning"
+        variant="soft"
+        title="暂无可配送方式"
+        description="当前收货地址暂无可配送方式，可尝试上方「门店自提 / 自提点」，或填写其他收货地址。"
+      />
+    </template>
+
     <UFormField
+      v-else
       :label="t('messages.general.shippingSelect')"
       class="text-md"
       name="shippingMethodId"
     >
       <URadioGroup
         v-model="state.shippingMethodId"
+        :update:model-value="onMethodChange"
         indicator="hidden"
         variant="table"
         orientation="vertical"
@@ -67,6 +115,7 @@ async function onError() {
       />
       <URadioGroup
         v-model="state.shippingMethodId"
+        :update:model-value="onMethodChange"
         indicator="hidden"
         variant="table"
         orientation="horizontal"
