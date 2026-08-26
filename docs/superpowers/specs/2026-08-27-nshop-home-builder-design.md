@@ -113,6 +113,37 @@ type ShopSection =
 - 商品搜索请求量随 goods 区块数线性增长 → 装修时限制每页 goods 区块 ≤2（后台 UI 提示），并对同 collectionId 的区块去重合并请求。
 - 主题切换本身是 `data-theme` 属性 + 已编译 CSS 变量，无运行时重算，零开销。
 
+#### 5.1 核心 Web Vitals 影响评估（FCP / LCP / TTFB / TTI）
+
+| 指标 | 现状基线 | 改造后预期 | 影响原因 |
+|---|---|---|---|
+| TTFB（首字节） | SSR 返回 HTML 前需完成：channel 查询 + 首页内容 + 2 次商品搜索 | 同基线（channel 查询一次带出 themeId+shopContent，不新增请求；商品搜索次数不变） | 增加的成本是 KB 级 JSON 序列化到 HTML，<1ms |
+| FCP（首屏绘制） | 首屏 HTML 即含 banner + 金刚区 | 首屏关键区块（banner/nav）仍最先渲染，保持 HTML 内联顺序 | 积木化不改变首屏区块的 SSR 内联时机 |
+| LCP（最大内容） | 轮播首图 | 轮播首图仍为首个最大元素；瀑布流大图仅在用户滚动到的 goods 区块出现 | 无回归 |
+| TTI（可交互） | 客户端 hydration Jd 组件 | 组件总量不变（同一批组件复用），无新增 hydration 体积 | 新增瀑布流/单列组件代码分割，不阻塞首屏 |
+
+结论：**四项核心 Web Vitals 均无感知回归**。积木化改变的只是"组件按后台配置排序"，数据依赖与现状一致。
+
+#### 5.2 实测方法与基准（改造前后对比）
+
+沿用 [bundle-audit.md](../bundle-audit.md) 的既有方法，改造前后各跑一次，记录并对比：
+
+1. **Lighthouse 移动端**：FCP / LCP / TTFB / CLS / 总请求数 / 传输体积（重点看传输体积与请求数增量）。
+2. **Nuxt `useAsyncData` 请求日志**：确认首页 SSR 请求数不增（channel 1 次 + 商品 ≤2 次）。
+3. **首屏 HTML 体积**：对比 `shopContent` 注入后 HTML 增量（预期 <10KB）。
+4. **pm2/服务器日志**：确认无新增慢查询（channel 查询带 shopContent 后响应时间无变化）。
+
+阈值：改造后 TTFB 增量 ≤30ms、FCP/LCP 增量 ≤5%、请求数不增 —— 超出即回查（优先检查是否误新增了商品查询或图片尺寸未裁剪）。
+
+#### 5.3 性能保护机制（落地约束，写入实施）
+
+1. **请求数硬约束**：首页 SSR 商品搜索总次数 ≤2（现状）；goods 区块共享同一 `useAsyncData` key 合并去重；同 collectionId 多区块只查一次。
+2. **图片规格表**：瀑布流大图统一经 `NuxtImg` + ipx 输出 `format=webp`，卡片图固定尺寸（如 600×600 瀑布流 / 300×300 紧凑），禁止原图直出。
+3. **懒加载**：首屏外区块（如 goods）图片 `loading="lazy"`，banner 首图 `fetchpriority="high"`。
+4. **代码分割**：masonry/single 商品卡片组件用 Nuxt 自动按需加载，不进首屏 bundle。
+5. **装修限幅**：后台 UI 提示 goods 区块 ≤2；区块总数 ≤10（超出提示性能风险）。
+6. **缓存**：`useShopContent` 走 `useAsyncData` + `{ server: true }` 缓存，SSR 内共享一次查询；shopContent 变化靠服务端 SSR 天然刷新，不引入额外失效机制。
+
 ## 实施范围与里程碑
 
 - **M1 · nshop 数据打通**：扩展 `GetChannelTheme` query（同时取 themeId + shopContent）、`useShopContent()`、`HomeBlockRenderer` 骨架、index.vue 移动端积木化 + 空配置兜底。
@@ -132,7 +163,8 @@ type ShopSection =
 - 切 `themeId=taobao-orange` 时：金刚区保持圆形图标 + 双排宫格，为你推荐变双列大图瀑布流；`minimal` 时金刚区单行、为你推荐单列。
 - 区块级样式选择可覆盖主题默认。
 - 未配置装修的租户首页与现在完全一致（兜底生效）。
-- 首页 SSR 性能无感知下降（可用 `docs/bundle-audit.md` 方法与 Lighthouse 前后对比）。
+- 首页 SSR 性能无感知下降：Lighthouse 前后对比 TTFB 增量 ≤30ms、FCP/LCP 增量 ≤5%、首页请求数不增（详见 §5.2）。
+- 图片全部 webp + 固定尺寸裁剪，首屏外懒加载，goods 区块 ≤2（性能保护机制生效）。
 - nshop 本地构建通过并部署（vshop 由用户构建）。
 
 ## 风险与开放问题
