@@ -1,101 +1,200 @@
 <script setup lang="ts">
-import { resolveBlockKind } from "../../layers/base/app/utils/home-content-block";
-import type { Component } from "vue";
-// 显式 import 组件并以对象作动态 :is，确保客户端 Vite 能静态分析并正确打包，
-// 避免字符串组件名被当作 custom element 渲染成空标签。
-import HomeOperationalHero from "../../layers/base/app/components/home/OperationalHero.vue";
-import HomeOperationalFloor from "../../layers/base/app/components/home/OperationalFloor.vue";
-import HomeBlocksIconGrid from "../../layers/base/app/components/home/blocks/IconGrid.vue";
-import HomeBlocksCategoryNav from "../../layers/base/app/components/home/blocks/CategoryNav.vue";
-import HomeBlocksNoticeBar from "../../layers/base/app/components/home/blocks/NoticeBar.vue";
-import HomeBlocksRecommendationRow from "../../layers/base/app/components/home/blocks/RecommendationRow.vue";
-import HomeFlashSalePlaceholder from "../../layers/base/app/components/home/FlashSalePlaceholder.vue";
+// 首页：京东风格商城首页（PC 全屏 + 窄屏自动降级为移动单列布局）
+// 底层逻辑不变，复用 nshop/Vendure 既有功能与数据：
+//   - 顶部分类(collection)（GetMenuCollections，已在 app.vue 加载）→ 分类导航/品质专区/PC 侧栏
+//   - 首页运营内容 Banner 块（GetHomeContent）→ 轮播 Banner，无则占位
+//   - SearchProducts 搜索结果 → 商品楼层
+// 顶部 AppHeader（城市选择 + 多语言 + 搜索 + 购物车）保持不变。
+import { isHero } from "../../layers/base/app/utils/home-content";
+import type { MenuCollections, TopLevelCollection } from "~~/types/collection";
+// 显式 import Jd 组件并以其注册名使用，避免字符串组件名被当作 custom element 渲染成空标签
+// （SSR 输出 <!---->、客户端输出 <jdcategorynav></jdcategorynav>）——与既有 home 区块修复模式一致。
+import JdCategoryNav from "../../layers/base/app/components/home/jd/JdCategoryNav.vue";
+import JdBannerCarousel from "../../layers/base/app/components/home/jd/JdBannerCarousel.vue";
+import JdPlazaGrid from "../../layers/base/app/components/home/jd/JdPlazaGrid.vue";
+import JdProductGrid from "../../layers/base/app/components/home/jd/JdProductGrid.vue";
+import JdPcHeader from "../../layers/base/app/components/home/jd/JdPcHeader.vue";
+import JdPcCategorySidebar from "../../layers/base/app/components/home/jd/JdPcCategorySidebar.vue";
+import JdFunctionGrid from "../../layers/base/app/components/home/jd/JdFunctionGrid.vue";
+import JdBrandFloor from "../../layers/base/app/components/home/jd/JdBrandFloor.vue";
+import JdTabBar from "../../layers/base/app/components/home/jd/JdTabBar.vue";
+import JdAllCategoryDrawer from "../../layers/base/app/components/home/jd/JdAllCategoryDrawer.vue";
 
 const { t } = useI18n();
+const localePath = useLocalePath();
+
+// 1) 顶部分类：菜单集合（含 featuredAsset / children）
+const menuCollections = useState<MenuCollections>("menuCollections");
+const topCategories = computed<TopLevelCollection[]>(
+  () => (menuCollections.value?.collections?.items ?? []) as TopLevelCollection[],
+);
+
+// 2) 轮播 Banner：取首页运营内容里的 Banner 块
 const { content } = await useHomeContent();
+const bannerSlides = computed(() =>
+  (content.value ?? [])
+    .map((b) => b.data ?? {})
+    .filter((d: any) => isHero(d))
+    .map((d: any) => ({
+      imageUrl: (d as any).imageUrl,
+      link: (d as any).link,
+      title: (d as any).title || (d as any).subTitle,
+    })),
+);
 
-const blocks = computed(() => content.value ?? []);
-const hasOperational = computed(() => blocks.value.length > 0);
+// 3) 商品楼层：热门 + 为你推荐（同一 Vendure 搜索，分页错开）
+const { data: hot } = await useAsyncGql("SearchProducts", { term: "", take: 10, skip: 0 });
+const { data: more } = await useAsyncGql("SearchProducts", { term: "", take: 10, skip: 10 });
+const hotProducts = computed(() => hot.value?.search?.items ?? []);
+const moreProducts = computed(() => more.value?.search?.items ?? []);
 
-// 按 sort 有序渲染，并累加所有 ContentItem 类型（Banner/Recommendation/Notice/Floor/IconGrid/CategoryNav…）
-const orderedBlocks = computed(() => [...blocks.value].sort((a, b) => a.sort - b.sort));
+// 4) PC 右栏静态数据：快讯 + 小广告
+const news = [
+  "全场自营商品满 99 元包邮",
+  "新用户首单立减 20 元",
+  "数码家电以旧换新进行中",
+  "今日秒杀 20:00 开启",
+  "售后服务 7 天无理由退换",
+];
+const ads = [
+  { src: "https://picsum.photos/seed/jp-ad-1/240/180", link: "/" },
+  { src: "https://picsum.photos/seed/jp-ad-2/240/180", link: "/" },
+];
 
-const blockRegistry: Record<string, Component> = {
-  Banner: HomeOperationalHero,
-  Recommendation: HomeBlocksRecommendationRow,
-  Notice: HomeBlocksNoticeBar,
-  Floor: HomeOperationalFloor,
-  IconGrid: HomeBlocksIconGrid,
-  CategoryNav: HomeBlocksCategoryNav,
-};
-
-function blockComponent(t: string) {
-  return blockRegistry[resolveBlockKind({ type: t, data: {} })] ?? HomeOperationalFloor;
-}
-
-// 把 data 摊平进 block：既让 Banner/Floor 组件能读到 imageUrl/title/layout/items 这些顶层字段，
-// 也保留原 data 引用供 IconGrid 等新组件经 block.data.items 使用（Vue 允许为组件传多余属性）。
-function normalizeBlock(b: { type: string; data?: any; id: string; sort: number; name?: string }) {
-  return { ...b, ...(b.data ?? {}) };
-}
+// 5) PC 快捷入口
+const entries = [
+  { label: "手机数码", icon: "i-lucide-smartphone", link: "/" },
+  { label: "家用电器", icon: "i-lucide-tv", link: "/" },
+  { label: "居家百货", icon: "i-lucide-home", link: "/" },
+  { label: "服饰鞋包", icon: "i-lucide-shirt", link: "/" },
+  { label: "美妆个护", icon: "i-lucide-sparkles", link: "/" },
+  { label: "食品生鲜", icon: "i-lucide-coffee", link: "/" },
+  { label: "运动户外", icon: "i-lucide-headphones", link: "/" },
+  { label: "礼品定制", icon: "i-lucide-gift", link: "/" },
+  { label: "全部商品", icon: "i-lucide-shopping-bag", link: "/" },
+];
 </script>
 
 <template>
-  <main>
-    <h1 class="sr-only">{{ t("messages.site.tagline") }}</h1>
+  <h1 class="sr-only">{{ t("messages.site.tagline") }}</h1>
 
-    <template v-if="hasOperational">
-      <component
-        :is="blockComponent(b.type)"
-        v-for="b in orderedBlocks"
-        :key="b.id"
-        :block="normalizeBlock(b)"
-      />
-      <HomeFlashSalePlaceholder />
-    </template>
+  <!-- ═══ PC 京东全屏版（≥1024px 显示）═══ -->
+  <main class="hidden bg-[#f5f5f5] lg:block" data-layout="pc">
+    <JdPcHeader :categories="topCategories" />
 
-    <!-- 兜底：无运营位时展示默认 hero + 固定三区块 -->
-    <template v-else>
-      <section class="mb-14" aria-labelledby="home-hero-heading">
-        <h2 id="home-hero-heading" class="sr-only">
-          {{ t("messages.pages.index.welcome") }} {{ t("messages.site.title") }}
-        </h2>
-        <div class="">
-          <NuxtImg
-            format="webp"
-            class="h-105 w-full object-cover lg:h-140 xl:h-135"
-            src="/hero.avif"
-            alt="Hero image"
-            loading="eager"
-            sizes="sm:100vw md:1600px"
-            fetchpriority="high"
-            preload
-          />
+    <div class="mx-auto max-w-[1240px] px-4 pt-3">
+      <!-- 首屏：分类侧栏 + 大轮播 + 右侧快讯/广告 -->
+      <div class="grid grid-cols-[210px_minmax(0,1fr)_230px] gap-3">
+        <JdPcCategorySidebar
+          v-if="topCategories.length"
+          class="self-start"
+          :categories="topCategories"
+        />
+
+        <JdBannerCarousel :slides="bannerSlides" />
+
+        <!-- 右侧栏 -->
+        <div class="space-y-3">
+          <!-- 京东快讯 -->
+          <div class="bg-white shadow-sm">
+            <div class="flex items-center justify-between border-b border-gray-100 px-3 py-2">
+              <h3 class="text-sm font-bold text-[#e6162d]">京东快讯</h3>
+              <span class="text-xs text-gray-400">更多 ›</span>
+            </div>
+            <ul class="px-3 py-1 text-xs text-gray-600">
+              <li
+                v-for="(n, i) in news"
+                :key="i"
+                class="flex items-center gap-2 border-b border-dashed border-gray-100 py-1.5 last:border-0"
+              >
+                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#e6162d]" />
+                <span class="truncate">{{ n }}</span>
+                <template v-if="i === 1">
+                  <span class="ml-auto shrink-0 rounded bg-[#e6162d] px-1 text-[10px] text-white">NEW</span>
+                </template>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 小广告 -->
+          <div class="grid grid-cols-2 gap-3">
+            <NuxtLink
+              v-for="a in ads"
+              :key="a.src"
+              :to="localePath(a.link)"
+              class="overflow-hidden rounded bg-white shadow-sm"
+            >
+              <NuxtImg
+                :src="a.src"
+                format="webp"
+                class="aspect-[4/3] w-full object-cover"
+                alt="活动广告"
+              />
+            </NuxtLink>
+          </div>
         </div>
-      </section>
-
-      <div class="container">
-        <section class="mb-14" aria-labelledby="home-categories-heading">
-          <h2 id="home-categories-heading" class="mb-4 text-2xl font-semibold">
-            {{ t("messages.shop.shopByCategory") }}
-          </h2>
-          <HomeCategoryCarousel />
-        </section>
-
-        <section class="mt-20 mb-14" aria-labelledby="home-features-heading">
-          <h2 id="home-features-heading" class="sr-only">Why Shop With Us</h2>
-          <HomeShopFeatures />
-        </section>
-
-        <section class="mb-14" aria-labelledby="home-products-heading">
-          <h2 id="home-products-heading" class="mb-4 text-2xl font-semibold">
-            {{ t("messages.shop.popularProducts") }}
-          </h2>
-          <HomeFeaturedProducts />
-        </section>
       </div>
-    </template>
+
+      <!-- 快捷入口 -->
+      <div class="mt-3 grid grid-cols-9 gap-2 rounded bg-white p-3 shadow-sm">
+        <NuxtLink
+          v-for="e in entries"
+          :key="e.label"
+          :to="localePath(e.link)"
+          class="flex flex-col items-center gap-1 text-xs text-gray-700 transition hover:text-[#e6162d]"
+        >
+          <span class="flex h-11 w-11 items-center justify-center rounded-full bg-[#fdeaea] text-[#e6162d]">
+            <UIcon :name="e.icon" class="h-5 w-5" />
+          </span>
+          <span class="truncate">{{ e.label }}</span>
+        </NuxtLink>
+      </div>
+
+      <!-- 品质专区（品牌/分类卡片） -->
+      <div class="mt-3">
+        <JdPlazaGrid v-if="topCategories.length" :categories="topCategories" />
+      </div>
+
+      <!-- 商品楼层 -->
+      <div class="mt-3 space-y-3 pb-8">
+        <JdProductGrid
+          v-if="hotProducts.length"
+          :title="t('messages.shop.popularProducts')"
+          :products="hotProducts"
+        />
+        <JdProductGrid v-if="moreProducts.length" title="为你推荐" :products="moreProducts" />
+      </div>
+    </div>
   </main>
+
+  <!-- ═══ 移动端降级版（<1024px 显示，保持原单列布局 + 京东加法模块）═══ -->
+  <main class="mx-auto max-w-md bg-[#f5f5f5] pb-20 lg:hidden" data-layout="mobile">
+    <!-- 分类导航（横向可滚动条） -->
+    <JdCategoryNav :categories="topCategories" />
+    <!-- 轮播 Banner -->
+    <JdBannerCarousel :slides="bannerSlides" />
+    <!-- 功能宫格（十宫格，用已有功能） -->
+    <JdFunctionGrid />
+    <!-- 品牌闪购（横向品牌墙，复用分类封面图） -->
+    <JdBrandFloor />
+    <!-- 品质专区 -->
+    <div class="mt-2">
+      <JdPlazaGrid v-if="topCategories.length" :categories="topCategories" />
+    </div>
+    <!-- 商品楼层 -->
+    <div class="mt-2">
+      <JdProductGrid
+        v-if="hotProducts.length"
+        :title="t('messages.shop.popularProducts')"
+        :products="hotProducts"
+      />
+      <JdProductGrid v-if="moreProducts.length" title="为你推荐" :products="moreProducts" />
+    </div>
+  </main>
+
+  <!-- ═══ 移动端底部固定导航 + 全部分类抽屉（仅移动端）═══ -->
+  <JdTabBar />
+  <JdAllCategoryDrawer />
 </template>
 
 <style lang="css" scoped></style>
