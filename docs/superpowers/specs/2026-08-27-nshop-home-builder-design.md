@@ -48,8 +48,7 @@ type ShopSection =
   | { type: 'notice';  text: string }
   | { type: 'nav';
       items: { label: string; image?: string; link?: string }[];
-      style?: 'round' | 'square' | 'none';   // 图标形状；默认跟随主题，主题默认 round（圆形，符合决策 2）
-      layout?: 'grid5x2' | 'grid4x2' | 'row'; // 宫格排布；默认跟随主题
+      layout?: 'grid5x2' | 'grid4x2' | 'row'; // 宫格排布；默认跟随主题。图标固定圆形（决策 2：跨风格一致），不设形状字段
     }
   | { type: 'goods';
       collectionId?: string;                  // 商品来源集合；为空则自动推荐（fallback 现有 SearchProducts）
@@ -70,7 +69,7 @@ type ShopSection =
 | section.type | 渲染组件 | 样式选择 |
 |---|---|---|
 | banner | 复用 `JdBannerCarousel` | — |
-| nav | 金刚区组件（复用 `JdFunctionGrid`，新增 `layout`/`style` props） | round/square/none + grid5x2/grid4x2/row |
+| nav | 金刚区组件（复用 `JdFunctionGrid`，新增 `layout` prop） | grid5x2/grid4x2/row（图标固定圆形） |
 | goods | 商品楼层组件（compact 复用现有卡片；masonry 新增瀑布流大图卡；single 新增单列大图横卡） | compact/masonry/single |
 | notice | 公告条（`NoticeBar`） | — |
 | richText | 富文本渲染 | — |
@@ -79,21 +78,27 @@ type ShopSection =
 
 ### 3. 主题布局跟随（themePresets）
 
-新增 `themePresets` 表：`themeId → { nav: {style, layout}, goods: {layout} }`，渲染时 `区块style = section.style ?? themePresets[themeId][type]`：
+新增 `themePresets` 表：`themeId → { nav: {layout}, goods: {layout} }`，渲染时 `区块layout = section.layout ?? themePresets[themeId][type]`：
 
-| themeId | 金刚区 | 为你推荐 |
+| themeId | 金刚区（图标一律圆形） | 为你推荐 |
 |---|---|---|
-| `default` / `jd-red`（京东） | round + grid5x2（现状） | compact |
-| `taobao-orange`（淘宝） | round（保持圆形）+ grid4x2 | masonry（双列大图瀑布流） |
-| `minimal`（极简） | none + row（单行图标条） | single |
+| `default` / `jd-red`（京东） | grid5x2（现状） | compact |
+| `taobao-orange`（淘宝） | grid4x2 | masonry（双列大图瀑布流） |
+| `minimal`（极简） | row（单行图标条） | single |
 
 配套把金刚区/为你推荐/快讯里的硬编码 `#e6162d` 等替换为 `bg-primary`/`text-primary`（`--ui-primary`），使配色跟随 `data-theme`。
 
 ### 4. vshop 装修页 UI 扩展（用户手动构建）
 
-- nav section：图标样式（圆形/方形/无底）+ 宫格排布（京东十宫格/淘宝双排/极简单行）选择控件。
+- nav section：宫格排布（京东十宫格/淘宝双排/极简单行）选择控件（图标固定圆形，不提供形状选项）。
 - goods section：卡片布局（紧凑/瀑布流/单列）+ 商品来源（集合选择或自动推荐）。
 - 保存逻辑沿用 `updateChannelCustomFields(id, { shopContent })`，后端**零改动**（customFields 已支持任意 JSON）。
+
+### 4.1 灵活性的边界（避免过度设计）
+
+- **能做到**：区块自由加减/排序；每区块自选一个样式（金刚区排布、商品卡布局）；每租户独立装修；主题默认兜底；未装修回退现有京东布局。
+- **不做**：后台生成新组件/新区块类型（类型由前端组件决定）、拖拽式精细排版（vshop 上下移足够）、富文本/极简等 vshop 已有能力不新增扩展。
+- **取舍**：图标形状字段已砍（决策 2 固定圆形）；极简主题降级为「有则跟随、无则不渲染对应区块」。
 
 ### 5. 性能影响分析（重点）
 
@@ -137,12 +142,10 @@ type ShopSection =
 
 #### 5.3 性能保护机制（落地约束，写入实施）
 
-1. **请求数硬约束**：首页 SSR 商品搜索总次数 ≤2（现状）；goods 区块共享同一 `useAsyncData` key 合并去重；同 collectionId 多区块只查一次。
-2. **图片规格表**：瀑布流大图统一经 `NuxtImg` + ipx 输出 `format=webp`，卡片图固定尺寸（如 600×600 瀑布流 / 300×300 紧凑），禁止原图直出。
-3. **懒加载**：首屏外区块（如 goods）图片 `loading="lazy"`，banner 首图 `fetchpriority="high"`。
-4. **代码分割**：masonry/single 商品卡片组件用 Nuxt 自动按需加载，不进首屏 bundle。
-5. **装修限幅**：后台 UI 提示 goods 区块 ≤2；区块总数 ≤10（超出提示性能风险）。
-6. **缓存**：`useShopContent` 走 `useAsyncData` + `{ server: true }` 缓存，SSR 内共享一次查询；shopContent 变化靠服务端 SSR 天然刷新，不引入额外失效机制。
+1. **请求数硬约束**：首页 SSR 商品搜索总次数 ≤2（与现状持平）；goods 区块共享同一 `useAsyncData` key 合并去重，同 collectionId 只查一次；后台 UI 提示 goods 区块 ≤2。
+2. **图片规格 + 懒加载**：商品卡统一经 `NuxtImg` + ipx 输出 `format=webp` 固定尺寸（瀑布流 600×600 / 紧凑 300×300），禁止原图直出；首屏外区块图片 `loading="lazy"`，banner 首图 `fetchpriority="high"`。
+3. **代码分割**：masonry/single 商品卡片组件用 Nuxt 自动按需加载，不进首屏 bundle。
+4. **缓存**：`useShopContent` 走 `useAsyncData` + `{ server: true }`，SSR 内共享一次 channel 查询；shopContent 变化靠 SSR 天然刷新，不引入额外失效机制。
 
 ## 实施范围与里程碑
 
