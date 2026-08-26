@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **✅ 实施状态（2026-08-26）：Task B–J 全部完成并线上验收通过。** Task A 为只读核查无需落地。验收结论：流①配送即时生效✓、流③自提免配✓、流④加购上限跟随真实库存✓；流②空态在当前生产数据下不可复现（所有地址均固定有 3 种自提方式）。已部署：vendure（服务器 git pull 到 21fd30163 + pm2 restart）、nshop（本地 build→deploy.mjs→pm2 restart）。
+
 **Goal:** 修复 nshop 加购与选配送方式两处的卡点：配送方式切换即时生效、空态友好提示、门店自提单免配、加购数量动态上限与部分库存提示。
 
 **Architecture:**
