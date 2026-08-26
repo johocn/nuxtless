@@ -30,7 +30,8 @@ const items = computed<NavigationMenuItem[]>(
 </script>
 
 <template>
-  <UFooter>
+  <!-- 移动端底部留出 TabBar(52px)+安全区高度，避免页脚被 fixed 底部导航遮挡；PC 不受影响 -->
+  <UFooter class="pb-[calc(52px+env(safe-area-inset-bottom))] lg:pb-0">
     <template #top>
       <USeparator />
     </template>
