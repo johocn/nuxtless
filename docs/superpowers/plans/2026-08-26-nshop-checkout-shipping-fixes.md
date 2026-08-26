@@ -463,6 +463,76 @@ git commit -m "feat(nshop): 加购数量上限动态化 + 部分库存 toast 提
 
 ---
 
+### Task I: 后端暴露 ProductVariant.availableStock（vendure fork，全新小块）
+
+> 依据：用户批准「加购上限跟随真实库存」。Vendure Shop 端 `ProductVariant` 现只暴露 `stockLevel: String!`（枚举）。本任务在 **`d:\zhao\vendure`**（vendure monorepo fork）给 Shop `ProductVariant` 加 `availableStock: Int`，复用现成 `getSaleableStockLevel`（`stockOnHand - stockAllocated - 缺货阈值`，正确处理多地点/渠道库存策略与 `trackInventory`，不跟踪返回 `MAX_SAFE_INTEGER`），不改库存策略不动数据。
+
+**Files（在 `d:\zhao\vendure`）：**
+- Modify: `packages/core/src/api/schema/common/product.type.graphql`（`ProductVariant` 类型，`stockLevel: String!` 附近）
+- Modify: `packages/core/src/api/resolvers/entity/product-variant-entity.resolver.ts`（紧邻 `stockLevel` 字段解析）
+
+- [ ] **Step 1: schema 加字段**
+  定位 `ProductVariant` 类型中 `stockLevel: String!`（约 L53-57），在其后加 `availableStock: Int`（注：未跟踪库存时返回大数，前端自行钳制）。
+
+- [ ] **Step 2: resolver 加字段解析**
+  在 `product-variant-entity.resolver.ts` 中参考现有 `stockLevel` 的 `@ResolveField` 写法，新增：
+  ```ts
+  @ResolveField()
+  async availableStock(@Ctx() ctx: RequestContext, @Parent() productVariant: ProductVariant): Promise<number> {
+      return this.productVariantService.getSaleableStockLevel(ctx, productVariant);
+  }
+  ```
+  确认已注入 `ProductVariantService`。
+
+- [ ] **Step 3: 本地编译验证**
+  Run（vendure 根目录）: `pnpm --filter @vendure/core build`（或仓库现有 core 构建命令）
+  Expected: 编译通过，无类型/生成错误。
+
+- [ ] **Step 4: Commit（vendure 仓库）**
+  ```bash
+  git add packages/core/src/api/schema/common/product.type.graphql packages/core/src/api/resolvers/entity/product-variant-entity.resolver.ts
+  git commit -m "feat(core): Shop API ProductVariant 暴露 availableStock（真实可售库存）"
+  ```
+
+### Task J: 前端接入 availableStock + 动态上限（nshop 完善）
+
+> 依赖 Task I 后含新字段的 schema。需先起后端，nshop codegen 从 live endpoint 重新生成。
+
+- [ ] **Step 1: 起后端 + 重新生成 gql codegen**
+  - 先确保 `/shop-api` 代理后的后端已含新字段（Task I 完成 + 重启）。
+  - 触 codegen：`gql` 由 `@nuxtjs`/`nuxt-graphql-client` 在 dev/build 时从 live endpoint 生成。用 `nuxi prepare`（或对应 codegen 命令）重新生成 `~~/.nuxt/gql/default`，确认 `ProductVariant` 现含 `availableStock?: number | null`。
+
+- [ ] **Step 2: fragment 加字段**
+  `layers/base/gql/fragments/product.gql`：在 product variant 相关的 fragment 里加 `availableStock`（若该 fragment 消费 variant 库存），使商品详情页 `selectedVariant` 携带该字段。
+
+- [ ] **Step 3: CartAddButton 用 availableStock 计算 maxStock**
+  将 Task G 里：
+  ```ts
+  const maxStock = computed(() =>
+    (selectedVariant.value as { stockOnHand?: number } | null)?.stockOnHand ?? 99,
+  );
+  ```
+  改为：
+  ```ts
+  const MAX_STOCK_CAP = 999;
+  const maxStock = computed(() => {
+    const available = selectedVariant.value?.availableStock;
+    // 未跟踪库存时后端返回极大值，钳制到上限；真实可售则取 0..cap
+    if (available == null) return 99;
+    return Math.min(Math.max(0, available), MAX_STOCK_CAP);
+  });
+  ```
+
+- [ ] **Step 4: typecheck + dev 复跑**
+  Run: `npx nuxi typecheck`
+  Expected: 通过。（若 `availableStock` 类型缺失，说明 codegen 未更新——回到 Step 1。）
+
+- [ ] **Step 5: Commit（nshop 仓库）**
+  ```bash
+  git add layers/base/gql/fragments/product.gql layers/base/app/components/cart/CartAddButton.vue
+  git commit -m "feat(nshop): 加购上限数据源切换为后端真实可售库存 availableStock"
+  ```
+
 ### Task H: 线上验收（agent-browser，4 条购买流）
 
 **Files:**
