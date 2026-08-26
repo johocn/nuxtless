@@ -48,7 +48,8 @@ type ShopSection =
   | { type: 'notice';  text: string }
   | { type: 'nav';
       items: { label: string; image?: string; link?: string }[];
-      layout?: 'grid5x2' | 'grid4x2' | 'row'; // 宫格排布；默认跟随主题。图标固定圆形（决策 2：跨风格一致），不设形状字段
+      shape?: 'round' | 'square';             // 图标形状（圆形/方形金刚区）；默认跟随主题（默认 round）
+      layout?: 'grid5x2' | 'grid4x2' | 'row'; // 宫格排布；默认跟随主题
     }
   | { type: 'goods';
       collectionId?: string;                  // 商品来源集合；为空则自动推荐（fallback 现有 SearchProducts）
@@ -69,7 +70,7 @@ type ShopSection =
 | section.type | 渲染组件 | 样式选择 |
 |---|---|---|
 | banner | 复用 `JdBannerCarousel` | — |
-| nav | 金刚区组件（复用 `JdFunctionGrid`，新增 `layout` prop） | grid5x2/grid4x2/row（图标固定圆形） |
+| nav | 金刚区组件（复用 `JdFunctionGrid`，新增 `shape`/`layout` props） | shape: round/square + layout: grid5x2/grid4x2/row |
 | goods | 商品楼层组件（compact 复用现有卡片；masonry 新增瀑布流大图卡；single 新增单列大图横卡） | compact/masonry/single |
 | notice | 公告条（`NoticeBar`） | — |
 | richText | 富文本渲染 | — |
@@ -78,27 +79,29 @@ type ShopSection =
 
 ### 3. 主题布局跟随（themePresets）
 
-新增 `themePresets` 表：`themeId → { nav: {layout}, goods: {layout} }`，渲染时 `区块layout = section.layout ?? themePresets[themeId][type]`：
+新增 `themePresets` 表：`themeId → { nav: {shape, layout}, goods: {layout} }`，渲染时 `区块shape/layout = section.shape/layout ?? themePresets[themeId]`：
 
-| themeId | 金刚区（图标一律圆形） | 为你推荐 |
+| themeId | 金刚区 | 为你推荐 |
 |---|---|---|
-| `default` / `jd-red`（京东） | grid5x2（现状） | compact |
-| `taobao-orange`（淘宝） | grid4x2 | masonry（双列大图瀑布流） |
-| `minimal`（极简） | row（单行图标条） | single |
+| `default` / `jd-red`（京东） | round + grid5x2（现状） | compact |
+| `taobao-orange`（淘宝） | round + grid4x2 | masonry（双列大图瀑布流） |
+| `minimal`（极简） | round + row（单行图标条） | single |
+
+说明：主题默认均为**圆形**金刚区（满足"淘宝风也想要圆形"），但运营可在区块级覆盖为**方形**；主题色跟随是全局 token 机制，圆形/方形均跟随 `data-theme`。
 
 配套把金刚区/为你推荐/快讯里的硬编码 `#e6162d` 等替换为 `bg-primary`/`text-primary`（`--ui-primary`），使配色跟随 `data-theme`。
 
 ### 4. vshop 装修页 UI 扩展（用户手动构建）
 
-- nav section：宫格排布（京东十宫格/淘宝双排/极简单行）选择控件（图标固定圆形，不提供形状选项）。
+- nav section：图标形状（圆形/方形）+ 宫格排布（京东十宫格/淘宝双排/极简单行）选择控件，默认跟随主题（圆形）。
 - goods section：卡片布局（紧凑/瀑布流/单列）+ 商品来源（集合选择或自动推荐）。
 - 保存逻辑沿用 `updateChannelCustomFields(id, { shopContent })`，后端**零改动**（customFields 已支持任意 JSON）。
 
 ### 4.1 灵活性的边界（避免过度设计）
 
-- **能做到**：区块自由加减/排序；每区块自选一个样式（金刚区排布、商品卡布局）；每租户独立装修；主题默认兜底；未装修回退现有京东布局。
+- **能做到**：区块自由加减/排序；每区块自选样式（金刚区：圆形/方形 + 排布；商品卡：紧凑/瀑布流/单列）；每租户独立装修；主题默认兜底；未装修回退现有京东布局；主题色全局跟随（圆形/方形均跟随）。
 - **不做**：后台生成新组件/新区块类型（类型由前端组件决定）、拖拽式精细排版（vshop 上下移足够）、富文本/极简等 vshop 已有能力不新增扩展。
-- **取舍**：图标形状字段已砍（决策 2 固定圆形）；极简主题降级为「有则跟随、无则不渲染对应区块」。
+- **取舍**：`shape` 仅保留 `round/square`（用户点名的能力，轻量枚举字段 + CSS 类切换，非过度设计）；砍掉"无底图标"等为极简假设场景铺路的设计。
 
 ### 5. 性能影响分析（重点）
 
