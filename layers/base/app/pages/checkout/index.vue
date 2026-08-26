@@ -85,7 +85,12 @@ const isSubmitted = shallowReactive({
 
 async function onSubmit() {
   await addressForm.value?.submitAddress();
-  await shippingForm.value?.submitShipping();
+  const isPickup = (order.value?.customFields?.deliveryType ?? "") === "pickup";
+  if (isPickup) {
+    isSubmitted.shipping = true;
+  } else {
+    await shippingForm.value?.submitShipping();
+  }
   if (!(isSubmitted.address && isSubmitted.shipping)) return;
   await paymentForm.value?.submitPayment();
 
