@@ -10,6 +10,11 @@ const { addItemToOrder } = useOrderStore();
 const { selectedVariant, stockLevel } = storeToRefs(useProductStore());
 const variantId = computed(() => selectedVariant.value?.id);
 const quantity = ref(1);
+const maxStock = computed(
+  () =>
+    (selectedVariant.value as { stockOnHand?: number } | null)?.stockOnHand ??
+    99,
+);
 
 const hasStock = computed(
   () => stockLevel.value === "IN_STOCK" || stockLevel.value === "LOW_STOCK",
@@ -31,7 +36,14 @@ watch(error, (val) => {
 async function addToCart() {
   if (!variantId.value || disabled || !hasStock.value) return;
 
-  await addItemToOrder(variantId.value, quantity.value);
+  const res = await addItemToOrder(variantId.value, quantity.value);
+  if (res?.status === "partial") {
+    toast.add({
+      title: t("messages.shop.addToCart"),
+      description: `库存不足，已加入 ${res.quantityAvailable ?? 0} 件`,
+      color: "warning",
+    });
+  }
 }
 </script>
 
@@ -40,7 +52,7 @@ async function addToCart() {
     :class="mobileClasses"
     class="flex gap-4 sm:static sm:bg-none sm:p-0 sm:backdrop-blur-none lg:w-md"
   >
-    <UInputNumber v-model="quantity" size="xl" :min="1" :max="10" />
+    <UInputNumber v-model="quantity" size="xl" :min="1" :max="maxStock" />
     <UButton
       :label="t('messages.shop.addToCart')"
       :loading="loading"
