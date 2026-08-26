@@ -45,12 +45,5 @@ export function useCheckout() {
     },
   );
 
-  watch(
-    () => checkoutState.value.shippingForm.shippingMethodId,
-    async (n, o) => {
-      if (n !== o) await recalcShipping();
-    },
-  );
-
   return { syncOrderLocation };
 }
