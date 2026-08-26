@@ -3,6 +3,7 @@ fragment ProductVariantFragment on ProductVariant {
   name
   sku
   stockLevel
+  availableStock
   currencyCode
   price
   priceWithTax
