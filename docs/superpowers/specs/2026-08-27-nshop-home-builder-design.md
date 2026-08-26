@@ -1,0 +1,141 @@
+# nshop 首页积木式装修 + 主题风格跟随设计
+
+> 日期：2026-08-27
+> 范围：让 nshop 首页（京东风格首页）支持**后台积木式装修**（每租户自由加减区块、区块内自选样式）与**主题风格跟随**（布局随京东/淘宝/极简等主题变化）。管理入口复用 vshop web-admin 装修页，数据统一存 `Channel.customFields.shopContent`。
+
+## 背景
+
+nshop 目前首页是**硬编码**京东风格组件固定顺序（[index.vue](../app/pages/index.vue)）：PC 版与移动版分别写死 `JdCategoryNav → JdBannerCarousel → JdFunctionGrid → JdBrandFloor → JdPlazaGrid → JdProductGrid`。运营想调整区块顺序、增删区块、切换不同电商风格（京东/淘宝/极简）都改不了前端代码。
+
+同时后台已有两套半成品能力，但未打通：
+- **vshop web-admin 装修页**：已支持积木式编辑（banner/notice/nav/goods/richText 五类区块，可添加/删除），数据存 `Channel.customFields.shopContent`（JSON）；还有「主题风格」页管理 `themeId`。
+- **operations-plugin ContentItem 引擎**：nshop 首页通过 `publishedContent` 消费，但目前只用其 Banner 轮播。
+
+用户明确决策：
+1. **布局跟随主题变**（京东/淘宝/极简等主题各自有首页布局模板）。
+2. **金刚区图标保持圆形**（圆形图标跨风格一致，宫格排布跟随主题）。
+3. **「为你推荐」选淘宝风双列大图瀑布流**（大图 + 价格/销量/店铺三行信息）。
+4. **管理入口 = 复用 vshop web-admin 装修页**。
+5. **数据统一用 shopContent**（后端零改动，vshop C 端与 nshop 共用一套装修数据）。
+
+## 目标
+
+- 后台积木式设计：每租户可自由加减首页区块、拖拽排序、为每个区块自选样式。
+- 风格跟随：主题级默认风格（themeId）决定区块布局，区块级字段可覆盖主题默认。
+- 保持现状兼容：未配置装修时首页按现有京东布局兜底渲染，不影响线上。
+- **明确量化对页面显示速度的影响**（本设计的重点）。
+
+## 现状关键事实（探索结论）
+
+| 项 | 现状 | 位置 |
+|---|---|---|
+| 装修数据 | `Channel.customFields.shopContent` = `{ version: 1, sections: [{type:'banner'|'notice'|'nav'|'goods'|'richText', ...}] }` | vshop `pages/decorate/home/index.vue`（`updateChannelCustomFields`） |
+| 主题数据 | `Channel.customFields.themeId`（default/jd-red/taobao-orange/minimal 等） | vshop `pages/decorate/theme/index.vue`；nshop [useChannelTheme.ts](../layers/base/app/composables/useChannelTheme.ts) |
+| nshop 首页 | 硬编码 Jd 组件固定顺序；PC（`lg:block`）与移动（`lg:hidden`）两套 | [index.vue](../app/pages/index.vue) |
+| nshop 主题应用 | `useChannelTheme` 读 themeId → `<html data-theme>` → [theme.css](../app/assets/css/theme.css) 切 `--ui-primary` 等 | [useChannelTheme.ts](../layers/base/app/composables/useChannelTheme.ts) |
+| nshop 首页数据 | `useHomeContent`（publishedContent）+ 两次 `SearchProducts`（热门/为你推荐） | [useHomeContent.ts](../layers/base/app/composables/useHomeContent.ts)、[index.vue](../app/pages/index.vue#L46-L49) |
+| 硬编码色 | 金刚区/为你推荐/快讯多处 `bg-[#e6162d]`/`text-[#e6162d]` | [JdFunctionGrid.vue](../layers/base/app/components/home/jd/JdFunctionGrid.vue)、[index.vue](../app/pages/index.vue) |
+
+## 方案
+
+### 1. 数据模型扩展（shopContent，向后兼容）
+
+现有 5 类 section 保持结构不变（vshop C 端 uni-app 继续兼容），**新增可选样式字段**，缺省时由主题默认风格兜底：
+
+```ts
+type ShopSection =
+  | { type: 'banner';  images: { image: string; link?: string }[] }
+  | { type: 'notice';  text: string }
+  | { type: 'nav';
+      items: { label: string; image?: string; link?: string }[];
+      style?: 'round' | 'square' | 'none';   // 图标形状；默认跟随主题，主题默认 round（圆形，符合决策 2）
+      layout?: 'grid5x2' | 'grid4x2' | 'row'; // 宫格排布；默认跟随主题
+    }
+  | { type: 'goods';
+      collectionId?: string;                  // 商品来源集合；为空则自动推荐（fallback 现有 SearchProducts）
+      layout?: 'compact' | 'masonry' | 'single'; // 卡片布局；默认跟随主题
+      title?: string;
+    }
+  | { type: 'richText'; html: string };
+```
+
+要点：
+- **字段只增不改**，vshop C 端 `templates/shared/schema.ts` 解析时忽略新字段即零影响。
+- `style`/`layout` 均为**区块级覆盖**，不填则走主题默认（见 3）。
+
+### 2. nshop 渲染器（积木式）
+
+新增 `useShopContent()`（读 `activeChannel.customFields.shopContent` 并 `JSON.parse`），并在 `blocks/` 目录下新增统一渲染入口 `HomeBlockRenderer.vue`，按 `section.type` 映射组件：
+
+| section.type | 渲染组件 | 样式选择 |
+|---|---|---|
+| banner | 复用 `JdBannerCarousel` | — |
+| nav | 金刚区组件（复用 `JdFunctionGrid`，新增 `layout`/`style` props） | round/square/none + grid5x2/grid4x2/row |
+| goods | 商品楼层组件（compact 复用现有卡片；masonry 新增瀑布流大图卡；single 新增单列大图横卡） | compact/masonry/single |
+| notice | 公告条（`NoticeBar`） | — |
+| richText | 富文本渲染 | — |
+
+[index.vue](../app/pages/index.vue) 移动端 `main` 改为按 `sections` 顺序渲染 `HomeBlockRenderer` 列表；**未配置装修（sections 为空）时保持现有京东布局兜底**，保证零配置可用。PC 版本次保持现有京东布局不动（仅后续可选积木化）。
+
+### 3. 主题布局跟随（themePresets）
+
+新增 `themePresets` 表：`themeId → { nav: {style, layout}, goods: {layout} }`，渲染时 `区块style = section.style ?? themePresets[themeId][type]`：
+
+| themeId | 金刚区 | 为你推荐 |
+|---|---|---|
+| `default` / `jd-red`（京东） | round + grid5x2（现状） | compact |
+| `taobao-orange`（淘宝） | round（保持圆形）+ grid4x2 | masonry（双列大图瀑布流） |
+| `minimal`（极简） | none + row（单行图标条） | single |
+
+配套把金刚区/为你推荐/快讯里的硬编码 `#e6162d` 等替换为 `bg-primary`/`text-primary`（`--ui-primary`），使配色跟随 `data-theme`。
+
+### 4. vshop 装修页 UI 扩展（用户手动构建）
+
+- nav section：图标样式（圆形/方形/无底）+ 宫格排布（京东十宫格/淘宝双排/极简单行）选择控件。
+- goods section：卡片布局（紧凑/瀑布流/单列）+ 商品来源（集合选择或自动推荐）。
+- 保存逻辑沿用 `updateChannelCustomFields(id, { shopContent })`，后端**零改动**（customFields 已支持任意 JSON）。
+
+### 5. 性能影响分析（重点）
+
+核心结论：**积木化 + 主题跟随对页面显示速度影响极小（预期 <5%）**，主要增量是「每个 goods 区块多一次商品搜索」，其余全部可忽略。逐项量化：
+
+| 关注点 | 现状 | 改造后增量 | 结论 |
+|---|---|---|---|
+| **SSR 渲染开销** | 硬编码固定组件树 | `HomeBlockRenderer` 为编译期 `switch(type)→组件`，区块数通常 ≤10，单区块渲染成本与现在组件等价 | 可忽略（<1ms） |
+| **数据请求数** | `GetHomeContent` + 2×`SearchProducts` | `shopContent` 与 `themeId` **同一次** `activeChannel` 查询返回（扩展 `GetChannelTheme` query 同时取 `customFields`），**不新增请求**；每个 goods 区块 +1 次 `SearchProducts(collectionId)` | 每页建议 goods 区块 ≤2，配合 useAsyncData key 去重，增量可忽略 |
+| **JSON 解析** | — | `shopContent` 为 KB 级，`JSON.parse` <1ms，SSR 一次性 | 可忽略 |
+| **图片数量与体积** | 轮播图 + 商品图 | 积木系统只改变组织方式、不增加图片；瀑布流大图用 NuxtImg `format=webp` + 尺寸裁剪（ipx）控制体积 | 与本次改造无关，属既有优化空间 |
+| **SSR 首字节（TTFB）** | 首页依赖 1 次 channel + 2 次商品查询 | 增量仅少量 JSON 解析 + ≤2 次商品查询（与现有 2 次并发） | 微增，可忽略 |
+| **客户端包体积** | Jd 组件已打包 | 新增瀑布流/单列卡片组件走 Nuxt 代码分割/懒加载，不进首屏 bundle | 首屏无影响 |
+| **缓存** | `useAsyncData` key 缓存 | `shopContent` 复用同一 key 缓存，SSR 内共享 | 不变 |
+
+**风险点与对策**：
+- 商品搜索请求量随 goods 区块数线性增长 → 装修时限制每页 goods 区块 ≤2（后台 UI 提示），并对同 collectionId 的区块去重合并请求。
+- 主题切换本身是 `data-theme` 属性 + 已编译 CSS 变量，无运行时重算，零开销。
+
+## 实施范围与里程碑
+
+- **M1 · nshop 数据打通**：扩展 `GetChannelTheme` query（同时取 themeId + shopContent）、`useShopContent()`、`HomeBlockRenderer` 骨架、index.vue 移动端积木化 + 空配置兜底。
+- **M2 · 主题布局跟随**：`themePresets`、金刚区 layout/style props、goods 三态卡片（compact 复用 / masonry 新增 / single 新增）、配色 token 化（替换硬编码红）。
+- **M3 · vshop 装修页 UI 扩展**：nav/goods 样式选择控件（**用户 HBuilder X 手动构建**）。
+- **M4 · 部署**：nshop 部分我本地构建（`node scripts/deploy.mjs` → scp → pm2 restart，遵守部署铁律，绝不在服务器构建）。
+
+## 排除项
+
+- operations-plugin `ContentItem` 引擎不用于本方案（保持现状，仅 banner 轮播复用）。
+- PC 版首页积木化（本次保持京东布局，仅移动端积木化；PC 可后续同机制扩展）。
+- 区块拖拽排序的精细 UI（vshop 现有上下移即可，不做拖拽库）。
+
+## 验收
+
+- 后台（vshop 装修页）能对指定租户自由加减区块、为金刚区/为你推荐选择样式并保存，nshop 前台立即生效。
+- 切 `themeId=taobao-orange` 时：金刚区保持圆形图标 + 双排宫格，为你推荐变双列大图瀑布流；`minimal` 时金刚区单行、为你推荐单列。
+- 区块级样式选择可覆盖主题默认。
+- 未配置装修的租户首页与现在完全一致（兜底生效）。
+- 首页 SSR 性能无感知下降（可用 `docs/bundle-audit.md` 方法与 Lighthouse 前后对比）。
+- nshop 本地构建通过并部署（vshop 由用户构建）。
+
+## 风险与开放问题
+
+- vshop C 端是否也消费扩展后的 shopContent 样式字段（本设计不强制，仅 nshop 消费；如需 vshop C 端也风格化，字段可复用同一 schema）。
+- 「自动推荐」（goods 无 collectionId）的商品排序策略需在 M1 明确（暂用现有 SearchProducts 热门/推荐语义）。
