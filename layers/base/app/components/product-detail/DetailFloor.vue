@@ -5,26 +5,11 @@ import { useProductDetailView } from "../../composables/useProductDetailView";
 const { visible } = useDetailConfig();
 const { product, selectedVariant, productName, productServiceable } = useProductDetailView();
 const { t } = useI18n();
-const toast = useToast();
-const { loading } = storeToRefs(useOrderStore());
-const { addItemToOrder } = useOrderStore();
+const { canBuy, loading, addToCartHandler, buyNowHandler } = useBuyActions();
 
 const inStock = computed(
   () => selectedVariant.value?.stockLevel === "IN_STOCK" || selectedVariant.value?.stockLevel === "LOW_STOCK",
 );
-
-async function addToCart() {
-  const id = selectedVariant.value?.id;
-  if (!id || !productServiceable.value) return;
-  const res = await addItemToOrder(id, 1);
-  if (res?.status === "partial") {
-    toast.add({
-      title: t("messages.shop.addToCart"),
-      description: `库存不足，已加入 ${res.quantityAvailable ?? 0} 件`,
-      color: "warning",
-    });
-  }
-}
 
 // 吸顶楼层 tab（跟随滚动高亮）
 const FLOOR_TABS = [
@@ -120,12 +105,17 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
         color="secondary"
         icon="i-lucide-shopping-cart"
         :loading="loading"
-        :disabled="!productServiceable"
-        @click="addToCart"
+        :disabled="!productServiceable || !canBuy"
+        @click="addToCartHandler"
       >{{ t("messages.detail.addToCart") }}</UButton>
-      <UButton class="flex-1 justify-center text-base" color="primary" icon="i-lucide-zap">
-        {{ t("messages.detail.buyNow") }}
-      </UButton>
+      <UButton
+        class="flex-1 justify-center text-base"
+        color="primary"
+        icon="i-lucide-zap"
+        :loading="loading"
+        :disabled="!productServiceable || !canBuy"
+        @click="buyNowHandler"
+      >{{ t("messages.detail.buyNow") }}</UButton>
     </section>
     <UAlert
       v-if="visible('purchase') && !productServiceable"

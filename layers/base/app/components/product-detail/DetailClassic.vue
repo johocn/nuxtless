@@ -5,26 +5,11 @@ import { useProductDetailView } from "../../composables/useProductDetailView";
 const { visible } = useDetailConfig();
 const { product, selectedVariant, productName, productServiceable } = useProductDetailView();
 const { t } = useI18n();
-const { loading } = storeToRefs(useOrderStore());
-const { addItemToOrder } = useOrderStore();
-const toast = useToast();
+const { canBuy, loading, addToCartHandler, buyNowHandler } = useBuyActions();
 
 const inStock = computed(
   () => selectedVariant.value?.stockLevel === "IN_STOCK" || selectedVariant.value?.stockLevel === "LOW_STOCK",
 );
-
-async function addToCart() {
-  const id = selectedVariant.value?.id;
-  if (!id || !productServiceable.value) return;
-  const res = await addItemToOrder(id, 1);
-  if (res?.status === "partial") {
-    toast.add({
-      title: t("messages.shop.addToCart"),
-      description: `库存不足，已加入 ${res.quantityAvailable ?? 0} 件`,
-      color: "warning",
-    });
-  }
-}
 </script>
 
 <template>
@@ -90,14 +75,17 @@ async function addToCart() {
             size="xl"
             icon="i-lucide-shopping-cart"
             :loading="loading"
-            :disabled="!productServiceable"
-            @click="addToCart"
+            :disabled="!productServiceable || !canBuy"
+            @click="addToCartHandler"
           >{{ t("messages.detail.addToCart") }}</UButton>
           <UButton
             class="flex-1 justify-center"
             color="primary"
             size="xl"
             icon="i-lucide-zap"
+            :loading="loading"
+            :disabled="!productServiceable || !canBuy"
+            @click="buyNowHandler"
           >{{ t("messages.detail.buyNow") }}</UButton>
         </div>
         <ProductDetailServiceableCityPanel :product="product" />

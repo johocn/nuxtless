@@ -4,6 +4,7 @@ import { useProductDetailView } from "../../composables/useProductDetailView";
 
 const { visible } = useDetailConfig();
 const { product, selectedVariant, productName, productServiceable } = useProductDetailView();
+const { canBuy, loading, addToCartHandler, buyNowHandler } = useBuyActions();
 const { t } = useI18n();
 </script>
 
@@ -39,11 +40,17 @@ const { t } = useI18n();
       color="secondary"
       variant="solid"
       icon="i-lucide-shopping-cart"
+      :loading="loading"
+      :disabled="!productServiceable || !canBuy"
+      @click="addToCartHandler"
     >{{ t("messages.detail.addToCart") }}</UButton>
     <UButton
       class="flex-1 justify-center text-base sm:min-w-40 sm:flex-none"
       color="primary"
       icon="i-lucide-zap"
+      :loading="loading"
+      :disabled="!productServiceable || !canBuy"
+      @click="buyNowHandler"
     >{{ t("messages.detail.buyNow") }}</UButton>
   </div>
   <ProductDetailServiceableCityPanel v-if="visible('purchase')" :product="product" />
