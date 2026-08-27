@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { NearStockLocation } from "~~/layers/base/app/composables/useNearbyStock";
+import type {
+  NearStockLocation,
+  NearbyResult,
+} from "~~/layers/base/app/composables/useNearbyStock";
 
 const props = defineProps<{
   /** 商品 ID（必填） */
@@ -8,10 +11,11 @@ const props = defineProps<{
   variantId?: string | null;
 }>();
 
+const { t } = useI18n();
 const locationStore = useLocationStore();
 const { loading, error, fetchNearbyStock } = useNearbyStock();
 
-const stockList = ref<NearStockLocation[]>([]);
+const result = ref<NearbyResult | null>(null);
 
 function formatDistance(km: number | null): string {
   if (km == null) return "距离未知";
@@ -29,9 +33,15 @@ function totalAllocated(loc: NearStockLocation): number {
 }
 
 async function loadStock() {
-  if (!props.productId) return;
-  if (!locationStore.coords) return;
-  stockList.value = await fetchNearbyStock({
+  if (!props.productId) {
+    result.value = { state: "no-stock", items: [], message: null };
+    return;
+  }
+  if (!locationStore.coords) {
+    result.value = { state: "no-coords", items: [], message: null };
+    return;
+  }
+  result.value = await fetchNearbyStock({
     productId: props.productId,
     variantId: props.variantId,
     coords: locationStore.coords,
@@ -48,20 +58,33 @@ watch(() => props.variantId, loadStock);
 </script>
 
 <template>
-  <section v-if="locationStore.coords" aria-labelledby="nearby-stock-heading">
+  <section aria-labelledby="nearby-stock-heading">
     <h2 id="nearby-stock-heading" class="mb-4 text-2xl font-semibold">
       就近库存
     </h2>
 
-    <p v-if="loading" class="text-sm text-neutral-500">正在加载库存…</p>
-    <p v-else-if="error" class="text-sm text-red-500">{{ error }}</p>
-    <p v-else-if="!stockList.length" class="text-sm text-neutral-500">
-      当前定位附近暂无可查询的库存。
+    <p v-if="loading" class="text-sm text-neutral-500">
+      {{ t("messages.detail.nearbyLoading") }}
+    </p>
+    <p
+      v-else-if="result?.state === 'no-coords'"
+      class="text-sm text-neutral-500"
+    >
+      {{ t("messages.detail.nearbyNoCoords") }}
+    </p>
+    <p v-else-if="result?.state === 'error'" class="text-sm text-neutral-500">
+      {{ t("messages.detail.nearbyError") }}
+    </p>
+    <p v-else-if="result?.state === 'no-stock'" class="text-sm text-neutral-500">
+      {{ t("messages.detail.nearbyNoStock") }}
     </p>
 
-    <ul v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <ul
+      v-else-if="result?.state === 'ok'"
+      class="grid grid-cols-1 gap-3 sm:grid-cols-2"
+    >
       <li
-        v-for="loc in stockList"
+        v-for="loc in result.items"
         :key="loc.location.id"
         class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
       >
