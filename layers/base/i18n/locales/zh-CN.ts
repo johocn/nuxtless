@@ -23,6 +23,14 @@ export default defineI18nLocale(() => ({
       floorSpecs: '参数',
       floorReviews: '评价',
       floorService: '售后',
+      notServiceable: '该商品暂不支持配送至当前城市',
+      viewServiceCities: '查看可购买城市',
+      serviceCitiesTitle: '可购买城市',
+      nationwide: '全城配送',
+      nearbyLoading: '正在查询就近库存…',
+      nearbyNoCoords: '开启定位可查看就近库存',
+      nearbyError: '就近门店库存暂不可查',
+      nearbyNoStock: '暂无可查看的门店库存',
     },
     pages: {
       index: {

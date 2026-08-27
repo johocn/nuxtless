@@ -23,6 +23,14 @@ export default defineI18nLocale(() => ({
       floorSpecs: 'Specs',
       floorReviews: 'Reviews',
       floorService: 'Service',
+      notServiceable: 'This product is not deliverable to your current city',
+      viewServiceCities: 'View deliverable cities',
+      serviceCitiesTitle: 'Deliverable cities',
+      nationwide: 'Nationwide delivery',
+      nearbyLoading: 'Checking nearby stock…',
+      nearbyNoCoords: 'Enable location to view nearby stock',
+      nearbyError: 'Nearby stock temporarily unavailable',
+      nearbyNoStock: 'No nearby store stock available',
     },
     pages: {
       index: {
