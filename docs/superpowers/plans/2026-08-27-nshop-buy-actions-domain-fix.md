@@ -70,6 +70,7 @@ import { storeToRefs } from "pinia";
 
 export function useBuyActions() {
   const { t } = useI18n();
+  const localePath = useLocalePath();
   const toast = useToast();
   const orderStore = useOrderStore();
   const { loading } = storeToRefs(orderStore);
@@ -128,7 +129,7 @@ export function useBuyActions() {
       });
       return;
     }
-    await navigateTo("/checkout");
+    await navigateTo(localePath("/checkout"));
   }
 
   return { loading, canBuy, addToCartHandler, buyNowHandler };
@@ -257,12 +258,11 @@ async function addToCart() {
 替换为：
 
 ```ts
-const { loading: orderLoading } = storeToRefs(useOrderStore());
 const { inStock } = storeToRefs(useProductStore());
 const { canBuy, loading, addToCartHandler, buyNowHandler } = useBuyActions();
 ```
 
-> 说明：`inStock` 改从 `useProductStore` 读取（需确认 store 有该 ref；若无，保留原 computed 与 `useBuyActions.loading` 即可）。`loading` 用于两个按钮。
+> 说明：`inStock` 改从 `useProductStore` 读取（该 store 暴露 `stockLevel`；改用 `storeToRefs(useProductStore()).stockLevel` 后重算 inStock。若嫌麻烦，**保留本地 `inStock` computed 亦可**，`loading` 已由 `useBuyActions` 提供。），`loading` 用于两个按钮。
 
 - [ ] **Step 2: 「加入购物车」改用 `addToCartHandler`**
 
