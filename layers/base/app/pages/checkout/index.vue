@@ -3,6 +3,13 @@ import type { ActiveOrderDetail } from "~~/types/order";
 import type { CheckoutState } from "~~/types/general";
 import type { AddressRecord } from "~~/types/address";
 import { isActiveOrderDetail } from "~~/types/guard";
+import CheckoutRenderer from "~~/layers/base/app/components/checkout/CheckoutRenderer.vue";
+import {
+  checkoutConfig,
+  isShippingMode,
+} from "~~/layers/base/app/utils/checkout-config";
+
+const layout = checkoutConfig.layout;
 
 const router = useRouter();
 const { t } = useI18n();
@@ -12,6 +19,9 @@ const toast = useToast();
 const orderStore = useOrderStore();
 const { order } = storeToRefs(orderStore);
 const isMounted = ref(false);
+
+// 京东版式：全页联动单一事实源（deliveryMode + 各功能块提交函数）
+const flow = provideCheckoutFlow();
 
 if (!isActiveOrderDetail(order.value)) {
   await orderStore.fetchOrder("detail");
@@ -83,7 +93,49 @@ const isSubmitted = shallowReactive({
 //   console.log(isSubmitted);
 // });
 
-async function onSubmit() {
+function successRedirect() {
+  orderStore.error = null;
+  const orderCode = activeOrder.value?.code;
+  void router.push(localePath(`/checkout/confirmation/${orderCode}`));
+  order.value = null;
+  toast.add({
+    title: "Order Successful",
+    description: "Thank you for your order.",
+    color: "success",
+  });
+}
+
+// 京东版式：按 地址 → (物流|自提) → 支付 门闩式推进
+async function submitJd() {
+  if (isShippingMode(flow.mode.value)) {
+    const okAddress =
+      (await flow.submitFns.submitAddress?.()) ?? false;
+    if (!okAddress) return;
+    const okDelivery =
+      (await flow.submitFns.submitDelivery?.()) ?? false;
+    if (!okDelivery) return;
+  } else {
+    // 自提：需已选自提点（选择即写库 deliveryType=pickup）
+    const cf = order.value?.customFields as
+      | { selectedPickupLocationId?: { id: string } | null }
+      | undefined;
+    if (!cf?.selectedPickupLocationId) {
+      orderStore.error = t("messages.checkout.needPickup");
+      toast.add({
+        title: t("messages.checkout.choosePickup"),
+        description: orderStore.error,
+        color: "error",
+      });
+      return;
+    }
+  }
+  const okPayment = (await flow.submitFns.submitPayment?.()) ?? false;
+  if (!okPayment) return;
+  successRedirect();
+}
+
+// 旧版式：原有分步提交流程
+async function submitLegacy() {
   await addressForm.value?.submitAddress();
   const isPickup = (order.value?.customFields?.deliveryType ?? "") === "pickup";
   if (isPickup) {
@@ -98,18 +150,16 @@ async function onSubmit() {
     isSubmitted.address = false;
     isSubmitted.shipping = false;
     isSubmitted.payment = false;
-
-    orderStore.error = null;
-    const orderCode = activeOrder.value?.code;
-    await router.push(localePath(`/checkout/confirmation/${orderCode}`));
-    order.value = null;
-
-    toast.add({
-      title: "Order Successful",
-      description: "Thank you for your order.",
-      color: "success",
-    });
+    successRedirect();
   }
+}
+
+async function onSubmit() {
+  if (layout === "jd") {
+    await submitJd();
+    return;
+  }
+  await submitLegacy();
 }
 
 onMounted(() => {
@@ -151,62 +201,68 @@ onMounted(() => {
 
     <div v-else class="flex w-full flex-col gap-12 md:flex-row md:gap-12">
       <div class="w-full md:w-1/2 lg:w-2/3">
-        <section id="address" aria-labelledby="address-heading">
-          <h2 id="address-heading" class="mb-4 text-2xl font-semibold">
-            {{ t("messages.general.shippingDetails") }}
-          </h2>
+        <!-- 京东新版版式（积木式，默认） -->
+        <CheckoutRenderer v-if="layout === 'jd'" />
 
-          <AddressPicker
-            v-if="isAuthenticated && addresses.length"
-            :addresses="addresses"
-            :default-id="activeAddressId"
-            class="mb-4"
-            @select="applyAddress"
-          />
+        <!-- 旧版式回退 -->
+        <template v-else>
+          <section id="address" aria-labelledby="address-heading">
+            <h2 id="address-heading" class="mb-4 text-2xl font-semibold">
+              {{ t("messages.general.shippingDetails") }}
+            </h2>
 
-          <div id="address-errors" role="status" aria-live="polite" />
+            <AddressPicker
+              v-if="isAuthenticated && addresses.length"
+              :addresses="addresses"
+              :default-id="activeAddressId"
+              class="mb-4"
+              @select="applyAddress"
+            />
 
-          <CheckoutAddressForm
-            ref="addressForm"
-            v-model="isSubmitted.address"
-            aria-labelledby="address-heading"
-            aria-describedby="address-errors"
-            novalidate
-          />
-        </section>
+            <div id="address-errors" role="status" aria-live="polite" />
 
-        <!-- Shipment -->
-        <section id="shipping" aria-labelledby="shipping-heading">
-          <h2 id="shipping-heading" class="sr-only">Shipping</h2>
+            <CheckoutAddressForm
+              ref="addressForm"
+              v-model="isSubmitted.address"
+              aria-labelledby="address-heading"
+              aria-describedby="address-errors"
+              novalidate
+            />
+          </section>
 
-          <div id="shipping-errors" role="status" aria-live="polite" />
+          <!-- Shipment -->
+          <section id="shipping" aria-labelledby="shipping-heading">
+            <h2 id="shipping-heading" class="sr-only">Shipping</h2>
 
-          <CheckoutShippingForm
-            ref="shippingForm"
-            v-model="isSubmitted.shipping"
-            aria-labelledby="shipping-heading"
-            aria-describedby="shipping-errors"
-            novalidate
-          />
+            <div id="shipping-errors" role="status" aria-live="polite" />
 
-          <!-- Pickup Location (门店自提) -->
-          <PickupLocationSelect class="mt-4" />
-        </section>
+            <CheckoutShippingForm
+              ref="shippingForm"
+              v-model="isSubmitted.shipping"
+              aria-labelledby="shipping-heading"
+              aria-describedby="shipping-errors"
+              novalidate
+            />
 
-        <!-- Payment -->
-        <section id="payment" aria-labelledby="payment-heading">
-          <h2 id="payment-heading" class="sr-only">Payment</h2>
+            <!-- Pickup Location (门店自提) -->
+            <PickupLocationSelect class="mt-4" />
+          </section>
 
-          <div id="payment-errors" role="status" aria-live="polite" />
+          <!-- Payment -->
+          <section id="payment" aria-labelledby="payment-heading">
+            <h2 id="payment-heading" class="sr-only">Payment</h2>
 
-          <CheckoutPaymentForm
-            ref="paymentForm"
-            v-model="isSubmitted.payment"
-            aria-labelledby="payment-heading"
-            aria-describedby="payment-errors"
-            novalidate
-          />
-        </section>
+            <div id="payment-errors" role="status" aria-live="polite" />
+
+            <CheckoutPaymentForm
+              ref="paymentForm"
+              v-model="isSubmitted.payment"
+              aria-labelledby="payment-heading"
+              aria-describedby="payment-errors"
+              novalidate
+            />
+          </section>
+        </template>
       </div>
 
       <aside
