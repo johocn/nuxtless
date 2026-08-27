@@ -2,6 +2,7 @@
 import type { MyAfterSalesRequestsQuery } from "#gql/default";
 import { formatMoney } from "../../utils/format-money";
 import { afterSalesTypeLabelKey, afterSalesStateInfo } from "../../utils/after-sales-state";
+import { assetSrc } from "../../utils/image";
 
 const props = defineProps<{
   request: NonNullable<MyAfterSalesRequestsQuery["myAfterSalesRequests"]>["items"][number];
@@ -17,9 +18,12 @@ const amount = computed(() => formatMoney(request.refundAmount, "CNY", locale.va
 const productName = computed(() => request.orderLine?.productVariant?.name);
 const preview = computed(
   () =>
-    request.orderLine?.featuredAsset?.preview ??
-    request.orderLine?.productVariant?.featuredAsset?.preview ??
-    "",
+    assetSrc(
+      request.orderLine?.featuredAsset?.preview ??
+        request.orderLine?.productVariant?.featuredAsset?.preview ??
+        "",
+      128,
+    ),
 );
 </script>
 

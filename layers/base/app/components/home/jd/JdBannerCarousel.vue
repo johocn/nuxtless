@@ -41,7 +41,7 @@ function stop() {
 onMounted(play);
 onBeforeUnmount(stop);
 
-function to(s: { link?: string }) {
+function to(s: { link?: string; [key: string]: unknown }) {
   return s.link ? localePath(s.link) : "";
 }
 </script>
@@ -62,14 +62,28 @@ function to(s: { link?: string }) {
           :to="to(s)"
           class="relative block w-full shrink-0"
         >
-          <NuxtImg :src="s.imageUrl" format="webp" class="h-44 w-full object-cover md:h-64 xl:h-[21rem]" />
+          <NuxtImg
+            :src="s.imageUrl"
+            format="webp"
+            width="750"
+            :loading="i === 0 ? 'eager' : 'lazy'"
+            :fetchpriority="i === 0 ? 'high' : 'auto'"
+            class="h-44 w-full object-cover md:h-64 xl:h-[21rem]"
+          />
           <span
             v-if="s.title"
             class="absolute bottom-2 left-3 rounded bg-black/30 px-2 py-0.5 text-xs text-white"
           >{{ s.title }}</span>
         </NuxtLink>
         <div v-else class="relative w-full shrink-0">
-          <NuxtImg :src="s.imageUrl" format="webp" class="h-44 w-full object-cover md:h-64 xl:h-[21rem]" />
+          <NuxtImg
+            :src="s.imageUrl"
+            format="webp"
+            width="750"
+            :loading="i === 0 ? 'eager' : 'lazy'"
+            :fetchpriority="i === 0 ? 'high' : 'auto'"
+            class="h-44 w-full object-cover md:h-64 xl:h-[21rem]"
+          />
           <span
             v-if="s.title"
             class="absolute bottom-2 left-3 rounded bg-black/30 px-2 py-0.5 text-xs text-white"

@@ -2,6 +2,7 @@
 // JD 风格「品质专区」卡片区（2 列网格）
 // 说明：nshop 前端无多租户商户(channel)列表数据，此处复用真实顶部分类(collection)作为专区入口，
 // 卡片展示分类封面图 + 名称 + 子分类描述，跳转到对应分类商品页
+import { assetSrc } from "../../../utils/image";
 defineProps<{
   categories: Array<{
     name: string;
@@ -33,8 +34,9 @@ const localePath = useLocalePath();
         >
           <NuxtImg
             v-if="cat.featuredAsset?.preview"
-            :src="cat.featuredAsset.preview"
-            format="webp"
+            :src="assetSrc(cat.featuredAsset.preview, 176)"
+            width="176"
+            loading="lazy"
             class="h-11 w-11 object-cover"
           />
           <UIcon v-else name="i-lucide-box" class="h-5 w-5" />

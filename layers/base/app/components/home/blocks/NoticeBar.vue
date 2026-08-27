@@ -1,9 +1,12 @@
 <script setup lang="ts">
 const props = defineProps<{
-  block: { data?: { content?: string; items?: Array<{ text?: string }> } };
+  text?: string;
+  block?: { data?: { content?: string; items?: Array<{ text?: string }> } };
 }>();
+// 优先直传 text（积木 nav 区块）；回退支持既有 block 契约
 // 后端 Notice 契约是 { content: string }；兼容旧式 items 数组
 const text = computed(() => {
+  if (props.text) return props.text;
   const d = props.block?.data ?? {};
   if (d.content) return d.content;
   return (d.items ?? []).map((i) => i.text ?? "").join("；");

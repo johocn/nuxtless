@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChildCollection } from "~~/types/collection";
+import { assetSrc } from "../../utils/image";
 
 const { collection, eager } = defineProps<{
   collection: ChildCollection;
@@ -13,7 +14,7 @@ if (!collection) {
 const localePath = useLocalePath();
 
 const imageSrc = computed(
-  () => collection?.featuredAsset?.preview || "/images/placeholder.webp",
+  () => assetSrc(collection?.featuredAsset?.preview, 700) || "/images/placeholder.webp",
 );
 </script>
 

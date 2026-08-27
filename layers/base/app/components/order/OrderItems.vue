@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { GetOrderByCodeQuery } from "#gql/default";
+import { assetSrc } from "../../utils/image";
 
 const props = defineProps<{
   order: NonNullable<GetOrderByCodeQuery["orderByCode"]>;
@@ -21,10 +22,10 @@ const fmt = (amount: number) =>
       class="flex items-center gap-4 py-4"
     >
       <NuxtImg
-        :src="line.featuredAsset?.preview"
+        :src="assetSrc(line.featuredAsset?.preview, 128)"
         :alt="line.productVariant?.name ?? ''"
         class="h-20 w-20 rounded object-cover"
-        format="webp"
+        loading="lazy"
       />
       <div class="min-w-0 flex-1">
         <p class="truncate font-medium">{{ line.productVariant?.name }}</p>

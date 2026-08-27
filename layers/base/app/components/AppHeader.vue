@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
 import type { MenuCollections } from "~~/types/collection";
+import { assetSrc } from "../utils/image";
 
 const { logoTop } = useAppConfig();
 const route = useRoute();
@@ -21,7 +22,7 @@ const items = computed<NavigationMenuItem[]>(
       return {
         label: collection.name,
         to: parentPath,
-        avatar: { src: collection.featuredAsset?.preview },
+        avatar: { src: assetSrc(collection.featuredAsset?.preview, 48) },
         defaultOpen: isActive,
         active: isActive,
         children: collection.children?.map((child) => ({

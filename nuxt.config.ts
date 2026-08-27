@@ -24,13 +24,16 @@ export default defineNuxtConfig({
     },
     // Windows + extends 分层 + node-server 下，对超大 server bundle 压缩也会显著拖慢，关闭压缩。
     minify: false,
-    // 本地开发：客户端动态使用同源 /shop-api，需代理到本地 Vendure（生产由 Nginx 反代）。
+    // 本地开发：客户端动态使用同源 /shop-api，经 devProxy 服务端代理到后端（生产由 Nginx 反代）。
+    // 默认指向线上 https://www.youshop.cn/shop-api，实现"本地 HMR 秒级预览 + 线上真实数据"的热更闭环；
+    // 需要本地独立 Vendure(如连数据快照)时，用 DEV_PROXY_TARGET 环境变量覆盖为 http://localhost:3000/shop-api。
     // 注意：nitro devProxy 经 h3 app.use 挂载时会剥离路由前缀（/shop-api 被剥成 /），
     // 故 target 需带上 /shop-api 路径，利用 http-proxy prependPath 重新拼接为 /shop-api/。
     devProxy: {
       "/shop-api": {
-        target: "http://localhost:3000/shop-api",
+        target: process.env.DEV_PROXY_TARGET || "https://www.youshop.cn/shop-api",
         changeOrigin: true,
+        secure: true,
       },
     },
   },

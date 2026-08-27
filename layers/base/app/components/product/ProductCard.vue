@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SearchResult } from "~~/types/product";
+import { assetSrc } from "../../utils/image";
 
 const { product, serviceInfo, eager } = defineProps<{
   product: SearchResult[number];
@@ -38,7 +39,7 @@ const productStartPrice = computed(() => {
 });
 
 const imageSrc = computed(
-  () => product?.productAsset?.preview || "/images/placeholder.webp",
+  () => assetSrc(product?.productAsset?.preview, 700) || "/images/placeholder.webp",
 );
 
 // 超区判断（依赖 serviceInfo 提供的 belongCity/serviceCities；未定位或未配置则视为可售）

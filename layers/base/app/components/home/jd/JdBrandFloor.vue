@@ -3,6 +3,7 @@
 // nshop 无独立品牌(channel)列表数据，不强造品牌，改为复用顶部分类(collection)的
 // 封面图( featuredAsset )作为品牌 logo，点击进入对应分类页，符合"系统中没有的功能用已有方案替换"。
 import type { MenuCollections } from "~~/types/collection";
+import { assetSrc } from "../../../utils/image";
 
 const localePath = useLocalePath();
 const menuCollections = useState<MenuCollections>("menuCollections");
@@ -32,8 +33,9 @@ function linkFor(slug: string) {
         <span class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-gray-50">
           <NuxtImg
             v-if="cat.featuredAsset?.preview"
-            :src="cat.featuredAsset.preview"
-            format="webp"
+            :src="assetSrc(cat.featuredAsset.preview, 112)"
+            width="112"
+            loading="lazy"
             class="h-full w-full object-cover"
             alt=""
           />

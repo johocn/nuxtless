@@ -3,6 +3,7 @@
 // 数据来源：顶部分类(collection)（GetMenuCollections 已加载到 menuCollections 状态，未动底层）
 // 通过全局 state isAllCatOpen 控制显隐，任何页面/组件都可 set true 打开。
 import type { MenuCollections } from "~~/types/collection";
+import { assetSrc } from "../../../utils/image";
 
 const localePath = useLocalePath();
 const open = useState<boolean>("isAllCatOpen", () => false);
@@ -59,8 +60,7 @@ function close() {
             >
               <NuxtImg
                 v-if="cat.featuredAsset?.preview"
-                :src="cat.featuredAsset.preview"
-                format="webp"
+                :src="assetSrc(cat.featuredAsset.preview, 72)"
                 class="h-9 w-9 shrink-0 rounded object-cover"
               />
               <span class="h-9 w-9 shrink-0 rounded bg-gray-100" v-else />

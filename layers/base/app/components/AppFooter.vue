@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
 import type { MenuCollections } from "~~/types/collection";
+import { assetSrc } from "../utils/image";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -21,7 +22,7 @@ const items = computed<NavigationMenuItem[]>(
       return {
         label: collection.name,
         to: parentPath,
-        avatar: { src: collection.featuredAsset?.preview },
+        avatar: { src: assetSrc(collection.featuredAsset?.preview, 48) },
         defaultOpen: isActive,
         active: isActive,
       };
@@ -30,8 +31,8 @@ const items = computed<NavigationMenuItem[]>(
 </script>
 
 <template>
-  <!-- 移动端底部留出 TabBar(52px)+安全区高度，避免页脚被 fixed 底部导航遮挡；PC 不受影响 -->
-  <UFooter class="pb-[calc(52px+env(safe-area-inset-bottom))] lg:pb-0">
+  <!-- 移动端整块隐藏（仅 PC 显示），移动端"为你推荐"下方只保留 JdTabBar 的四 tab（首页/分类/购物车/我的） -->
+  <UFooter class="hidden lg:block">
     <template #top>
       <USeparator />
     </template>
@@ -40,14 +41,6 @@ const items = computed<NavigationMenuItem[]>(
       <LogoElement wrapper-class="w-1/2" class="hidden md:block" />
     </template>
 
-    <LogoElement class="me-6 block md:hidden" wrapper-class="w-1/3" />
-
-    <UNavigationMenu
-      :items="items"
-      orientation="vertical"
-      variant="link"
-      class="block md:hidden"
-    />
     <UNavigationMenu :items="items" variant="link" class="hidden md:block" />
 
     <template #bottom>
