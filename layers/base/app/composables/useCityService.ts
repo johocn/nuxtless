@@ -18,9 +18,12 @@ export function useCityService() {
   const locationStore = useLocationStore();
 
   interface ServiceableProduct {
+    // 弱类型规避：加索引签名避免「全可选、无公共属性」引起的强类型拒绝，
+    // 同时保留 belongCity/serviceCities 的类型化读取（真实商品 customFields 为两者并集）
     customFields?: {
       belongCity?: string | null;
       serviceCities?: Array<string | null> | null;
+      [key: string]: unknown;
     } | null;
   }
 
