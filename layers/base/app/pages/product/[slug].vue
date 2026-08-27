@@ -10,10 +10,6 @@ const ogColorMode = computed<"dark" | "light">(() =>
 const productStore = useProductStore();
 const { hasOptions, selectedVariant } = storeToRefs(productStore);
 
-const locationStore = useLocationStore();
-const { isServiceable } = useCityService();
-const productServiceable = computed(() => isServiceable(product.value));
-
 const slug = useRouteParam("slug");
 
 const { data } = await useAsyncGql("GetProductDetail", {
@@ -127,118 +123,7 @@ if (product.value && selectedVariant.value) {
 
 <template>
   <main class="container">
-    <div
-      class="grid grid-flow-row grid-cols-1 gap-10 sm:grid-flow-col sm:grid-cols-2 sm:grid-rows-[auto_auto_auto_auto]"
-    >
-      <header class="mt-14">
-        <div class="flex gap-4">
-          <h1 class="text-2xl font-semibold">
-            {{ selectedVariant?.name ?? product?.name }}
-          </h1>
-        </div>
-        <UBadge color="info">
-          <div class="flex flex-row gap-2 text-sm font-bold">
-            <span>
-              {{ formatPrice(selectedVariant?.priceWithTax) }}
-            </span>
-          </div>
-        </UBadge>
-        <BreadcrumbTrail :product="product" trail="product" class="mt-2" />
-      </header>
-
-      <!-- Prouct Galley -->
-      <section
-        aria-labelledby="product-gallery-heading"
-        :class="displayLayout !== 'standard' ? 'sm:order-1' : ''"
-      >
-        <h2 id="product-gallery-heading" class="sr-only">Product Gallery</h2>
-        <ProductGallery />
-      </section>
-
-      <div
-        class="row-span-3 grid grid-rows-subgrid gap-4"
-        :class="displayLayout !== 'standard' ? 'sm:order-2' : ''"
-      >
-        <div class="row-start-2 flex flex-col sm:mt-2">
-          <!-- Product Details -->
-          <section aria-labelledby="product-details-heading">
-            <h2 id="product-details-heading" class="sr-only">
-              Product Details
-            </h2>
-
-            <ProductDetails
-              :stock-level="selectedVariant?.stockLevel"
-              :sku="selectedVariant?.sku"
-            />
-
-            <ProductDescription
-              class="mt-8"
-              :class="{ 'line-clamp-2': displayLayout !== 'rich' }"
-            />
-          </section>
-
-          <hr class="mt-8" />
-
-          <!-- Product Variants -->
-          <section class="mt-8" aria-labelledby="product-variants-heading">
-            <h2 id="product-variants-heading" class="sr-only">
-              Product Variants
-            </h2>
-            <ProductVariants />
-          </section>
-
-          <section
-            :class="[hasOptions ? 'mt-0 sm:mt-12' : 'mt-0']"
-            aria-labelledby="product-add-to-cart-heading"
-          >
-            <h2 id="product-add-to-cart-heading" class="sr-only">
-              Add to Cart
-            </h2>
-            <UAlert
-              v-if="!productServiceable"
-              color="warning"
-              variant="subtle"
-              icon="i-lucide-map-pin-off"
-              class="mb-3"
-              :title="`该商品暂不支持配送至「${locationStore.cityName || '当前城市'}」`"
-              description="可切换上方城市后查看，或浏览其他商品。"
-            />
-            <CartAddButton :disabled="!productServiceable" />
-          </section>
-        </div>
-      </div>
-    </div>
-
-    <hr class="mt-4 mb-8 sm:mt-0" />
-
-    <!-- Nearby Stores -->
-    <ProductNearbyStores
-      class="mb-10"
-      :product-id="product?.id"
-      :variant-id="selectedVariant?.id"
-    />
-
-    <!-- Full Description -->
-    <section
-      v-if="displayLayout !== 'rich'"
-      aria-labelledby="product-description-heading"
-    >
-      <h2 id="product-description-heading" class="sr-only">
-        Product Description
-      </h2>
-      <ProductDescription
-        v-if="product?.description"
-        :description="product?.description"
-      />
-    </section>
-
-    <!-- Featured Products -->
-    <section class="mt-14 mb-14" aria-labelledby="related-products-heading">
-      <h2 id="related-products-heading" class="mb-4 text-2xl font-semibold">
-        {{ t("messages.shop.popularProducts") }}
-      </h2>
-      <HomeFeaturedProducts />
-    </section>
+    <ProductDetailRenderer />
   </main>
 </template>
 
