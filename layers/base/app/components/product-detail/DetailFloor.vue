@@ -136,6 +136,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
       title="该商品暂不支持配送至当前城市"
       description="可切换上方城市后查看，或浏览其他商品。"
     />
+    <ProductDetailServiceableCityPanel v-if="visible('purchase')" :product="product" />
 
     <!-- 参数（楼层） -->
     <section v-if="visible('variants')" id="floor-variants" class="mt-8 scroll-mt-16">

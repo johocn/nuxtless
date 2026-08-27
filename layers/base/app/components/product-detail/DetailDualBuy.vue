@@ -46,6 +46,7 @@ const { t } = useI18n();
       icon="i-lucide-zap"
     >{{ t("messages.detail.buyNow") }}</UButton>
   </div>
+  <ProductDetailServiceableCityPanel v-if="visible('purchase')" :product="product" />
 
   <ProductDescription
     v-if="visible('description') && product?.description"
