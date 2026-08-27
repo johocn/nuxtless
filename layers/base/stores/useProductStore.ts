@@ -1,4 +1,12 @@
+import { assetPlaceholderSrc } from "../app/utils/image";
 import type { ProductDetail } from "~~/types/product";
+
+export interface DetailMedia {
+  type: "image" | "video";
+  id: string;
+  src: string; // 图片=preview / 视频=videoUrl
+  preview?: string; // 图片预览（视频无）
+}
 
 export const useProductStore = defineStore("product", () => {
   const product = ref<ProductDetail>(null);
@@ -48,7 +56,28 @@ export const useProductStore = defineStore("product", () => {
   const galleryAssets = computed(() => {
     const variantAssets = selectedVariant.value?.assets ?? [];
     const productAssets = product.value?.assets ?? [];
-    return variantAssets.length > 0 ? variantAssets : productAssets;
+    const imgs = variantAssets.length > 0 ? variantAssets : productAssets;
+    if (imgs.length > 0) return imgs;
+    // 空图集兜底占位，避免手机端空白
+    return [{ id: "placeholder", preview: assetPlaceholderSrc() } as any];
+  });
+
+  const mediaAssets = computed<DetailMedia[]>(() => {
+    const imgs: any[] = (galleryAssets.value as any[]).filter(
+      (a: any) => a.id && a.id !== "placeholder",
+    );
+    const images: DetailMedia[] = imgs.map((a) => ({
+      type: "image",
+      id: a.id,
+      src: a.preview ?? "",
+      preview: a.preview,
+    }));
+    // 视频优先：选中变体 videoUrl 优先，回退商品 videoUrl
+    const variantVideo = (selectedVariant.value?.customFields as any)?.videoUrl;
+    const productVideo = (product.value?.customFields as any)?.videoUrl;
+    const videoUrl = (variantVideo || productVideo || "").trim();
+    if (videoUrl) return [{ type: "video", id: "video", src: videoUrl }, ...images];
+    return images;
   });
 
   function init(p: ProductDetail) {
@@ -95,6 +124,7 @@ export const useProductStore = defineStore("product", () => {
     selectedVariant,
     stockLevel,
     galleryAssets,
+    mediaAssets,
     init,
     setOption,
     refreshStock,
