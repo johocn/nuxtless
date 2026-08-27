@@ -1,21 +1,56 @@
-/* 语义配色令牌：渠道级固定主题，只切主色，不动布局。
-   Nuxt UI v4 在本项目仅暴露唯一主色变量 --ui-primary；按 <html data-theme> 覆盖即可。 */
+/* 语义配色令牌：渠道级固定主题。Nuxt UI v4 暴露 --ui-primary 等语义变量；
+   按 <html data-theme> 覆盖。未定义字段继承 :root 默认令牌（内建兜底）。 */
+:root {
+  /* 内建兜底（无匹配 data-theme 或字段未定义时生效） */
+  --ui-primary: #134e4a;
+  --ui-success: #16a34a;
+  --ui-warning: #f59e0b;
+  --ui-error: #ef4444;
+  --ui-radius: 0.5rem;
+  --font-size-base: 14px;
+}
+
 :root[data-theme='jd-red'] {
   --ui-primary: #E1251B;
+  --ui-success: #07c160;
+  --ui-warning: #ff8f1f;
+  --ui-error:   #f03d3d;
+  --ui-radius:  0.375rem;
+  --font-size-base: 14px;
 }
 
 :root[data-theme='taobao-orange'] {
   --ui-primary: #FF5000;
+  --ui-success: #07c160;
+  --ui-warning: #ff8f1f;
+  --ui-error:   #f03d3d;
+  --ui-radius:  0.5rem;
+  --font-size-base: 14px;
 }
 
 :root[data-theme='modern-minimal'] {
   --ui-primary: #111827;
+  --ui-success: #16a34a;
+  --ui-warning: #f59e0b;
+  --ui-error:   #ef4444;
+  --ui-radius:  0.375rem;
+  --font-size-base: 14px;
 }
 
 :root[data-theme='brand'] {
   --ui-primary: var(--ui-brand-color, #334155);
+  --ui-success: #16a34a;
+  --ui-warning: #f59e0b;
+  --ui-error:   #ef4444;
+  --ui-radius:  0.5rem;
+  --font-size-base: 14px;
 }
 
 :root[data-theme='default'] {
   --ui-primary: #134e4a;
+  --ui-success: #16a34a;
+  --ui-warning: #f59e0b;
+  --ui-error:   #ef4444;
+  --ui-radius:  0.5rem;
+  --font-size-base: 14px;
 }
