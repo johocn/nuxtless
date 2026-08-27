@@ -14,3 +14,13 @@ export function assetSrc(src?: string | null, width?: number, q = 70): string {
   const sep = src.includes("?") ? "&" : "?";
   return `${src}${sep}${params.join("&")}`;
 }
+
+// 空图集兜底占位图：内联 SVG data URI（灰底 + 居中文案"暂无图片"），避免手机端主图空白。
+export function assetPlaceholderSrc(): string {
+  return (
+    "data:image/svg+xml;charset=utf-8," +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="100%" height="100%" fill="#f3f4f6"/><text x="50%" y="50%" fill="#9ca3af" font-size="14" text-anchor="middle" dominant-baseline="middle">暂无图片</text></svg>`,
+    )
+  );
+}
