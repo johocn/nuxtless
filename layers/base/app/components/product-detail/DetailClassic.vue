@@ -5,6 +5,26 @@ import { useProductDetailView } from "../../composables/useProductDetailView";
 const { visible } = useDetailConfig();
 const { product, selectedVariant, productName, productServiceable } = useProductDetailView();
 const { t } = useI18n();
+const { loading } = storeToRefs(useOrderStore());
+const { addItemToOrder } = useOrderStore();
+const toast = useToast();
+
+const inStock = computed(
+  () => selectedVariant.value?.stockLevel === "IN_STOCK" || selectedVariant.value?.stockLevel === "LOW_STOCK",
+);
+
+async function addToCart() {
+  const id = selectedVariant.value?.id;
+  if (!id || !productServiceable.value) return;
+  const res = await addItemToOrder(id, 1);
+  if (res?.status === "partial") {
+    toast.add({
+      title: t("messages.shop.addToCart"),
+      description: `库存不足，已加入 ${res.quantityAvailable ?? 0} 件`,
+      color: "warning",
+    });
+  }
+}
 </script>
 
 <template>
@@ -12,16 +32,48 @@ const { t } = useI18n();
     <section v-if="visible('gallery')" aria-label="商品图集">
       <ProductGallery />
     </section>
-    <div class="flex flex-col gap-4">
+
+    <!-- 信息区卡片化 -->
+    <div class="flex flex-col gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
       <header v-if="visible('info')">
         <h1 class="text-2xl font-semibold">{{ productName }}</h1>
         <BreadcrumbTrail :product="product" trail="product" class="mt-2" />
       </header>
-      <PriceBlock v-if="visible('price')" />
-      <PromoBlock v-if="visible('promo')" />
-      <ServiceBlock v-if="visible('service')" />
+
+      <!-- 价格区强化：价格 + 库存现货徽章 + SKU -->
+      <section
+        v-if="visible('price')"
+        class="flex items-end justify-between gap-3 rounded-lg bg-primary/5 px-3 py-2.5"
+      >
+        <ProductDetailPriceBlock />
+        <div class="flex flex-col items-end gap-1">
+          <span class="text-xs font-semibold text-primary">{{ t(`messages.detail.${inStock ? "inStock" : "outOfStock"}`) }}</span>
+          <span v-if="selectedVariant?.sku" class="text-[11px] text-gray-400">SKU: {{ selectedVariant.sku }}</span>
+        </div>
+      </section>
+
+      <!-- 促销视觉化 -->
+      <section v-if="visible('promo')" class="rounded-lg border border-primary/15 bg-primary/5 p-3">
+        <div class="mb-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
+          <UIcon name="i-lucide-gift" class="size-3.5" />
+          {{ t("messages.detail.promoSummary") }}
+        </div>
+        <ProductDetailPromoBlock />
+      </section>
+
+      <!-- 服务保障视觉化 -->
+      <section v-if="visible('service')" class="rounded-lg border border-gray-100 bg-gray-50/60 p-3">
+        <div class="mb-2 flex items-center gap-1.5 text-xs font-semibold text-gray-500">
+          <UIcon name="i-lucide-shield-check" class="size-3.5" />
+          {{ t("messages.detail.serviceSummary") }}
+        </div>
+        <ProductDetailServiceBlock />
+      </section>
+
       <ProductVariants v-if="visible('variants')" />
-      <section v-if="visible('purchase')">
+
+      <!-- 双按钮购买栏：加入购物车(功能) + 立即购买(主红) -->
+      <section v-if="visible('purchase')" class="mt-1">
         <UAlert
           v-if="!productServiceable"
           color="warning"
@@ -31,7 +83,23 @@ const { t } = useI18n();
           title="该商品暂不支持配送至当前城市"
           description="可切换上方城市后查看，或浏览其他商品。"
         />
-        <CartAddButton :disabled="!productServiceable" />
+        <div class="flex flex-col-reverse gap-3 sm:flex-row">
+          <UButton
+            class="flex-1 justify-center"
+            color="secondary"
+            size="xl"
+            icon="i-lucide-shopping-cart"
+            :loading="loading"
+            :disabled="!productServiceable"
+            @click="addToCart"
+          >{{ t("messages.detail.addToCart") }}</UButton>
+          <UButton
+            class="flex-1 justify-center"
+            color="primary"
+            size="xl"
+            icon="i-lucide-zap"
+          >{{ t("messages.detail.buyNow") }}</UButton>
+        </div>
       </section>
     </div>
   </div>
@@ -50,7 +118,7 @@ const { t } = useI18n();
     :description="product?.description"
   />
 
-  <ReviewsSection v-if="visible('reviews')" class="mb-8" />
+  <ProductDetailReviewsSection v-if="visible('reviews')" class="mb-8" />
 
   <section v-if="visible('related')" aria-labelledby="related-products-heading">
     <h2 id="related-products-heading" class="mb-4 text-2xl font-semibold">

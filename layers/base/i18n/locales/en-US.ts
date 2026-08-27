@@ -17,6 +17,12 @@ export default defineI18nLocale(() => ({
       addToCart: 'Add to Cart',
       promoSummary: 'Promotions',
       serviceSummary: 'Services',
+      inStock: 'In Stock',
+      outOfStock: 'Out of Stock',
+      floorDescription: 'Details',
+      floorSpecs: 'Specs',
+      floorReviews: 'Reviews',
+      floorService: 'Service',
     },
     pages: {
       index: {
