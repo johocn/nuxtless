@@ -1,10 +1,10 @@
-# nshop 首页积木式装修 + 主题风格跟随 实施计划
+# nshop 首页积木式装修（京东风格模板）+ 主题色跟随 实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 让 nshop 首页支持**按风格分套的积木式装修**——每个风格（京东/淘宝/极简）各自一套可独立增删排序的首页区块配置，前台按当前租户 `themeId` 渲染对应套；每区块可选样式（金刚区圆形/方形、商品卡紧凑/瀑布流/单列）；主色统一跟随 `data-theme` token。
+**Goal:** 让 nshop 首页在**京东风格模板**基础上支持积木式装修——单套 `sections` 可自由增删/排序/换样式的首页区块配置，前台按配置渲染；金刚区/商品卡提供淘宝/极简等风格布局作为客户可选样式；主色统一跟随所选主题 token。**不做按风格分套的多套区块体系**。
 
-**Architecture:** 数据存 `Channel.customFields.shopContent`（新增 `byTheme` 结构兼容老数据），前端按主题取套渲染。`themeId` 与 `shopContent` 在同一次 `activeChannel` 查询返回（扩展 `GetChannelTheme`），不新增请求。新增 `useShopContent()` 解析 + `HomeBlockRenderer.vue` 统一映射，复用现有 Jd 组件（banner/nav/compact goods），新增 masonry/single 商品卡走代码分割。渲染不改变数据依赖，SSR 请求数与现状持平（商品搜索 ≤2 次）。
+**Architecture:** 数据仍存 `Channel.customFields.shopContent = { version: 1, sections }`（零迁移，商用结构不变，仅新增可选字段）。`themeId` 与 `shopContent` 在同一次 `activeChannel` 查询返回（扩展 `GetChannelTheme`），不新增请求。新增 `useShopContent()` 解析 + `HomeBlockRenderer.vue` 统一映射，复用现有 Jd 组件（banner/nav/compact goods），新增 masonry/single 商品卡走代码分割。渲染不改变数据依赖，SSR 请求数与现状持平（商品搜索 ≤2 次）。**themeId 只驱动配色，不驱动区块集合。**
 
 **Tech Stack:** Nuxt 3（SSR + useAsyncData）、@nuxt/gql（自动生成类型）、Tailwind CSS + Nuxt UI v4（`--ui-primary` token）、Vendure 自定义字段（后端零改动）、vshop web-admin（Vue 3 + HBuilder X，用户手动构建）。
 
@@ -15,7 +15,7 @@
 1. **验证方式**：nshop 无单元测试框架（package.json 仅 dev/build/typecheck）。每个任务用「`pnpm typecheck` + `pnpm dev` 本地可视化验证 + `pnpm build`」验证；M3 vshop 部分由**用户 HBuilder X 手动构建**，我只提供代码改动。
 2. **组件引入纪律**：新组件一律**显式 `import` 组件对象**后再用（index.vue 顶部已有注释说明：字符串组件名会被 Nuxt 当 custom element 渲染成空标签，SSR 输出 `<!---->`）。`HomeBlockRenderer` 用 `<component :is="对象">`。
 3. **git 纪律**：`d:\zhao\nshop` 工作区存在未跟踪临时产物（`.superpowers/`、`_dev.html`、`_mobile_check.png`、`_shots/`）及上轮未提交改动（logo-top.svg / AppFooter.vue / nuxt.config.ts 等）。**禁止 `git add -A`**，每个 commit 只 `git add` 本任务涉及的具体文件。
-4. **主题 id 清单**（theme.css 已定义）：`default` / `jd-red` / `taobao-orange` / `modern-minimal` / `brand`。风格默认值只对前四个有意义（brand 回退 default）。
+4. **京东默认值**（前端常量，不落库）：`nav → {shape:'square', layout:'grid5x2'}`、`goods → 'compact'`。新建区块预填该默认；渲染缺省用京东默认兜底。
 5. **部署铁律**：绝不在服务器构建。nshop 本地 `node scripts/deploy.mjs`（本地 build → scp .output → pm2 restart）。vshop 由用户构建。
 6. **性能红线**（设计 §5.3，M2 必须守住）：首页 SSR 商品搜索总次数 ≤2；商品卡统一 NuxtImg `format=webp` + 固定尺寸（masonry 600×600 / compact 300×300）；首屏外图片 `loading="lazy"`；banner 首图 `fetchpriority="high"`。
 
@@ -24,8 +24,8 @@
 | 文件 | 职责 | 动作 |
 |---|---|---|
 | `layers/base/gql/queries/context.gql` | 扩展 `GetChannelTheme` 同时返回 themeId + shopContent | Modify |
-| `layers/base/app/utils/shop-content.ts` | 类型定义 + 风格默认常量 + 解析/取套 | Create |
-| `layers/base/app/composables/useShopContent.ts` | 按主题取套 + 老数据兼容 | Create |
+| `layers/base/app/utils/shop-content.ts` | 类型定义 + 京东默认常量 + 解析 | Create |
+| `layers/base/app/composables/useShopContent.ts` | 读 shopContent 解析 sections | Create |
 | `layers/base/app/components/home/HomeBlockRenderer.vue` | 统一积木渲染入口（type→组件映射） | Create |
 | `layers/base/app/components/home/blocks/BannerBlock.vue` | banner 适配（images→slides） | Create |
 | `layers/base/app/components/home/blocks/NoticeBlock.vue` | notice 适配 | Create |
@@ -69,7 +69,7 @@ query GetChannelTheme {
 pnpm dev
 ```
 
-等出现 `✔ Nitro server built` / 编译完成后，验证生成的类型已含 `shopContent`：
+等编译完成，验证生成的类型已含 `shopContent`：
 
 ```bash
 Select-String .nuxt/gql/default.d.ts -Pattern "shopContent"
@@ -86,7 +86,7 @@ git commit -m "feat(nshop): GetChannelTheme 同查 themeId + shopContent（零�
 
 ---
 
-### Task 2: 新增 shopContent 工具层（类型 + 风格默认 + 解析）
+### Task 2: 新增 shopContent 工具层（类型 + 京东默认 + 解析）
 
 **Files:**
 - Create: `layers/base/app/utils/shop-content.ts`
@@ -96,11 +96,12 @@ git commit -m "feat(nshop): GetChannelTheme 同查 themeId + shopContent（零�
 仿照既有 `layers/base/app/utils/home-content.ts` 的纯函数风格，创建 `layers/base/app/utils/shop-content.ts`：
 
 ```ts
-// shopContent 解析工具：类型 + 风格默认值 + 按主题取套（纯函数，SSR 友好）
+// shopContent 解析工具：类型 + 京东默认样式 + 解析（纯函数，SSR 友好）
+// 范围：京东风格模板，单套 sections；区域样式可选（含淘宝圆形/瀑布流等）
 
-export type NavShape = 'round' | 'square';
-export type NavLayout = 'grid5x2' | 'grid4x2' | 'row';
-export type GoodsLayout = 'compact' | 'masonry' | 'single';
+export type NavShape = 'square' | 'round';   // 默认 'square'（京东）；'round' = 淘宝圆形
+export type NavLayout = 'grid5x2' | 'grid4x2' | 'row'; // 默认 'grid5x2'（京东十宫格）；'grid4x2' 淘宝八宫格 / 'row' 单行
+export type GoodsLayout = 'compact' | 'masonry' | 'single'; // 默认 'compact'（京东）；'masonry' 淘宝瀑布流 / 'single' 单列
 
 export interface BannerSection { type: 'banner'; images: { image: string; link?: string }[]; }
 export interface NoticeSection { type: 'notice'; text: string; }
@@ -112,56 +113,46 @@ export interface NavSection {
 }
 export interface GoodsSection {
   type: 'goods';
-  collectionId?: string;
+  collectionId?: string;   // 为空则自动推荐（fallback 现有 SearchProducts）
   layout?: GoodsLayout;
   title?: string;
 }
 export interface RichTextSection { type: 'richText'; html: string; }
 
 export type ShopSection = BannerSection | NoticeSection | NavSection | GoodsSection | RichTextSection;
-export type ThemeSections = { sections: ShopSection[] };
+export interface ShopContent { version: 1; sections: ShopSection[]; }
 
-export type ShopContent =
-  | { version: 1; byTheme: Record<string, ThemeSections> } // 新版：按风格分套
-  | { version: 1; sections: ShopSection[] };               // 老数据：视为 default 风格
-
-export interface ThemeStyleDefaults {
-  nav: { shape: NavShape; layout: NavLayout };
-  goods: GoodsLayout;
-}
-
-// 风格默认样式（前端常量，不落库）：新建区块预填 + 渲染兜底
-export const THEME_STYLE_DEFAULTS: Record<string, ThemeStyleDefaults> = {
-  default: { nav: { shape: 'square', layout: 'grid5x2' }, goods: 'compact' },
-  'jd-red': { nav: { shape: 'square', layout: 'grid5x2' }, goods: 'compact' },
-  'taobao-orange': { nav: { shape: 'round', layout: 'grid4x2' }, goods: 'masonry' },
-  'modern-minimal': { nav: { shape: 'round', layout: 'row' }, goods: 'single' },
+// 京东默认样式（前端常量，不落库）：新建区块预填 + 渲染字段缺省兜底
+export const JD_STYLE_DEFAULTS = {
+  nav: { shape: 'square' as NavShape, layout: 'grid5x2' as NavLayout },
+  goods: 'compact' as GoodsLayout,
 };
-
-export function themeDefaultsFor(themeId: string): ThemeStyleDefaults {
-  return THEME_STYLE_DEFAULTS[themeId] ?? THEME_STYLE_DEFAULTS.default;
-}
 
 export function parseShopContent(raw: string | null | undefined): ShopContent | null {
   if (!raw) return null;
   try {
     const data = JSON.parse(raw);
     if (typeof data !== 'object' || data === null) return null;
-    // 新版 byTheme / 老版 sections 均可
-    if (data.byTheme && typeof data.byTheme === 'object') return data as ShopContent;
-    if (Array.isArray(data.sections)) return data as ShopContent;
-    return null;
+    if (!Array.isArray(data.sections)) return null;
+    return data as ShopContent;
   } catch {
     return null;
   }
 }
 
-export function getThemeSections(content: ShopContent | null, themeId: string): ShopSection[] {
-  if (!content) return [];
-  if ('byTheme' in content) {
-    return content.byTheme[themeId]?.sections ?? content.byTheme.default?.sections ?? [];
-  }
-  return content.sections ?? [];
+export function getSections(content: ShopContent | null): ShopSection[] {
+  return content?.sections ?? [];
+}
+
+// 区块字段缺省 → 京东默认
+export function navDefaults(shape?: NavShape, layout?: NavLayout) {
+  return {
+    shape: shape ?? JD_STYLE_DEFAULTS.nav.shape,
+    layout: layout ?? JD_STYLE_DEFAULTS.nav.layout,
+  };
+}
+export function goodsLayout(layout?: GoodsLayout): GoodsLayout {
+  return layout ?? JD_STYLE_DEFAULTS.goods;
 }
 ```
 
@@ -171,13 +162,13 @@ export function getThemeSections(content: ShopContent | null, themeId: string): 
 pnpm typecheck
 ```
 
-Expected: 通过（无 `shopContent` / `byTheme` 相关类型错误）。
+Expected: 通过（无 `shopContent` / `ShopSection` 相关类型错误）。
 
 - [ ] **Step 3: 提交**
 
 ```bash
 git add layers/base/app/utils/shop-content.ts
-git commit -m "feat(nshop): shopContent 工具层（按风格分套类型+风格默认+解析）"
+git commit -m "feat(nshop): shopContent 工具层（京东模板类型+默认样式+解析）"
 ```
 
 ---
@@ -189,16 +180,14 @@ git commit -m "feat(nshop): shopContent 工具层（按风格分套类型+风格
 
 - [ ] **Step 1: 创建 composable**
 
-`useShopContent` 读 channel 的 `shopContent`（与 `useChannelTheme` 同用 `GetChannelTheme`，@nuxt/gql 按操作名自动去重，SSR 只发一次请求），按当前 `themeId` 返回对应套 + 风格默认：
+`useShopContent` 读 channel 的 `shopContent`（与 `useChannelTheme` 同用 `GetChannelTheme`，@nuxt/gql 按操作名自动去重，SSR 只发一次请求）：
 
 ```ts
-// 按当前主题取装修套 + 风格默认。themeId 与 shopContent 来自同一 GetChannelTheme 查询（SSR 去重，不新增请求）
+// 读 shopContent 并解析 sections。themeId 与 shopContent 来自同一 GetChannelTheme 查询（SSR 去重，不新增请求）
 import { useAsyncData } from "#imports";
-import { parseShopContent, getThemeSections, themeDefaultsFor } from "../utils/shop-content";
+import { parseShopContent, getSections } from "../utils/shop-content";
 
 export function useShopContent() {
-  const { config: themeId } = useChannelTheme();
-
   const { data } = useAsyncData(
     "shop-content",
     async () => {
@@ -208,10 +197,9 @@ export function useShopContent() {
     { server: true },
   );
 
-  const shopContent = computed(() => getThemeSections(parseShopContent(data.value), themeId.value));
-  const themeDefaults = computed(() => themeDefaultsFor(themeId.value));
+  const sections = computed(() => getSections(parseShopContent(data.value)));
 
-  return { shopContent, themeDefaults };
+  return { sections };
 }
 ```
 
@@ -221,13 +209,13 @@ export function useShopContent() {
 pnpm typecheck
 ```
 
-Expected: 通过（确认 `useChannelTheme` 返回的 `config` 是 `Ref<string>`，computed 可正常读取）。
+Expected: 通过。
 
 - [ ] **Step 3: 提交**
 
 ```bash
 git add layers/base/app/composables/useShopContent.ts
-git commit -m "feat(nshop): useShopContent 按主题取装修套 + 风格默认兜底"
+git commit -m "feat(nshop): useShopContent 解析 sections（单套京东模板）"
 ```
 
 ---
@@ -244,7 +232,7 @@ git commit -m "feat(nshop): useShopContent 按主题取装修套 + 风格默认�
 
 - [ ] **Step 1: 创建 HomeBlockRenderer.vue**
 
-统一渲染入口，按 `section.type` 映射组件对象（显式 import，规避字符串组件名问题）。goods 组件在 Task 7 创建，这里先放占位指向待建文件——**先完成本任务文件，goods 相关在 Task 7 补齐**：
+统一渲染入口，按 `section.type` 映射组件对象（显式 import，规避字符串组件名问题）：
 
 ```vue
 <script setup lang="ts">
@@ -255,12 +243,9 @@ import NoticeBlock from "./blocks/NoticeBlock.vue";
 import NavGrid from "./blocks/NavGrid.vue";
 import GoodsFloor from "./blocks/GoodsFloor.vue";
 import RichTextView from "./blocks/RichTextView.vue";
-import type { ShopSection, ThemeStyleDefaults } from "../../utils/shop-content";
+import type { ShopSection } from "../../utils/shop-content";
 
-const props = defineProps<{
-  sections: ShopSection[];
-  themeDefaults: ThemeStyleDefaults;
-}>();
+const props = defineProps<{ sections: ShopSection[] }>();
 
 const componentMap: Record<string, any> = {
   banner: BannerBlock,
@@ -277,7 +262,6 @@ const componentMap: Record<string, any> = {
     :key="index"
     :is="componentMap[section.type] ?? null"
     :section="section"
-    :theme-defaults="props.themeDefaults"
   />
 </template>
 ```
@@ -324,21 +308,19 @@ const props = defineProps<{ section: NoticeSection }>();
 
 > 先读 `layers/base/app/components/home/blocks/NoticeBar.vue`，若它只接受 `block.data` 形态（`{ id, data: { text } }`），则改为同时支持 `text` prop：`defineProps<{ block?: any; text?: string }>()`，`const text = computed(() => props.text ?? props.block?.data?.text ?? "")`，保证既有的 ContentItem 消费方不受影响。
 
-- [ ] **Step 4: 创建 NavGrid.vue**（nav 区块 → JdFunctionGrid，透传 shape/layout/items）
+- [ ] **Step 4: 创建 NavGrid.vue**（nav 区块 → JdFunctionGrid，透传京东默认 shape/layout + items）
 
 ```vue
 <script setup lang="ts">
-// nav 区块适配：section.items + 风格默认 shape/layout → JdFunctionGrid
+// nav 区块适配：section.items + 京东默认 shape/layout → JdFunctionGrid
 import JdFunctionGrid from "../jd/JdFunctionGrid.vue";
-import type { NavSection, ThemeStyleDefaults } from "../../utils/shop-content";
+import { navDefaults } from "../../utils/shop-content";
+import type { NavSection } from "../../utils/shop-content";
 
-const props = defineProps<{
-  section: NavSection;
-  themeDefaults: ThemeStyleDefaults;
-}>();
+const props = defineProps<{ section: NavSection }>();
 
-const shape = computed(() => props.section.shape ?? props.themeDefaults.nav.shape);
-const layout = computed(() => props.section.layout ?? props.themeDefaults.nav.layout);
+const shape = computed(() => navDefaults(props.section.shape, props.section.layout).shape);
+const layout = computed(() => navDefaults(props.section.shape, props.section.layout).layout);
 // 装修配置的 items 转成 JdFunctionGrid 的 GridItem 形态（有图用图，无图 emoji 兜底）
 const items = computed(() =>
   props.section.items.map((it) => ({
@@ -373,14 +355,12 @@ const props = defineProps<{ section: RichTextSection }>();
 
 - [ ] **Step 6: 临时创建 GoodsFloor.vue 占位**（Task 7 会完整实现）
 
-先建最小占位，保证 `componentMap` 引用不报错（Task 5 接入页面后可先验证其余区块，goods 后续补全）：
-
 ```vue
 <script setup lang="ts">
 // goods 区块占位：完整三态实现见 Task 7
-import type { GoodsSection, ThemeStyleDefaults } from "../../utils/shop-content";
+import type { GoodsSection } from "../../utils/shop-content";
 
-defineProps<{ section: GoodsSection; themeDefaults: ThemeStyleDefaults }>();
+defineProps<{ section: GoodsSection }>();
 </script>
 
 <template>
@@ -440,8 +420,8 @@ const bannerSlides = computed(() =>
 );
 
 // 3) 商品楼层：仅当未配置装修（兜底京东布局）时才发热门/为你推荐搜索，积木配置下由 goods 区块各自取数
-const { shopContent, themeDefaults } = useShopContent();
-const hasBlocks = computed(() => shopContent.value.length > 0);
+const { sections: shopSections } = useShopContent();
+const hasBlocks = computed(() => shopSections.value.length > 0);
 const { data: fallbackSearch } = await useAsyncData(
   "home-fallback-search",
   async () => {
@@ -466,8 +446,8 @@ const moreProducts = computed(() => fallbackSearch.value?.more ?? []);
 ```vue
 <!-- ═══ 移动端降级版（<1024px 显示）═══ -->
 <main class="mx-auto max-w-md bg-[#f5f5f5] pb-20 lg:hidden" data-layout="mobile">
-  <!-- 积木化：按当前风格套渲染（京东有金刚区/淘宝无金刚区等） -->
-  <HomeBlockRenderer v-if="hasBlocks" :sections="shopContent" :theme-defaults="themeDefaults" />
+  <!-- 积木化：按配置渲染（京东模板单套 sections） -->
+  <HomeBlockRenderer v-if="hasBlocks" :sections="shopSections" />
 
   <!-- 未配置装修：兜底现有京东布局（与之前完全一致） -->
   <template v-else>
@@ -501,8 +481,7 @@ pnpm dev
 
 Expected:
 - 未配置装修的渠道：移动端首页与改造前完全一致（兜底生效，无配置时 2 次商品搜索不变）。
-- 手动在浏览器控制台临时注入 `shopContent` 配置后可看到积木渲染（或按 Task 9 在 vshop 后台配置后验证）：
-  - 用 `localStorage`/DevTools 改 channel customFields 不方便时，可先在 `useShopContent` 里临时 `console.log(parsed)` 确认解析正常，再删除调试日志。
+- 手动在浏览器控制台临时注入 `shopContent` 配置后可看到积木渲染（或按 Task 9 在 vshop 后台配置后验证）。可先在 `useShopContent` 里临时 `console.log(parsed)` 确认解析正常，再删除调试日志。
 
 - [ ] **Step 4: 提交**
 
@@ -513,7 +492,7 @@ git commit -m "feat(nshop): 首页移动端积木化渲染 + 空配置京东兜�
 
 ---
 
-## M2 · 风格默认与主题化渲染
+## M2 · 主题化渲染
 
 ### Task 6: 金刚区 shape/layout/items props（JdFunctionGrid 扩展）
 
@@ -543,7 +522,7 @@ const props = withDefaults(
     items?: GridItem[];
   }>(),
   {
-    shape: "round",     // 兜底（无装修）保持现状圆形；积木场景由 NavGrid 按风格默认传入
+    shape: "round",     // 兜底（无装修）保持现状圆形；积木场景由 NavGrid 按京东默认传入 square
     layout: "grid5x2",
     items: () => [],
   },
@@ -577,7 +556,7 @@ const gridItems = computed<GridItem[]>(() =>
 ```vue
 <template>
   <section class="mx-2 mt-2 rounded-lg bg-white p-2">
-    <!-- row：极简单行横向滚动；其余：宫格 -->
+    <!-- row：单行横向滚动；其余：宫格 -->
     <div
       v-if="layout === 'row'"
       class="flex gap-3 overflow-x-auto px-1 py-1.5"
@@ -674,15 +653,13 @@ git commit -m "feat(nshop): 金刚区 shape/layout/items props（京东方形/�
 import JdProductGrid from "../jd/JdProductGrid.vue";
 import GoodsMasonryGrid from "./GoodsMasonryGrid.vue";
 import GoodsSingleList from "./GoodsSingleList.vue";
-import type { GoodsSection, GoodsLayout, ThemeStyleDefaults } from "../../utils/shop-content";
+import { goodsLayout } from "../../utils/shop-content";
+import type { GoodsSection, GoodsLayout } from "../../utils/shop-content";
 import type { SearchResult } from "~~/types/product";
 
-const props = defineProps<{
-  section: GoodsSection;
-  themeDefaults: ThemeStyleDefaults;
-}>();
+const props = defineProps<{ section: GoodsSection }>();
 
-const layout = computed<GoodsLayout>(() => props.section.layout ?? props.themeDefaults.goods);
+const layout = computed<GoodsLayout>(() => goodsLayout(props.section.layout));
 const title = computed(() => props.section.title ?? "为你推荐");
 const take = computed(() => (layout.value === "masonry" ? 8 : 10));
 
@@ -711,7 +688,7 @@ const products = computed(() => data.value ?? []);
 </template>
 ```
 
-> `SearchProducts` 的 `$term` 为必填 String，传 `""`；`$take`/`$skip` 有默认值。布局切换由 style 默认驱动（淘宝→masonry、极简→single、京东→compact）。
+> `SearchProducts` 的 `$term` 为必填 String，传 `""`；`$take`/`$skip` 有默认值。布局由区块 `layout` 值决定（默认 compact，即京东紧凑卡；masonry 淘宝瀑布流 / single 单列）。
 
 - [ ] **Step 2: 创建 GoodsMasonryGrid.vue（淘宝双列大图瀑布流）**
 
@@ -852,13 +829,13 @@ pnpm typecheck
 pnpm dev
 ```
 
-Expected: 手动将 `themeId` 切到 `taobao-orange`（DevTools 改 `<html data-theme>` 不影响取套，需在 channel 配置真正生效或临时在 useShopContent 打印确认），goods 区块按 masonry 双列大图渲染；切 `modern-minimal` 单列横卡；`jd-red` 紧凑卡复用 JdProductGrid。图片全部 webp + 固定尺寸。
+Expected: 配置 goods 区块 `layout` 分别为 compact/masonry/single 时，渲染京东紧凑卡 / 淘宝双列大图瀑布流 / 极简单列横卡。图片全部 webp + 固定尺寸。
 
 - [ ] **Step 5: 提交**
 
 ```bash
 git add layers/base/app/components/home/blocks/GoodsFloor.vue layers/base/app/components/home/blocks/GoodsMasonryGrid.vue layers/base/app/components/home/blocks/GoodsSingleList.vue
-git commit -m "feat(nshop): goods 三态卡片（紧凑复用/淘宝瀑布流/极简单列）"
+git commit -m "feat(nshop): goods 三态卡片（京东紧凑复用/淘宝瀑布流/极简单列）"
 ```
 
 ---
@@ -870,7 +847,7 @@ git commit -m "feat(nshop): goods 三态卡片（紧凑复用/淘宝瀑布流/�
 
 - [ ] **Step 1: 替换硬编码 `#e6162d` 为 token**
 
-`app/pages/index.vue` 中 PC 版（`lg:block`）仍保留，但把硬编码红替换为主题 token（`text-primary` / `bg-primary`），使配色跟随 `data-theme`：
+`app/pages/index.vue` 中 PC 版（`lg:block`）保留，但把硬编码红替换为主题 token（`text-primary` / `bg-primary`），使配色跟随 `data-theme`：
 
 | 行 | 现状 | 改为 |
 |---|---|---|
@@ -905,82 +882,52 @@ git commit -m "refactor(nshop): 首页硬编码红色替换为主题 token（配
 
 > **执行者注意**：vshop 属 HBuilder X 环境，**禁止我执行构建/装依赖**。本里程碑我仅产出代码改动，由用户用 HBuilder X 编译验证。
 
-### Task 9: 装修页风格切换 + nav/goods 样式控件
+### Task 9: 装修页 nav/goods 样式控件（含淘宝风格选项）
 
 **Files:**
 - Modify: `d:\zhao\vshop\web-admin\src\templates\shared\schema.ts`
 - Modify: `d:\zhao\vshop\src\templates\shared\schema.ts`（C 端副本，同结构）
 - Modify: `d:\zhao\vshop\web-admin\src\pages\decorate\home\index.vue`
 
-- [ ] **Step 1: schema 支持 byTheme + 新区块字段**
+- [ ] **Step 1: schema 放宽可选字段**
 
-`web-admin\src\templates\shared\schema.ts` 与 `src\templates\shared\schema.ts` 同步修改：
+`web-admin\src\templates\shared\schema.ts` 与 `src\templates\shared\schema.ts` 同步修改（`byTheme` 字段不存在，仍为现有 `sections` 结构）：
 
 ```ts
-export type NavShape = 'round' | 'square';
+export type NavShape = 'square' | 'round';
 export type NavLayout = 'grid5x2' | 'grid4x2' | 'row';
 export type GoodsLayout = 'compact' | 'masonry' | 'single';
 
 export interface NavItem { label: string; icon?: string; image?: string; link?: string; }
 export interface NavSection { type: 'nav'; items: NavItem[]; shape?: NavShape; layout?: NavLayout; }
 export interface GoodsSection { type: 'goods'; title?: string; collectionId?: string; layout?: GoodsLayout; }
-export interface ShopContent { version: number; theme?: ShopTheme; sections?: ShopSection[]; byTheme?: Record<string, { sections: ShopSection[] }>; }
-
-export function isValidShopContent(data: any): data is ShopContent {
-  if (!data || typeof data !== 'object') return false;
-  if (data.version !== 1) return false;
-  // 新老结构都合法
-  if (data.byTheme && typeof data.byTheme === 'object') {
-    for (const theme of Object.values(data.byTheme)) {
-      if (!theme || !Array.isArray(theme.sections)) return false;
-      for (const sec of theme.sections) {
-        if (!isValidSection(sec)) return false;
-      }
-    }
-    return true;
-  }
-  if (!Array.isArray(data.sections)) return false;
-  for (const sec of data.sections) {
-    if (!isValidSection(sec)) return false;
-  }
-  return true;
-}
-
-function isValidSection(sec: any): boolean {
-  if (!sec || typeof sec !== 'object') return false;
-  if (!VALID_TYPES.includes(sec.type)) return false;
-  if (sec.type === 'banner' && (!Array.isArray(sec.images) || sec.images.length === 0)) return false;
-  if (sec.type === 'notice' && typeof sec.text !== 'string') return false;
-  if (sec.type === 'nav' && (!Array.isArray(sec.items) || sec.items.length === 0)) return false;
-  if (sec.type === 'goods' && sec.collectionId != null && typeof sec.collectionId !== 'string') return false;
-  if (sec.type === 'richText' && typeof sec.html !== 'string') return false;
-  return true;
-}
 ```
 
-> 注意：`goods.collectionId` 从必填改为可选（`自动推荐`），校验放宽。
+`isValidShopContent` 中 `goods` 校验放宽（collectionId 可空，兼容自动推荐）：
 
-- [ ] **Step 2: 装修页顶部加风格切换**
+```ts
+if (sec.type === 'goods' && sec.collectionId != null && typeof sec.collectionId !== 'string') return false;
+```
 
-`web-admin\src\pages\decorate\home\index.vue`：
-- 新增状态 `activeTheme = ref<'default'|'jd-red'|'taobao-orange'|'modern-minimal'>('default')` 与顶部风格 Tab（京东/淘宝/极简）。
-- 读取时：`parseShopContent(raw)` 后若为 `byTheme` 结构，`sections.value = byTheme[activeTheme]?.sections ?? []`；切换 Tab 时切换对应套（互不干扰，空套可新建）。
-- 保存时（`updateChannelCustomFields(id, { shopContent })`）写 `{ version: 1, byTheme: { [activeTheme]: { sections } } }`，并保留老 `sections` 原样（零迁移）。
+> 新区块可选字段 shape/layout 不影响 `isValidShopContent` 既有校验（仅类型声明，运行时忽略）。
 
-- [ ] **Step 3: nav / goods 区块加样式控件**
+- [ ] **Step 2: 装修页 nav 区块加样式控件**
 
-- nav 区块编辑区新增两行：
-  - 图标形状：两个按钮「圆形 / 方形」→ `sec.shape`
-  - 宫格排布：三个按钮「十宫格 / 八宫格 / 单行」→ `sec.layout`
-  - 新建 nav 时按当前风格默认预填（京东 square/grid5x2、淘宝 round/grid4x2、极简 round/row）。
-- goods 区块编辑区新增：
-  - 卡片布局：三个按钮「紧凑 / 瀑布流 / 单列」→ `sec.layout`
-  - 商品集合 ID 改为可留空（自动推荐）。
-  - 每风格 goods 区块 ≤2 的 UI 提示（性能红线）。
+`web-admin\src\pages\decorate\home\index.vue` nav 区块编辑区（第 37-57 行间）新增两行：
+- **图标形状**：两个按钮「方形(京东) / 圆形(淘宝)」↔ `sec.shape`，缺省预填 `square`。
+- **宫格排布**：三个按钮「京东十宫格 / 淘宝八宫格 / 极简单行」↔ `sec.layout`，缺省预填 `grid5x2`。
+- 新建 nav 区块（`addNav`）时预填 `{ shape: 'square', layout: 'grid5x2' }`。
+
+- [ ] **Step 3: 装修页 goods 区块加样式控件**
+
+goods 区块编辑区（第 60-69 行间）：
+- **卡片布局**：三个按钮「京东紧凑 / 淘宝瀑布流 / 极简单列」↔ `sec.layout`，缺省预填 `compact`。
+- **商品集合 ID** 改为可留空（自动推荐），`collectionId` 不填即自动推荐。
+- 区块标题 + 性能提示「每风格 goods 区块建议 ≤2」。
 
 - [ ] **Step 4: 用户 HBuilder X 编译验证**
 
-由用户在 HBuilder X 打开 `web-admin` 工程编译运行，验证：切换风格 Tab 各自维护区块、保存后 `shopContent` 为 `byTheme` 结构、nav/goods 样式控件生效。（**我绝不执行构建**）
+由用户在 HBuilder X 打开 `web-admin` 工程编译运行，验证：nav/goods 样式控件生效、保存后 `shopContent` 仍为 `{ version: 1, sections }` 含新可选字段。（**我绝不执行构建**）
 
 ---
 
@@ -997,7 +944,7 @@ function isValidSection(sec: any): boolean {
 pnpm build
 ```
 
-Expected: 构建通过。用 `Select-String .output/server/chunks -Pattern "shop-content|GoodsMasonryGrid"`（或在 `.output` 产物里搜关键词）确认新逻辑已进产物。
+Expected: 构建通过。用 `Select-String .output/server/chunks -Pattern "shop-content|GoodsMasonryGrid"` 确认新逻辑已进产物。
 
 - [ ] **Step 2: 部署（本地构建 → scp → pm2 restart，遵守部署铁律）**
 
@@ -1010,7 +957,7 @@ Expected: 本地 build → 上传 `.output/` → 服务器 `pm2 restart nshop`�
 - [ ] **Step 3: 前台验证**
 
 - 未配置装修的线上渠道首页与部署前一致（兜底生效）。
-- 用户在 vshop 后台配置「京东/淘宝」两套区块（含金刚区形状、goods 布局）并保存后，线上 nshop 按当前 `themeId` 渲染对应套；切 `taobao-orange` 整套切换（金刚区圆形双排、为你推荐双列大图瀑布流）。
+- 用户在 vshop 后台配置区块（含金刚区形状/排布、goods 布局）并保存后，线上 nshop 按配置渲染；金刚区选圆形+八宫格、为你推荐选瀑布流即呈现淘宝风格。
 
 - [ ] **Step 4: 性能对比（设计 §5.2）**
 
@@ -1036,17 +983,17 @@ git commit -m "chore(nshop): 部署积木式装修（本地构建产物）"
 
 ## 验收清单（对照设计 §验收）
 
-- [ ] 后台（vshop 装修页）能按风格（京东/淘宝/极简）分别加减区块、为金刚区/为你推荐选择样式并保存。
-- [ ] 切 `themeId=taobao-orange`：整套切换为淘宝配置（金刚区默认圆形 + 双排宫格、为你推荐双列大图瀑布流）；若淘宝套未配金刚区则无金刚区。
-- [ ] 京东风格金刚区默认方形；淘宝默认圆形；区块级选择可覆盖。
-- [ ] 老数据（仅 sections）正常显示为京东风格（零迁移）。
+- [ ] 后台（vshop 装修页）能加减区块、为金刚区/商品卡选择样式（含淘宝风格）并保存，nshop 前台按配置渲染，立即生效。
+- [ ] 金刚区选「圆形 + 八宫格」→ 淘宝风格圆形图标双排宫格；选「方形 + 十宫格」→ 京东风格（默认）。
+- [ ] 「为你推荐」选「瀑布流」→ 淘宝双列大图瀑布流；默认「紧凑」→ 京东紧凑卡。
+- [ ] 老数据（仅 sections）正常显示（零迁移）。
 - [ ] 未配置装修的租户首页与现在完全一致（兜底生效）。
 - [ ] 首页 SSR 性能无感知下降（§5.2 阈值达标）。
-- [ ] 图片全部 webp + 固定尺寸裁剪，首屏外懒加载，每风格 goods 区块 ≤2。
+- [ ] 图片全部 webp + 固定尺寸裁剪，首屏外懒加载，goods 区块 ≤2。
 - [ ] nshop 本地构建通过并部署；vshop 由用户构建。
 
 ## 风险与开放项（延续设计文档）
 
 - `SearchResult` 无销量/店铺字段，masonry 卡底行暂用「自营 + 站点名」；如需真实销量/店铺需另扩 query（后续项）。
-- 风格切换驱动取套的 `themeId` 来自 channel customFields；DevTools 手改 `<html data-theme>` 只改配色不改取套（取套看 channel 配置，天然同源不错配）。
-- vshop C 端是否也消费 `byTheme` 结构不在本计划（仅 nshop 消费；C 端 schema 已兼容新字段，零影响）。
+- **不做按风格分套**：`themeId` 只驱动配色（`data-theme`），不驱动区块集合——单套 sections（京东模板）。
+- vshop C 端是否也消费 `shopContent` 的 `sections` 新可选字段不在本计划（仅 nshop 消费；C 端 schema 已兼容新字段，零影响）。
