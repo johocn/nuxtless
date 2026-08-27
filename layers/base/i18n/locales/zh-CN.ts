@@ -8,6 +8,16 @@ export default defineI18nLocale(() => ({
       description:
         "Nuxtless is a flexible and modular starter project for headless e-commerce, designed for high performance, excellent SEO, and clean architecture. It offers ready integrations with Vendure, Nuxt UI, and Payload, type-safe code, and professional security practices — a solid foundation for any professional online store.",
     },
+    detail: {
+      reviews: '商品评价',
+      reviewsEmpty: '暂无评价，成为第一个评价的人',
+      serviceItems: ['正品保障', '极速发货', '售后无忧'],
+      promoItems: ['支持7天无理由退换', '满99元包邮'],
+      buyNow: '立即购买',
+      addToCart: '加入购物车',
+      promoSummary: '促销',
+      serviceSummary: '服务保障',
+    },
     pages: {
       index: {
         welcome: "Welcome to",
