@@ -31,6 +31,9 @@ export default defineI18nLocale(() => ({
       nearbyNoCoords: '开启定位可查看就近库存',
       nearbyError: '就近门店库存暂不可查',
       nearbyNoStock: '暂无可查看的门店库存',
+      addedToCart: '已加入购物车',
+      buyNowFailed: '购买失败，请重试',
+      stockShortage: '库存不足，已加入 {n} 件',
     },
     pages: {
       index: {
