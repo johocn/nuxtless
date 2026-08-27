@@ -23,6 +23,9 @@ fragment ProductVariantFragment on ProductVariant {
     id
     preview
   }
+  customFields {
+    videoUrl
+  }
 }
 
 fragment ProductBaseFragment on Product {
@@ -42,6 +45,7 @@ fragment ProductBaseFragment on Product {
     belongCity
     serviceCities
     displayTemplate
+    videoUrl
   }
 }
 
