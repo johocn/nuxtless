@@ -31,6 +31,9 @@ export default defineI18nLocale(() => ({
       nearbyNoCoords: 'Enable location to view nearby stock',
       nearbyError: 'Nearby stock temporarily unavailable',
       nearbyNoStock: 'No nearby store stock available',
+      addedToCart: 'Added to cart',
+      buyNowFailed: 'Purchase failed, please retry',
+      stockShortage: 'Insufficient stock, added {n} item(s)',
     },
     pages: {
       index: {
