@@ -3,13 +3,13 @@
 import { localizeText, type LocalizedText } from "../../utils/detail-config";
 
 const props = defineProps<{ text?: LocalizedText }>();
-const { t, locale } = useI18n();
+const { tm, locale } = useI18n();
 const iterator = (v: string) => [v]; // 数组转 single（本阶段只展示一条自定义或默认）
 
 const items = computed(() =>
   props.text
     ? iterator(localizeText(props.text, locale.value))
-    : t("messages.detail.promoItems"), // i18n 数组，缺失回退 default locale
+    : (tm("messages.detail.promoItems") as string[]), // i18n 数组用 tm() 取（t() 对数组会返回原 key）
 );
 </script>
 

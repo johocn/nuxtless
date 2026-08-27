@@ -17,6 +17,12 @@ export default defineI18nLocale(() => ({
       addToCart: '加入购物车',
       promoSummary: '促销',
       serviceSummary: '服务保障',
+      inStock: '有货',
+      outOfStock: '无货',
+      floorDescription: '详情',
+      floorSpecs: '参数',
+      floorReviews: '评价',
+      floorService: '售后',
     },
     pages: {
       index: {

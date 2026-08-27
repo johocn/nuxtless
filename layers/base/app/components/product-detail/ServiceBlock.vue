@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 服务/保障条：固定文案走 i18n messages.detail（缺失自动回退 default locale）
-const { t } = useI18n();
-const items = computed(() => t("messages.detail.serviceItems")); // string[]，随 locale 变化
+const { tm } = useI18n();
+const items = computed(() => tm("messages.detail.serviceItems") as string[]); // 数组用 tm()，随 locale 变化
 </script>
 
 <template>
