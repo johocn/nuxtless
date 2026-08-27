@@ -100,6 +100,7 @@ async function addToCart() {
             icon="i-lucide-zap"
           >{{ t("messages.detail.buyNow") }}</UButton>
         </div>
+        <ProductDetailServiceableCityPanel :product="product" />
       </section>
     </div>
   </div>
