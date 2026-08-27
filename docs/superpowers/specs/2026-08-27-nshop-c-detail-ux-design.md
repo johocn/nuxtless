@@ -44,7 +44,7 @@
 
 ### 数据聚合：`useProductStore.galleryAssets`
 重写为返回**有序媒体数组**，元素 `{ type: 'image' | 'video', id, src, preview? }`：
-- **视频优先**：若存在 `assetVideos`（商品或选中变体 `videoUrl` 非空），取选中变体优先、回退商品，放最前。
+- **视频优先**：若存在 `videoUrl`（商品或选中变体 `videoUrl` 非空），取选中变体优先、回退商品，放最前。
 - 其余拼接商品/变体 `assets` 图片（沿用现有"选中变体 assets → 商品 assets"回退）。
 - 纯图片场景逻辑与现状等价（不回归）。
 - `videoAutoplay` 开关：默认开（L2 配置可关，见模块3 S 表）。
