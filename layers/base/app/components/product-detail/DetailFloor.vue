@@ -98,8 +98,8 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
       >{{ x.label }}</a>
     </nav>
 
-    <!-- 双按钮吸底 -->
-    <section v-if="visible('purchase')" class="sticky bottom-0 z-20 -mx-4 mt-4 flex items-center gap-3 border-t border-gray-100 bg-white/95 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-2px_12px_rgba(0,0,0,0.06)] backdrop-blur">
+    <!-- 双按钮吸底：fixed 常显，滚动全程始终贴合视口底部 -->
+    <section v-if="visible('purchase')" class="fixed bottom-0 left-0 right-0 z-20 flex items-center gap-3 border-t border-gray-100 bg-white/95 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-2px_12px_rgba(0,0,0,0.06)] backdrop-blur">
       <UButton
         class="flex-1 justify-center text-base"
         color="secondary"
