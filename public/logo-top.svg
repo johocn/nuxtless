@@ -1,12 +1,12 @@
-<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 42">
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 178 46">
   <defs>
     <style>
       .t { font-family: Arial, "Microsoft Yahei", sans-serif; font-weight: 900; font-style: italic; }
       .r { fill: #E6162D; }
-      .sup { font-family: Arial, sans-serif; font-weight: 700; fill: #4b5563; font-size: 13px; }
+      .sup { font-family: Arial, sans-serif; font-weight: 700; fill: #4b5563; font-size: 26px; }
     </style>
   </defs>
   <title>youShop</title>
-  <text class="t r" x="0" y="32" font-size="30">youShop</text>
-  <text class="sup" x="130" y="18">JD</text>
+  <text class="t r" x="0" y="32" font-size="28">youShop</text>
+  <text class="sup" x="112" y="16">.cn</text>
 </svg>

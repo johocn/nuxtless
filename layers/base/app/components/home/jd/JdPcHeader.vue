@@ -3,6 +3,7 @@
 // 搜索复用 nshop 的 useSimpleSearch（与 SearchModal 同数据源，商品点按进详情页），
 // 无需独立的搜索结果页路由。
 import type { TopLevelCollection } from "~~/types/collection";
+import { assetSrc } from "../../../utils/image";
 
 defineProps<{ categories: TopLevelCollection[] }>();
 const localePath = useLocalePath();
@@ -64,8 +65,7 @@ function submit() {
             >
               <NuxtImg
                 v-if="item.productAsset?.preview"
-                :src="item.productAsset.preview"
-                format="webp"
+                :src="assetSrc(item.productAsset.preview, 64)"
                 class="h-8 w-8 rounded object-cover"
               />
               <UIcon v-else name="i-lucide-package" class="h-4 w-4 text-gray-400" />

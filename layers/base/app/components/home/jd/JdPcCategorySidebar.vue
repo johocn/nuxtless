@@ -2,6 +2,7 @@
 // JD 风格 PC 左侧「全部分类」侧边栏：顶部一级分类，悬浮展开二级子分类子菜单
 // 数据来源：顶部分类(collection)（GetMenuCollections 已加载到 menuCollections 状态）
 import type { TopLevelCollection } from "~~/types/collection";
+import { assetSrc } from "../../../utils/image";
 
 defineProps<{ categories: TopLevelCollection[] }>();
 const localePath = useLocalePath();
@@ -27,8 +28,7 @@ function linkFor(slug: string) {
             <span class="flex min-w-0 items-center gap-2">
               <NuxtImg
                 v-if="cat.featuredAsset?.preview"
-                :src="cat.featuredAsset.preview"
-                format="webp"
+                :src="assetSrc(cat.featuredAsset.preview, 40)"
                 class="h-5 w-5 shrink-0 rounded object-cover"
               />
               <UIcon v-else name="i-lucide-folder" class="h-4 w-4 shrink-0 text-gray-400" />

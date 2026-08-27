@@ -2,6 +2,7 @@
 // JD 风格商品楼层：标题 + 2 列紧凑商品卡（图 / 标题 / 京东价 / 销量标签）
 // 数据来源：复用 SearchProducts 商品搜索结果（与 ProductCard 同源 Vendure 数据）
 import type { SearchResult } from "~~/types/product";
+import { assetSrc } from "../../../utils/image";
 
 type SearchItem = SearchResult[number];
 
@@ -42,8 +43,9 @@ function format(currencyCode?: string | null, price?: SearchItem["priceWithTax"]
       >
         <div class="relative">
           <NuxtImg
-            :src="p.productAsset?.preview || '/images/placeholder.webp'"
-            format="webp"
+            :src="assetSrc(p.productAsset?.preview || '/images/placeholder.webp', 300)"
+            width="300"
+            loading="lazy"
             class="aspect-square w-full bg-gray-100 object-cover"
           />
           <span class="absolute bottom-1 left-1 rounded bg-primary px-1 py-0.5 text-[9px] text-white">

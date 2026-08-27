@@ -19,6 +19,7 @@ import JdFunctionGrid from "../../layers/base/app/components/home/jd/JdFunctionG
 import JdBrandFloor from "../../layers/base/app/components/home/jd/JdBrandFloor.vue";
 import JdTabBar from "../../layers/base/app/components/home/jd/JdTabBar.vue";
 import JdAllCategoryDrawer from "../../layers/base/app/components/home/jd/JdAllCategoryDrawer.vue";
+import HomeBlockRenderer from "../../layers/base/app/components/home/HomeBlockRenderer.vue";
 
 const { t } = useI18n();
 const localePath = useLocalePath();
@@ -42,11 +43,28 @@ const bannerSlides = computed(() =>
     })),
 );
 
-// 3) 商品楼层：热门 + 为你推荐（同一 Vendure 搜索，分页错开）
-const { data: hot } = await useAsyncGql("SearchProducts", { term: "", take: 10, skip: 0 });
-const { data: more } = await useAsyncGql("SearchProducts", { term: "", take: 10, skip: 10 });
-const hotProducts = computed(() => hot.value?.search?.items ?? []);
-const moreProducts = computed(() => more.value?.search?.items ?? []);
+// 3) 装修配置：GetChannelTheme → sections（useShopContent 内部单个 useAsyncData + 单次 useAsyncGql）
+const { sections: shopSections } = useShopContent();
+const hasBlocks = computed(() => shopSections.value.length > 0);
+
+// 4) 商品楼层：仅未配置装修（兜底京东布局）才发一次 SearchProducts(take=20) 并切片；
+//    积木配置下由 goods 区块各自取数，这里不发兜底搜索（守请求数红线）。
+//    注意：单个 useAsyncData handler 内只 await 一次 useAsyncGql——连续 await 多个
+//    useAsyncGql 会丢失 Nuxt 实例上下文（nuxt 4 withAsyncContext 跨 await 限制），
+//    导致 SSR 抛 "[nuxt] A composable that requires access to the Nuxt instance..." 错误、数据被移除。
+const { data: fallbackSearch } = await useAsyncData(
+  "home-fallback-search",
+  async () => {
+    if (hasBlocks.value) return { hot: [], more: [] };
+    const r = await useAsyncGql("SearchProducts", { term: "", take: 20, skip: 0 });
+    const items = r.data.value?.search?.items ?? [];
+    return { hot: items.slice(0, 10), more: items.slice(10, 20) };
+  },
+  { server: true },
+);
+
+const hotProducts = computed(() => fallbackSearch.value?.hot ?? []);
+const moreProducts = computed(() => fallbackSearch.value?.more ?? []);
 
 // 4) PC 右栏静态数据：快讯 + 小广告
 const news = [
@@ -98,7 +116,7 @@ const entries = [
           <!-- 京东快讯 -->
           <div class="bg-white shadow-sm">
             <div class="flex items-center justify-between border-b border-gray-100 px-3 py-2">
-              <h3 class="text-sm font-bold text-[#e6162d]">京东快讯</h3>
+              <h3 class="text-sm font-bold text-primary">京东快讯</h3>
               <span class="text-xs text-gray-400">更多 ›</span>
             </div>
             <ul class="px-3 py-1 text-xs text-gray-600">
@@ -107,10 +125,10 @@ const entries = [
                 :key="i"
                 class="flex items-center gap-2 border-b border-dashed border-gray-100 py-1.5 last:border-0"
               >
-                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#e6162d]" />
+                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                 <span class="truncate">{{ n }}</span>
                 <template v-if="i === 1">
-                  <span class="ml-auto shrink-0 rounded bg-[#e6162d] px-1 text-[10px] text-white">NEW</span>
+                  <span class="ml-auto shrink-0 rounded bg-primary px-1 text-[10px] text-white">NEW</span>
                 </template>
               </li>
             </ul>
@@ -141,9 +159,9 @@ const entries = [
           v-for="e in entries"
           :key="e.label"
           :to="localePath(e.link)"
-          class="flex flex-col items-center gap-1 text-xs text-gray-700 transition hover:text-[#e6162d]"
+          class="flex flex-col items-center gap-1 text-xs text-gray-700 transition hover:text-primary"
         >
-          <span class="flex h-11 w-11 items-center justify-center rounded-full bg-[#fdeaea] text-[#e6162d]">
+          <span class="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
             <UIcon :name="e.icon" class="h-5 w-5" />
           </span>
           <span class="truncate">{{ e.label }}</span>
@@ -167,29 +185,32 @@ const entries = [
     </div>
   </main>
 
-  <!-- ═══ 移动端降级版（<1024px 显示，保持原单列布局 + 京东加法模块）═══ -->
+  <!-- ═══ 移动端降级版（<1024px 显示）：有积木配置则动态渲染，否则兜底京东布局 ═══ -->
   <main class="mx-auto max-w-md bg-[#f5f5f5] pb-20 lg:hidden" data-layout="mobile">
-    <!-- 分类导航（横向可滚动条） -->
-    <JdCategoryNav :categories="topCategories" />
-    <!-- 轮播 Banner -->
-    <JdBannerCarousel :slides="bannerSlides" />
-    <!-- 功能宫格（十宫格，用已有功能） -->
-    <JdFunctionGrid />
-    <!-- 品牌闪购（横向品牌墙，复用分类封面图） -->
-    <JdBrandFloor />
-    <!-- 品质专区 -->
-    <div class="mt-2">
-      <JdPlazaGrid v-if="topCategories.length" :categories="topCategories" />
-    </div>
-    <!-- 商品楼层 -->
-    <div class="mt-2">
-      <JdProductGrid
-        v-if="hotProducts.length"
-        :title="t('messages.shop.popularProducts')"
-        :products="hotProducts"
-      />
-      <JdProductGrid v-if="moreProducts.length" title="为你推荐" :products="moreProducts" />
-    </div>
+    <HomeBlockRenderer v-if="hasBlocks" :sections="shopSections" />
+    <template v-else>
+      <!-- 分类导航（横向可滚动条） -->
+      <JdCategoryNav :categories="topCategories" />
+      <!-- 轮播 Banner -->
+      <JdBannerCarousel :slides="bannerSlides" />
+      <!-- 功能宫格（十宫格，用已有功能） -->
+      <JdFunctionGrid />
+      <!-- 品牌闪购（横向品牌墙，复用分类封面图） -->
+      <JdBrandFloor />
+      <!-- 品质专区 -->
+      <div class="mt-2">
+        <JdPlazaGrid v-if="topCategories.length" :categories="topCategories" />
+      </div>
+      <!-- 商品楼层 -->
+      <div class="mt-2">
+        <JdProductGrid
+          v-if="hotProducts.length"
+          :title="t('messages.shop.popularProducts')"
+          :products="hotProducts"
+        />
+        <JdProductGrid v-if="moreProducts.length" title="为你推荐" :products="moreProducts" />
+      </div>
+    </template>
   </main>
 
   <!-- ═══ 移动端底部固定导航 + 全部分类抽屉（仅移动端）═══ -->

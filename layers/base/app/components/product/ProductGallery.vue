@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { assetSrc } from "../../utils/image";
+
 const { product, selectedVariant, galleryAssets } =
   storeToRefs(useProductStore());
 
@@ -36,9 +38,8 @@ const { openPhotoSwipe } = useProductLightbox({ select });
       @select="onSelect"
     >
       <NuxtImg
-        format="webp"
         class="mx-auto h-62.5 cursor-pointer rounded-lg object-contain transition-transform hover:opacity-90 sm:h-87.5 sm:object-cover"
-        :src="item.preview"
+        :src="assetSrc(item.preview, 700)"
         :alt="`${selectedVariant?.name || product?.name || 'Product image'} – Slide ${activeIndex + 1}`"
         :loading="activeIndex === 0 ? 'eager' : 'lazy'"
         :preload="activeIndex === 0"
@@ -60,9 +61,8 @@ const { openPhotoSwipe } = useProductLightbox({ select });
         @click="select(index)"
       >
         <NuxtImg
-          format="webp"
           class="h-11.25 w-11.25 rounded-lg object-cover"
-          :src="item.preview"
+          :src="assetSrc(item.preview, 90)"
           :alt="`${selectedVariant?.name || product?.name || 'Product image'} – Thumb ${index + 1}`"
           loading="eager"
           preload

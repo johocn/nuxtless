@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { OrderLine } from "~~/types/order";
+import { assetSrc } from "../../utils/image";
 
 const { line } = defineProps<{
   line: OrderLine;
@@ -19,12 +20,11 @@ const remove = () => {
   <div class="flex gap-4 border-b py-4">
     <div class="basis-[20%]">
       <NuxtImg
-        :src="line?.featuredAsset?.preview"
+        :src="assetSrc(line?.featuredAsset?.preview, 128)"
         :alt="line?.productVariant.name ?? 'Product Image'"
         class="h-full rounded object-cover"
-        width="64"
-        format="webp"
-        :quality="80"
+        width="128"
+        loading="lazy"
       />
     </div>
 

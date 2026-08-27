@@ -4,6 +4,11 @@ const colorMode = useColorMode();
 const { t, locale } = useI18n();
 const toast = useToast();
 
+// Set initial locale for Vendure requests (must run before any useAsyncGql,
+// otherwise queries like GetChannelTheme fall back to the baked GQL_HOST=localhost
+// which is NOT proxied in production and returns 404, so the theme stays "default")
+useGqlHost(`${useGqlHostUrl()}?languageCode=${locale.value}`);
+
 const { config: themeConfig, loadTheme } = useChannelTheme();
 // 渠道级固定主题：SSR 首帧即写入 <html data-theme>，避免 FOUC
 useHead(() => ({ htmlAttrs: { "data-theme": themeConfig.value } }));
@@ -15,9 +20,6 @@ const ogColorMode = computed<"dark" | "light">(() =>
 
 const orderStore = useOrderStore();
 const { error } = storeToRefs(orderStore);
-
-// Set initial locale for Vendure requests
-useGqlHost(`${useGqlHostUrl()}?languageCode=${locale.value}`);
 
 // Create shared menu collections. Could be rewritten as composable.
 const { data: menuCollections } = await useAsyncGql("GetMenuCollections");

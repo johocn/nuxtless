@@ -16,6 +16,7 @@ query GetChannelTheme {
   activeChannel {
     customFields {
       themeId
+      shopContent
     }
   }
 }

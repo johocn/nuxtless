@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // 简单实现路径：读取 data.items（[{name, slug, imageUrl, price}]）横向渲染卡片，
 // 避免额外 GraphQL 取数（productIds -> GetProductsByIds）的复杂度。
+import { assetSrc } from "../../../utils/image";
+
 const props = defineProps<{
   block: {
     id: string;
@@ -22,9 +24,8 @@ const localePath = useLocalePath();
       >
         <NuxtImg
           v-if="it.imageUrl"
-          format="webp"
           class="h-28 w-full object-cover"
-          :src="it.imageUrl"
+          :src="assetSrc(it.imageUrl, 300)"
           :alt="it.name"
           loading="lazy"
         />

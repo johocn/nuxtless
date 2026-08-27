@@ -10,6 +10,7 @@ import {
   canFillTracking,
 } from "../../../utils/after-sales-state";
 import { formatMoney } from "../../../utils/format-money";
+import { assetSrc } from "../../../utils/image";
 
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
@@ -26,9 +27,12 @@ const amount = computed(() => (request.value ? formatMoney(request.value.refundA
 const progress = computed(() => (request.value ? afterSalesProgressIndex(request.value.state) : -1));
 const preview = computed(
   () =>
-    request.value?.orderLine?.featuredAsset?.preview ??
-    request.value?.orderLine?.productVariant?.featuredAsset?.preview ??
-    "",
+    assetSrc(
+      request.value?.orderLine?.featuredAsset?.preview ??
+        request.value?.orderLine?.productVariant?.featuredAsset?.preview ??
+        "",
+      128,
+    ),
 );
 
 async function onCancel() {
@@ -73,7 +77,7 @@ async function onCancel() {
         :src="preview"
         :alt="request.orderLine?.productVariant?.name ?? ''"
         class="h-20 w-20 rounded object-cover"
-        format="webp"
+        loading="lazy"
       />
       <div class="min-w-0">
         <p class="font-medium">{{ t(typeKey) }}</p>

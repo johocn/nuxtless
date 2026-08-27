@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { assetSrc } from "../utils/image";
+
 const { t } = useI18n();
 const localePath = useLocalePath();
 const open = ref(false);
@@ -60,7 +62,7 @@ watch(error, (err) => {
             <UButton
               variant="outline"
               :avatar="{
-                src: item.productAsset?.preview,
+                src: assetSrc(item.productAsset?.preview, 96),
                 size: '3xl',
               }"
               :to="localePath(`/product/${item.slug}`)"
