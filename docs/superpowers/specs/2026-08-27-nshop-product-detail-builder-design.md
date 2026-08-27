@@ -71,7 +71,12 @@
 
 ```ts
 export type DetailLayout = 'classic' | 'floor' | 'dualBuy';
-export interface DetailBlockCfg { visible?: boolean; /* L3 样式字段预留 */ }
+// 可翻译文案：后台填字符串 = 各语言共用（或仅当缺失时兜底）；填对象 { language: 文本 } 逐语言
+export type LocalizedText = string | Record<string, string>;
+export interface DetailBlockCfg {
+  visible?: boolean;
+  /* L3 样式字段预留 */ title?: LocalizedText; text?: LocalizedText;
+}
 export interface DetailConfig { version: number; layout?: DetailLayout; blocks?: Record<string, DetailBlockCfg>; }
 
 const BLOCK_DEFAULT_VISIBLE: Record<string, boolean> = {
@@ -82,9 +87,45 @@ const BLOCK_DEFAULT_VISIBLE: Record<string, boolean> = {
 export function parseDetailConfig(raw): DetailConfig | null; // JSON + 结构校验，坏则 null
 export function detailLayout(cfg): DetailLayout;             // 非法/缺省 → 'classic'
 export function blockVisible(cfg, key): boolean;             // 层1块定制 → 层2内建默认 → true
+export function localizeText(text, locale, defaultLocale?): string; // 见「国际化」节
 ```
 
-兜底设计：`blockVisible = cfg.blocks?.[key]?.visible ?? BLOCK_DEFAULT_VISIBLE[key] ?? true`。凡缺省字段一律回退到非空层。
+兜底设计：`blockVisible = cfg.blocks?.[key]?.visible ?? BLOCK_DEFAULT_VISIBLE[key] ?? true`。凡缺省字段（含 `title/text` 文案）一律回退到非空层。
+
+## 国际化多语言（横切维度）
+
+四级体系描述的是**结构层级**；国际化是贯穿 L1–L3 的**横切维度**，作用于所有「用户可见/后台可编辑文案」，不改动层级结构。现有 i18n 能力：10 种语言、default `zh-CN`、字典文件 `layers/base/i18n/locales/*.ts`、模板用 `t('messages.*')`。
+
+将文案分两类，分别接入兜底链：
+
+| 文案来源 | 声明位置 | 解析方式 |
+|---|---|---|
+| 前端固定文案 | i18n 字典 `messages.detail.*`（新增命名空间，各语种文件补 key） | 模板 `t('messages.detail.xxx')`，缺失自动回退 default locale |
+| 后台可编辑文案 | `detailConfig` / 未来 `shopContent` 的 `title/text` 字段，类型 `LocalizedText` | `localizeText(text, locale)` |
+
+**_本地化纯函数 `localizeText`（SSR 友好，并入 detail-config.ts）：** 逐级回退：
+
+```ts
+export function localizeText(
+  text: LocalizedText | undefined | null,
+  locale: string,
+  defaultLocale = "zh-CN",
+): string {
+  if (typeof text === "string") return text;              // 字符串 = 各语言共用
+  if (!text) return "";                                     // 缺省 → 空（由块内建占位兜底）
+  return text[locale] ?? text[defaultLocale] ?? Object.values(text)[0] ?? "";
+}
+```
+
+**兜底链（含语言维度，具体→回退）：**
+
+```
+当前 locale 的文案 → defaultLocale 文案 → 无语言对象首个值 → 块内建占位(final)  → i18n 字典静态文案 → 全局默认
+```
+
+**i18n 配置补充：** base 层 `nuxt.config.ts` 的 `i18n` 显式加 `fallbackLocale: 'zh-CN'`，保证个别语种 key 缺失时回退中文而非显示 key 本身；`messages.detail.*` key 至少补齐 `zh-CN` 与 `en-US`（其余语言缺失走 fallback）。
+
+**本次落地范围：** 详情页新增块（PriceBlock/PromoBlock/ServiceBlock/ReviewsSection）的文案改用 i18n 静态 key + `localizeText` 支持台可编辑多语言字段；首页 `shopContent` 文案多语言化与其余页留后续（同一套 `LocalizedText/localizeText` 模式直接复用）。
 
 ## 渲染器：`ProductDetailRenderer.vue`
 
@@ -180,12 +221,18 @@ theme.css 从单一 `--ui-primary` 扩为统一语义令牌集，京东/淘宝�
 
 **成功标准**：三版式后台可指定并正确渲染；数据仍走 `useProductStore` 单一状态；无新增 typecheck 错误；无 detailConfig 时行为与现状一致。
 
+## 国际化落地边界
+
+- **本次**：详情页新增块的固定文案进 i18n 字典 `messages.detail.*`（至少 zh-CN/en-US，其余走 `fallbackLocale`）；`LocalizedText` 支持台可编辑多语言字段，`localizeText` 逐级回退。
+- **后续**：首页 `shopContent`、分类页 `categoryConfig` 的文案多语言化（同一套 `LocalizedText/localizeText` 模式复用）；其余语种字典补 key。
+
 ## 不在本次范围（后续迭代）
 
 - 分类页积木化（`categoryConfig`）
 - 后台自由排序/重排详情功能块（"解析后重排"）
 - L1 令牌后台可编辑（改为运行时覆盖）
 - 首页块 L3 样式字段全面补齐（本次仅详情块埋最小字段）
+- 首页/其余页文案多语言化（见「国际化落地边界」）
 
 ## 逐步实现（写入实现计划后细化为里程碑）
 
