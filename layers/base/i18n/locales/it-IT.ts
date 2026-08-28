@@ -1,5 +1,7 @@
-export default defineI18nLocale(() => ({
-  messages: {
+import { zhFallbackLocale } from "./merge";
+
+export default defineI18nLocale(() =>
+  zhFallbackLocale({
     site: {
       title: "Nuxtless",
       tagline: "Nuxt Level Headless E-commerce",
@@ -7,6 +9,55 @@ export default defineI18nLocale(() => ({
         "Una base moderna, veloce e sicura per creare negozi online headless con Nuxt e Vendure.",
       description:
         "Nuxtless è un progetto iniziale flessibile e modulare per l’e-commerce headless, progettato per garantire alte prestazioni, un eccellente SEO e un’architettura pulita. Offre integrazioni pronte con Vendure, Nuxt UI e Payload, codice sicuro e tipizzato e pratiche professionali di sicurezza — una base solida per qualsiasi negozio online professionale.",
+    },
+    nav: {
+      home: "Home",
+      categories: "Categorie",
+      allCategories: "Tutte le categorie",
+      allProducts: "Tutti i prodotti",
+      my: "Il mio account",
+      cart: "Carrello",
+      search: "Cerca",
+      searchPlaceholder: "Cosa cerchi?…",
+      loading: "Caricamento…",
+      selectCity: "Scegli la città",
+      locating: "Geolocalizzazione…",
+      hotCities: "Città popolari",
+      noCityData: "Nessuna città disponibile per questa provincia",
+      more: "Altro ›",
+      brandFlash: "Flash vendite del marchio",
+      reloadLocation: "Rilocalizza",
+      backToProvince: "Torna alle province",
+      allProvinces: "Tutte le province",
+      viewMore: "Mostra altro",
+      categoryNav: "Navigazione categorie",
+      bottomNav: "Navigazione inferiore",
+      previous: "Indietro",
+      next: "Avanti",
+      noMatchProducts: "Nessun prodotto corrispondente",
+      qualityZone: "Zona qualità",
+    },
+    home: {
+      newsTitle: "Notizie JD",
+      adsAlt: "Pubblicità promozionale",
+      news: [
+        "Spedizione gratuita su tutti gli articoli in proprio oltre 99 ¥",
+        "Sconto di 20 ¥ sul primo ordine dei nuovi utenti",
+        "Scambio vecchio con nuovo in corso per elettronica ed elettrodomestici",
+        "Le offerte lampo di oggi iniziano alle 20:00",
+        "Reso senza motivo entro 7 giorni",
+      ],
+      entryLabels: [
+        "Telefonia e digitale",
+        "Elettrodomestici",
+        "Prodotti per la casa",
+        "Abbigliamento, calzature e borse",
+        "Bellezza e cura personale",
+        "Cibo e prodotti freschi",
+        "Sport e outdoor",
+        "Regali personalizzati",
+        "Tutti i prodotti",
+      ],
     },
     pages: {
       index: {
@@ -19,6 +70,7 @@ export default defineI18nLocale(() => ({
       },
     },
     general: {
+      recommendations: 'Consigliato per te',
       cancel: 'Annulla',
       save: 'Salva',
       colorMode: "Modalità colore",
@@ -64,6 +116,12 @@ export default defineI18nLocale(() => ({
       footer: {
         unstack: "Creato con ❤️ su Unstack",
       },
+    },
+    checkout: {
+      deliveryLogistic: "Spedizione logistica",
+      chooseCarrier: "Scelga la modalità di consegna",
+      pickupFillFromLocation:
+        "Ritiro selezionato: verrà mostrato l'elenco dei punti di ritiro e l'indirizzo di consegna verrà nascosto automaticamente",
     },
     account: {
       password: "Password",
@@ -273,5 +331,5 @@ export default defineI18nLocale(() => ({
       orderNotFound:
         "Non siamo riusciti a trovare il tuo ordine. Accedi per visualizzare i tuoi ordini.",
     },
-  },
-}));
+  }),
+);
