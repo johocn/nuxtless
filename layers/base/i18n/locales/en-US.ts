@@ -168,6 +168,13 @@ export default defineI18nLocale(() => ({
       contactName: "Contact name",
       phone: "Phone",
       afterSales: "After-Sales",
+      noDefaultAddress: "No default address",
+      profileInfo: "Profile Information",
+      phoneLabel: "Phone",
+      addressLabel: "Address",
+      accountActions: "Account Actions",
+      verifyingAccount: "Verifying your account...",
+      verificationComplete: "Verification complete. Redirecting…",
     },
     afterSales: {
       title: "After-Sales",
@@ -253,6 +260,9 @@ export default defineI18nLocale(() => ({
       quantity: "Quantity",
       checkout: "Checkout",
       searchProducts: "Search Products",
+      searchPlaceholder: "Type to search...",
+      searchLoading: "Loading",
+      searchProductsAria: "Search products",
       couponCode: "Coupon Code",
       noProductsFound: {
         title: "No products found",
