@@ -22,6 +22,8 @@ export const availableLocales: AppLocale[] = [
   { code: "fr", language: "fr-FR", file: "fr-FR.ts", name: "Français 🇫🇷" },
   { code: "it", language: "it-IT", file: "it-IT.ts", name: "Italiano 🇮🇹" },
   { code: "pt", language: "pt-BR", file: "pt-BR.ts", name: "Português 🇧🇷" },
+  { code: "ja", language: "ja-JP", file: "ja-JP.ts", name: "日本語 🇯🇵" },
+  { code: "ko", language: "ko-KR", file: "ko-KR.ts", name: "한국어 🇰🇷" },
 ];
 
 function getEnabledLocales(): string[] | null {
