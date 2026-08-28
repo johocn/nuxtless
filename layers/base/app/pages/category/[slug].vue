@@ -251,7 +251,9 @@ useSchemaOrg([
 
     <!-- Collection Products -->
     <section class="mb-8" aria-labelledby="category-products-heading">
-      <h2 id="category-products-heading" class="sr-only">Products</h2>
+      <h2 id="category-products-heading" class="sr-only">
+        {{ t("messages.shop.browseOurProducts") }}
+      </h2>
       <div class="mb-4 flex items-center justify-between gap-2">
         <SortBar v-model="sort" />
         <UButton

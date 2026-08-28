@@ -305,7 +305,9 @@ onMounted(async () => {
 
     <!-- 4. Actions -->
     <section aria-labelledby="actions-heading" class="no-print mb-14">
-      <h2 id="actions-heading" class="sr-only">Actions</h2>
+      <h2 id="actions-heading" class="sr-only">
+        {{ t("messages.general.actions") }}
+      </h2>
       <UButton variant="soft" @click="printReceipt">{{
         t("messages.general.printReceipt")
       }}</UButton>
