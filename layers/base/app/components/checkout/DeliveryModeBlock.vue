@@ -237,6 +237,9 @@ flow.submitFns.submitDelivery = async () => {
             {{ modeLabel[m] }}
           </button>
         </div>
+        <p v-if="!isShippingMode(mode)" class="mt-2 text-xs text-neutral-400 dark:text-neutral-500">
+          {{ t("messages.checkout.pickupFillFromLocation") }}
+        </p>
       </div>
     </template>
   </section>
