@@ -31,7 +31,9 @@ onMounted(async () => {
     </header>
 
     <section aria-labelledby="profile-info" class="mb-14 flex flex-col gap-4">
-      <h2 id="profile-info" class="sr-only">Profile Information</h2>
+      <h2 id="profile-info" class="sr-only">
+        {{ t("messages.account.profileInfo") }}
+      </h2>
       <div class="flex items-center gap-4">
         <UAvatar
           :alt="`${activeCustomer?.firstName} ${activeCustomer?.lastName}`"
@@ -47,7 +49,7 @@ onMounted(async () => {
           {{ t("messages.account.myPhone") }}:
           {{ activeCustomer?.phoneNumber }}
         </dd>
-        <dt class="sr-only">Address</dt>
+        <dt class="sr-only">{{ t("messages.account.addressLabel") }}</dt>
         <dd class="flex gap-2">
           {{ t("messages.account.myAddress") }}:
           <address v-if="activeCustomer?.addresses?.[0]" class="wrap-anywhere">
@@ -61,7 +63,9 @@ onMounted(async () => {
     </section>
 
     <section aria-labelledby="account-actions" class="mb-14">
-      <h2 id="account-actions" class="sr-only">Account Actions</h2>
+      <h2 id="account-actions" class="sr-only">
+        {{ t("messages.account.accountActions") }}
+      </h2>
       <UButton :to="localePath('/account/orders')" class="px-7">
         {{ t("messages.account.orders") }}
       </UButton>
