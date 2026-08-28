@@ -8,6 +8,7 @@
 // 仅移动端显示(lg:hidden)，PC 端保留原顶部导航。
 const route = useRoute();
 const localePath = useLocalePath();
+const { t } = useI18n();
 
 const isCartOpen = useState<boolean>("isCartOpen", () => false);
 const isAllCatOpen = useState<boolean>("isAllCatOpen", () => false);
@@ -27,7 +28,7 @@ const active = computed(() => {
 <template>
   <nav
     class="fixed inset-x-0 bottom-0 z-[60] grid grid-cols-4 border-t border-gray-100 bg-white pb-[env(safe-area-inset-bottom)] text-xs lg:hidden"
-    aria-label="底部导航"
+    :aria-label="t('messages.nav.bottomNav')"
   >
     <NuxtLink
       :to="localePath('/')"
@@ -38,7 +39,7 @@ const active = computed(() => {
         :name="active === 'home' ? 'i-lucide-home' : 'i-lucide-home'"
         class="h-6 w-6"
       />
-      <span>首页</span>
+      <span>{{ t('messages.nav.home') }}</span>
     </NuxtLink>
 
     <button
@@ -47,7 +48,7 @@ const active = computed(() => {
       @click="isAllCatOpen = true"
     >
       <UIcon name="i-lucide-layout-grid" class="h-6 w-6" />
-      <span>分类</span>
+      <span>{{ t('messages.nav.categories') }}</span>
     </button>
 
     <button
@@ -64,7 +65,7 @@ const active = computed(() => {
           {{ cartCount }}
         </span>
       </span>
-      <span>购物车</span>
+      <span>{{ t('messages.nav.cart') }}</span>
     </button>
 
     <NuxtLink
@@ -73,7 +74,7 @@ const active = computed(() => {
       :class="active === 'account' ? 'text-primary' : 'text-gray-500'"
     >
       <UIcon name="i-lucide-user" class="h-6 w-6" />
-      <span>我的</span>
+      <span>{{ t('messages.nav.my') }}</span>
     </NuxtLink>
   </nav>
 </template>

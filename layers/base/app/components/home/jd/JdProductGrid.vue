@@ -32,7 +32,7 @@ function format(currencyCode?: string | null, price?: SearchItem["priceWithTax"]
         <span class="inline-block h-3.5 w-1 rounded bg-primary" />
         {{ title }}
       </h2>
-      <NuxtLink :to="localePath('/')" class="text-xs text-gray-400">更多 ›</NuxtLink>
+      <NuxtLink :to="localePath('/')" class="text-xs text-gray-400">{{ t('messages.nav.more') }}</NuxtLink>
     </div>
     <div class="grid grid-cols-2 gap-2 px-3 pb-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 xl:gap-3">
       <NuxtLink

@@ -5,6 +5,7 @@ const props = defineProps<{
   categories: Array<{ name: string; slug: string }>;
 }>();
 const localePath = useLocalePath();
+const { t } = useI18n();
 
 function linkFor(cat: { slug?: string }) {
   return cat.slug ? localePath(`/category/${cat.slug}`) : localePath("/");
@@ -14,9 +15,9 @@ function linkFor(cat: { slug?: string }) {
 <template>
   <nav
     class="no-scrollbar sticky top-[52px] z-30 flex items-center gap-2 overflow-x-auto bg-primary px-3 py-2"
-    aria-label="分类导航"
+    :aria-label="t('messages.nav.categoryNav')"
   >
-    <span class="shrink-0 text-sm font-bold text-white">全部</span>
+    <span class="shrink-0 text-sm font-bold text-white">{{ t('messages.nav.allProducts') }}</span>
     <template v-for="cat in categories" :key="cat.slug + cat.name">
       <NuxtLink
         :to="linkFor(cat)"

@@ -4,6 +4,7 @@
 import type { TopLevelCollection } from "~~/types/collection";
 import { assetSrc } from "../../../utils/image";
 
+const { t } = useI18n();
 defineProps<{ categories: TopLevelCollection[] }>();
 const localePath = useLocalePath();
 
@@ -15,10 +16,10 @@ function linkFor(slug: string) {
 <template>
   <aside class="bg-white shadow-sm">
     <div class="flex items-center justify-between bg-[#e6162d] px-4 py-2.5">
-      <span class="text-sm font-semibold text-white">全部分类</span>
-      <span class="text-xs text-white/80">全部商品</span>
+      <span class="text-sm font-semibold text-white">{{ t('messages.nav.allCategories') }}</span>
+      <span class="text-xs text-white/80">{{ t('messages.nav.allProducts') }}</span>
     </div>
-    <nav aria-label="全部分类">
+    <nav :aria-label="t('messages.nav.allCategories')">
       <template v-for="cat in categories" :key="cat.slug">
         <div class="group relative">
           <NuxtLink

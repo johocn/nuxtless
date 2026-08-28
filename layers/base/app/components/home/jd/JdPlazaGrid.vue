@@ -12,6 +12,7 @@ defineProps<{
   }>;
 }>();
 const localePath = useLocalePath();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -19,7 +20,7 @@ const localePath = useLocalePath();
     <div class="flex items-center justify-between px-3 pb-2 pt-3">
       <h2 class="flex items-center gap-1 text-base font-bold">
         <span class="inline-block h-3.5 w-1 rounded bg-primary" />
-        品质专区
+        {{ t('messages.nav.qualityZone') }}
       </h2>
     </div>
     <div class="grid grid-cols-2 gap-2 px-3 pb-3 md:grid-cols-4 xl:pt-1">
