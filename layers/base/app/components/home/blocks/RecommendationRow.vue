@@ -14,7 +14,7 @@ const localePath = useLocalePath();
 </script>
 <template>
   <section v-if="(block.data?.items ?? []).length" class="mx-auto max-w-5xl px-4 py-8" aria-label="推荐">
-    <h2 class="mb-4 text-2xl font-semibold">为你推荐</h2>
+    <h2 class="mb-4 text-2xl font-semibold">{{ t('messages.general.recommendations') }}</h2>
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <NuxtLink
         v-for="(it, index) in block.data?.items ?? []"

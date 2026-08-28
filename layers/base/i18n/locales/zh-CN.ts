@@ -56,6 +56,7 @@ export default defineI18nLocale(() => ({
       serviceCitiesTitle: '可购买城市',
       nationwide: '全城配送',
       nearbyLoading: '正在查询就近库存…',
+      nearbyTitle: '就近库存',
       nearbyNoCoords: '开启定位可查看就近库存',
       nearbyError: '就近门店库存暂不可查',
       nearbyNoStock: '暂无可查看的门店库存',

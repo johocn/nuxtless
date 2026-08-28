@@ -8,9 +8,10 @@ import type { GoodsSection, GoodsLayout } from "../../../utils/shop-content";
 import type { SearchResult } from "~~/types/product";
 
 const props = defineProps<{ section: GoodsSection }>();
+const { t } = useI18n();
 
 const layout = computed<GoodsLayout>(() => goodsLayout(props.section.layout));
-const title = computed(() => props.section.title ?? "为你推荐");
+const title = computed(() => props.section.title ?? t("messages.general.recommendations"));
 const take = computed(() => (layout.value === "masonry" ? 8 : 10));
 
 // 按 collectionSlug 取 key：同 collection 的多个 goods 区块 SSR 不去重各自查一次（受后台"每风格商品区块 ≤2"约束）
