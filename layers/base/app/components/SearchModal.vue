@@ -39,12 +39,12 @@ watch(error, (err) => {
         icon="i-lucide-search"
         size="lg"
         variant="ghost"
-        placeholder="Type to search..."
+        :placeholder="$t('messages.shop.searchPlaceholder')"
         class="mb-4 w-full"
-        aria-label="Search products"
+        :aria-label="$t('messages.shop.searchProductsAria')"
       />
       <div>
-        <p v-if="pending">Loading</p>
+        <p v-if="pending">{{ $t('messages.shop.searchLoading') }}</p>
 
         <div v-else-if="error" role="alert">
           <p class="text-red-500">
