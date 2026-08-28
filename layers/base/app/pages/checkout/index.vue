@@ -184,7 +184,9 @@ onMounted(() => {
 
     <div v-if="(activeOrder?.lines.length ?? 0) < 1">
       <section aria-labelledby="cart-empty-title">
-        <h2 id="cart-empty-title" class="sr-only">Cart empty</h2>
+        <h2 id="cart-empty-title" class="sr-only">
+          {{ t("messages.shop.cartEmpty") }}
+        </h2>
         <CartEmpty />
       </section>
 
@@ -250,7 +252,9 @@ onMounted(() => {
 
           <!-- Payment -->
           <section id="payment" aria-labelledby="payment-heading">
-            <h2 id="payment-heading" class="sr-only">Payment</h2>
+            <h2 id="payment-heading" class="sr-only">
+              {{ t("messages.general.paymentMethod") }}
+            </h2>
 
             <div id="payment-errors" role="status" aria-live="polite" />
 
