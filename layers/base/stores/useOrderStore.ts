@@ -170,7 +170,7 @@ export const useOrderStore = defineStore("order", () => {
   }
 
   async function setCustomerForOrder(input: {
-    emailAddress: string;
+    emailAddress?: string;
     firstName: string;
     lastName: string;
   }): Promise<void> {
@@ -198,6 +198,7 @@ export const useOrderStore = defineStore("order", () => {
     fullName?: string;
     streetLine1: string;
     streetLine2?: string;
+    province?: string;
     city?: string;
     postalCode?: string;
     countryCode: string;

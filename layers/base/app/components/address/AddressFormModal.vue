@@ -31,7 +31,7 @@ const countries = computed(
 
 // 默认空态表单（新增）；编辑时父组件通过 state 注入
 const schema = object({
-  fullName: pipe(string(), nonEmpty(t("messages.billing.firstName") + " required")),
+  fullName: pipe(string(), nonEmpty(t("messages.billing.recipient") + " required")),
   streetLine1: pipe(string(), nonEmpty(t("messages.billing.address1") + " required")),
   streetLine2: optional(string()),
   city: optional(string()),
