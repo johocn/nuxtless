@@ -34,7 +34,7 @@ router.afterEach(() => {
     </template>
 
     <template #footer>
-      <div class="flex gap-2">Footer</div>
+      <div class="flex gap-2">{{ $t('messages.general.footer.unstack') }}</div>
     </template>
   </USlideover>
 </template>
