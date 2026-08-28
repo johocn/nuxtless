@@ -50,27 +50,29 @@ function applyAddress(record: AddressRecord) {
   activeAddressId.value = record.id;
   const checkout = useState<CheckoutState>("checkoutState");
   const form = checkout.value.addressForm;
-  // fullName 拆分为 firstName/lastName，以与结算表单字段一致
-  const [firstName = "", ...rest] = (record.fullName ?? "").trim().split(/\s+/);
-  form.firstName = firstName;
-  form.lastName = rest.join(" ") ?? "";
+  form.fullName = record.fullName ?? "";
   form.streetLine1 = record.streetLine1 ?? "";
   form.streetLine2 = record.streetLine2 ?? "";
   form.city = record.city ?? "";
+  form.province = record.province ?? "";
   form.postalCode = record.postalCode ?? "";
   form.countryCode = record.countryCode ?? countryCodeDefault;
 }
 
 useState<CheckoutState>("checkoutState", () => ({
   addressForm: {
-    firstName: "",
-    lastName: "",
+    fullName: "",
     emailAddress: "",
     streetLine1: "",
     streetLine2: "",
+    province: "",
     city: "",
+    district: "",
+    street: "",
     postalCode: "",
     countryCode: countryCodeDefault,
+    phoneNumber: "",
+    isDefault: false,
     billingSameAsShipping: true,
   },
   shippingForm: {

@@ -19,6 +19,7 @@ const loading = ref(false);
 const locations = ref<PickupLocation[]>([]);
 const selectedId = ref<string | null>(null);
 const preselectedByNearest = ref(false);
+const searchTerm = ref("");
 
 const currentType = computed<"store" | "employee" | "point" | null>(() => {
   if (mode.value === "shipping") return null;
@@ -36,6 +37,17 @@ function distanceKm(loc: PickupLocation): number {
   if (!locationStore.coords || !c) return Infinity;
   return haversineKm(locationStore.coords, c);
 }
+
+// 自提点较多时支持按名称/地址本地搜索
+const filteredLocations = computed(() => {
+  const kw = searchTerm.value.trim().toLowerCase();
+  if (!kw) return locations.value;
+  return locations.value.filter((loc) =>
+    [loc.name, loc.address, loc.phoneNumber].filter(Boolean).some((s) =>
+      String(s).toLowerCase().includes(kw),
+    ),
+  );
+});
 
 async function load() {
   const type = currentType.value;
@@ -98,6 +110,7 @@ watch(currentType, (n, o) => {
   if (n !== o) {
     selectedId.value = null;
     locations.value = [];
+    searchTerm.value = "";
     load();
   }
 });
@@ -131,8 +144,29 @@ watch(() => locationStore.coords, load);
     </p>
 
     <div v-else class="space-y-2">
+      <!-- 自提点较多时支持搜索 -->
+      <UInput
+        v-if="locations.length > 1"
+        v-model="searchTerm"
+        size="sm"
+        :placeholder="t('messages.checkout.searchPickupPlaceholder')"
+        class="mb-2 w-full"
+        trailing
+      >
+        <template #trailing>
+          <UIcon name="i-heroicons:magnifying-glass" class="size-4 text-neutral-400" />
+        </template>
+      </UInput>
+
+      <p
+        v-if="searchTerm && !filteredLocations.length"
+        class="text-sm text-neutral-500"
+      >
+        {{ t("messages.checkout.noPickup") }}
+      </p>
+
       <label
-        v-for="loc in locations"
+        v-for="loc in filteredLocations"
         :key="loc.id"
         class="flex cursor-pointer items-start gap-3 rounded-md border border-neutral-200 p-3 transition hover:border-primary-300 dark:border-neutral-800"
         :class="selectedId === loc.id ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/20' : ''"

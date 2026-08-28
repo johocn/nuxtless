@@ -22,16 +22,29 @@ const editing = ref(false);
 
 function applyAddress(record: AddressRecord) {
   appliedAddressId.value = record.id;
-  const [firstName = "", ...rest] = (record.fullName ?? "").trim().split(/\s+/);
-  state.firstName = firstName;
-  state.lastName = rest.join(" ") ?? "";
+  state.fullName = record.fullName ?? "";
   state.streetLine1 = record.streetLine1 ?? "";
   state.streetLine2 = record.streetLine2 ?? "";
   state.city = record.city ?? "";
+  state.province = record.province ?? "";
   state.postalCode = record.postalCode ?? "";
   state.countryCode = record.countryCode ?? countryCodeDefault;
+  state.phoneNumber = record.phoneNumber ?? "";
   editing.value = false;
 }
+
+// 京东式顶部摘要：收货人 电话 城市 街道
+const addressSummary = computed(() => {
+  const fullName = state.fullName;
+  const street = [state.streetLine1, state.streetLine2].filter(Boolean).join(" ");
+  return {
+    fullName,
+    phone: state.phoneNumber || appliedPhone.value,
+    crude: [state.province, state.city].filter(Boolean).join(" "),
+    street,
+    has: !!(street && fullName),
+  };
+});
 
 const appliedPhone = computed<string>(() => {
   const rec = addresses.value.find((a) => a.id === appliedAddressId.value);
@@ -40,19 +53,6 @@ const appliedPhone = computed<string>(() => {
 
 // CheckoutAddressForm 的 isSubmitted 绑定（成功提交置 true）
 const addressSubmitted = ref(false);
-
-// 京东式顶部摘要：收货人 电话 城市 街道
-const addressSummary = computed(() => {
-  const fullName = `${state.firstName} ${state.lastName}`.trim();
-  const street = [state.streetLine1, state.streetLine2].filter(Boolean).join(" ");
-  return {
-    fullName,
-    phone: appliedPhone.value,
-    crude: [state.city].filter(Boolean).join(" "),
-    street,
-    has: !!(street && fullName),
-  };
-});
 
 // 默认加载默认地址（地址簿第一条，isDefault 由后端排序保证）
 onMounted(() => {
@@ -80,13 +80,9 @@ flow.submitFns.submitAddress = async () => {
   orderStore.error = null;
   const fullName = addressSummary.value.fullName;
   if (!isAuthenticated.value) {
-    if (!state.emailAddress) {
-      orderStore.error = t("messages.billing.email");
-      return false;
-    }
     await orderStore.setCustomerForOrder({
-      firstName: state.firstName,
-      lastName: state.lastName,
+      firstName: state.fullName,
+      lastName: "",
       emailAddress: state.emailAddress,
     });
     if (orderStore.error) return false;
@@ -96,8 +92,10 @@ flow.submitFns.submitAddress = async () => {
     streetLine1: state.streetLine1,
     streetLine2: state.streetLine2,
     city: state.city,
+    province: state.province ?? "",
     postalCode: state.postalCode,
     countryCode: state.countryCode,
+    phoneNumber: state.phoneNumber,
   });
   return !orderStore.error;
 };
