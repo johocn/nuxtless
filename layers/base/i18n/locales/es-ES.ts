@@ -1,5 +1,7 @@
-export default defineI18nLocale(() => ({
-  messages: {
+import { zhFallbackLocale } from "./merge";
+
+export default defineI18nLocale(() =>
+  zhFallbackLocale({
     site: {
       title: "Nuxtless",
       tagline: "Nuxt Level Headless E-Commerce",
@@ -7,6 +9,55 @@ export default defineI18nLocale(() => ({
         "Una base moderna, rápida y segura para construir tiendas online headless con Nuxt y Vendure.",
       description:
         "Nuxtless es un proyecto inicial flexible y modular para comercio electrónico headless, diseñado para ofrecer alto rendimiento, un SEO excelente y una arquitectura limpia. Incluye integraciones listas con Vendure, Nuxt UI y Payload, código tipado y prácticas profesionales de seguridad — una base sólida para cualquier tienda online profesional.",
+    },
+    nav: {
+      home: "Inicio",
+      categories: "Categorías",
+      allCategories: "Todas las categorías",
+      allProducts: "Todos los productos",
+      my: "Mi cuenta",
+      cart: "Cesta",
+      search: "Buscar",
+      searchPlaceholder: "¿Qué busca?…",
+      loading: "Cargando…",
+      selectCity: "Seleccionar ciudad",
+      locating: "Localizando…",
+      hotCities: "Ciudades populares",
+      noCityData: "No hay datos de ciudades para esta región",
+      more: "Más ›",
+      brandFlash: "Ofertas flash de marcas",
+      reloadLocation: "Reubicar",
+      backToProvince: "Volver a provincias",
+      allProvinces: "Todas las provincias",
+      viewMore: "Ver más",
+      categoryNav: "Navegación por categorías",
+      bottomNav: "Navegación inferior",
+      previous: "Anterior",
+      next: "Siguiente",
+      noMatchProducts: "No hay productos que coincidan",
+      qualityZone: "Zona de calidad",
+    },
+    home: {
+      newsTitle: "Noticias JD",
+      adsAlt: "Publicidad promocional",
+      news: [
+        "Envío gratuito en todos los artículos propios a partir de 99 ¥",
+        "20 ¥ de descuento en su primer pedido para nuevos clientes",
+        "Renovación de electrodomésticos y productos digitales",
+        "Ofertas flash hoy a partir de las 20:00",
+        "Devoluciones sin motivo en 7 días",
+      ],
+      entryLabels: [
+        "Móviles y digital",
+        "Electrodomésticos",
+        "Artículos del hogar",
+        "Ropa y bolsos",
+        "Belleza y cuidado",
+        "Alimentos y frescos",
+        "Deporte y aire libre",
+        "Regalos personalizados",
+        "Todos los productos",
+      ],
     },
     pages: {
       index: {
@@ -19,6 +70,7 @@ export default defineI18nLocale(() => ({
       },
     },
     general: {
+      recommendations: 'Recomendado para ti',
       cancel: 'Cancelar',
       save: 'Guardar',
       colorMode: "Modo de color",
@@ -64,6 +116,12 @@ export default defineI18nLocale(() => ({
       footer: {
         unstack: "Creado con ❤️ en Unstack",
       },
+    },
+    checkout: {
+      deliveryLogistic: "Entrega logística",
+      chooseCarrier: "Elija el método de entrega",
+      pickupFillFromLocation:
+        "Recogida seleccionada: se mostrarán los puntos de recogida y se ocultará automáticamente la dirección de entrega",
     },
     account: {
       password: "Contraseña",
@@ -274,5 +332,5 @@ export default defineI18nLocale(() => ({
       orderNotFound:
         "No pudimos encontrar su pedido. Inicie sesión para ver sus pedidos.",
     },
-  },
-}));
+  }),
+);

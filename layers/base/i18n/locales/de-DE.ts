@@ -1,5 +1,7 @@
-export default defineI18nLocale(() => ({
-  messages: {
+import { zhFallbackLocale } from "./merge";
+
+export default defineI18nLocale(() =>
+  zhFallbackLocale({
     site: {
       title: "Nuxtless",
       tagline: "Nuxt Level Headless E-Commerce",
@@ -7,6 +9,33 @@ export default defineI18nLocale(() => ({
         "Eine moderne, schnelle und sichere Basis für den Aufbau von Headless-Onlineshops mit Nuxt und Vendure.",
       description:
         "Nuxtless ist ein flexibles und modulares Starterprojekt für Headless-E-Commerce, entwickelt für hohe Leistung, hervorragendes SEO und eine saubere Architektur. Es bietet fertige Integrationen mit Vendure, Nuxt UI und Payload, typsicheren Code und professionelle Sicherheitspraktiken – eine stabile Grundlage für jeden professionellen Onlineshop.",
+    },
+    nav: {
+      home: "Startseite",
+      categories: "Kategorien",
+      allCategories: "Alle Kategorien",
+      allProducts: "Alle Produkte",
+      my: "Mein Konto",
+      cart: "Warenkorb",
+      search: "Suche",
+      searchPlaceholder: "Wonach suchen?…",
+      loading: "Wird geladen…",
+      selectCity: "Stadt wählen",
+      locating: "Wird geortet…",
+      hotCities: "Beliebte Städte",
+      noCityData: "Für diese Provinz liegen keine Städtedaten vor",
+      more: "Mehr ›",
+      brandFlash: "Marken-Blitzangebot",
+      reloadLocation: "Neu orten",
+      backToProvince: "Zurück zu Provinzen",
+      allProvinces: "Alle Provinzen",
+      viewMore: "Mehr ansehen",
+      categoryNav: "Kategorie-Navigation",
+      bottomNav: "Untere Navigation",
+      previous: "Zurück",
+      next: "Weiter",
+      noMatchProducts: "Keine passenden Produkte",
+      qualityZone: "Qualitätszone",
     },
     pages: {
       index: {
@@ -20,6 +49,28 @@ export default defineI18nLocale(() => ({
     },
     detail: {
       nearbyTitle: "Lagerbestand in der Nähe",
+    },
+    home: {
+      newsTitle: "JD-News",
+      adsAlt: "Aktionswerbung",
+      news: [
+        "Kostenloser Versand ab 99 ¥ für alle Eigenmarken-Artikel",
+        "20 ¥ Rabatt auf die erste Bestellung für Neukunden",
+        "Alt gegen Neu für Digital- und Haushaltsgeräte",
+        "Heutiges Blitzangebot ab 20:00 Uhr",
+        "7 Tage Rückgaberecht ohne Angabe von Gründen",
+      ],
+      entryLabels: [
+        "Smartphones & Digital",
+        "Haushaltsgeräte",
+        "Haushalt & Waren",
+        "Bekleidung, Schuhe & Taschen",
+        "Schönheit & Pflege",
+        "Lebensmittel & Frische",
+        "Sport & Outdoor",
+        "Geschenke & Individualisierung",
+        "Alle Produkte",
+      ],
     },
     general: {
       cancel: 'Abbrechen',
@@ -68,6 +119,12 @@ export default defineI18nLocale(() => ({
       footer: {
         unstack: "Erstellt mit ❤️ auf Unstack",
       },
+    },
+    checkout: {
+      deliveryLogistic: "Logistiklieferung",
+      chooseCarrier: "Versandart wählen",
+      pickupFillFromLocation:
+        "Selbstabholung ausgewählt: Die Abholpunkte werden angezeigt und die Lieferadresse automatisch ausgeblendet",
     },
     account: {
       password: "Passwort",
@@ -278,5 +335,5 @@ export default defineI18nLocale(() => ({
       orderNotFound:
         "Wir konnten Ihre Bestellung nicht finden. Bitte melden Sie sich an, um Ihre Bestellungen einzusehen.",
     },
-  },
-}));
+  }),
+);

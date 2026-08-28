@@ -1,6 +1,8 @@
-export default defineI18nLocale(() => ({
-  messages: {
-    site: {
+export const zhMessages = {
+  // 中文为默认语言 / 兜底语言（defaultLocale、fallbackLocale 均为 zh-CN）。
+  // 其它语言包通过 deepMerge 以本对象为基底递归合并自身翻译，缺失词条自动回退到中文，
+  // 规避 vue-i18n 懒加载下 fallback 失效导致页面显示原始 key 的问题。
+  site: {
       // 品牌名与国际化 tagline 保留英文（非 UI 操作文案）
       title: "Nuxtless",
       tagline: "Nuxt Level Headless E-commerce",
@@ -65,6 +67,21 @@ export default defineI18nLocale(() => ({
       stockShortage: '库存不足，已加入 {n} 件',
       sku: 'SKU: {code}',
     },
+    home: {
+      newsTitle: '京东快讯',
+      adsAlt: '活动广告',
+      news: [
+        '全场自营商品满 99 元包邮',
+        '新用户首单立减 20 元',
+        '数码家电以旧换新进行中',
+        '今日秒杀 20:00 开启',
+        '售后服务 7 天无理由退换',
+      ],
+      entryLabels: [
+        '手机数码', '家用电器', '居家百货', '服饰鞋包',
+        '美妆个护', '食品生鲜', '运动户外', '礼品定制', '全部商品',
+      ],
+    },
     pages: {
       index: {
         welcome: '欢迎使用',
@@ -104,6 +121,7 @@ export default defineI18nLocale(() => ({
       apply: '应用',
       loading: '请稍候…',
       printReceipt: '打印回执',
+      recommendations: '为你推荐',
       generalMessage: '请稍后重试或联系客服。',
       shopFeatures: {
         shipping: '全场包邮',
@@ -123,6 +141,9 @@ export default defineI18nLocale(() => ({
       deliveryMethod: "配送方式",
       pickupMethod: "自提方式",
       logisticsDelivery: "物流配送",
+      deliveryLogistic: "物流配送",
+      chooseCarrier: "请选择承运方式",
+      pickupFillFromLocation: "已选中自提方式，将展示自提点列表并自动隐藏收货地址",
       storePickup: "门店自提",
       employeePickup: "职工单位自提",
       pointPickup: "自提点自提",
@@ -359,5 +380,8 @@ export default defineI18nLocale(() => ({
       noOrder: '未找到订单',
       orderNotFound: '未找到您的订单，请登录后查看。',
     },
-  },
+};
+
+export default defineI18nLocale(() => ({
+  messages: zhMessages,
 }));

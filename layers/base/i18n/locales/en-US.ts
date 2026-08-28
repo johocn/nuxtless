@@ -1,5 +1,7 @@
-export default defineI18nLocale(() => ({
-  messages: {
+import { zhFallbackLocale } from "./merge";
+
+export default defineI18nLocale(() =>
+  zhFallbackLocale({
     site: {
       title: "Nuxtless",
       tagline: "Nuxt Level Headless E-commerce",
@@ -34,6 +36,28 @@ export default defineI18nLocale(() => ({
       next: "Next",
       noMatchProducts: "No matching products",
       qualityZone: "Quality Zone",
+    },
+    home: {
+      newsTitle: "JD News",
+      adsAlt: "Promo ad",
+      news: [
+        "Free shipping on all self-operated items over ¥99",
+        "¥20 off your first order for new customers",
+        "Trade-in for digital and home appliances",
+        "Flash sale today from 20:00",
+        "7-day no-reason returns",
+      ],
+      entryLabels: [
+        "Mobile & Digital",
+        "Home Appliances",
+        "Household Goods",
+        "Apparel & Bags",
+        "Beauty & Care",
+        "Food & Fresh",
+        "Sports & Outdoors",
+        "Custom Gifts",
+        "All Products",
+      ],
     },
     detail: {
       reviews: 'Reviews',
@@ -75,6 +99,7 @@ export default defineI18nLocale(() => ({
       },
     },
     general: {
+      recommendations: 'Recommended for you',
       cancel: 'Cancel',
       save: 'Save',
       colorMode: "Color Mode",
@@ -102,7 +127,6 @@ export default defineI18nLocale(() => ({
       apply: "Apply",
       loading: "Please wait...",
       printReceipt: "Print Receipt",
-      recommendations: "Recommendations",
       generalMessage: "Please try again later or contact support.",
       shopFeatures: {
         shipping: "Free shipping",
@@ -122,6 +146,9 @@ export default defineI18nLocale(() => ({
       deliveryMethod: "Delivery Method",
       pickupMethod: "Pickup Method",
       logisticsDelivery: "Logistics Delivery",
+      deliveryLogistic: "Delivery",
+      chooseCarrier: "Select a carrier",
+      pickupFillFromLocation: "Pickup selected: showing pickup points and hiding the delivery address",
       storePickup: "Store Pickup",
       employeePickup: "Employee Pickup",
       pointPickup: "Pickup Point",
@@ -360,5 +387,5 @@ export default defineI18nLocale(() => ({
       orderNotFound:
         "We couldn't find your order. Please log in to view your orders.",
     },
-  },
-}));
+  }),
+);
