@@ -6,6 +6,7 @@ import type { MenuCollections } from "~~/types/collection";
 import { assetSrc } from "../../../utils/image";
 
 const localePath = useLocalePath();
+const { t } = useI18n();
 const menuCollections = useState<MenuCollections>("menuCollections");
 const cats = computed(() => menuCollections.value?.collections?.items ?? []);
 
@@ -17,9 +18,9 @@ function linkFor(slug: string) {
 <template>
   <section class="mx-2 mt-2 rounded-lg bg-white p-3">
     <div class="mb-3 flex items-center justify-between">
-      <h2 class="text-base font-bold text-gray-800">品牌闪购</h2>
+      <h2 class="text-base font-bold text-gray-800">{{ t('messages.nav.brandFlash') }}</h2>
       <NuxtLink :to="cats[0] ? linkFor(cats[0].slug) : localePath('/')" class="text-xs text-primary">
-        查看更多 ›
+        {{ t('messages.nav.viewMore') }} ›
       </NuxtLink>
     </div>
 

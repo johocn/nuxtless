@@ -5,6 +5,7 @@
 import type { MenuCollections } from "~~/types/collection";
 import { assetSrc } from "../../../utils/image";
 
+const { t } = useI18n();
 const localePath = useLocalePath();
 const open = useState<boolean>("isAllCatOpen", () => false);
 
@@ -36,14 +37,14 @@ function close() {
         v-if="open"
         role="dialog"
         aria-modal="true"
-        aria-label="全部分类"
+        :aria-label="t('messages.nav.allCategories')"
         class="fixed inset-y-0 left-0 z-[71] flex w-[82%] max-w-sm flex-col bg-white lg:hidden"
       >
         <header class="flex items-center justify-between bg-primary px-4 py-3 text-white">
-          <span class="text-base font-semibold">全部分类</span>
+          <span class="text-base font-semibold">{{ t('messages.nav.allCategories') }}</span>
           <button
             type="button"
-            aria-label="关闭"
+            :aria-label="t('messages.shop.close')"
             class="rounded p-1 hover:bg-white/15"
             @click="close"
           >

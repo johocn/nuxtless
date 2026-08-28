@@ -5,6 +5,7 @@
 import type { TopLevelCollection } from "~~/types/collection";
 import { assetSrc } from "../../../utils/image";
 
+const { t } = useI18n();
 defineProps<{ categories: TopLevelCollection[] }>();
 const localePath = useLocalePath();
 const { term, results, pending } = useSimpleSearch();
@@ -37,7 +38,7 @@ function submit() {
           <input
             v-model="term"
             type="text"
-            placeholder="搜点什么…"
+            :placeholder="t('messages.nav.searchPlaceholder')"
             class="w-full rounded-l-lg border-2 border-[#e6162d] px-4 py-2 text-sm outline-none"
             @focus="focused = true"
             @blur="onBlur"
@@ -46,7 +47,7 @@ function submit() {
             type="submit"
             class="rounded-r-lg bg-[#e6162d] px-8 py-2 text-sm font-semibold text-white"
           >
-            搜索
+            {{ t('messages.nav.search') }}
           </button>
         </form>
 
@@ -55,7 +56,7 @@ function submit() {
           v-if="focused && (pending || term)"
           class="absolute top-full left-0 right-0 z-40 mt-1 overflow-hidden rounded-md border border-gray-100 bg-white shadow-lg"
         >
-          <p v-if="pending" class="px-4 py-3 text-sm text-gray-400">加载中…</p>
+          <p v-if="pending" class="px-4 py-3 text-sm text-gray-400">{{ t('messages.nav.loading') }}</p>
           <template v-else>
             <NuxtLink
               v-for="item in results"
@@ -72,7 +73,7 @@ function submit() {
               <span class="truncate">{{ item.productName }}</span>
             </NuxtLink>
             <p v-if="!results.length" class="px-4 py-3 text-sm text-gray-400">
-              无匹配商品
+              {{ t('messages.nav.noMatchProducts') }}
             </p>
           </template>
         </div>

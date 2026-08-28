@@ -5,6 +5,7 @@ const { slides } = defineProps<{
   slides: Array<{ imageUrl?: string; link?: string; title?: string; subTitle?: string }>;
 }>();
 
+const { t } = useI18n();
 const localePath = useLocalePath();
 
 // 缺省占位 Banner（无运营 Banner 时兜底展示）
@@ -95,13 +96,13 @@ function to(s: { link?: string; [key: string]: unknown }) {
     <!-- 左右箭头 -->
     <button
       type="button"
-      aria-label="上一张"
+      :aria-label="t('messages.nav.previous')"
       class="absolute left-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-lg leading-none text-white"
       @click.stop="play(); go(cur - 1)"
     >‹</button>
     <button
       type="button"
-      aria-label="下一张"
+      :aria-label="t('messages.nav.next')"
       class="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-lg leading-none text-white"
       @click.stop="play(); go(cur + 1)"
     >›</button>

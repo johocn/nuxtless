@@ -35,6 +35,7 @@ const props = withDefaults(
 const localePath = useLocalePath();
 const isCartOpen = useState<boolean>("isCartOpen", () => false);
 const isAllCatOpen = useState<boolean>("isAllCatOpen", () => false);
+const { t } = useI18n();
 
 const menuCollections = useState<MenuCollections>("menuCollections");
 const cats = computed(() => menuCollections.value?.collections?.items ?? []);
@@ -45,14 +46,14 @@ function linkFor(slug: string) {
 
 // 自动兜底宫格：前 4 个为分类入口，其余为固定功能入口
 // 图标策略：分类有 featuredAsset 图用图；无图回退 emoji；固定项一律 emoji 文本（勿当图片 URL 加载）
-const fixedItems = [
-  { label: "我的订单", emoji: "📦", path: "/account/orders" },
-  { label: "购物车", emoji: "🛒", cart: true },
-  { label: "我的", emoji: "👤", path: "/account" },
-  { label: "售后", emoji: "🔁", path: "/account/after-sales" },
-  { label: "全部分类", emoji: "📋", drawer: true },
-  { label: "去结算", emoji: "💳", path: "/checkout" },
-];
+const fixedItems = computed<GridItem[]>(() => [
+  { label: t("messages.account.orders"), emoji: "📦", path: "/account/orders" },
+  { label: t("messages.nav.cart"), emoji: "🛒", cart: true },
+  { label: t("messages.nav.my"), emoji: "👤", path: "/account" },
+  { label: t("messages.account.afterSales"), emoji: "🔁", path: "/account/after-sales" },
+  { label: t("messages.nav.allCategories"), emoji: "📋", drawer: true },
+  { label: t("messages.shop.checkout"), emoji: "💳", path: "/checkout" },
+]);
 
 const autoItems = computed<GridItem[]>(() => {
   const top = cats.value.slice(0, 4).map((c) => ({
@@ -61,7 +62,7 @@ const autoItems = computed<GridItem[]>(() => {
     emoji: "🏷️",
     path: linkFor(c.slug),
   }));
-  return [...top, ...fixedItems];
+  return [...top, ...fixedItems.value];
 });
 
 // 配置优先，自动兜底

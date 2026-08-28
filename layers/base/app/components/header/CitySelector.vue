@@ -3,6 +3,7 @@ import type { CityInfo, GeoCoords } from "~~/types/location";
 import type { DistrictNode } from "~~/.nuxt/gql/default";
 
 const locationStore = useLocationStore();
+const { t } = useI18n();
 
 const open = ref(false);
 const locating = ref(false);
@@ -89,21 +90,21 @@ async function reLocate() {
       color="neutral"
       :icon="locating || locationStore.locating ? 'i-lucide-loader-circle' : 'i-lucide-map-pin'"
       :ui="(locating || locationStore.locating) ? { leadingIcon: ['animate-spin'] } : undefined"
-      :label="locationStore.cityName || (locationStore.locating ? '定位中…' : '选择城市')"
+      :label="locationStore.cityName || (locationStore.locating ? t('messages.nav.locating') : t('messages.nav.selectCity'))"
       @click="openPanel"
     />
 
     <template #content>
       <div class="w-72 p-4">
         <div class="mb-3 flex items-center justify-between">
-          <p class="text-sm font-semibold">选择城市</p>
+          <p class="text-sm font-semibold">{{ t('messages.nav.selectCity') }}</p>
           <UButton
             size="xs"
             variant="outline"
             color="neutral"
             :loading="locating"
             icon="i-lucide-locate-fixed"
-            label="重新定位"
+            :label="t('messages.nav.reloadLocation')"
             @click="reLocate"
           />
         </div>
@@ -114,7 +115,7 @@ async function reLocate() {
 
         <!-- 热门城市 -->
         <div class="mb-3">
-          <p class="mb-1.5 text-xs text-neutral-500">热门城市</p>
+          <p class="mb-1.5 text-xs text-neutral-500">{{ t('messages.nav.hotCities') }}</p>
           <div class="flex flex-wrap gap-1.5">
             <UButton
               v-for="item in hotCities"
@@ -137,11 +138,11 @@ async function reLocate() {
               variant="ghost"
               color="neutral"
               icon="i-lucide-arrow-left"
-              aria-label="返回省份"
+              :aria-label="t('messages.nav.backToProvince')"
               @click="backToProvinces"
             />
             <p class="text-xs text-neutral-500">
-              {{ currentProvince?.name ?? "全部省份" }}
+              {{ currentProvince?.name ?? t('messages.nav.allProvinces') }}
             </p>
           </div>
           <ul v-if="!loadingDistricts" class="max-h-52 space-y-0.5 overflow-y-auto">
@@ -157,7 +158,7 @@ async function reLocate() {
                 />
               </li>
               <li v-if="!cities.length">
-                <p class="px-2 py-1 text-xs text-neutral-400">该省暂无城市数据</p>
+                <p class="px-2 py-1 text-xs text-neutral-400">{{ t('messages.nav.noCityData') }}</p>
               </li>
             </template>
             <template v-else>
@@ -173,7 +174,7 @@ async function reLocate() {
               </li>
             </template>
           </ul>
-          <p v-else class="py-2 text-center text-xs text-neutral-400">加载中…</p>
+          <p v-else class="py-2 text-center text-xs text-neutral-400">{{ t('messages.nav.loading') }}</p>
         </div>
       </div>
     </template>
