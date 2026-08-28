@@ -37,6 +37,9 @@ logs
 schema.graphql
 graphql.schema.json
 
+# Playwright verification screenshots
+verify-shots/
+
 # Media files
 public/media/
 
