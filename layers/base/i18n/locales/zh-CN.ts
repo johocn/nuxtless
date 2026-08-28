@@ -35,6 +35,7 @@ export default defineI18nLocale(() => ({
       addedToCart: '已加入购物车',
       buyNowFailed: '购买失败，请重试',
       stockShortage: '库存不足，已加入 {n} 件',
+      sku: 'SKU: {code}',
     },
     pages: {
       index: {

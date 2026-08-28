@@ -34,6 +34,7 @@ export default defineI18nLocale(() => ({
       addedToCart: 'Added to cart',
       buyNowFailed: 'Purchase failed, please retry',
       stockShortage: 'Insufficient stock, added {n} item(s)',
+      sku: 'SKU: {code}',
     },
     pages: {
       index: {
