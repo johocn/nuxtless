@@ -14,6 +14,8 @@ export interface CheckoutState {
   addressForm: AddressForm;
   shippingForm: ShippingForm;
   paymentForm: PaymentForm;
+  /** 拆单结算后跳转确认页用的订单 code（checkoutSplitted 首单） */
+  placedOrderCode?: string;
 }
 
 export interface OrderLineRow {

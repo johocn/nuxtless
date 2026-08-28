@@ -174,3 +174,46 @@ mutation SetOrderCustomFields($input: UpdateOrderInput!) {
     }
   }
 }
+
+# ===== 按配送档案分箱 + 支付拆合（后端 cjk-plugin）=====
+
+query GetOrderBoxes {
+  orderBoxes {
+    boxKey
+    profileId
+    profileName
+    lineIds
+    tenantChannelId
+    shippingProfileIds
+    availableShippingMethodIds
+    defaultShippingMethodId
+    availablePaymentMethodCodes
+    pickupLocations {
+      id
+      name
+      type
+      address
+      phoneNumber
+      businessHours
+      coordinates
+    }
+  }
+}
+
+mutation SetOrderBoxShippingMethod($boxKey: String!, $shippingMethodId: ID!, $pickupLocationId: ID) {
+  setOrderBoxShippingMethod(
+    boxKey: $boxKey
+    shippingMethodId: $shippingMethodId
+    pickupLocationId: $pickupLocationId
+  ) {
+    __typename
+    ...OrderDetail
+  }
+}
+
+mutation CheckoutSplitted($method: String!, $metadata: String) {
+  checkoutSplitted(method: $method, metadata: $metadata) {
+    __typename
+    ...OrderDetail
+  }
+}
