@@ -18,6 +18,9 @@ export default defineI18nLocale(() => ({
         accountVerify: "Kontoverifizierung",
       },
     },
+    detail: {
+      nearbyTitle: "Lagerbestand in der Nähe",
+    },
     general: {
       cancel: 'Abbrechen',
       save: 'Speichern',
@@ -46,6 +49,7 @@ export default defineI18nLocale(() => ({
       apply: "Anwenden",
       loading: "Bitte warten...",
       printReceipt: "Beleg drucken",
+      recommendations: "Empfehlungen",
       generalMessage:
         "Bitte versuchen Sie es später erneut oder kontaktieren Sie den Support.",
       shopFeatures: {

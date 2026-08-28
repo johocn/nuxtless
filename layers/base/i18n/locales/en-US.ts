@@ -55,6 +55,7 @@ export default defineI18nLocale(() => ({
       serviceCitiesTitle: 'Deliverable cities',
       nationwide: 'Nationwide delivery',
       nearbyLoading: 'Checking nearby stock…',
+      nearbyTitle: 'Nearby Stock',
       nearbyNoCoords: 'Enable location to view nearby stock',
       nearbyError: 'Nearby stock temporarily unavailable',
       nearbyNoStock: 'No nearby store stock available',
@@ -101,6 +102,7 @@ export default defineI18nLocale(() => ({
       apply: "Apply",
       loading: "Please wait...",
       printReceipt: "Print Receipt",
+      recommendations: "Recommendations",
       generalMessage: "Please try again later or contact support.",
       shopFeatures: {
         shipping: "Free shipping",

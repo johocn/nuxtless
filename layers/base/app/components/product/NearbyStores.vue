@@ -60,7 +60,7 @@ watch(() => props.variantId, loadStock);
 <template>
   <section aria-labelledby="nearby-stock-heading">
     <h2 id="nearby-stock-heading" class="mb-4 text-2xl font-semibold">
-      就近库存
+      {{ t("messages.detail.nearbyTitle") }}
     </h2>
 
     <p v-if="loading" class="text-sm text-neutral-500">
