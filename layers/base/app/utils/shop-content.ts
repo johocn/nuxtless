@@ -1,15 +1,19 @@
 // shopContent 解析工具：类型 + 京东默认样式 + 解析（纯函数，SSR 友好）
 // 范围：京东风格模板，单套 sections；区域样式可选（含淘宝圆形/瀑布流等）
+// 后台可编辑文案（title / text / label）一律用 LocalizedText：string = 各语言共用；
+// Record<locale,string> = 逐语言，经 localizeText() 逐级回退（当前 locale → zh-CN → 首个值）。
+
+import type { LocalizedText } from "./detail-config";
 
 export type NavShape = 'square' | 'round';   // 默认 'square'（京东）；'round' = 淘宝圆形
 export type NavLayout = 'grid5x2' | 'grid4x2' | 'row'; // 默认 'grid5x2'（京东十宫格）；'grid4x2' 淘宝八宫格 / 'row' 单行
 export type GoodsLayout = 'compact' | 'masonry' | 'single'; // 默认 'compact'（京东）；'masonry' 淘宝瀑布流 / 'single' 单列
 
 export interface BannerSection { type: 'banner'; images: { image: string; link?: string }[]; }
-export interface NoticeSection { type: 'notice'; text: string; }
+export interface NoticeSection { type: 'notice'; text: LocalizedText; }
 export interface NavSection {
   type: 'nav';
-  items: { label: string; image?: string; link?: string }[];
+  items: { label: LocalizedText; image?: string; link?: string }[];
   shape?: NavShape;
   layout?: NavLayout;
 }
@@ -17,7 +21,7 @@ export interface GoodsSection {
   type: 'goods';
   collectionId?: string;   // 为空则自动推荐（fallback 现有 SearchProducts）
   layout?: GoodsLayout;
-  title?: string;
+  title?: LocalizedText;
 }
 export interface RichTextSection { type: 'richText'; html: string; }
 

@@ -21,7 +21,7 @@ import JdTabBar from "../../layers/base/app/components/home/jd/JdTabBar.vue";
 import JdAllCategoryDrawer from "../../layers/base/app/components/home/jd/JdAllCategoryDrawer.vue";
 import HomeBlockRenderer from "../../layers/base/app/components/home/HomeBlockRenderer.vue";
 
-const { t } = useI18n();
+const { t, tm } = useI18n();
 const localePath = useLocalePath();
 
 // 1) 顶部分类：菜单集合（含 featuredAsset / children）
@@ -66,31 +66,29 @@ const { data: fallbackSearch } = await useAsyncData(
 const hotProducts = computed(() => fallbackSearch.value?.hot ?? []);
 const moreProducts = computed(() => fallbackSearch.value?.more ?? []);
 
-// 4) PC 右栏静态数据：快讯 + 小广告
-const news = [
-  "全场自营商品满 99 元包邮",
-  "新用户首单立减 20 元",
-  "数码家电以旧换新进行中",
-  "今日秒杀 20:00 开启",
-  "售后服务 7 天无理由退换",
-];
+// 4) PC 右栏静态数据：快讯 + 小广告（文案走 i18n，缺失回退中文）
+const news = computed<string[]>(() => tm("messages.home.news") as string[]);
 const ads = [
   { src: "https://picsum.photos/seed/jp-ad-1/240/180", link: "/" },
   { src: "https://picsum.photos/seed/jp-ad-2/240/180", link: "/" },
 ];
 
-// 5) PC 快捷入口
-const entries = [
-  { label: "手机数码", icon: "i-lucide-smartphone", link: "/" },
-  { label: "家用电器", icon: "i-lucide-tv", link: "/" },
-  { label: "居家百货", icon: "i-lucide-home", link: "/" },
-  { label: "服饰鞋包", icon: "i-lucide-shirt", link: "/" },
-  { label: "美妆个护", icon: "i-lucide-sparkles", link: "/" },
-  { label: "食品生鲜", icon: "i-lucide-coffee", link: "/" },
-  { label: "运动户外", icon: "i-lucide-headphones", link: "/" },
-  { label: "礼品定制", icon: "i-lucide-gift", link: "/" },
-  { label: "全部商品", icon: "i-lucide-shopping-bag", link: "/" },
+// 5) PC 快捷入口（图标/链接固定，标签走 i18n 数组，逐语言本地化）
+const entryMeta = [
+  { icon: "i-lucide-smartphone", link: "/" },
+  { icon: "i-lucide-tv", link: "/" },
+  { icon: "i-lucide-home", link: "/" },
+  { icon: "i-lucide-shirt", link: "/" },
+  { icon: "i-lucide-sparkles", link: "/" },
+  { icon: "i-lucide-coffee", link: "/" },
+  { icon: "i-lucide-headphones", link: "/" },
+  { icon: "i-lucide-gift", link: "/" },
+  { icon: "i-lucide-shopping-bag", link: "/" },
 ];
+const entryLabels = computed<string[]>(() => tm("messages.home.entryLabels") as string[]);
+const entries = computed(() =>
+  (entryLabels.value ?? []).map((label, i) => ({ label, ...(entryMeta[i] ?? { icon: "i-lucide-shop", link: "/" }) })),
+);
 </script>
 
 <template>
@@ -116,8 +114,8 @@ const entries = [
           <!-- 京东快讯 -->
           <div class="bg-white shadow-sm">
             <div class="flex items-center justify-between border-b border-gray-100 px-3 py-2">
-              <h3 class="text-sm font-bold text-primary">京东快讯</h3>
-              <span class="text-xs text-gray-400">更多 ›</span>
+              <h3 class="text-sm font-bold text-primary">{{ t("messages.home.newsTitle") }}</h3>
+              <span class="text-xs text-gray-400">{{ t("messages.nav.more") }}</span>
             </div>
             <ul class="px-3 py-1 text-xs text-gray-600">
               <li
@@ -146,7 +144,7 @@ const entries = [
                 :src="a.src"
                 format="webp"
                 class="aspect-[4/3] w-full object-cover"
-                alt="活动广告"
+                :alt="t('messages.home.adsAlt')"
               />
             </NuxtLink>
           </div>
@@ -180,7 +178,7 @@ const entries = [
           :title="t('messages.shop.popularProducts')"
           :products="hotProducts"
         />
-        <JdProductGrid v-if="moreProducts.length" title="为你推荐" :products="moreProducts" />
+        <JdProductGrid v-if="moreProducts.length" :title="t('messages.general.recommendations')" :products="moreProducts" />
       </div>
     </div>
   </main>
@@ -208,7 +206,7 @@ const entries = [
           :title="t('messages.shop.popularProducts')"
           :products="hotProducts"
         />
-        <JdProductGrid v-if="moreProducts.length" title="为你推荐" :products="moreProducts" />
+        <JdProductGrid v-if="moreProducts.length" :title="t('messages.general.recommendations')" :products="moreProducts" />
       </div>
     </template>
   </main>

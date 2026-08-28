@@ -3,15 +3,18 @@
 import JdFunctionGrid from "../jd/JdFunctionGrid.vue";
 import { navDefaults } from "../../../utils/shop-content";
 import type { NavSection } from "../../../utils/shop-content";
+import { localizeText } from "../../../utils/detail-config";
 
 const props = defineProps<{ section: NavSection }>();
+const { locale } = useI18n();
 
 const shape = computed(() => navDefaults(props.section.shape, props.section.layout).shape);
 const layout = computed(() => navDefaults(props.section.shape, props.section.layout).layout);
 // 装修配置的 items 转成 JdFunctionGrid 的 GridItem 形态（有图用图，无图 emoji 兜底）
+// label 为后台 LocalizedText，逐级本地化
 const items = computed(() =>
   props.section.items.map((it) => ({
-    label: it.label,
+    label: localizeText(it.label, locale.value),
     img: it.image || undefined,
     emoji: it.image ? undefined : "🏷️",
     path: it.link || undefined,
