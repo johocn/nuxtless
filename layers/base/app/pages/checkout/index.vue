@@ -6,7 +6,6 @@ import { isActiveOrderDetail } from "~~/types/guard";
 import CheckoutRenderer from "~~/layers/base/app/components/checkout/CheckoutRenderer.vue";
 import {
   checkoutConfig,
-  isShippingMode,
 } from "~~/layers/base/app/utils/checkout-config";
 
 const layout = checkoutConfig.layout;
@@ -95,7 +94,11 @@ const isSubmitted = shallowReactive({
 
 function successRedirect() {
   orderStore.error = null;
-  const orderCode = activeOrder.value?.code;
+  const checkout = useState<CheckoutState>("checkoutState").value;
+  // 拆单结算后活动订单已置空，用 checkoutSplitted 首单 code；单订单回退用活动订单 code
+  const orderCode = checkout.placedOrderCode || activeOrder.value?.code;
+  if (!orderCode) return;
+  checkout.placedOrderCode = "";
   void router.push(localePath(`/checkout/confirmation/${orderCode}`));
   order.value = null;
   toast.add({
@@ -105,30 +108,17 @@ function successRedirect() {
   });
 }
 
-// 京东版式：按 地址 → (物流|自提) → 支付 门闩式推进
+// 京东版式：按「(物流箱)地址 → 各箱配送方式 → 支付(拆单结算)」门闩式推进
 async function submitJd() {
-  if (isShippingMode(flow.mode.value)) {
-    const okAddress =
-      (await flow.submitFns.submitAddress?.()) ?? false;
+  const hasLogistics = (orderStore.orderBoxes ?? []).some(
+    (b) => (b.availableShippingMethodIds ?? []).length > 0,
+  );
+  if (hasLogistics) {
+    const okAddress = (await flow.submitFns.submitAddress?.()) ?? false;
     if (!okAddress) return;
-    const okDelivery =
-      (await flow.submitFns.submitDelivery?.()) ?? false;
-    if (!okDelivery) return;
-  } else {
-    // 自提：需已选自提点（选择即写库 deliveryType=pickup）
-    const cf = order.value?.customFields as
-      | { selectedPickupLocationId?: { id: string } | null }
-      | undefined;
-    if (!cf?.selectedPickupLocationId) {
-      orderStore.error = t("messages.checkout.needPickup");
-      toast.add({
-        title: t("messages.checkout.choosePickup"),
-        description: orderStore.error,
-        color: "error",
-      });
-      return;
-    }
   }
+  const okDelivery = (await flow.submitFns.submitDelivery?.()) ?? false;
+  if (!okDelivery) return;
   const okPayment = (await flow.submitFns.submitPayment?.()) ?? false;
   if (!okPayment) return;
   successRedirect();

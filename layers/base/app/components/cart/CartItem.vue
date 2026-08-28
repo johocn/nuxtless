@@ -11,6 +11,14 @@ const orderStore = useOrderStore();
 const { loading } = storeToRefs(orderStore);
 const { selectedVariant } = storeToRefs(useProductStore());
 
+// 商品显示名 = 商品名 + 变体名（例：智能手环 6 经典黑），变体名与商品名相同时仅展示一次
+const displayName = computed(() => {
+  const pName = line.productVariant?.product?.name ?? "";
+  const vName = line.productVariant?.name ?? "";
+  if (vName && vName !== pName) return `${pName} ${vName}`.trim();
+  return pName || vName;
+});
+
 const remove = () => {
   orderStore.removeItemFromOrder(line.id);
 };
@@ -30,7 +38,7 @@ const remove = () => {
 
     <div class="flex basis-[50%] flex-col">
       <div class="text-sm font-medium">
-        {{ line.productVariant.name }}
+        {{ displayName }}
       </div>
       <div class="text-xs">
         {{ t("messages.shop.quantity") }}: {{ line.quantity }}

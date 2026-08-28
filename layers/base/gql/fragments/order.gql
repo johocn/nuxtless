@@ -20,6 +20,10 @@ fragment OrderBase on Order {
     productVariant {
       id
       name
+      product {
+        id
+        name
+      }
     }
     featuredAsset {
       id
@@ -81,6 +85,10 @@ fragment OrderDetail on Order {
       id
       name
       sku
+      product {
+        id
+        name
+      }
     }
     featuredAsset {
       id

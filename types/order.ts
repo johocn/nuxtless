@@ -15,6 +15,9 @@ import type {
   GetPaymentMethodsQuery,
   TransitionToStateMutation,
   AddPaymentToOrderMutation,
+  GetOrderBoxesQuery,
+  SetOrderBoxShippingMethodMutation,
+  CheckoutSplittedMutation,
 } from "~~/.nuxt/gql/default";
 
 // ─────────────────────────────────────────────────────────────
@@ -74,6 +77,19 @@ export type TransitionToStateResult =
 
 export type AddPaymentToOrderResult =
   AddPaymentToOrderMutation["addPaymentToOrder"];
+
+// ─────────────────────────────────────────────────────────────
+// 按配送档案分箱 + 支付拆合（后端 cjk-plugin）
+// ─────────────────────────────────────────────────────────────
+
+export type OrderBoxInfo = NonNullable<GetOrderBoxesQuery["orderBoxes"]>[number];
+
+export type OrderBoxes = GetOrderBoxesQuery["orderBoxes"];
+
+export type SetOrderBoxShippingMethodResult =
+  SetOrderBoxShippingMethodMutation["setOrderBoxShippingMethod"];
+
+export type CheckoutSplittedResult = CheckoutSplittedMutation["checkoutSplitted"];
 
 // ─────────────────────────────────────────────────────────────
 // Aggregate

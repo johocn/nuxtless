@@ -162,6 +162,12 @@ export const zhMessages = {
       needPickup: "请先选择自提点",
       noShippingMethod: "暂无可配送方式",
       noShippingMethodDesc: "当前收货地址暂无可配送方式，可尝试门店自提/自提点，或修改收货地址。",
+      boxGroupTitle: "配送组 {n}",
+      boxLogistics: "物流配送",
+      boxPickup: "自提点",
+      boxLogisticsOption: "该组物流配送方式",
+      boxPickupOption: "该组自提点",
+      needBoxDelivery: "请为每个配送组选择配送方式或自提点",
     },
     account: {
       password: '密码',

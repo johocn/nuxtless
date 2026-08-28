@@ -3,6 +3,8 @@ import type {
   OrderStatus,
   ShippingMethods,
   PaymentMethods,
+  OrderBoxes,
+  CheckoutSplittedResult,
 } from "~~/types/order";
 
 export const useOrderStore = defineStore("order", () => {
@@ -16,6 +18,7 @@ export const useOrderStore = defineStore("order", () => {
   const couponCode = computed(() => order.value?.couponCodes?.[0] ?? null);
   const shippingMethods = ref<ShippingMethods | null>(null);
   const paymentMethods = ref<PaymentMethods | null>(null);
+  const orderBoxes = ref<OrderBoxes>([]);
 
   async function fetchOrder(type: "base" | "detail" = "base"): Promise<void> {
     loading.value = true;
@@ -348,6 +351,82 @@ export const useOrderStore = defineStore("order", () => {
     }
   }
 
+  // ===== 按配送档案分箱 + 支付拆合（后端 cjk-plugin）=====
+
+  /** 拉取当前订单的分箱结果（每箱配送档案/可用方式/可用支付/自提点） */
+  async function fetchOrderBoxes(): Promise<void> {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const { orderBoxes: result } = await GqlGetOrderBoxes();
+      orderBoxes.value = result ?? [];
+    } catch (err) {
+      if (err instanceof Error) {
+        error.value = err.message || "Failed to fetch order boxes";
+      }
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /** 为某一箱设置配送方式（物流不传 pickupLocationId；自提需传相应自提点 + 该箱承运配送方式） */
+  async function setOrderBoxShippingMethod(
+    boxKey: string,
+    shippingMethodId: string,
+    pickupLocationId?: string | null,
+  ): Promise<void> {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const { setOrderBoxShippingMethod: result } = await GqlSetOrderBoxShippingMethod({
+        boxKey,
+        shippingMethodId,
+        pickupLocationId: pickupLocationId ?? null,
+      });
+      const res = useOrderMutation(order, result);
+      if (res.status === "error") {
+        error.value = res.message;
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        error.value = err.message || "Failed to set order box shipping method";
+      }
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /**
+   * 一次性拆单结算：内部完成「源订单分箱 + 按所选支付方式聚合拆合 + 逐单过渡 ArrangingPayment + addPayment」。
+   * 返回已结算订单列表；活动订单已不存在，order 置空、orderBoxes 清空。
+   */
+  async function checkoutSplitted(
+    method: string,
+    metadata?: string,
+  ): Promise<CheckoutSplittedResult> {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const { checkoutSplitted: result } = await GqlCheckoutSplitted({
+        method,
+        metadata: metadata ?? null,
+      });
+      order.value = null;
+      orderBoxes.value = [];
+      return (result ?? []) as CheckoutSplittedResult;
+    } catch (err) {
+      if (err instanceof Error) {
+        error.value = err.message || "Failed to checkout";
+      }
+      return [];
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     loading,
     error,
@@ -355,6 +434,7 @@ export const useOrderStore = defineStore("order", () => {
     order,
     shippingMethods,
     paymentMethods,
+    orderBoxes,
     fetchOrder,
     addItemToOrder,
     removeItemFromOrder,
@@ -369,5 +449,8 @@ export const useOrderStore = defineStore("order", () => {
     getPaymentMethods,
     transitionToState,
     addPaymentToOrder,
+    fetchOrderBoxes,
+    setOrderBoxShippingMethod,
+    checkoutSplitted,
   };
 });
