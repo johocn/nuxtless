@@ -68,7 +68,7 @@ onMounted(async () => {
       >
         <p v-if="verifying">Verifying your account...</p>
         <p v-else-if="error" role="alert" class="text-red-600">{{ error }}</p>
-        <p v-else>Verification complete. Redirecting…</p>
+        <p v-else>{{ t("messages.account.verificationComplete") }}</p>
       </div>
     </section>
   </main>
