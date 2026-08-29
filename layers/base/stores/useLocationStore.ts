@@ -1,8 +1,13 @@
-import type { CityInfo, GeoCoords, LocationSource } from "~~/types/location";
+import type {
+  CityInfo,
+  GeoCoords,
+  LocationSource,
+  ReverseGeocodeInfo,
+} from "~~/types/location";
 
 /**
- * 定位 store：保存当前城市、经纬度与定位来源。
- * city/coords/source 持久化，避免每次刷新重复定位（弹授权/等待）。
+ * 定位 store：保存当前城市、经纬度、完整逆地理结果与定位来源。
+ * city/coords/source/geo 持久化，避免每次刷新重复定位（弹授权/等待）。
  */
 export const useLocationStore = defineStore(
   "location",
@@ -10,6 +15,8 @@ export const useLocationStore = defineStore(
     const city = ref<CityInfo | null>(null);
     const coords = ref<GeoCoords | null>(null);
     const source = ref<LocationSource | null>(null);
+    /** 完整逆地理结果（省/市/区/街道），供结账地址表单四级联动默认选中 */
+    const geo = ref<ReverseGeocodeInfo | null>(null);
 
     // 以下为瞬态状态，不持久化
     const locating = ref(false);
@@ -37,6 +44,7 @@ export const useLocationStore = defineStore(
           city.value = result.city;
           coords.value = result.coords;
           source.value = result.source;
+          geo.value = result.geo ?? null;
         } else {
           error.value = "定位失败，请手动选择城市";
         }
@@ -52,6 +60,7 @@ export const useLocationStore = defineStore(
       city.value = info;
       coords.value = c ?? null;
       source.value = "manual";
+      geo.value = null;
       error.value = null;
     }
 
@@ -59,6 +68,7 @@ export const useLocationStore = defineStore(
       city,
       coords,
       source,
+      geo,
       locating,
       error,
       initialized,
@@ -71,7 +81,7 @@ export const useLocationStore = defineStore(
   },
   {
     persist: {
-      pick: ["city", "coords", "source"],
+      pick: ["city", "coords", "source", "geo"],
     },
   },
 );

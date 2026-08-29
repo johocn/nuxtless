@@ -384,6 +384,13 @@ export default defineI18nLocale(() =>
       email: "Email (optional)",
       isDefault: "Set as default shipping address",
       loadingDistricts: "Loading regions…",
+      requiredFullName: "Please enter the recipient name",
+      requiredPhone: "Please enter your phone number",
+      requiredAddress: "Please enter the detailed address",
+      requiredAddress2: "Please enter Address 2 (building, floor, apartment)",
+      requiredCity: "Please select a city",
+      requiredCountry: "Please select a country",
+      invalidEmail: "Invalid email address",
     },
     error: {
       invalidPasswordResetLink: "Password reset link is invalid.",

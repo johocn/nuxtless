@@ -28,12 +28,19 @@ function methodName(id: string): string {
 
 function initDefaultFor(box: OrderBoxInfo): BoxSel | null {
   const carrierIds = box.availableShippingMethodIds ?? [];
+  const pickups = box.pickupLocations ?? [];
+
+  // 仅一个自提点（且至多一个物流方式）：默认选中该自提点（门店自提场景）
+  if (pickups.length === 1 && carrierIds.length <= 1) {
+    const methodId = String(box.defaultShippingMethodId ?? carrierIds[0] ?? "");
+    return { mode: "pickup", methodId, pickupId: String(pickups[0]!.id) };
+  }
   if (carrierIds.length) {
     const methodId = String(box.defaultShippingMethodId ?? carrierIds[0] ?? "");
     return { mode: "logistics", methodId, pickupId: "" };
   }
-  if ((box.pickupLocations ?? []).length) {
-    return { mode: "pickup", methodId: "", pickupId: String(box.pickupLocations[0]!.id) };
+  if (pickups.length) {
+    return { mode: "pickup", methodId: "", pickupId: String(pickups[0]!.id) };
   }
   return null;
 }

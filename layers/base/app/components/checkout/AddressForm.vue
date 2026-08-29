@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { AddressForm } from "~~/layers/base/validators/addressForm";
+import { createBillingAddressSchema } from "~~/layers/base/validators/addressForm";
+import type { AddressForm } from "~~/layers/base/validators/addressForm";
 
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { DistrictNode } from "~~/.nuxt/gql/default";
+import type { ReverseGeocodeInfo } from "~~/types/location";
 import type { ActiveCustomerDetail } from "~~/types/customer";
 import type { CheckoutState } from "~~/types/general";
 import { isActiveCustomerDetail } from "~~/types/guard";
@@ -10,6 +12,10 @@ import { isActiveCustomerDetail } from "~~/types/guard";
 const isSubmitted = defineModel<boolean>({ default: false });
 
 const { t } = useI18n();
+// 校验提示随 locale 切换（中文/英文）
+const billingSchema = computed(() =>
+  createBillingAddressSchema((k) => t(k)),
+);
 const addressForm = useTemplateRef("addressForm");
 const submitAddress = () => addressForm.value?.submit();
 defineExpose({ submitAddress });
@@ -118,29 +124,81 @@ function onStreetChange() {
   syncState();
 }
 
-// 按定位城市自动默认省/市
-async function preselectByLocation() {
-  const cityName = locationStore.city?.name;
-  if (!cityName) return;
-  await loadDistrict(null, provinceSel.value);
-  const matchedProvince =
-    provinceSel.value.items.find(
-      (p) => p.name.includes(cityName) || cityName.includes(p.name),
-    ) ?? null;
-  if (matchedProvince) {
-    provinceSel.value.current = matchedProvince.name;
-    const node = provinceSel.value.items.find((p) => p.name === matchedProvince.name);
-    await loadDistrict(node!.adcode, citySel.value);
-    const matchedCity =
-      citySel.value.items.find(
-        (c) => c.name.includes(cityName) || cityName.includes(c.name),
-      ) ?? null;
-    if (matchedCity) {
-      citySel.value.current = matchedCity.name;
-      const cnode = citySel.value.items.find((c) => c.name === matchedCity.name);
-      await loadDistrict(cnode!.adcode, districtSel.value);
+// 在给定候选名中尽量找到匹配节点；无匹配且列表只剩唯一项时自动选中该唯一项
+function pickBest(
+  level: LevelList,
+  ...names: Array<string | null | undefined>
+): DistrictNode | null {
+  if (!level.items.length) return null;
+  const candidates = names.filter(Boolean) as string[];
+  for (const n of candidates) {
+    const exact = level.items.find((x) => x.name === n);
+    if (exact) return exact;
+    const incl = level.items.find((x) => x.name.includes(n) || n.includes(x.name));
+    if (incl) return incl;
+  }
+  if (level.items.length === 1) return level.items[0] ?? null;
+  return null;
+}
+
+// 按定位逆地理结果（geo）自动默认选中 省→市→区→街道（街道唯一项也自动选）
+async function cascadeGeo(geo: ReverseGeocodeInfo) {
+  // 直辖市：省下直挂区/县（level != city），此时把区/县当作「市」级处理
+  const firstNode = citySel.value.items[0];
+  const isMunicipality = !!firstNode && firstNode.level !== "city";
+
+  const cityNode = pickBest(
+    citySel.value,
+    ...(isMunicipality ? [geo.district, geo.city] : [geo.city]),
+  );
+  if (!cityNode) {
+    if (citySel.value.items.length === 1) {
+      citySel.value.current = citySel.value.items[0]?.name ?? "";
+    }
+    return;
+  }
+  citySel.value.current = cityNode.name;
+
+  if (isMunicipality) {
+    // 直辖市：cityNode 实为区/县，其子级即街道
+    await loadDistrict(cityNode.adcode, streetSel.value);
+  } else {
+    await loadDistrict(cityNode.adcode, districtSel.value);
+    const distNode = pickBest(districtSel.value, geo.district);
+    if (distNode) {
+      districtSel.value.current = distNode.name;
+      await loadDistrict(distNode.adcode, streetSel.value);
+    } else if (districtSel.value.items.length === 1) {
+      districtSel.value.current = districtSel.value.items[0]?.name ?? "";
     }
   }
+
+  // 街道：匹配定位值；否则唯一一项自动选中
+  const streetNode = pickBest(streetSel.value, geo.street);
+  if (streetNode) streetSel.value.current = streetNode.name;
+  else if (streetSel.value.items.length === 1) {
+    streetSel.value.current = streetSel.value.items[0]?.name ?? "";
+  }
+}
+
+// 按定位自动默认省/市（优先完整逆地理 geo；无则用坐标补一次反查）
+async function preselectByLocation() {
+  let geo = locationStore.geo;
+  if (!geo && locationStore.coords) {
+    geo = await useGeoLocation().reverseGeocode(
+      locationStore.coords.lat,
+      locationStore.coords.lng,
+    );
+  }
+  if (!geo) return;
+
+  await loadDistrict(null, provinceSel.value);
+  const prov = pickBest(provinceSel.value, geo.province);
+  if (!prov) return;
+  provinceSel.value.current = prov.name;
+
+  await loadDistrict(prov.adcode, citySel.value);
+  await cascadeGeo(geo);
   syncState();
 }
 
@@ -237,7 +295,7 @@ async function onError() {
 <template>
   <UForm
     ref="addressForm"
-    :schema="AddressForm"
+    :schema="billingSchema"
     :state="state"
     :disabled="!isMounted"
     class="grid grid-cols-2 gap-4"
@@ -277,7 +335,7 @@ async function onError() {
     <!-- 国家 -->
     <UFormField
       :label="t('messages.billing.country')"
-      name="country"
+      name="countryCode"
       class="col-span-2"
       size="xl"
     >

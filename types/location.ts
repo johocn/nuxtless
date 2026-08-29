@@ -16,6 +16,8 @@ export interface GeoLocation {
   city: CityInfo;
   coords: GeoCoords;
   source: LocationSource;
+  /** 完整逆地理结果（省/市/区/街道），供结账地址表单四级联动默认选中 */
+  geo?: ReverseGeocodeInfo;
 }
 
 export interface ReverseGeocodeInfo {

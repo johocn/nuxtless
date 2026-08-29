@@ -2,6 +2,7 @@ import type {
   CityInfo,
   GeoCoords,
   GeoLocation,
+  LocationSource,
   ReverseGeocodeInfo,
 } from "~~/types/location";
 
@@ -172,38 +173,40 @@ export function useGeoLocation() {
   async function locate(): Promise<GeoLocation | null> {
     const AMap = await loadAmapSdk();
 
+    // 根据候选坐标反查城市 + 完整省市区街道，封装为 GeoLocation
+    async function toLocation(
+      candidate: AmapPosition,
+      source: LocationSource,
+    ): Promise<GeoLocation | null> {
+      const geo = await reverseGeocode(candidate.lat, candidate.lng);
+      const city = toCityInfo(geo);
+      if (!city) return null;
+      return {
+        city,
+        coords: { lat: candidate.lat, lng: candidate.lng },
+        source,
+        geo: geo ?? undefined,
+      };
+    }
+
     if (AMap) {
       const high = await amapLocate(AMap);
       if (high) {
-        const city = toCityInfo(await reverseGeocode(high.lat, high.lng));
-        if (city) {
-          return {
-            city,
-            coords: { lat: high.lat, lng: high.lng },
-            source: "amap",
-          };
-        }
+        const loc = await toLocation(high, "amap");
+        if (loc) return loc;
       }
 
       const ip = await amapIpLocate(AMap);
       if (ip) {
-        const city = toCityInfo(await reverseGeocode(ip.lat, ip.lng));
-        if (city) {
-          return { city, coords: { lat: ip.lat, lng: ip.lng }, source: "ip" };
-        }
+        const loc = await toLocation(ip, "ip");
+        if (loc) return loc;
       }
     }
 
     const native = await nativeLocate();
     if (native) {
-      const city = toCityInfo(await reverseGeocode(native.lat, native.lng));
-      if (city) {
-        return {
-          city,
-          coords: { lat: native.lat, lng: native.lng },
-          source: "native",
-        };
-      }
+      const loc = await toLocation(native, "native");
+      if (loc) return loc;
     }
 
     return null;
