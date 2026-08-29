@@ -190,9 +190,13 @@ async function preselectByLocation() {
       locationStore.coords.lng,
     );
   }
+  // 省列表可能已在 onMounted 的 else 分支预加载，避免重复请求
+  if (provinceSel.value.items.length === 0) {
+    await loadDistrict(null, provinceSel.value);
+  }
+
   if (!geo) return;
 
-  await loadDistrict(null, provinceSel.value);
   const prov = pickBest(provinceSel.value, geo.province);
   if (!prov) return;
   provinceSel.value.current = prov.name;
@@ -256,7 +260,8 @@ onMounted(async () => {
   } else {
     state.fullName = activeCustomer.value?.firstName ?? "";
     state.countryCode = state.countryCode || countryCodeDefault;
-    // 无省市区，按定位城市默认省/市
+    // 无地址簿：仍先加载省列表（即使无定位也能手选省份），再按定位城市默认省/市
+    await loadDistrict(null, provinceSel.value);
     await preselectByLocation();
   }
 });
