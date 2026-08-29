@@ -384,6 +384,13 @@ export const zhMessages = {
       email: '邮箱（选填）',
       isDefault: '设为默认收货地址',
       loadingDistricts: '加载行政区划中…',
+      requiredFullName: '请输入收货人姓名',
+      requiredPhone: '请输入联系电话',
+      requiredAddress: '请输入详细地址',
+      requiredAddress2: '请输入地址 2（楼栋、楼层、门牌）',
+      requiredCity: '请选择城市',
+      requiredCountry: '请选择国家/地区',
+      invalidEmail: '邮箱格式不正确',
     },
     error: {
       invalidPasswordResetLink: '密码重置链接无效。',

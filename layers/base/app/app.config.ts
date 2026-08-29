@@ -3,7 +3,7 @@ export default defineAppConfig({
     name: "Base Layer",
   },
 
-  countryCodeDefault: "BG",
+  countryCodeDefault: "CN",
 
   logoTop: {
     light: "/logo-top.svg",
