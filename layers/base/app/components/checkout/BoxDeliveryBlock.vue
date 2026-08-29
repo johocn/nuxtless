@@ -3,13 +3,19 @@
 // - 每箱数据：availableShippingMethodIds（物流方式，name 由 eligibleShippingMethods 映射）+ pickupLocations（自提点）。
 // - 选择即写库（setOrderBoxShippingMethod）；物流传 pickupLocationId=null，自提传承运方式 + 自提点。
 // - submitDelivery 校验每箱已有生效配送方式（默认取 defaultShippingMethodId，onMounted 兜底应用）。
+import type { PickupLocation } from "~~/.nuxt/gql/default";
 import type { OrderBoxInfo } from "~~/types/order";
 import { useCheckoutFlow } from "~~/layers/base/app/composables/useCheckoutFlow";
+import {
+  haversineKm,
+  parseCoordinates,
+} from "~~/layers/base/app/utils/checkout-config";
 
 const { t } = useI18n();
 const toast = useToast();
 const orderStore = useOrderStore();
 const flow = useCheckoutFlow();
+const locationStore = useLocationStore();
 
 await orderStore.fetchOrderBoxes();
 await orderStore.getShippingMethods();
@@ -21,6 +27,35 @@ const shippingMethodList = computed(() => shippingMethods.value ?? []);
 
 type BoxSel = { mode: "logistics" | "pickup"; methodId: string; pickupId: string };
 const sel = reactive<Record<string, BoxSel>>({});
+
+/** 每箱独立的自提点搜索关键词 */
+const boxSearch = reactive<Record<string, string>>({});
+
+function distanceKm(loc: PickupLocation): number {
+  const c = parseCoordinates(loc.coordinates);
+  if (!locationStore.coords || !c) return Infinity;
+  return haversineKm(locationStore.coords, c);
+}
+
+/** 自提点较多时支持按名称/地址就近本地过滤 */
+function filteredPickups(box: OrderBoxInfo): PickupLocation[] {
+  const locs = (box.pickupLocations ?? []) as PickupLocation[];
+  const kw = (boxSearch[box.boxKey] ?? "").trim().toLowerCase();
+  if (!kw) return locs;
+  return locs.filter((loc) =>
+    [loc.name, loc.address, loc.phoneNumber].filter(Boolean).some((s) =>
+      String(s).toLowerCase().includes(kw),
+    ),
+  );
+}
+
+/** 有定位时按就近取最近自提点，否则取列表首个（用于仅自提无物流时的默认值） */
+function nearestPickup(box: OrderBoxInfo): PickupLocation | null {
+  const locs = (box.pickupLocations ?? []) as PickupLocation[];
+  if (!locs.length) return null;
+  if (!locationStore.coords) return locs[0] ?? null;
+  return [...locs].sort((a, b) => distanceKm(a) - distanceKm(b))[0] ?? null;
+}
 
 function methodName(id: string): string {
   return shippingMethodList.value.find((m) => m.id === id)?.name ?? id;
@@ -40,7 +75,10 @@ function initDefaultFor(box: OrderBoxInfo): BoxSel | null {
     return { mode: "logistics", methodId, pickupId: "" };
   }
   if (pickups.length) {
-    return { mode: "pickup", methodId: "", pickupId: String(pickups[0]!.id) };
+    // 仅自提无物流：就近默认选中最近自提点，否则首个
+    const nearest = nearestPickup(box);
+    const pickupId = nearest ? String(nearest.id) : String(pickups[0]!.id);
+    return { mode: "pickup", methodId: "", pickupId };
   }
   return null;
 }
@@ -173,8 +211,30 @@ flow.submitFns.submitDelivery = async () => {
 
         <div v-if="(box.pickupLocations ?? []).length" class="mt-3">
           <p class="mb-1 text-xs text-neutral-500">{{ t("messages.checkout.boxPickupOption") }}</p>
+
+          <!-- 自提点较多时支持搜索 -->
+          <UInput
+            v-if="(box.pickupLocations ?? []).length > 1"
+            v-model="boxSearch[box.boxKey]"
+            size="sm"
+            :placeholder="t('messages.checkout.searchPickupPlaceholder')"
+            class="mb-2 w-full"
+            trailing
+          >
+            <template #trailing>
+              <UIcon name="i-heroicons:magnifying-glass" class="size-4 text-neutral-400" />
+            </template>
+          </UInput>
+
+          <p
+            v-if="boxSearch[box.boxKey] && !filteredPickups(box).length"
+            class="mb-2 text-sm text-neutral-500"
+          >
+            {{ t("messages.checkout.noPickup") }}
+          </p>
+
           <label
-            v-for="loc in box.pickupLocations"
+            v-for="loc in filteredPickups(box)"
             :key="loc.id"
             class="flex cursor-pointer items-start gap-3 rounded-md border border-neutral-200 p-3 text-sm transition hover:border-primary-300 dark:border-neutral-800"
             :class="sel[box.boxKey]?.pickupId === String(loc.id) ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/20' : ''"
@@ -188,7 +248,12 @@ flow.submitFns.submitDelivery = async () => {
               @change="choosePickup(box, String(loc.id))"
             />
             <span class="flex-1">
-              <span class="block font-medium">{{ loc.name }}</span>
+              <span class="block font-medium">
+                {{ loc.name }}
+                <span v-if="distanceKm(loc) !== Infinity" class="ml-1 text-xs text-neutral-400">
+                  {{ distanceKm(loc) < 1 ? `${Math.round(distanceKm(loc) * 1000)}m` : `${distanceKm(loc).toFixed(1)}km` }}
+                </span>
+              </span>
               <span class="block text-neutral-500">{{ loc.address }}</span>
               <span v-if="loc.businessHours || loc.phoneNumber" class="block text-xs text-neutral-400">
                 {{ loc.businessHours || loc.phoneNumber }}
