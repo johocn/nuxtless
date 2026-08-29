@@ -203,11 +203,33 @@ async function preselectByLocation() {
 }
 
 async function applyExistingState() {
-  // 从已有 state 恢复四级下拉（逐级回填并下钻）
-  if (state.province) provinceSel.value.current = state.province;
-  if (state.city) citySel.value.current = state.city;
-  if (state.district) districtSel.value.current = state.district;
-  if (state.street) streetSel.value.current = state.street;
+  // 从已有 state 恢复四级下拉：先加载省列表，再逐级下钻子级，回填 current
+  // （否则只设 current 不填 items，下拉选项为空导致无法继续选择/更改）
+  await loadDistrict(null, provinceSel.value);
+  if (state.province) {
+    const prov = provinceSel.value.items.find((p) => p.name === state.province);
+    if (prov) {
+      provinceSel.value.current = prov.name;
+      await loadDistrict(prov.adcode, citySel.value);
+      if (state.city) {
+        const city = citySel.value.items.find((c) => c.name === state.city);
+        if (city) {
+          citySel.value.current = city.name;
+          await loadDistrict(city.adcode, districtSel.value);
+          if (state.district) {
+            const district = districtSel.value.items.find((d) => d.name === state.district);
+            if (district) {
+              districtSel.value.current = district.name;
+              await loadDistrict(district.adcode, streetSel.value);
+              if (state.street) {
+                streetSel.value.current = state.street;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 onMounted(async () => {
@@ -227,8 +249,8 @@ onMounted(async () => {
       state.province = first.province ?? "";
       state.phoneNumber = first.phoneNumber ?? "";
       state.countryCode = first.countryCode ?? countryCodeDefault;
-      // 从省市区文本回填四级下拉选中项
-      applyExistingState();
+      // 从省市区文本回填四级下拉选中项（含逐级加载子级选项）
+      await applyExistingState();
       syncState();
     }
   } else {
