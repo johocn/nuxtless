@@ -14,6 +14,8 @@ export interface CheckoutSubmitFns {
   submitAddress?: (() => Promise<boolean>) | null;
   /** 提交配送方式（仅配送模式调用，默认/唯一物流直接选） */
   submitDelivery?: (() => Promise<boolean>) | null;
+  /** 提交到店领取联系人（需要联系方式的档案才调用） */
+  submitContact?: (() => Promise<boolean>) | null;
   /** 提交支付方式 */
   submitPayment?: (() => Promise<boolean>) | null;
 }
@@ -33,6 +35,7 @@ export function provideCheckoutFlow() {
   const submitFns: CheckoutSubmitFns = {
     submitAddress: null,
     submitDelivery: null,
+    submitContact: null,
     submitPayment: null,
   };
   const ctx: CheckoutFlowContext = {
