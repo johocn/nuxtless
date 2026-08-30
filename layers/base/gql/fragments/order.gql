@@ -129,5 +129,8 @@ fragment OrderDetail on Order {
     pickupClaimed
     packageShippingJson
     shippingAdjustment
+    contactName
+    contactPhone
+    remark
   }
 }

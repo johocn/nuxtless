@@ -187,6 +187,8 @@ query GetOrderBoxes {
     shippingProfileIds
     availableShippingMethodIds
     defaultShippingMethodId
+    requiresAddress
+    requiresContact
     availablePaymentMethodCodes
     pickupLocations {
       id
