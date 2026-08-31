@@ -6,6 +6,7 @@ import { useCheckoutFlow } from "~~/layers/base/app/composables/useCheckoutFlow"
 const { t } = useI18n();
 const orderStore = useOrderStore();
 const flow = useCheckoutFlow();
+const { isAuthenticated } = storeToRefs(useAuthStore());
 
 await orderStore.fetchOrderBoxes();
 await orderStore.getPaymentMethods();
@@ -19,22 +20,41 @@ const allowedCodes = computed(() => {
   }
   return set;
 });
-
-const paymentMethodList = computed(() =>
-  (paymentMethods.value ?? []).filter((m) => allowedCodes.value.has(m.code)),
-);
+// 需登录才能使用的支付方式并集（游客结算时过滤，如余额钱包）
+const loginRequiredCodes = computed(() => {
+  const set = new Set<string>();
+  for (const box of orderBoxes.value ?? []) {
+    for (const code of box.loginRequiredPaymentCodes ?? []) set.add(code);
+  }
+  return set;
+});
 
 const checkoutState = useState<CheckoutState>("checkoutState");
 const state = checkoutState.value.paymentForm;
 
-// 默认选中：优先余额（可跨租户/跨档案合单），否则第一个可用
-onMounted(() => {
-  if (!state.code && paymentMethodList.value.length) {
-    const balance = paymentMethodList.value.find((m) => /balance|wallet|余额/i.test(m.code)) ;
-    const first = balance ?? paymentMethodList.value[0];
-    if (first) state.code = first.code;
+// 游客：过滤掉需登录的方法（余额钱包）；登录用户：全部白名单方法
+const paymentMethodList = computed(() =>
+  (paymentMethods.value ?? []).filter(
+    (m) => allowedCodes.value.has(m.code) && (isAuthenticated.value || !loginRequiredCodes.value.has(m.code)),
+  ),
+);
+
+// 选中兜底：优先余额（可跨租户/跨档案合单）——仅登录用户，否则第一个可用；
+// 若当前选中已被过滤掉（如游客此前选了余额），重置为可用项。
+function applyDefaultSelection() {
+  const list = paymentMethodList.value;
+  if (!list.length) {
+    state.code = "";
+    return;
   }
-});
+  const stillOk = list.some((m) => m.code === state.code);
+  if (state.code && stillOk) return;
+  const balance =
+    isAuthenticated.value && list.find((m) => /balance|wallet|余额/i.test(m.code));
+  state.code = (balance ?? list[0]).code;
+}
+onMounted(applyDefaultSelection);
+watch(paymentMethodList, applyDefaultSelection);
 
 // 注册提交：一次性拆单结算（内部聚合拆合 + 逐单过渡 ArrangingPayment + addPayment）
 flow.submitFns.submitPayment = async () => {
@@ -63,8 +83,11 @@ flow.submitFns.submitPayment = async () => {
       {{ t("messages.general.paymentMethod") }}
     </h3>
 
-    <p v-if="!paymentMethodList.length" class="text-sm text-neutral-500">
+    <p v-if="!paymentMethodList.length && isAuthenticated" class="text-sm text-neutral-500">
       {{ t("messages.general.loading") }}
+    </p>
+    <p v-else-if="!paymentMethodList.length" class="text-sm text-neutral-500">
+      {{ t("messages.general.loginRequiredForPayment") }}
     </p>
     <URadioGroup
       v-else

@@ -196,6 +196,7 @@ query GetOrderBoxes {
     requiresContact
     type
     availablePaymentMethodCodes
+    loginRequiredPaymentCodes
     pickupLocations {
       id
       name
