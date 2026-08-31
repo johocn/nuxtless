@@ -186,9 +186,15 @@ query GetOrderBoxes {
     tenantChannelId
     shippingProfileIds
     availableShippingMethodIds
+    availableShippingMethods {
+      id
+      code
+      name
+    }
     defaultShippingMethodId
     requiresAddress
     requiresContact
+    type
     availablePaymentMethodCodes
     pickupLocations {
       id
