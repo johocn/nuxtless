@@ -14,6 +14,7 @@
 definePageMeta({ title: "admin-redemption" });
 
 const { public: cfg } = useRuntimeConfig();
+const { t } = useI18n();
 const adminApiBase = computed<string>(() => (cfg as any).adminApiBase || "https://e.joho.cn/admin-api");
 
 /* ---------------- 管理 token（内存 + sessionStorage） ---------------- */
@@ -39,7 +40,7 @@ async function adminGql<T = any>(query: string, variables: Record<string, unknow
   try {
     res = await fetch(adminApiBase.value, { method: "POST", headers, body: JSON.stringify({ query, variables }) });
   } catch (e) {
-    return { error: `网络错误：${(e as Error).message}` };
+    return { error: `${t('messages.order.netError')}：${(e as Error).message}` };
   }
   const newToken = res.headers.get("vendure-auth-token");
   const txt = await res.text();
@@ -47,9 +48,9 @@ async function adminGql<T = any>(query: string, variables: Record<string, unknow
   try {
     body = JSON.parse(txt);
   } catch {
-    return { error: `非 JSON 响应（HTTP ${res.status}）` };
+    return { error: t('messages.order.nonJsonResponse', { status: res.status }) };
   }
-  if (body?.errors?.length) return { error: body.errors[0]?.message ?? "GraphQL 错误" };
+  if (body?.errors?.length) return { error: body.errors[0]?.message ?? t('messages.order.graphqlError') };
   return { data: body?.data as T, token: newToken || undefined };
 }
 
@@ -77,12 +78,12 @@ async function doLogin() {
     if (res.token) {
       persistAdminToken(res.token);
       loginForm.password = "";
-      loginMsg.value = "令牌获取成功（仅保存在本会话）";
+      loginMsg.value = t('messages.order.tokenAcquired');
     } else if (res.error) {
       loginMsg.value = res.error;
     } else {
       const login = res.data?.login;
-      loginMsg.value = login?.message || "登录未返回令牌，请手动粘贴 token";
+      loginMsg.value = login?.message || t('messages.order.noTokenReturned');
     }
   } finally {
     loginLoading.value = false;
@@ -127,7 +128,7 @@ async function execute() {
   const input = code.value.trim().toUpperCase();
   if (!input) return;
   if (!adminToken.value) {
-    message.value = "请先录入/获取管理令牌（下方「管理令牌」区）";
+    message.value = t('messages.order.needTokenFirst');
     state.value = "error";
     return;
   }
@@ -142,12 +143,12 @@ async function execute() {
   const r = data?.redemptionLookup;
   if (!r) {
     state.value = "error";
-    message.value = "未找到核销数据";
+    message.value = t('messages.order.redemptionUnavailable');
     return;
   }
   if (!r.order) {
     state.value = "error";
-    message.value = "未找到该核销码对应的订单";
+    message.value = t('messages.order.redeemNotFound');
     return;
   }
   lookup.value = r;
@@ -167,7 +168,7 @@ async function claim() {
     return;
   }
   lookup.value = { ...lookup.value, claimed: true };
-  message.value = already ? "该核销码已核销" : "核销成功";
+  message.value = already ? t('messages.order.redeemAlready') : t('messages.order.redeemSuccess');
   state.value = "done";
   // 刷新最新核销时间
   const refetch = await adminGql<LookupRes>(LOOKUP_QUERY, { code: input });
@@ -176,10 +177,10 @@ async function claim() {
 
 const statusLabel = computed(() => {
   switch (state.value) {
-    case "loading": return "查询中…";
-    case "claiming": return "核销中…";
-    case "done": return "核销成功";
-    case "error": return "操作失败";
+    case "loading": return t('messages.order.queryLoading');
+    case "claiming": return t('messages.order.claimLoading');
+    case "done": return t('messages.order.redeemSuccess');
+    case "error": return t('messages.order.opFailed');
     default: return "";
   }
 });
@@ -187,32 +188,32 @@ const statusLabel = computed(() => {
 
 <template>
   <main class="container max-w-2xl py-10">
-    <h1 class="mb-2 text-2xl font-semibold">订单核销</h1>
-    <p class="mb-6 text-sm text-neutral-500">输入/扫码 6 位核销码（大小写不敏感，自动转大写）查询订单并核销。</p>
+    <h1 class="mb-2 text-2xl font-semibold">{{ t('messages.order.redemptionAdminTitle') }}</h1>
+    <p class="mb-6 text-sm text-neutral-500">{{ t('messages.order.redemptionAdminSub') }}</p>
 
     <!-- 管理令牌区 -->
     <section class="mb-6 rounded-xl border border-neutral-200 p-4 text-sm dark:border-neutral-800">
       <div class="mb-3 flex items-center justify-between">
-        <h2 class="font-semibold">管理令牌</h2>
+        <h2 class="font-semibold">{{ t('messages.order.adminTokenLabel') }}</h2>
         <span class="text-xs text-neutral-500">
-          {{ adminToken ? "已持有令牌（存在本会话）" : "未设置令牌" }}
+          {{ adminToken ? t('messages.order.adminTokenSet') : t('messages.order.adminTokenNotSet') }}
         </span>
       </div>
 
       <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <UInput v-model="loginForm.username" placeholder="管理员账号" autocomplete="off" />
-        <UInput v-model="loginForm.password" type="password" placeholder="密码" autocomplete="off" @keyup.enter="doLogin" />
-        <UButton :loading="loginLoading" :label="'获取令牌'" @click="doLogin" />
-        <UButton v-if="!adminToken" variant="soft" :label="'清空'" @click="persistAdminToken('')" />
+        <UInput v-model="loginForm.username" :placeholder="t('messages.order.adminUsername')" autocomplete="off" />
+        <UInput v-model="loginForm.password" type="password" :placeholder="t('messages.order.adminPassword')" autocomplete="off" @keyup.enter="doLogin" />
+        <UButton :loading="loginLoading" :label="t('messages.order.getToken')" @click="doLogin" />
+        <UButton v-if="!adminToken" variant="soft" :label="t('messages.order.clearToken')" @click="persistAdminToken('')" />
       </div>
 
       <div class="mt-3 flex gap-2">
-        <UInput v-model="rawToken" class="flex-1" placeholder="或直接粘贴后端 Admin token" @keyup.enter="setRawToken" />
-        <UButton variant="soft" :label="'保存令牌'" @click="setRawToken" />
+        <UInput v-model="rawToken" class="flex-1" :placeholder="t('messages.order.pasteToken')" @keyup.enter="setRawToken" />
+        <UButton variant="soft" :label="t('messages.order.saveToken')" @click="setRawToken" />
       </div>
 
       <p v-if="loginMsg" class="mt-2 text-xs text-neutral-500">{{ loginMsg }}</p>
-      <p class="mt-2 text-xs text-neutral-400">完整 Admin 登录（独立登录页/角色路由守卫）为后续工作；此处令牌仅存内存/sessionStorage。</p>
+      <p class="mt-2 text-xs text-neutral-400">{{ t('messages.order.adminTokenNote') }}</p>
     </section>
 
     <!-- 核销码输入（扫码枪：聚焦输入框，键入回车即触发查询） -->
@@ -223,11 +224,11 @@ const statusLabel = computed(() => {
         size="lg"
         autofocus
         :maxlength="6"
-        placeholder="请输入 / 扫码 6 位核销码"
+        :placeholder="t('messages.order.redemptionCodePlaceholder')"
         :disabled="state === 'loading' || state === 'claiming'"
         @keyup.enter="execute"
       />
-      <UButton size="lg" color="primary" :loading="state === 'loading'" :label="'查询'" @click="execute" />
+      <UButton size="lg" color="primary" :loading="state === 'loading'" :label="t('messages.order.redemptionLookupBtn')" @click="execute" />
     </div>
 
     <div class="mt-4">
@@ -239,16 +240,16 @@ const statusLabel = computed(() => {
     <!-- 查询结果 -->
     <div v-if="lookup?.order && (state === 'found' || state === 'claiming' || state === 'done')" class="mt-4 rounded-xl border border-neutral-200 p-4 text-sm dark:border-neutral-800">
       <dl class="space-y-2">
-        <div class="flex justify-between"><dt class="text-neutral-500">订单号</dt><dd class="font-mono font-semibold">{{ lookup.order.code }}</dd></div>
-        <div class="flex justify-between"><dt class="text-neutral-500">状态</dt><dd>{{ lookup.order.state }}</dd></div>
-        <div class="flex justify-between"><dt class="text-neutral-500">件数 / 金额</dt><dd>{{ lookup.order.totalQuantity }} 件 · {{ lookup.order.totalWithTax }} {{ lookup.order.currencyCode }}</dd></div>
-        <div class="flex justify-between"><dt class="text-neutral-500">核销状态</dt><dd>{{ lookup.claimed ? "已核销" : "待核销" }}</dd></div>
-        <div v-if="lookup.claimedAt" class="flex justify-between"><dt class="text-neutral-500">核销时间</dt><dd>{{ new Date(lookup.claimedAt).toLocaleString() }}</dd></div>
+        <div class="flex justify-between"><dt class="text-neutral-500">{{ t('messages.order.orderCodeAdmin') }}</dt><dd class="font-mono font-semibold">{{ lookup.order.code }}</dd></div>
+        <div class="flex justify-between"><dt class="text-neutral-500">{{ t('messages.general.status') }}</dt><dd>{{ lookup.order.state }}</dd></div>
+        <div class="flex justify-between"><dt class="text-neutral-500">{{ t('messages.order.quantityAmount') }}</dt><dd>{{ lookup.order.totalQuantity }} {{ t('messages.order.unit') }} · {{ lookup.order.totalWithTax }} {{ lookup.order.currencyCode }}</dd></div>
+        <div class="flex justify-between"><dt class="text-neutral-500">{{ t('messages.order.redemptionStatus') }}</dt><dd>{{ lookup.claimed ? t('messages.order.redeemed') : t('messages.order.redeemPending') }}</dd></div>
+        <div v-if="lookup.claimedAt" class="flex justify-between"><dt class="text-neutral-500">{{ t('messages.order.claimedAt') }}</dt><dd>{{ new Date(lookup.claimedAt).toLocaleString() }}</dd></div>
       </dl>
 
       <div class="mt-4">
-        <UButton v-if="!lookup.claimed" color="primary" :loading="state === 'claiming'" :label="'确认核销'" @click="claim" />
-        <UButton v-else variant="soft" :label="'再来一单'" @click="code = ''; lookup = null; state='idle'" />
+        <UButton v-if="!lookup.claimed" color="primary" :loading="state === 'claiming'" :label="t('messages.order.confirmRedeem')" @click="claim" />
+        <UButton v-else variant="soft" :label="t('messages.order.nextOne')" @click="code = ''; lookup = null; state='idle'" />
       </div>
     </div>
   </main>
