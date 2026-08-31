@@ -1,0 +1,7 @@
+mutation GuestSetOrderCustomFields($input: GuestSetOrderCustomFieldsInput!) {
+  guestSetOrderCustomFields(input: $input) {
+    orderCode
+    hasPhone
+    pickupCode
+  }
+}

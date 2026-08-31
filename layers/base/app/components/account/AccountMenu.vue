@@ -77,6 +77,12 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
       to: localePath("/account/after-sales"),
       class: "items-center",
     },
+    {
+      label: t("messages.order.lookupMenu"),
+      icon: "i-lucide-search",
+      to: localePath("/order/lookup"),
+      class: "items-center",
+    },
   ],
   [
     {
@@ -116,6 +122,14 @@ const guestItems = computed<DropdownMenuItem[][]>(() => [
       label: t("messages.account.login"),
       icon: "i-lucide-log-in",
       to: localePath("/account/login"),
+      class: "items-center",
+    },
+  ],
+  [
+    {
+      label: t("messages.order.lookupMenu"),
+      icon: "i-lucide-search",
+      to: localePath("/order/lookup"),
       class: "items-center",
     },
   ],

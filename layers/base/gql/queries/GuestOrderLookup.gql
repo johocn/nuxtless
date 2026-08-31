@@ -1,0 +1,18 @@
+query GuestOrderLookup($input: GuestOrderLookupInput!) {
+  guestOrderLookup(input: $input) {
+    orderCode
+    currencyCode
+    orderPlacedAt
+    state
+    totalQuantity
+    subTotal
+    totalWithTax
+    isPickup
+    pickupClaimed
+    pickupCode
+    pickupClaimable
+    pickupLocation { name address businessHours }
+    lines { productName sku quantity linePriceWithTax }
+    hasPhone
+  }
+}
