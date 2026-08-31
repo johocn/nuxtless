@@ -1,0 +1,27 @@
+query AdminRedemptionLookup($code: String!) {
+  redemptionLookup(code: $code) {
+    claimed
+    claimedAt
+    order {
+      id
+      code
+      state
+      totalWithTax
+      currencyCode
+      totalQuantity
+    }
+  }
+}
+
+mutation AdminRedemptionClaim($code: String!) {
+  redemptionClaim(code: $code) {
+    claimed
+    claimedAt
+    message
+    order {
+      id
+      code
+      state
+    }
+  }
+}

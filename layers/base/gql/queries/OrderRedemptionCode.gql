@@ -1,0 +1,9 @@
+query OrderRedemptionCode($input: OrderRedemptionCodeInput!) {
+  orderRedemptionCode(input: $input) {
+    redemptionCode
+    qrPayload
+    barcodePayload
+    claimed
+    canAccess
+  }
+}
