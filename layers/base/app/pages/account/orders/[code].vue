@@ -8,12 +8,18 @@ const code = useRouteParam("code");
 const { data, error, refresh } = await useAsyncGql("GetOrderByCode", { code });
 
 const order = computed(() => data.value?.orderByCode ?? null);
+
+// --- 售后申请逻辑（保留原文件） ---
 import { canApplyAfterSales } from "../../../utils/after-sales-state";
 import type { OrderLine } from "~~/types/order";
 
 const applyModalOpen = ref(false);
 const applyLine = ref<OrderLine | null>(null);
+
 const hasError = computed(() => !!error.value || !order.value);
+const isPickup = computed(
+  () => (order.value?.customFields?.deliveryType ?? "") === "pickup",
+);
 </script>
 
 <template>
@@ -26,23 +32,28 @@ const hasError = computed(() => !!error.value || !order.value);
     }"
   />
   <main v-else-if="order" class="container mb-14">
-    <header class="my-14">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-semibold">{{ t("messages.shop.orderDetails") }}</h1>
-        <OrderStateBadge :state="order.state" />
-      </div>
-      <ULink :to="localePath('/account/orders')" class="mt-2 text-sm">
+    <header class="my-14 flex items-center justify-between">
+      <h1 class="text-2xl font-semibold">{{ t("messages.shop.orderDetails") }}</h1>
+      <ULink :to="localePath('/account/orders')" class="text-sm text-neutral-500">
         {{ t("messages.account.orders") }}
       </ULink>
-      <p class="mt-2 text-sm text-neutral-500">
-        {{ t("messages.shop.orderCode") }}: {{ order.code }}
-      </p>
     </header>
 
+    <OrderStatusBanner :order="order" class="mb-4" />
     <OrderProgress :state="order.state" class="mb-8" />
 
-    <section class="mb-10">
-      <h2 class="mb-3 text-lg font-semibold">{{ t("messages.shop.orderSummary") }}</h2>
+    <OrderRedemptionCard :order-code="order.code" class="mb-4" />
+
+    <section
+      class="mb-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+    >
+      <OrderAddress :address="order.shippingAddress" />
+    </section>
+
+    <section
+      class="mb-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+    >
+      <h2 class="mb-3 font-semibold">{{ t("messages.shop.orderSummary") }}</h2>
       <OrderItems :order="order">
         <template #line-actions="{ line, order: o }">
           <UButton
@@ -59,15 +70,24 @@ const hasError = computed(() => !!error.value || !order.value);
       </OrderItems>
     </section>
 
-    <div class="mb-10 grid grid-cols-1 gap-6 md:grid-cols-2">
-      <OrderAddress :address="order.shippingAddress" />
-      <OrderDeliveryInfo :order="order" />
-    </div>
+    <OrderPickupCard
+      v-if="isPickup"
+      :order="order"
+      class="mb-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+    />
 
-    <section class="mb-10 max-w-md">
-      <h2 class="mb-3 text-lg font-semibold">{{ t("messages.general.amount") }}</h2>
+    <section
+      class="mb-4 max-w-md rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+    >
+      <h2 class="mb-3 font-semibold">{{ t("messages.general.amount") }}</h2>
       <OrderTotals :order="order" />
       <OrderShippingBreakdown :order="order" />
+    </section>
+
+    <section
+      class="mb-6 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+    >
+      <OrderMetaCard :order="order" />
     </section>
 
     <OrderActions :order="order" @updated="refresh" class="mb-10" />
