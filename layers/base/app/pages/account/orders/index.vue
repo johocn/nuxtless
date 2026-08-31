@@ -1,228 +1,34 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "account" });
 
-import { h, resolveComponent } from "vue";
-import { SortOrder } from "~~/types/default";
-
-import type { TableColumn, TableRow } from "@nuxt/ui";
-import type { OrderTableRow } from "~~/types/general";
-
-import { ORDER_TABS, tabOfState } from "../../../utils/order-state";
 import type { OrderTabKey } from "../../../utils/order-state";
-import { formatMoney } from "../../../utils/format-money";
 
-const { i18NBaseUrl } = useRuntimeConfig().public;
-const { locale, d, t } = useI18n();
-const localePath = useLocalePath();
-const router = useRouter();
+const { t } = useI18n();
+const { customer } = storeToRefs(useCustomerStore());
 const { copy } = useClipboard();
 const toast = useToast();
-const { customer } = storeToRefs(useCustomerStore());
-const { canCancel, cancelOrder, reorder, loading: actionLoading } =
-  useOrderActions();
-const loading = ref(true);
 const activeTab = ref<OrderTabKey>("ALL");
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
-const OrderStateBadge = resolveComponent("OrderStateBadge");
-
-const options = {
-  sort: { createdAt: SortOrder.DESC },
-  take: 10,
-};
-
-const { data: orderHistory, refresh } = await useAsyncGql(
-  "GetOrderHistory",
-  {
-    options,
-  },
-  {
-    immediate: false,
-    server: false,
-  },
-);
-
-const orders = computed(
-  () => orderHistory.value.activeCustomer?.orders?.items ?? [],
-);
-
-const filteredOrders = computed(() =>
-  activeTab.value === "ALL"
-    ? orders.value
-    : orders.value.filter((o) => tabOfState(o.state) === activeTab.value),
-);
-
-const tableData = computed<OrderTableRow[]>(() =>
-  filteredOrders.value.map((order, index) => ({
-    id: index + 1,
-    // 已取消等未完成订单的 orderPlacedAt 为 null，new Date(null) 会落到 1970-01-01，
-    // 统一用占位符展示，避免误导用户。
-    date: order.orderPlacedAt
-      ? d(new Date(order.orderPlacedAt))
-      : t("messages.general.na"),
-    status: order.state,
-    amount: formatMoney(order.totalWithTax, order.currencyCode, locale.value),
-    currency: order.currencyCode,
-    code: order.code,
-  })),
-);
-
-const columns: TableColumn<OrderTableRow>[] = [
-  {
-    accessorKey: "id",
-    header: "#",
-    cell: ({ row }) => `#${row.getValue("id")}`,
-  },
-  {
-    accessorKey: "date",
-    header: t("messages.general.date"),
-    cell: ({ row }) => `${row.getValue("date")}`,
-  },
-  {
-    accessorKey: "status",
-    header: t("messages.general.status"),
-    cell: ({ row }) =>
-      h(OrderStateBadge, { state: row.getValue("status") }),
-  },
-  {
-    accessorKey: "amount",
-    header: () =>
-      h("div", { class: "text-right" }, t("messages.general.amount")),
-    cell: ({ row }) => {
-      return h("div", { class: "text-right font-medium" }, row.original.amount);
-    },
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
-        h(
-          UDropdownMenu,
-          {
-            content: {
-              align: "end",
-            },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
-          },
-          () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
-              loading: actionLoading.value,
-            }),
-        ),
-      );
-    },
-  },
-];
-
-function findOrder(code: string) {
-  return orders.value.find((o) => o.code === code);
+async function onCopy(email: string) {
+  await copy(email);
+  toast.add({ title: t("messages.general.getLinkSuccess"), color: "success" });
 }
-
-function getRowItems(row: TableRow<OrderTableRow>) {
-  const code = row.original.code;
-
-  return [
-    {
-      type: "label",
-      label: t("messages.general.actions"),
-    },
-    {
-      type: "separator",
-    },
-    {
-      label: t("messages.general.getLink"),
-      icon: "i-lucide-link",
-      class: "items-center",
-      onSelect() {
-        const path = localePath(`/account/orders/${row.original.code}`);
-        copy(`${i18NBaseUrl}${path}`);
-
-        toast.add({
-          title: t("messages.general.getLinkSuccess"),
-          color: "success",
-          icon: "i-lucide-clipboard-check",
-        });
-      },
-    },
-    ...(canCancel(row.original.status)
-      ? [
-          {
-            label: t("messages.order.cancel"),
-            icon: "i-lucide-x",
-            class: "items-center",
-            async onSelect() {
-              const ok = await cancelOrder(row.original.status);
-              if (ok) await refresh();
-            },
-          },
-        ]
-      : []),
-    {
-      label: t("messages.order.reorder"),
-      icon: "i-lucide-shopping-cart",
-      class: "items-center",
-      async onSelect() {
-        const target = findOrder(code);
-        if (!target) return;
-        const lines = target.lines.map((l) => ({
-          productVariantId: l.productVariant.id,
-          quantity: l.quantity,
-        }));
-        const ok = await reorder(lines);
-        if (ok) router.push(localePath("/checkout"));
-      },
-    },
-    {
-      label: t("messages.general.details"),
-      icon: "i-lucide-info",
-      to: localePath(`/account/orders/${row.original.code}`),
-      class: "items-center",
-    },
-  ];
-}
-
-onMounted(async () => {
-  await refresh();
-
-  loading.value = false;
-});
 </script>
 
 <template>
-  <BaseLoader v-if="loading" width="sm:w-xs md:w-sm" />
-  <main v-else class="container">
-    <header class="my-14">
-      <h1 class="text-2xl font-semibold">{{ t("messages.account.orders") }}</h1>
-      <ULink :to="localePath('/account')" class="mt-2">
+  <main class="container py-8">
+    <header class="mb-6">
+      <h1 class="text-2xl font-semibold">
+        {{ t("messages.account.orders") }}
+      </h1>
+      <button
+        class="mt-1 text-sm text-neutral-500 underline"
+        @click="onCopy(customer?.emailAddress ?? '')"
+      >
         {{ customer?.emailAddress }}
-      </ULink>
+      </button>
     </header>
-
-    <div v-if="orders">
-      <UTabs
-        v-model="activeTab"
-        :items="ORDER_TABS.map((tb) => ({ key: tb.key, label: t(tb.labelKey) }))"
-        class="mb-6"
-      />
-
-      <UTable
-        sticky
-        :data="tableData"
-        :columns="columns"
-        caption="My Orders"
-        class="max-h-[312px] flex-1"
-      />
-    </div>
+    <OrderTabBar v-model="activeTab" />
+    <OrderCardList v-model:tab="activeTab" />
   </main>
 </template>
-
-<style lang="css" scoped></style>
