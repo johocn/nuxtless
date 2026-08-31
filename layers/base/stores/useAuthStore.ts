@@ -1,3 +1,5 @@
+import { writeVendureSessionToken } from "./../app/utils/vendure-session";
+
 export const useAuthStore = defineStore(
   "auth",
   () => {
@@ -16,6 +18,7 @@ export const useAuthStore = defineStore(
       source: "vendure" = "vendure",
     ) {
       session.value = { token, tokenSource: source, user };
+      writeVendureSessionToken(token);
     }
 
     function setUser(user: { id: string; email: string }) {
@@ -26,6 +29,7 @@ export const useAuthStore = defineStore(
 
     function clearSession() {
       session.value = null;
+      writeVendureSessionToken(null);
     }
 
     const isAuthenticated = computed(() => !!session.value?.user?.id);

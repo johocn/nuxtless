@@ -1,5 +1,6 @@
 import type { ActiveOrder } from "~~/types/order";
 import type { LogInResult } from "~~/types/customer";
+import { readVendureSessionToken } from "../utils/vendure-session";
 
 // 统一会话入口：login 返回登录结果（CurrentUser | ErrorResult），default 返回活跃订单。
 // token 捕获依赖手写 fetch 读取 vendure-auth-token 响应头（typed client 无此能力）。
@@ -34,7 +35,9 @@ export async function useGqlSession(
     "Content-Type": "application/json",
   };
 
-  const token = authStore.session?.token;
+  // 优先用登录态 token；游客时回退 cookie 中的匿名会话 token，
+  // 保证 login 请求带上游客 token，Vendure 才能把游客购物车合并到登录用户。
+  const token = authStore.session?.token ?? readVendureSessionToken();
   if (token) {
     headers.authorization = `Bearer ${token}`;
   }

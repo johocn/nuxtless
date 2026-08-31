@@ -25,7 +25,20 @@ const orderStore = useOrderStore();
 const locationStore = useLocationStore();
 const { customer } = storeToRefs(useCustomerStore());
 const { fetchCustomer } = useCustomerStore();
-const countryCodeDefault = "CN";
+// 国家默认值随首页语言推导（zh→CN，en→US；频道可用国家不含该值时回退到列表内默认）
+function localeToCountry(locale: string): string | null {
+  const l = (locale || "").toLowerCase();
+  if (l.startsWith("zh")) return "CN";
+  if (l.startsWith("en")) return "US";
+  return null;
+}
+const { locale } = useI18n();
+const countryDefault = computed(() => {
+  const desired = localeToCountry(locale.value) ?? "CN";
+  if (countries.value.some((c) => c.code === desired)) return desired;
+  if (countries.value.some((c) => c.code === "CN")) return "CN";
+  return countries.value[0]?.code ?? "";
+});
 const isMounted = ref(false);
 
 if (!isActiveCustomerDetail(customer.value)) {
@@ -73,7 +86,8 @@ function syncState() {
   state.city = citySel.value.current;
   state.district = districtSel.value.current;
   state.street = streetSel.value.current;
-  state.streetLine1 = fullAddress();
+  // 街道已并入“详细地址”文本框人工填写，切换省市区时不得覆盖用户已输入的门牌号
+  if (!state.streetLine1) state.streetLine1 = fullAddress();
 }
 
 async function loadDistrict(parentAdcode: string | null, target: LevelList) {
@@ -116,11 +130,6 @@ async function onDistrictChange() {
   state.district = districtSel.value.current;
   const node = districtSel.value.items.find((d) => d.name === districtSel.value.current);
   await loadSub(node, [streetSel.value], streetSel.value);
-  syncState();
-}
-
-function onStreetChange() {
-  state.street = streetSel.value.current;
   syncState();
 }
 
@@ -195,7 +204,12 @@ async function preselectByLocation() {
     await loadDistrict(null, provinceSel.value);
   }
 
-  if (!geo) return;
+  if (!geo) {
+    // 反查失败：用首页定位城市兜底（仅回填市，供用户按需选省/区）
+    const fallbackCity = locationStore.cityName;
+    if (fallbackCity) state.city = state.city || fallbackCity;
+    return;
+  }
 
   const prov = pickBest(provinceSel.value, geo.province);
   if (!prov) return;
@@ -203,6 +217,12 @@ async function preselectByLocation() {
 
   await loadDistrict(prov.adcode, citySel.value);
   await cascadeGeo(geo);
+
+  // 街道并入详细地址：逆地理结果(省市区街道)在用户未手填时预填进 streetLine1
+  if (!state.streetLine1 && geo.formattedAddress) {
+    state.streetLine1 = geo.formattedAddress;
+  }
+
   syncState();
 }
 
@@ -252,14 +272,14 @@ onMounted(async () => {
       state.city = first.city ?? "";
       state.province = first.province ?? "";
       state.phoneNumber = first.phoneNumber ?? "";
-      state.countryCode = first.countryCode ?? countryCodeDefault;
+      state.countryCode = first.countryCode ?? countryDefault.value;
       // 从省市区文本回填四级下拉选中项（含逐级加载子级选项）
       await applyExistingState();
       syncState();
     }
   } else {
     state.fullName = activeCustomer.value?.firstName ?? "";
-    state.countryCode = state.countryCode || countryCodeDefault;
+    state.countryCode = state.countryCode || countryDefault.value;
     // 无地址簿：仍先加载省列表（即使无定位也能手选省份），再按定位城市默认省/市
     await loadDistrict(null, provinceSel.value);
     await preselectByLocation();
@@ -359,80 +379,44 @@ async function onError() {
       />
     </UFormField>
 
-    <!-- 国家 -->
-    <UFormField
-      :label="t('messages.billing.country')"
-      name="countryCode"
-      class="col-span-2"
-      size="xl"
-    >
-      <USelectMenu
-        v-model="state.countryCode"
-        value-key="code"
-        :items="countries"
-        class="w-full"
-      />
-    </UFormField>
+    <!-- 国家 / 省 / 市 / 区 显示在一行（4格，含手机 390px 也强制一行） -->
+    <div class="col-span-2 grid grid-cols-4 gap-2">
+      <UFormField :label="t('messages.billing.country')" name="countryCode" class="w-full" size="xl">
+        <USelectMenu
+          v-model="state.countryCode"
+          value-key="code"
+          :items="countries"
+          class="w-full min-w-0"
+        />
+      </UFormField>
 
-    <!-- 省 / 市 / 区 / 街道 四级联动 -->
-    <div class="col-span-2 flex flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-4 lg:gap-2">
-      <UFormField
-        :label="t('messages.billing.province')"
-        name="province"
-        class="w-full"
-        size="xl"
-      >
+      <UFormField :label="t('messages.billing.province')" name="province" class="w-full" size="xl">
         <USelectMenu
           v-model="provinceSel.current"
           :items="provinceSel.items.map((p) => p.name)"
           :disabled="districtsLoading"
           @update:model-value="onProvinceChange"
-          class="w-full"
+          class="w-full min-w-0"
         />
       </UFormField>
 
-      <UFormField
-        :label="t('messages.billing.city')"
-        name="city"
-        class="w-full"
-        size="xl"
-      >
+      <UFormField :label="t('messages.billing.city')" name="city" class="w-full" size="xl">
         <USelectMenu
           v-model="citySel.current"
           :items="citySel.items.map((c) => c.name)"
           :disabled="districtsLoading"
           @update:model-value="onCityChange"
-          class="w-full"
+          class="w-full min-w-0"
         />
       </UFormField>
 
-      <UFormField
-        :label="t('messages.billing.district')"
-        name="district"
-        class="w-full"
-        size="xl"
-      >
+      <UFormField :label="t('messages.billing.district')" name="district" class="w-full" size="xl">
         <USelectMenu
           v-model="districtSel.current"
           :items="districtSel.items.map((d) => d.name)"
           :disabled="districtsLoading"
           @update:model-value="onDistrictChange"
-          class="w-full"
-        />
-      </UFormField>
-
-      <UFormField
-        :label="t('messages.billing.street')"
-        name="street"
-        class="w-full"
-        size="xl"
-      >
-        <USelectMenu
-          v-model="streetSel.current"
-          :items="streetSel.items.map((s) => s.name)"
-          :disabled="districtsLoading"
-          @update:model-value="onStreetChange"
-          class="w-full"
+          class="w-full min-w-0"
         />
       </UFormField>
     </div>
@@ -447,7 +431,12 @@ async function onError() {
       name="streetLine1"
       size="xl"
     >
-      <UInput v-model="state.streetLine1" class="w-full" type="text" />
+      <UInput
+        v-model="state.streetLine1"
+        class="w-full"
+        type="text"
+        :placeholder="t('messages.billing.address1Placeholder')"
+      />
     </UFormField>
 
     <!-- 地址 2（必填） -->

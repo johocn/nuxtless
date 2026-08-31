@@ -53,12 +53,26 @@ export const useProductStore = defineStore("product", () => {
     () => liveStock.value ?? selectedVariant.value?.stockLevel,
   );
 
+  // 当前选中变体的主图（featuredAsset 优先，回退该变体 assets 首张 -> null）
+  const variantImage = computed(() => {
+    const v = selectedVariant.value;
+    if (v?.featuredAsset?.preview) return v.featuredAsset.preview;
+    return v?.assets?.[0]?.preview ?? null;
+  });
+
   const galleryAssets = computed(() => {
     const variantAssets = selectedVariant.value?.assets ?? [];
     const productAssets = product.value?.assets ?? [];
-    const imgs = variantAssets.length > 0 ? variantAssets : productAssets;
+    const hasVariantImage = variantImage.value != null && variantImage.value !== '';
+    // 变体主图切换：有变体图则以变体 featuredAsset 为主图首项，其余变体图跟随（去重）
+    const imgs =
+      hasVariantImage || variantAssets.length > 0
+        ? [
+            ...(hasVariantImage ? [{ id: "variant-main", preview: variantImage.value! }] : []),
+            ...variantAssets.filter((a) => a.preview !== variantImage.value),
+          ]
+        : productAssets;
     if (imgs.length > 0) return imgs;
-    // 空图集兜底占位，避免手机端空白
     return [{ id: "placeholder", preview: assetPlaceholderSrc() } as any];
   });
 

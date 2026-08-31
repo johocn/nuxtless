@@ -1,5 +1,6 @@
 export interface AddressRecord {
   id: string;
+  defaultShippingAddress: boolean;
   fullName: string | null;
   streetLine1: string | null;
   streetLine2?: string | null;

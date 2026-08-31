@@ -15,6 +15,22 @@ const { t } = useI18n();
 // 用选中 id 反查完整记录后上抛，保持对外事件负载为 AddressRecord。
 const selectedId = ref<string>();
 
+watch(
+  () => props.defaultId,
+  (id) => {
+    if (id && !selectedId.value) selectedId.value = id;
+  },
+  { immediate: true },
+);
+
+// 下拉选项用“姓名 · 街道”组合标签，避免同名地址在列表里无法区分
+const options = computed(() =>
+  props.addresses.map((a) => ({
+    ...a,
+    label: [a.fullName, a.streetLine1].filter(Boolean).join(" · "),
+  })),
+);
+
 const selectedRecord = computed(
   () => props.addresses.find((a) => a.id === selectedId.value) ?? null,
 );
@@ -28,9 +44,9 @@ function onSelect(id?: string) {
 <template>
   <USelectMenu
     v-model="selectedId"
-    :items="props.addresses"
+    :items="options"
     :value-key="'id'"
-    :label-key="'fullName'"
+    :label-key="'label'"
     :placeholder="t('messages.account.selectAddress')"
     class="w-full"
     @update:model-value="onSelect"

@@ -110,17 +110,31 @@ function successRedirect() {
   });
 }
 
-// 京东版式：按「(物流箱)地址 → 各箱配送方式 → 支付(拆单结算)」门闩式推进
+// 京东版式：按箱型门闩式推进——(物流箱)地址 → 配送方式 → (自提单)承运+自提点 → (需联系方式)联系人 → 支付(拆单结算)
 async function submitJd() {
-  const hasLogistics = (orderStore.orderBoxes ?? []).some(
-    (b) => (b.availableShippingMethodIds ?? []).length > 0,
+  const hasDeliveryBox = (orderStore.orderBoxes ?? []).some(
+    (b) => b.type === "delivery",
   );
-  if (hasLogistics) {
+  const hasPickupBox = (orderStore.orderBoxes ?? []).some(
+    (b) => b.type === "pickup",
+  );
+  const hasPickupContactBox = (orderStore.orderBoxes ?? []).some(
+    (b) => b.type === "pickup" && b.requiresContact,
+  );
+  if (hasDeliveryBox) {
     const okAddress = (await flow.submitFns.submitAddress?.()) ?? false;
     if (!okAddress) return;
+    const okDelivery = (await flow.submitFns.submitDelivery?.()) ?? false;
+    if (!okDelivery) return;
   }
-  const okDelivery = (await flow.submitFns.submitDelivery?.()) ?? false;
-  if (!okDelivery) return;
+  if (hasPickupBox) {
+    const okPickup = (await flow.submitFns.submitPickup?.()) ?? false;
+    if (!okPickup) return;
+  }
+  if (hasPickupContactBox) {
+    const okContact = (await flow.submitFns.submitContact?.()) ?? false;
+    if (!okContact) return;
+  }
   const okPayment = (await flow.submitFns.submitPayment?.()) ?? false;
   if (!okPayment) return;
   successRedirect();
@@ -136,6 +150,11 @@ async function submitLegacy() {
     await shippingForm.value?.submitShipping();
   }
   if (!(isSubmitted.address && isSubmitted.shipping)) return;
+  // 到店需联系方式则校验联系人
+  if (isPickup && flow.submitFns.submitContact) {
+    const okContact = (await flow.submitFns.submitContact()) ?? false;
+    if (!okContact) return;
+  }
   await paymentForm.value?.submitPayment();
 
   if (isSubmitted.address && isSubmitted.shipping && isSubmitted.payment) {

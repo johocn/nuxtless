@@ -3,6 +3,7 @@ import type { AddressRecord, AddressDraft } from "~~/types/address";
 function toRecord(a: any): AddressRecord {
   return {
     id: a.id,
+    defaultShippingAddress: Boolean(a.defaultShippingAddress),
     fullName: a.fullName ?? null,
     streetLine1: a.streetLine1 ?? null,
     streetLine2: a.streetLine2 ?? null,
@@ -30,7 +31,10 @@ export function useAddressBook() {
     error.value = null;
     try {
       const { activeCustomer } = await GqlGetCustomerAddresses();
-      addresses.value = (activeCustomer?.addresses ?? []).map(toRecord);
+      const list = (activeCustomer?.addresses ?? []).map(toRecord);
+      addresses.value = [...list].sort(
+        (x, y) => Number(y.defaultShippingAddress) - Number(x.defaultShippingAddress),
+      );
       return addresses.value;
     } catch (err) {
       error.value =
@@ -82,6 +86,7 @@ export function useAddressBook() {
           postalCode: d.postalCode,
           countryCode: d.countryCode,
           phoneNumber: d.phoneNumber,
+          defaultShippingAddress: d.isDefault === true,
         },
       });
       return true;
@@ -117,6 +122,7 @@ export function useAddressBook() {
       postalCode: r.postalCode ?? "",
       countryCode: r.countryCode ?? "",
       phoneNumber: r.phoneNumber ?? "",
+      isDefault: r.defaultShippingAddress === true,
     };
   }
 
