@@ -3,6 +3,7 @@ import type { GetOrderByCodeQuery } from "#gql/default";
 
 const props = defineProps<{
   order: NonNullable<GetOrderByCodeQuery["orderByCode"]>;
+  pickupCode?: string | null;
 }>();
 const { t } = useI18n();
 
@@ -22,8 +23,8 @@ const pickupClaimed = computed(
 const expressCompany = computed<string | null>(() => null);
 const expressNo = computed<string | null>(() => null);
 const trackingUrl = computed<string | null>(() => null);
-// 预留接口：自提核销/提货码，待后端顾客核销 mutation 就绪后填充
-const pickupCode = computed<string | null>(() => null);
+// 自提核销/提货码：由父组件传入（确认页从 guestOrderLookup 概览取到）
+const pickupCode = computed<string | null>(() => props.pickupCode ?? null);
 </script>
 
 <template>
