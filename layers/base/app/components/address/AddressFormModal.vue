@@ -38,6 +38,7 @@ const schema = object({
   postalCode: optional(string()),
   countryCode: pipe(string(), nonEmpty("Country is required")),
   phoneNumber: optional(string()),
+  isDefault: optional(boolean()),
 });
 
 const state = ref<InferOutput<typeof schema>>({
@@ -48,6 +49,7 @@ const state = ref<InferOutput<typeof schema>>({
   postalCode: "",
   countryCode: "",
   phoneNumber: "",
+  isDefault: false,
 });
 
 // draft 变化（打开编辑弹窗）时填充表单；新增时为 null 重置为空态
@@ -62,6 +64,7 @@ watch(
       postalCode: draft?.postalCode ?? "",
       countryCode: draft?.countryCode ?? "",
       phoneNumber: draft?.phoneNumber ?? "",
+      isDefault: !!draft?.isDefault,
     };
   },
   { immediate: true },
@@ -116,6 +119,10 @@ async function onSubmit(event: FormSubmitEvent<InferOutput<typeof schema>>) {
         </UFormField>
         <UFormField :label="t('messages.account.phone')" name="phoneNumber">
           <UInput v-model="state.phoneNumber" class="w-full" />
+        </UFormField>
+        <UFormField name="isDefault" class="flex items-center justify-between rounded-md border border-neutral-200 p-3 dark:border-neutral-800">
+          <span class="text-sm">{{ t("messages.account.defaultAddress") }}</span>
+          <USwitch v-model="state.isDefault" />
         </UFormField>
       </UForm>
     </template>

@@ -93,6 +93,9 @@ export default defineNuxtConfig({
         headers: {
           "vendure-channel-token": process.env.CHANNEL_TOKEN!,
         },
+        // 让 requestMiddleware 以 `Authorization: Bearer <token>` 注入会话 token。
+        // token 值 + 响应头捕获由 plugins/gql-session.ts 提供（游客/登录一致）。
+        token: { name: "Authorization", type: "Bearer" },
       },
     },
   },
