@@ -437,6 +437,8 @@ export default defineI18nLocale(() =>
       needTokenFirst: 'Please enter/get an admin token first (see the "Admin Token" section below)',
       orderCodeAdmin: 'Order code',
       redemptionStatus: 'Redemption status',
+      collectPending: 'Awaiting in-store payment',
+      collected: 'Collected',
       claimedAt: 'Redeemed at',
       quantityAmount: 'Items / Amount',
       unit: 'item(s)',

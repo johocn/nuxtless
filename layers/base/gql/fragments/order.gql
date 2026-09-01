@@ -127,6 +127,8 @@ fragment OrderDetail on Order {
     }
     pickupType
     pickupClaimed
+    collected
+    paymentType
     packageShippingJson
     shippingAdjustment
     contactName

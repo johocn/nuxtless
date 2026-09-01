@@ -289,7 +289,7 @@ onMounted(async () => {
           {{ t('messages.order.pickupKeepHint') }}
         </p>
 
-        <!-- 无手机号 → 补录手机号卡 -->
+        <!-- 无手机号 → 补录手机号卡；保存成功后切换为成功提示（同帧卸载卡片会连带提示消失，故分开渲染） -->
         <div v-if="showAddPhone" class="mt-4 rounded-lg border border-dashed border-neutral-300 p-4 dark:border-neutral-700">
           <p class="text-sm font-medium mb-1">{{ t('messages.order.addPhoneTitle') }}</p>
           <p class="text-xs text-neutral-500 mb-3">{{ t('messages.order.addPhoneHint') }}</p>
@@ -297,8 +297,10 @@ onMounted(async () => {
             <UInput v-model="addPhoneForm.phone" type="tel" maxlength="11" :placeholder="t('messages.order.phonePlaceholder')" class="max-w-[16rem]" :disabled="savingPhone" />
             <UButton :loading="savingPhone" :label="t('messages.order.savePhone')" @click="savePhone" />
           </div>
-          <p v-if="savedPhoneMsgOpen" class="mt-2 text-xs text-success">{{ t('messages.order.phoneSaved') }}</p>
         </div>
+        <p v-else-if="savedPhoneMsgOpen" class="mt-4 text-sm font-medium text-success">
+          {{ t('messages.order.phoneSaved') }}
+        </p>
       </div>
     </section>
 

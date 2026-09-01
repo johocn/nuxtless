@@ -54,6 +54,23 @@ async function submit() {
             {{ overview.pickupClaimed ? $t('messages.shop.pickupClaimed') : $t('messages.shop.pickupPending') }}
           </UBadge>
         </div>
+        <div class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800 text-sm space-y-2">
+          <h3 class="font-medium">{{ $t('messages.order.orderItems') }}</h3>
+          <div
+            v-for="(line, idx) in overview.lines"
+            :key="idx"
+            class="flex items-center justify-between gap-3 border-t border-neutral-100 pt-2 dark:border-neutral-800 first:border-t-0 first:pt-0"
+          >
+            <div class="min-w-0">
+              <p class="font-medium truncate">{{ line.productName || line.sku }}</p>
+              <p class="text-xs text-neutral-500">SKU: {{ line.sku }}</p>
+            </div>
+            <div class="shrink-0 text-right">
+              <p>x{{ line.quantity }}</p>
+              <p class="text-xs text-neutral-500">{{ line.linePriceWithTax }} {{ overview.currencyCode }}</p>
+            </div>
+          </div>
+        </div>
         <UButton variant="soft" @click="state='idle'; overview=null">{{ $t('messages.general.back') }}</UButton>
       </template>
     </section>
