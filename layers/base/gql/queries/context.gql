@@ -18,6 +18,8 @@ query GetChannelTheme {
       themeId
       shopContent
       detailConfig
+      orderDetailConfig
+      orderListConfig
     }
   }
 }
