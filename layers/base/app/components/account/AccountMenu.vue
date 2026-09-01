@@ -78,6 +78,12 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
       class: "items-center",
     },
     {
+      label: t("messages.account.coupons"),
+      icon: "i-lucide-ticket-percent",
+      to: localePath("/coupon"),
+      class: "items-center",
+    },
+    {
       label: t("messages.order.lookupMenu"),
       icon: "i-lucide-search",
       to: localePath("/order/lookup"),
