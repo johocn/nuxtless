@@ -4,6 +4,7 @@ import type { CheckoutState } from "~~/types/general";
 import { useCheckoutFlow } from "~~/layers/base/app/composables/useCheckoutFlow";
 
 const { t } = useI18n();
+const toast = useToast();
 const orderStore = useOrderStore();
 const flow = useCheckoutFlow();
 const { isAuthenticated } = storeToRefs(useAuthStore());
@@ -58,7 +59,15 @@ watch(paymentMethodList, applyDefaultSelection);
 
 // 注册提交：一次性拆单结算（内部聚合拆合 + 逐单过渡 ArrangingPayment + addPayment）
 flow.submitFns.submitPayment = async () => {
-  if (!state.code) return false;
+  if (!state.code) {
+    orderStore.error = t("messages.checkout.pickPaymentMethod");
+    toast.add({
+      title: t("messages.checkout.completeSections"),
+      description: orderStore.error,
+      color: "warning",
+    });
+    return false;
+  }
   orderStore.error = null;
   orderStore.loading = true;
   const settled = await orderStore.checkoutSplitted(state.code);

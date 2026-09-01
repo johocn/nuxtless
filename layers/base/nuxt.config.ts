@@ -69,13 +69,6 @@ export default defineNuxtConfig({
     fallback: "light",
   },
 
-  // NuxtScripts Registry
-  scripts: {
-    registry: {
-      stripe: true,
-    },
-  },
-
   // Global GraphQL Client Configuration
   "graphql-client": {
     codegen: {

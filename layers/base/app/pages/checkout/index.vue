@@ -112,6 +112,16 @@ function successRedirect() {
 
 // 京东版式：按箱型门闩式推进——(物流箱)地址 → 配送方式 → (自提单)承运+自提点 → (需联系方式)联系人 → 支付(拆单结算)
 async function submitJd() {
+  // 守门：orderBoxes 未加载完成时（轮询/首次进入即点提交），三个 hasXxxBox 全为 false 会静默跳过所有校验直接结算。
+  if (!(orderStore.orderBoxes?.length)) {
+    orderStore.error = t("messages.checkout.orderBoxesLoading");
+    toast.add({
+      title: t("messages.checkout.deliveryMethod"),
+      description: orderStore.error,
+      color: "warning",
+    });
+    return;
+  }
   const hasDeliveryBox = (orderStore.orderBoxes ?? []).some(
     (b) => b.type === "delivery",
   );

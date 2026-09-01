@@ -184,6 +184,9 @@ export default defineI18nLocale(() =>
       pickContactPerson: "Select contact",
       switchContact: "Switch / add contact",
       locateAddressDone: "Shipping address filled from location",
+      orderBoxesLoading: "Shipping info is loading, please try again in a moment",
+      completeSections: "Please complete shipping and payment info first",
+      pickPaymentMethod: "Please select a payment method",
     },
     account: {
       password: "Password",
