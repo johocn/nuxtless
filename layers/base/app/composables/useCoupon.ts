@@ -85,6 +85,27 @@ export interface CouponClientOptions {
   locale?: string;
 }
 
+// nshop i18n locale code → Vendure LanguageCode 枚举值（zh-CN 需映射为 zh_Hans，
+// 否则 `?languageCode=zh-CN` 不被 Vendure 识别，券名/说明会回退英文）
+const VENDURE_LOCALE_MAP: Record<string, string> = {
+  "zh-CN": "zh_Hans",
+  en: "en",
+  bg: "bg_BG",
+  ru: "ru_RU",
+  fa: "fa_IR",
+  de: "de_DE",
+  es: "es_ES",
+  fr: "fr_FR",
+  it: "it_IT",
+  pt: "pt_BR",
+  ja: "ja_JP",
+  ko: "ko_KR",
+};
+
+function toVendureLocale(locale: string): string {
+  return VENDURE_LOCALE_MAP[locale] ?? locale;
+}
+
 function resolveClient(): GraphQLClient {
   const { channelToken } = useRuntimeConfig().public;
   const i18n = useI18n();
@@ -99,7 +120,7 @@ function resolveClient(): GraphQLClient {
   if (channelToken) headers["vendure-channel-token"] = channelToken;
   if (i18n.locale.value) headers["Accept-Language"] = i18n.locale.value;
 
-  const client = new GraphQLClient(`${gqlHost}?languageCode=${i18n.locale.value}`, {
+  const client = new GraphQLClient(`${gqlHost}?languageCode=${toVendureLocale(i18n.locale.value)}`, {
     // 复刻 gql-session 插件：捕获响应头 `vendure-auth-token` 持久化，保证游客/登录同会话
     responseMiddleware: (response: any) => {
       const headersObj = response?.headers ?? response?.response?.headers;
