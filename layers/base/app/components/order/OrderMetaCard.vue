@@ -5,6 +5,16 @@ defineProps<{
   order: NonNullable<GetOrderByCodeQuery["orderByCode"]>;
 }>();
 const { t, locale } = useI18n();
+
+function paymentLine(order: NonNullable<GetOrderByCodeQuery["orderByCode"]>): string {
+  const method = order.payments?.[0]?.method || "";
+  const cf = (order.customFields as any) ?? {};
+  const cod = method === "cash-on-delivery" || cf.paymentType === "cod";
+  const collected = !!cf.collected;
+  if (cod && !collected) return t("messages.order.collectPending");
+  if (collected) return t("messages.order.collected");
+  return method || t("messages.general.na");
+}
 </script>
 
 <template>
@@ -25,7 +35,7 @@ const { t, locale } = useI18n();
     </div>
     <div>
       <dt class="text-neutral-500">{{ t("messages.general.paymentMethod") }}</dt>
-      <dd>{{ order.payments?.[0]?.method || t("messages.general.na") }}</dd>
+      <dd>{{ paymentLine(order) }}</dd>
     </div>
     <div>
       <dt class="text-neutral-500">{{ t("messages.general.shippingSelect") }}</dt>

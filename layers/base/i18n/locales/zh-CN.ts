@@ -433,6 +433,8 @@ export const zhMessages = {
       needTokenFirst: '请先录入/获取管理令牌（下方「管理令牌」区）',
       orderCodeAdmin: '订单号',
       redemptionStatus: '核销状态',
+      collectPending: '待到店收款',
+      collected: '已收款',
       claimedAt: '核销时间',
       quantityAmount: '件数 / 金额',
       unit: '件',
