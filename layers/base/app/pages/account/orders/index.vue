@@ -28,7 +28,6 @@ async function onCopy(email: string) {
         {{ customer?.emailAddress }}
       </button>
     </header>
-    <OrderTabBar v-model="activeTab" />
-    <OrderCardList v-model:tab="activeTab" />
+    <OrderListRenderer v-model="activeTab" />
   </main>
 </template>
