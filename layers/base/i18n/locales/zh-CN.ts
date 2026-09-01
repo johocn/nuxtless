@@ -181,6 +181,9 @@ export const zhMessages = {
       pickContactPerson: "选择联系人",
       switchContact: "切换/新增联系人",
       locateAddressDone: "已按定位填充收货地址",
+      orderBoxesLoading: "配送信息加载中，请稍候再试",
+      completeSections: "请先完善配送与支付信息",
+      pickPaymentMethod: "请选择支付方式",
     },
     account: {
       password: '密码',
