@@ -9,7 +9,7 @@ const { data, error, refresh } = await useAsyncGql("GetOrderByCode", { code });
 
 const order = computed(() => data.value?.orderByCode ?? null);
 
-// --- 售后申请逻辑（保留原文件） ---
+// --- 售后申请逻辑 ---
 import { canApplyAfterSales } from "../../../utils/after-sales-state";
 import type { OrderLine } from "~~/types/order";
 
@@ -17,9 +17,6 @@ const applyModalOpen = ref(false);
 const applyLine = ref<OrderLine | null>(null);
 
 const hasError = computed(() => !!error.value || !order.value);
-const isPickup = computed(
-  () => (order.value?.customFields?.deliveryType ?? "") === "pickup",
-);
 </script>
 
 <template>
@@ -39,58 +36,20 @@ const isPickup = computed(
       </ULink>
     </header>
 
-    <OrderStatusBanner :order="order" class="mb-4" />
-    <OrderProgress :state="order.state" class="mb-8" />
-
-    <OrderRedemptionCard :order-code="order.code" class="mb-4" />
-
-    <section
-      class="mb-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
-    >
-      <OrderAddress :address="order.shippingAddress" />
-    </section>
-
-    <section
-      class="mb-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
-    >
-      <h2 class="mb-3 font-semibold">{{ t("messages.shop.orderSummary") }}</h2>
-      <OrderItems :order="order">
-        <template #line-actions="{ line, order: o }">
-          <UButton
-            v-if="canApplyAfterSales(o.state)"
-            size="xs"
-            variant="soft"
-            color="primary"
-            icon="i-lucide-receipt"
-            :label="t('messages.afterSales.apply')"
-            class="shrink-0"
-            @click="applyLine = line; applyModalOpen = true"
-          />
-        </template>
-      </OrderItems>
-    </section>
-
-    <OrderPickupCard
-      v-if="isPickup"
-      :order="order"
-      class="mb-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
-    />
-
-    <section
-      class="mb-4 max-w-md rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
-    >
-      <h2 class="mb-3 font-semibold">{{ t("messages.general.amount") }}</h2>
-      <OrderTotals :order="order" />
-      <OrderShippingBreakdown :order="order" />
-    </section>
-
-    <section
-      class="mb-6 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
-    >
-      <OrderMetaCard :order="order" />
-    </section>
-
-    <OrderActions :order="order" @updated="refresh" class="mb-10" />
+    <OrderDetailRenderer :order="order" :refresh="refresh">
+      <template #line-actions="{ line, order: o }">
+        <UButton
+          v-if="canApplyAfterSales(o.state)"
+          size="xs"
+          variant="soft"
+          color="primary"
+          icon="i-lucide-receipt"
+          :label="t('messages.afterSales.apply')"
+          class="shrink-0"
+          @click="applyLine = line; applyModalOpen = true"
+        />
+      </template>
+    </OrderDetailRenderer>
 
     <AfterSalesCreateModal
       v-if="applyLine"
@@ -101,5 +60,3 @@ const isPickup = computed(
     />
   </main>
 </template>
-
-<style lang="css" scoped></style>
