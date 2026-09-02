@@ -2,6 +2,7 @@ export interface AddressRecord {
   id: string;
   defaultShippingAddress: boolean;
   fullName: string | null;
+  company?: string | null;
   streetLine1: string | null;
   streetLine2?: string | null;
   province?: string | null;
@@ -14,6 +15,7 @@ export interface AddressRecord {
 
 export interface AddressDraft {
   fullName: string;
+  company?: string;
   streetLine1: string;
   streetLine2?: string;
   province?: string;

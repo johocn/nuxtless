@@ -17,6 +17,7 @@ query GetCustomerAddresses {
     addresses {
       id
       fullName
+      company
       defaultShippingAddress
       streetLine1
       streetLine2

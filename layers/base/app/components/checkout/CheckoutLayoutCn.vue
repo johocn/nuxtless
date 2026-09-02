@@ -35,6 +35,9 @@ const emit = defineEmits<{ (e: "submit"): void }>();
     <!-- 支付块（支付方式由全箱白名单聚合） -->
     <CheckoutPaymentBlock />
 
+    <!-- 分账汇总（按商户分账 + 应付款总额） -->
+    <CheckoutPerBoxSummary />
+
     <!-- 底部吸底结算栏（含金额明细 / 协议 / 去结算；移动端吸底，桌面端用全局 aside 提交） -->
     <CheckoutCnSummaryBar :disabled="false" :on-submit="() => emit('submit')" />
   </div>

@@ -5,6 +5,7 @@ import type {
   PaymentMethods,
   OrderBoxes,
   CheckoutSplittedResult,
+  MerchantSplits,
 } from "~~/types/order";
 
 export const useOrderStore = defineStore("order", () => {
@@ -19,6 +20,7 @@ export const useOrderStore = defineStore("order", () => {
   const shippingMethods = ref<ShippingMethods | null>(null);
   const paymentMethods = ref<PaymentMethods | null>(null);
   const orderBoxes = ref<OrderBoxes>([]);
+  const merchantSplit = ref<MerchantSplits>([]);
 
   async function fetchOrder(type: "base" | "detail" = "base"): Promise<void> {
     loading.value = true;
@@ -196,6 +198,7 @@ export const useOrderStore = defineStore("order", () => {
 
   async function setOrderShippingAddress(input: {
     fullName?: string;
+    company?: string;
     streetLine1: string;
     streetLine2?: string;
     province?: string;
@@ -371,6 +374,23 @@ export const useOrderStore = defineStore("order", () => {
     }
   }
 
+  /** 每商户（租户）分账汇总：合并单支付后各商家应计入金额（含税实收口径，spec §8） */
+  async function fetchOrderMerchantSplit(): Promise<void> {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const { orderMerchantSplit: result } = await GqlGetOrderMerchantSplit();
+      merchantSplit.value = result ?? [];
+    } catch (err) {
+      if (err instanceof Error) {
+        error.value = err.message || "Failed to fetch merchant split";
+      }
+    } finally {
+      loading.value = false;
+    }
+  }
+
   /** 为某一箱设置配送方式（物流不传 pickupLocationId；自提需传相应自提点 + 该箱承运配送方式） */
   async function setOrderBoxShippingMethod(
     boxKey: string,
@@ -401,20 +421,28 @@ export const useOrderStore = defineStore("order", () => {
 
   /**
    * 一次性拆单结算：内部完成「源订单分箱 + 按所选支付方式聚合拆合 + 逐单过渡 ArrangingPayment + addPayment」。
+   * opts.boxKeys/lineIds 可选（String 语义）：限定只结算部分箱 / 箱内部分行；不传=结算全部箱与行。
    * 返回已结算订单列表；活动订单已不存在，order 置空、orderBoxes 清空。
    */
   async function checkoutSplitted(
     method: string,
     metadata?: string,
+    opts?: { boxKeys?: string[]; lineIds?: string[] },
   ): Promise<CheckoutSplittedResult> {
     loading.value = true;
     error.value = null;
 
     try {
-      const { checkoutSplitted: result } = await GqlCheckoutSplitted({
-        method,
-        metadata: metadata ?? null,
-      });
+      const vars: {
+        method: string;
+        metadata?: string | null;
+        boxKeys?: string[];
+        lineIds?: string[];
+      } = { method, metadata: metadata ?? null };
+      // 未传入限定集合时保持未定义，避免 codegen 把空数组/空值一并上送干扰后端判定
+      if (opts?.boxKeys?.length) vars.boxKeys = opts.boxKeys;
+      if (opts?.lineIds?.length) vars.lineIds = opts.lineIds;
+      const { checkoutSplitted: result } = await GqlCheckoutSplitted(vars);
       order.value = null;
       orderBoxes.value = [];
       return (result ?? []) as CheckoutSplittedResult;
@@ -453,5 +481,7 @@ export const useOrderStore = defineStore("order", () => {
     fetchOrderBoxes,
     setOrderBoxShippingMethod,
     checkoutSplitted,
+    merchantSplit,
+    fetchOrderMerchantSplit,
   };
 });

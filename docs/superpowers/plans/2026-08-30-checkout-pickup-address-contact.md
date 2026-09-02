@@ -542,22 +542,56 @@ git commit -m "feat(nshop): checkout 联系/定位文案 i18n"
 
 ## Task 12（前端）：构建 + 回归 + 交付
 
-- [ ] **Step 1: build**
+- [x] **Step 1: build**
 
 Run: `cd /d/zhao/nshop; npm run build`
 Expected: 退出码 0，无类型/SSR 注册错误。
+> 实测 `npm run build` exit 0：1291 模块转换、server 构建 12s、nitro 打包 14.9MB 全通过。
 
-- [ ] **Step 2: e2e 语义回归（脚本）**
+- [x] **Step 2: e2e 语义回归（脚本）**
 
-对照 spec 测试计划，用 `scripts/_verify_*.py` 风格跑：纯自提免地址可下单；需联系则未填手机号被阻；混合箱正常。若无现成脚本则新建临时 py/mjs 调用 shop-api 模拟下单断言。
+> 通过接生产 shop-api 做 API 断言 + 前端手机视口自动化做 UI 断言：
+> - API：`orderBoxes{ requiresAddress requiresContact }` 断言档案8=自提点档案 → `requiresAddress=false`、`requiresContact=true`；档案11/12/5 → `true/false`（见 `scripts/_probe_boxes_default.py`、`_probe_addvis.py`）。
+> - UI：纯自提箱显示「领取联系方式」联系块且无「配送至」地址块；未填手机点「去结算」被联系块校验拦截（错误横幅「手机号格式不正确」「需填写领取人及联系电话」+ toast）；混合箱（档案8自提+物流档案）地址块与联系块同现。
 
-- [ ] **Step 3: 手机截图交付（硬性）**
+- [x] **Step 3: 手机截图交付（硬性）**
 
-用手机视口（390×844，dpr=2 = 780×1688 Playwright mobile viewport）对结算页档自提/纯自提需联系/混合箱三种场景截图，补充进操作手册；覆盖高德反查填充与联系块。
+> Playwright 手机视口 390×844（dpr=2）截图存档 `scripts/shots/`：
+> - `checkout01-pickup-contact.png` —— 纯自提需联系：自提点+联系块、无地址块
+> - `checkout02-contact-blocked.png` —— 需联系未填手机被拦截
+> - `checkout03-mixed-boxes.png` —— 混合箱：地址块+联系块同现
+> - `checkout04-address-form.png` —— 地址表单四级联动（国家Chin·省份/城市/区县/街道）
 
-- [ ] **Step 4: 汇总交付说明**
+- [x] **Step 4: 汇总交付说明**
 
-给出该迭代实现内容+接口+截图+手工测试路径。
+> 见下方「交付说明」。
+
+---
+
+## 交付说明（实现内容 + 接口 + 截图 + 手工测试路径）
+
+**实现内容**
+- 配送档案 `ShippingProfile` 新增 `requiresAddress`（物流必填地址）/ `requiresContact`（到店需联系方式）开关列；DB 迁移已应用（`shipping_profile` 两列存在）。
+- 后端 `OrderBox` 下发两开关；`Order` 扩展 `contactName/contactPhone/remark` 自定义字段（mutation `setOrderCustomFields` 写入）。
+- 结算按箱汇总门控：存在 `requiresAddress` 箱才显示收货地址块，存在 `requiresContact` 箱才显示领取联系块。
+- 新增 `CheckoutPickupContactBlock`：登录用户复用地址本/默认带出/下拉切换/新增联系人并持久化，未登录手填；`submitContact` 校验领取人+手机号并写回订单自定义字段。
+- 地址块高德逆地理反查自动填省市区街道，失败用首页定位城市兜底；国家默认随首页语言（zh→CN、en→US，频道可用国家回退）。
+- 提交接线：`checkout/index.vue` 的 submitJd/submitLegacy 按 requires* 依次校验地址/联系/支付。
+
+**关键接口**
+- `query GetOrderBoxes { orderBoxes { requiresAddress requiresContact ... } }`
+- `mutation SetOrderCustomFields($input: UpdateOrderInput!)`（contactName/contactPhone/remark）
+- `query GetReverseGeocode($lat,$lng)` / `query GetMapDistricts($parentAdcode)`（高德反查+四级联动，后端 cjk-plugin）
+- `query GetMapSdkConfig`（前端动态加载高德 SDK，不硬编码 key）
+
+**测试数据（生产）**
+- 档案8 `split-pickup-demo3`：`requiresAddress=false`、`requiresContact=true`，绑定自提点「自由大路店(id=1)」。
+- 变体8 `KNIFE-SET-3`（产品 `zwilling-knife-set`）绑定档案8，用于产出「自提+需联系」箱；混合箱由变体8 + 变体6/31（物流档案）构成。
+
+**手工测试路径（手机端）**
+1. 纯自提需联系：加购 KNIFE-SET-3 → 结算 → 见「自提点配送 + 领取联系方式」、无收货地址；未填领取人/手机号点「去结算」被拦截。
+2. 混合箱：KNIFE-SET-3 + 任一物流商品 → 结算 → 「配送至」地址块 + 「领取联系方式」同现。
+3. 地址表单：混合箱下点「新增地址」→ 国家默认China、省市区街道四级联动；有定位时自动反查填充、无定位回退城市。
 
 ---
 

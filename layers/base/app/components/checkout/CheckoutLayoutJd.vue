@@ -38,5 +38,8 @@ const hasPickupContactBox = computed(() =>
     <CheckoutBoxPickupBlock v-if="hasPickupBox" />
 
     <CheckoutPaymentBlock />
+
+    <!-- 分账汇总（按商户分账 + 应付款总额） -->
+    <CheckoutPerBoxSummary />
   </div>
 </template>
