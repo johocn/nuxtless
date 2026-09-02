@@ -3,19 +3,15 @@
 // 金额一律按「已选项」实时刷新（usePerBoxSelection 单例）：
 //   本箱小计 = 该箱已选商品合计 + 该箱运费(box.shippingCost) − 券/免邮折扣(box.shippingDiscount)；
 //   应付款 = 各被选箱小计之和（合并/分箱同口径，均按已选项求和，避免把未选行金额算进应付款）。
-// 数据源 orderStore.orderBoxes + usePerBoxSelection + orderStore.merchantSplit（GetOrderMerchantSplit）。
-import type { MerchantSplitInfo, OrderBoxInfo } from "~~/types/order";
+// 数据源 orderStore.orderBoxes + usePerBoxSelection（商户分账按已选箱租户聚合，不依赖后端整单 split）。
+import type { OrderBoxInfo } from "~~/types/order";
 import { usePerBoxSelection } from "~~/layers/base/app/composables/usePerBoxSelection";
 
 const { t } = useI18n();
 const orderStore = useOrderStore();
 const sel = usePerBoxSelection();
 
-await orderStore.fetchOrderMerchantSplit();
-
-const { orderBoxes, merchantSplit } = storeToRefs(orderStore);
-
-const split = computed<MerchantSplitInfo[]>(() => merchantSplit.value ?? []);
+const { orderBoxes } = storeToRefs(orderStore);
 
 const fmt = (cents: number) => `¥${(cents / 100).toFixed(2)}`;
 
@@ -59,6 +55,22 @@ const payableTotal = computed(() =>
 const selectedQty = computed(() =>
   selectedBoxList.value.reduce((acc, b) => acc + boxSelectedQty(b), 0),
 );
+
+/** 商户分账 = 各被选箱小计按租户聚合（部分结算时只计入已选项，与会实收一致；不再用后端整单 merchantSplit） */
+const merchantRows = computed<{ key: string; name: string; amount: number }[]>(() => {
+  const map = new Map<string, { key: string; name: string; amount: number }>();
+  for (const box of selectedBoxList.value) {
+    const key = box.tenantChannelId ?? box.tenantName ?? box.profileName;
+    const cur = map.get(key) ?? {
+      key,
+      name: box.tenantName ?? box.profileName ?? "",
+      amount: 0,
+    };
+    cur.amount += boxSubtotal(box);
+    map.set(key, cur);
+  }
+  return [...map.values()];
+});
 </script>
 
 <template>
@@ -103,19 +115,19 @@ const selectedQty = computed(() =>
       </div>
     </dl>
 
-    <!-- 商户分账汇总（沿用既有 merchantSplit，每商户一行金额） -->
-    <template v-if="split.length">
+    <!-- 商户分账汇总（按已选箱租户聚合，每商户一行金额；部分结算时与会实收一致） -->
+    <template v-if="merchantRows.length">
       <p class="mb-2 mt-4 text-xs text-primary-600 dark:text-primary-400">
         {{ t("messages.checkout.mergeToOneOrder") }}
       </p>
       <dl class="space-y-1 text-sm">
         <div
-          v-for="s in split"
-          :key="s.tenantChannelId || s.tenantName"
+          v-for="s in merchantRows"
+          :key="s.key"
           class="flex items-center justify-between text-neutral-600 dark:text-neutral-300"
         >
-          <dt class="min-w-0 truncate">{{ s.tenantName }}</dt>
-          <dd class="shrink-0 font-medium">{{ fmt(s.amount ?? 0) }}</dd>
+          <dt class="min-w-0 truncate">{{ s.name }}</dt>
+          <dd class="shrink-0 font-medium">{{ fmt(s.amount) }}</dd>
         </div>
       </dl>
     </template>
