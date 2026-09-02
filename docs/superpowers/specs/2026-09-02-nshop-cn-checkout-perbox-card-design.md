@@ -2,7 +2,7 @@
 
 > 关联 repo：`d:\zhao\nshop`（C 端 Nuxt）
 > 依据：`2026-09-02-nshop-cn-per-box-checkout-design.md`（逐箱结算设计定稿）
-> 状态：待审阅
+> 状态：定稿（含优惠券切换 / 支付交集 / 商品行预留槽位实现细节）
 > 日期：2026-09-02
 
 ## 1. 背景与目标
@@ -55,6 +55,25 @@
 - 边界：数量不得减到 0（禁用减号）；某种商品不可拆分时行内仅允许全选该行。
 - 汇总、箱小计、件数、券、运费**实时按已选项计算刷新**。
 
+## 5a. 商品行字段与预留槽位
+
+`BoxLines` 每行按「勾选｜图片｜名称+规格名+SKU｜单价｜数量步进｜行小计｜删除」布局：
+
+| 槽位 | 来源字段 | 现状 | 后端需求 |
+|---|---|---|---|
+| 勾选框 | —— | —— | —— |
+| 商品图片 | `featureAsset.source`（Vendure `orderLine.featuredAsset`） | ❌ lines 未下发 | **需增补** |
+| 名称 | `productName` | ✅ | —— |
+| 规格名 | `variantName`（`orderLine.productVariant.name`，多为 颜色·容量 等规格组合） | ❌ lines 未下发 | **需增补** |
+| SKU | `sku` | ❌ 未下发 | 需增补（可空） |
+| 单价 | `unitPrice`（含税，分） | ✅ | —— |
+| 数量 | `quantity` | ✅ | —— |
+| 行小计 | `lineTotal`（含税，随已选项不需要改，仅展示该行整额） | ✅ | —— |
+| 删除 | —— | —— | —— |
+
+> 前端按新字段渲染；缺失时示意图占位（`featureAsset` 为空显灰块、`variantName` 为空只显名称），以保证旧数据/未部署新后端时页面不破版。
+> 商品行小计展示该行 `lineTotal`；勾选后本轮可用原 `lineTotal`（行级不拆份），整箱/汇总按「被选行」求和——前端本地计算，不需后端重算每行。
+
 ## 6. 多租户 × 多档案分组（§1）
 
 - `CheckoutPerBoxList` 按 `tenantId` 分区：每个租户一个**区块头**（商户名），区内并列该商户各配送箱卡。
@@ -63,17 +82,27 @@
 
 ## 7. 支付方式：交集 + 三态（§7）
 
-- 支付区（全局）计算**被选箱白名单交集**。
+实现细节（全局支付区）：
+- 输入 = 被选箱的 `availablePaymentMethodCodes` 白名单集合；`intersection = ∩(所有被选箱白名单)`。
 - **交集非空** → 显示交集内方式，提示「将合并为 1 单支付」；任选 → 合并 1 单统一收款，实收按商户分账。
-- **交集为空** → 顶部红条「各箱支付方式不同，将分箱支付」；支付区按箱列出各自唯一方式，提交按箱拆单。
-- **余额**：共享钱包充足可选合并；不足 → 禁用 + 「余额不足，分箱支付」。
-- **不放合并/分箱开关**，系统自动判定。
+- **交集为空** → 顶部红条「各箱支付方式不同，将分箱支付」；支付区改为**按箱**列出各自白名单方式，提交按箱拆单（每箱一单各自支付）。
+- **余额特例**：① 选择「余额」且共享钱包充足，且所有被选箱白名单支持余额 → 合并 1 单共享钱包扣；② 钱包不足 → 余额选项禁用 + 提示「余额不足，分箱支付」。
+- **不放合并/分箱开关**，系统自动判定；判定与提交复用后端 `decideAggregation`（`boxKeys`/`lineIds` 局部结算已上线）。
+
+示例：盒A{微信,支付宝} 盒B{支付宝,货到付款} 盒C{货到付款}：
+- 选 A+B → ∩={支付宝} → 合并 1 单付支付宝；
+- 全选 A+B+C → ∩=∅ → 红条 + 三箱各自支付、按箱拆单。
 
 ## 8. 优惠券（整单一券）
 
-- **约束**：沿用 `applyCouponToOrder`/`clearCouponFromOrder`（一单一券、作用于整个活动订单）。**不实现逐箱多券**。
-- **UI**：每张卡内「优惠券」行显示当前已用券/未用，点开展开该店可用券（`box.availableCoupons` ∩ `useCoupon().getMyCoupons(UNUSED)`）。任一箱内选中即 `applyCouponToOrder(code)`（替换整单一券）；切换/清除调用 `clearCouponFromOrder`。折扣仅作用于该券归属店商品行（既有 COUPON_SCOPE 逻辑）。
-- 提示：一单最多一券；换券前清除旧券。toast 展示券抵扣。
+实现细节：
+- **机制不变**：沿用 `applyCouponToOrder(code)` / `clearCouponFromOrder()`（一单一券、作用于整个活动订单）。**不实现逐箱多券**。
+- **UI**：每张卡内「优惠券」行显示 当前已用券 / 未使用；点击展开**券选择抽屉**（弹层）：
+  - 列表 = 该店可用我持有的券（`box.availableCoupons` ∩ `useCoupon().getMyCoupons(UNUSED)`），逐项含 券名 / 金额(满X减Y或折扣) / 状态(可用/已过期置灰)。
+  - 选中 → `applyCouponToOrder(code)`（**整单一券**，替换旧券）→ 整单重算 → 回填各箱卡「已用：-¥N」+ toast「已使用优惠券，优惠¥N」。
+  - 换券 → 先 `clearCouponFromOrder()` 清旧，再 `applyCouponToOrder(新code)`。
+  - 取消 → `clearCouponFromOrder()`。
+- 折扣仅作用于该券归属店商品行（既有 COUPON_SCOPE 逻辑）；券不可叠加，一单最多一券。
 
 ## 9. 收货地址（§4，共享为主 + 逐箱可选）
 
@@ -132,8 +161,9 @@
 
 ## 18. 后端配合
 
-- 券：沿用 `applyCouponToOrder`（整单一券），**无后端改造**。
-- `checkoutSplitted` 已支持 `boxKeys`/`lineIds` 局部结算（Phase A 已上线）——前端按 selectedBoxes 传参即可。无需后端新增。
+- **券**：沿用 `applyCouponToOrder`（整单一券），**无后端改造**。
+- **`checkoutSplitted`**：已支持 `boxKeys`/`lineIds` 局部结算（Phase A 已上线）——前端按 selectedBoxes 传参即可，无需后端新增。
+- **`GetOrderBoxes().lines` 增补字段（本次唯一后端改动）**：物流/自提箱的商品行需增补 `featureAsset { source }`（图）、`variantName`（规格名，映射 `orderLine.productVariant.name`）、`sku`（可空），供 `BoxLines` 预留图片/规格名/SKU 槽位。改后端 `cjk-plugin` order-box-aggregation，重新生成 `lib/` 提交，服务器 git pull + pm2 restart。
 
 ## 19. 测试与交付（硬性）
 
@@ -148,4 +178,5 @@
 
 ## 21. 待实施清单（交付 writing-plans）
 
-① `usePerBoxSelection.ts`；② `BoxLines / BoxShippingMethod / BoxAddress / BoxPickup`；③ `CheckoutPerBoxList.vue`（分组渲染 + 卡片装配）；④ cn/jd 外层容器改造；⑤ `CheckoutLayoutJdLegacy.vue` 回退；⑥ `useCheckoutFlow` 提交 + 回流；⑦ 底部订单汇总；⑧ i18n 双语言补全；⑨ 手机截图 + 操作手册。
+① 后端 `GetOrderBoxes().lines` 增补 `featureAsset/variantName/sku` + 重出 lib 部署；
+② `usePerBoxSelection.ts`；③ `BoxLines / BoxShippingMethod / BoxAddress / BoxPickup`；④ `CheckoutPerBoxList.vue`（分组渲染 + 卡片装配）；⑤ cn/jd 外层容器改造；⑥ `CheckoutLayoutJdLegacy.vue` 回退；⑦ `useCheckoutFlow` 提交 + 回流；⑧ 底部订单汇总；⑨ i18n 双语言补全；⑩ 手机截图 + 操作手册。
