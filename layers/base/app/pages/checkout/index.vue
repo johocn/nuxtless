@@ -194,6 +194,12 @@ onMounted(() => {
   if (isAuthenticated.value) {
     void fetchAddresses();
   }
+
+  // 访客会话：SSR 端 fetchOrder 无浏览器 cookie 拿到空单，需在客户端重取，
+  // 否则结算页被 v-if(activeOrder.lines<1) 判为空购物车态。
+  if (!isActiveOrderDetail(order.value)) {
+    void orderStore.fetchOrder("detail");
+  }
 });
 </script>
 
