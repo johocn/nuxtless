@@ -93,7 +93,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <USlideover v-model:open="isOpen" :ui="{ width: 'max-w-md' }" :title="t('messages.coupon.coupon')">
+  <USlideover v-model:open="isOpen" :title="t('messages.coupon.coupon')">
     <template #header>
       <h3 class="text-base font-medium">{{ t("messages.coupon.coupon") }}</h3>
     </template>
