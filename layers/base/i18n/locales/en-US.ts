@@ -174,6 +174,8 @@ export default defineI18nLocale(() =>
       mobileMenu: "Mobile Menu",
       apply: "Apply",
       loading: "Please wait...",
+      to: "to",
+      and: "and",
       printReceipt: "Print Receipt",
       generalMessage: "Please try again later or contact support.",
       shopFeatures: {
@@ -233,6 +235,13 @@ export default defineI18nLocale(() =>
       orderBoxesLoading: "Shipping info is loading, please try again in a moment",
       completeSections: "Please complete shipping and payment info first",
       pickPaymentMethod: "Please select a payment method",
+      cnContactTitle: "Contact Information",
+      cnAgreementTerms: "User Service Agreement",
+      cnAgreementPrivacy: "Privacy Policy",
+      cnAgreementNotice: "I have read and agree to",
+      cnAgreementRequired: "Please agree to the terms and privacy policy before submitting",
+      cnExpandDetails: "Details",
+      cnCollapseDetails: "Collapse",
     },
     account: {
       password: "Password",

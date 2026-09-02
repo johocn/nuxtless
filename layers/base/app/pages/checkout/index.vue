@@ -9,6 +9,7 @@ import {
 } from "~~/layers/base/app/utils/checkout-config";
 
 const layout = checkoutConfig.layout;
+const isCn = layout === "cn";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -176,7 +177,7 @@ async function submitLegacy() {
 }
 
 async function onSubmit() {
-  if (layout === "jd") {
+  if (layout === "cn" || layout === "jd") {
     await submitJd();
     return;
   }
@@ -224,8 +225,11 @@ onMounted(() => {
 
     <div v-else class="flex w-full flex-col gap-12 md:flex-row md:gap-12">
       <div class="w-full md:w-1/2 lg:w-2/3">
-        <!-- 京东新版版式（积木式，默认） -->
-        <CheckoutRenderer v-if="layout === 'jd'" />
+        <!-- 积木式版式：cn（中国本地化，默认）｜jd（京东新版，均可回退） -->
+        <CheckoutRenderer
+          v-if="layout === 'cn' || layout === 'jd'"
+          @submit="onSubmit"
+        />
 
         <!-- 旧版式回退 -->
         <template v-else>
@@ -294,6 +298,7 @@ onMounted(() => {
         role="complementary"
         aria-labelledby="order-summary-heading"
         class="sticky top-30 h-fit w-full md:w-2/3 lg:w-1/3"
+        :class="isCn ? 'hidden md:block' : ''"
       >
         <h2 id="order-summary-heading" class="mb-4 text-2xl font-semibold">
           {{ t("messages.shop.orderSummary") }}
