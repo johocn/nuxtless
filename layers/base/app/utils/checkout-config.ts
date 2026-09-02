@@ -2,24 +2,30 @@
  * checkout 页面「可回退积木式构建器」前端配置。
  *
  * 遵循 C 端模板强制组合：多语言 + 多城市 + 四级可回退风格体系。
- * - 本配置为「L2 页面级」前端常量，默认 `jd`（京东新版）、备选 `legacy`（原有版式回退）；
+ * - 本配置为「L2 页面级」前端常量：默认 `cn`（中国本地化）、备选 `jd`（京东新版）、
+ *   `legacy`（原有版式回退）；
  *   未来如需渠道级下发，可拆到后端 customFields（SSR 读取）而无需改动组件。
  */
 
-export type CheckoutLayout = "jd" | "legacy";
+export type CheckoutLayout = "cn" | "jd" | "legacy";
 
 export interface CheckoutPageConfig {
   layout: CheckoutLayout;
 }
 
-/** 前端常量（纯函数解析需要时再抽离；当前单一常量） */
+/** 前端常量（默认中国本地化版式 `cn`） */
 export const checkoutConfig: CheckoutPageConfig = {
-  layout: "jd",
+  layout: "cn",
 };
 
-/** 纯函数：解析布局，非法值回退默认 `jd`，保证 SSR/客户端一致 */
+/**
+ * 纯函数：解析布局，非法值回退默认 `cn`，保证 SSR/客户端一致。
+ * cn（默认）｜jd｜legacy 三级可回退。
+ */
 export function checkLayout(raw: string | null | undefined): CheckoutLayout {
-  return raw === "legacy" ? "legacy" : "jd";
+  if (raw === "jd") return "jd";
+  if (raw === "legacy") return "legacy";
+  return "cn";
 }
 
 /**
