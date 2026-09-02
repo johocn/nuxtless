@@ -82,6 +82,7 @@ useState<CheckoutState>("checkoutState", () => ({
   },
   paymentForm: {
     code: "",
+    boxPay: {},
   },
 }));
 
@@ -178,7 +179,7 @@ async function submitLegacy() {
 }
 
 async function onSubmit() {
-  if (layout === "cn" || layout === "jd") {
+  if (layout === "cn" || layout === "jd" || layout === "jd-legacy") {
     await submitJd();
     return;
   }
@@ -226,9 +227,9 @@ onMounted(() => {
 
     <div v-else class="flex w-full flex-col gap-12 md:flex-row md:gap-12">
       <div class="w-full md:w-1/2 lg:w-2/3">
-        <!-- 积木式版式：cn（中国本地化，默认）｜jd（京东新版，均可回退） -->
+        <!-- 积木式版式：cn（中国本地化，默认）｜jd（京东新版）｜jd-legacy（旧京东回退，均可回退） -->
         <CheckoutRenderer
-          v-if="layout === 'cn' || layout === 'jd'"
+          v-if="layout === 'cn' || layout === 'jd' || layout === 'jd-legacy'"
           @submit="onSubmit"
         />
 
