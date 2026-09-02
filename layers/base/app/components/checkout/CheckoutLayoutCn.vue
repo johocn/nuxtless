@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // 中国本地化版式：积木式纵向装配（组件全名引用，规避 hydration mismatch）。
-// 复用既有功能块（配送/自提/支付）+ 新增 cn 块（联系人卡/优惠抽屉/吸底结算栏/协议）。
-// 顺序：联系人卡(物流箱) → 配送方式(物流箱) → 自提模块 → 支付 → 底部吸底结算栏。
+// 中间逐箱区由统一渲染器 CheckoutPerBoxList 承担（cn/jd 共用，按租户分区渲染逐箱卡片）；
+// cn 特有外围保留：联系人卡（物流地址）+ 支付 + 分账汇总 + 底部吸底结算栏。
+// 顺序：联系人卡(物流箱) → 逐箱卡片 → 支付 → 分账汇总 → 底部吸底结算栏。
 import { useCheckoutFlow } from "~~/layers/base/app/composables/useCheckoutFlow";
 
 const flow = useCheckoutFlow();
@@ -13,9 +14,6 @@ await orderStore.fetchOrderBoxes();
 const hasDeliveryBox = computed(() =>
   (orderStore.orderBoxes ?? []).some((b) => b.type === "delivery"),
 );
-const hasPickupBox = computed(() =>
-  (orderStore.orderBoxes ?? []).some((b) => b.type === "pickup"),
-);
 
 // 吸底结算栏提交（cn 走 submitJd 门闩式序列）；由页面注入 on-submit
 const emit = defineEmits<{ (e: "submit"): void }>();
@@ -26,11 +24,8 @@ const emit = defineEmits<{ (e: "submit"): void }>();
     <!-- 收货人一体卡：仅物流箱（地址只与物流模块绑定，不与自提相连） -->
     <CheckoutCnContactCard v-if="hasDeliveryBox" />
 
-    <!-- 配送方式（物流箱） -->
-    <CheckoutBoxDeliveryBlock v-if="hasDeliveryBox" />
-
-    <!-- 自提单模块（自提点 + 需联系方式时联系人子块） -->
-    <CheckoutBoxPickupBlock v-if="hasPickupBox" />
+    <!-- 统一逐箱卡片渲染器（物流/自提箱卡，按租户分区；配送/自提逻辑复用 BoxDeliveryBlock/BoxPickupBlock） -->
+    <CheckoutPerBoxList />
 
     <!-- 支付块（支付方式由全箱白名单聚合） -->
     <CheckoutPaymentBlock />

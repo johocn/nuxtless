@@ -3,6 +3,7 @@
 // 展开金额明细（小计/税费/运费/合计）+ 优惠抽屉入口 + 协议勾选（未勾拦截）。
 import type { Ref } from "vue";
 import type { ActiveOrderDetail } from "~~/types/order";
+import { usePerBoxSelection } from "~~/layers/base/app/composables/usePerBoxSelection";
 
 const props = defineProps<{
   disabled?: boolean;
@@ -15,18 +16,56 @@ const orderStore = useOrderStore();
 const { order, loading } = storeToRefs(orderStore);
 const activeOrder = order as Ref<ActiveOrderDetail>;
 
+// 行级选择状态（与逐箱卡片/汇总共用同一单例）：金额一律按「已选项」实时刷新
+const sel = usePerBoxSelection();
+const { orderBoxes } = storeToRefs(orderStore);
+
 // 协议勾选（默认勾选）；未勾选时提交前拦截
 const accepted = ref(true);
 const expandState = ref(false);
 const promoOpen = ref(false);
 
-const subTotal = computed(() => (activeOrder.value?.subTotal / 100).toFixed(2));
-const orderTotal = computed(() => (activeOrder.value?.totalWithTax / 100).toFixed(2));
-const orderTaxTotal = computed(() => {
-  const taxTotal = activeOrder.value?.taxSummary?.[0]?.taxTotal;
-  return taxTotal != null ? (taxTotal / 100).toFixed(2) : null;
+/** 已选商品合计（cents） */
+const selectedGoods = computed(() => sel.selectedAmount());
+
+/** 被选箱（至少选了一行） */
+const selectedBoxList = computed(() =>
+  (orderBoxes.value ?? []).filter((b) =>
+    (b.lines ?? []).some((l) => (sel.selection[b.boxKey]?.[l.orderLineId] ?? 0) > 0),
+  ),
+);
+
+/** 应付款（cents）= 已选商品合计 + 被选箱运费 − 券/免邮折扣（合并/分箱同口径，均按已选项） */
+const payableCents = computed(() => {
+  let shipping = 0;
+  let discount = 0;
+  for (const box of selectedBoxList.value) {
+    shipping += box.shippingCost ?? 0;
+    discount += box.shippingDiscount ?? 0;
+  }
+  return Math.max(0, selectedGoods.value + shipping - discount);
 });
-const shippingWithTax = computed(() => (activeOrder.value?.shippingWithTax / 100).toFixed(2));
+
+/** 已选 N 件 */
+const selectedQty = computed(() => {
+  let qty = 0;
+  for (const box of orderBoxes.value ?? []) {
+    for (const l of box.lines ?? []) {
+      qty += sel.selection[box.boxKey]?.[l.orderLineId] ?? 0;
+    }
+  }
+  return qty;
+});
+
+const subTotal = computed(() => (selectedGoods.value / 100).toFixed(2));
+const orderTotal = computed(() => (payableCents.value / 100).toFixed(2));
+// 已选项口径无法精确拆分税额（activeOrder.taxSummary 含未选行），隐藏税额行避免口径不一致
+const orderTaxTotal = computed(() => null);
+const shippingWithTax = computed(() => {
+  let shipping = 0;
+  for (const box of selectedBoxList.value) shipping += box.shippingCost ?? 0;
+  return (shipping / 100).toFixed(2);
+});
 
 function expandDetails() {
   expandState.value = !expandState.value;
@@ -75,6 +114,9 @@ async function onGoCheckout() {
           <span class="text-xs text-neutral-400">{{ t("messages.shop.total") }}</span>
           <span class="font-bold text-primary-600 dark:text-primary-300">¥{{ orderTotal }}</span>
         </div>
+        <p class="text-[11px] text-neutral-400">
+          {{ t("messages.checkout.selectedCount", { n: selectedQty }) }}
+        </p>
       </div>
       <UButton
         size="lg"

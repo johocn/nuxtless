@@ -214,6 +214,9 @@ query GetOrderBoxes {
       unitPrice
       quantity
       lineTotal
+      featureAssetSource
+      variantName
+      sku
     }
     availableCoupons {
       code

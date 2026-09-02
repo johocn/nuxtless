@@ -1,24 +1,46 @@
+<script lang="ts">
+import { reactive } from "vue";
+// 模块级共享选择状态：CheckoutPerBoxList 按租户分区渲染会产生多个块实例，
+// 每箱配送方式选择必须跨实例共享（提交校验按全箱遍历读取，任一实例注册的 submitDelivery 都能读到全部选择）。
+const methodSel = reactive<Record<string, string>>({});
+</script>
+
 <script setup lang="ts">
-// 配送方式块（京东版，物流箱专用）：仅渲染 type==='delivery' 的箱，每个物流箱单选「物流配送方式」。
+// 配送方式块（物流箱专用）：渲染 type==='delivery' 的箱，每个物流箱单选「物流配送方式」。
 // 选择即写库（setOrderBoxShippingMethod(…, pickupLocationId=null)）。
 // submitDelivery 校验每箱已有生效配送方式（默认取 defaultShippingMethodId，onMounted 兜底应用）。
+// 支持 :boxes 限定渲染范围（CheckoutPerBoxList 按租户分区传入）；:bare 去掉外层 section 标题容器（卡片版式）。
 import type { OrderBoxInfo } from "~~/types/order";
 import { useCheckoutFlow } from "~~/layers/base/app/composables/useCheckoutFlow";
+
+const props = defineProps<{ boxes?: OrderBoxInfo[]; bare?: boolean }>();
 
 const { t } = useI18n();
 const toast = useToast();
 const orderStore = useOrderStore();
 const flow = useCheckoutFlow();
 
-await orderStore.fetchOrderBoxes();
-
 const { orderBoxes } = storeToRefs(orderStore);
-const boxes = computed<OrderBoxInfo[]>(() =>
+const allDeliveryBoxes = computed<OrderBoxInfo[]>(() =>
   (orderBoxes.value ?? []).filter((b) => b.type === "delivery"),
 );
+// 渲染范围：传入 boxes 时用传入的（租户分区），否则全部物流箱（legacy 整块）
+const boxes = computed<OrderBoxInfo[]>(() => props.boxes ?? allDeliveryBoxes.value);
+
+// 行级/整箱选择状态（模块单例，与 BoxLines 及其它汇总共享）
+const lineSel = usePerBoxSelection();
+
+/** 该箱「被选行」lineTotal 求和（未选行不计入箱小计） */
+function boxSubtotal(box: OrderBoxInfo): number {
+  let sum = 0;
+  for (const l of box.lines ?? []) {
+    if ((lineSel.selection[box.boxKey]?.[l.orderLineId] ?? 0) > 0) sum += l.lineTotal;
+  }
+  return sum;
+}
 
 function methodName(id: string): string {
-  for (const box of boxes.value) {
+  for (const box of allDeliveryBoxes.value) {
     const m = box.availableShippingMethods?.find((s) => s.id === id);
     if (m) return m.name;
   }
@@ -30,9 +52,6 @@ function defaultMethodId(box: OrderBoxInfo): string {
     box.defaultShippingMethodId ?? box.availableShippingMethodIds?.[0] ?? "",
   );
 }
-
-// 每箱当前选中的物流方式
-const methodSel = reactive<Record<string, string>>({});
 
 async function applyBox(box: OrderBoxInfo, methodId: string, silent = false) {
   if (!methodId) return;
@@ -53,20 +72,20 @@ function chooseLogistics(box: OrderBoxInfo, methodId: string) {
 }
 
 onMounted(() => {
-  for (const box of boxes.value) {
+  // 兜底应用：让每箱初始即有生效配送方式（按全箱遍历，跨实例幂等）
+  for (const box of allDeliveryBoxes.value) {
     if (methodSel[box.boxKey]) continue;
     const m = defaultMethodId(box);
     if (m) {
       methodSel[box.boxKey] = m;
-      // 兜底应用：让每箱初始即有生效配送方式
       void applyBox(box, m, true);
     }
   }
 });
 
-// 提交：确保每个物流箱都有生效配送方式
+// 提交：确保每个物流箱都有生效配送方式（全箱遍历，与渲染分区无关）
 flow.submitFns.submitDelivery = async () => {
-  for (const box of boxes.value) {
+  for (const box of allDeliveryBoxes.value) {
     const m = methodSel[box.boxKey] ?? defaultMethodId(box);
     if (!m) {
       orderStore.error = t("messages.checkout.needBoxDelivery");
@@ -93,10 +112,14 @@ flow.submitFns.submitDelivery = async () => {
 
 <template>
   <section
-    aria-labelledby="box-delivery-heading"
-    class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+    :aria-labelledby="bare ? undefined : 'box-delivery-heading'"
+    :class="bare ? '' : 'rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900'"
   >
-    <h3 id="box-delivery-heading" class="mb-4 font-medium text-neutral-900 dark:text-neutral-100">
+    <h3
+      v-if="!bare"
+      id="box-delivery-heading"
+      class="mb-4 font-medium text-neutral-900 dark:text-neutral-100"
+    >
       {{ t("messages.checkout.deliveryMethod") }}
     </h3>
 
@@ -111,29 +134,31 @@ flow.submitFns.submitDelivery = async () => {
 
     <div v-else class="space-y-4">
       <div
-        v-for="(box, idx) in boxes"
+        v-for="box in boxes"
         :key="box.boxKey"
-        class="rounded-md border border-neutral-200 p-3 dark:border-neutral-800"
+        class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
       >
         <p class="mb-2 flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          <input
+            type="checkbox"
+            :checked="lineSel.isBoxChecked(box.boxKey)"
+            class="h-4 w-4 shrink-0 accent-primary-500"
+            @change="lineSel.toggleBox(box.boxKey, ($event.target as HTMLInputElement).checked)"
+          />
           <span class="h-3.5 w-1 rounded-sm bg-primary-500" />
-          <span>{{ box.tenantName }}</span>
-          <span class="text-xs font-normal text-neutral-400">{{ box.profileName }}</span>
+          <span>{{ box.profileName }}</span>
+          <span class="rounded-sm bg-primary-50 px-1.5 py-0.5 text-[11px] font-normal text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+            {{ t("messages.checkout.logisticsDelivery") }}
+          </span>
+          <span class="text-xs font-normal text-neutral-400">{{ box.tenantName }}</span>
         </p>
 
-        <!-- 该箱商品明细（后端 orderBoxes.lines，含税） -->
+        <!-- 该箱商品明细（可勾选/步进/删除，行级选择由 CheckoutBoxLines 复用 usePerBoxSelection） -->
         <ul
           v-if="(box.lines ?? []).length"
-          class="mb-3 space-y-1 border-b border-dashed border-neutral-200 pb-2 text-xs text-neutral-600 dark:border-neutral-800 dark:text-neutral-400"
+          class="-mx-4 mb-3 border-b border-dashed border-neutral-200 dark:border-neutral-800"
         >
-          <li
-            v-for="l in box.lines ?? []"
-            :key="l.orderLineId"
-            class="flex justify-between gap-2"
-          >
-            <span class="min-w-0 flex-1 truncate">{{ l.productName }} × {{ l.quantity }}</span>
-            <span class="shrink-0">¥{{ (l.lineTotal / 100).toFixed(2) }}</span>
-          </li>
+          <CheckoutBoxLines :box="box" />
         </ul>
 
         <template v-if="(box.availableShippingMethodIds ?? []).length">
@@ -172,9 +197,14 @@ flow.submitFns.submitDelivery = async () => {
           </div>
           <div class="flex items-center justify-between font-medium text-neutral-700 dark:text-neutral-300">
             <dt>{{ t("messages.checkout.subtotal") }}</dt>
-            <dd>¥{{ ((box.subtotal ?? 0) / 100).toFixed(2) }}</dd>
+            <dd>¥{{ (boxSubtotal(box) / 100).toFixed(2) }}</dd>
           </div>
         </dl>
+
+        <!-- 该箱优惠券行（整单一券，入口抽屉） -->
+        <div class="mt-2 border-t border-dashed border-neutral-200 pt-1 dark:border-neutral-800">
+          <CheckoutBoxCouponSelect :box="box" />
+        </div>
       </div>
     </div>
   </section>
