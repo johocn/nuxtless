@@ -3,16 +3,14 @@ import { createBillingAddressSchema } from "~~/layers/base/validators/addressFor
 import type { AddressForm } from "~~/layers/base/validators/addressForm";
 
 import type { FormSubmitEvent } from "@nuxt/ui";
-import type { DistrictNode } from "~~/.nuxt/gql/default";
-import type { ReverseGeocodeInfo } from "~~/types/location";
 import type { ActiveCustomerDetail } from "~~/types/customer";
 import type { CheckoutState } from "~~/types/general";
+import type { RegionValue } from "~~/types/region";
 import { isActiveCustomerDetail } from "~~/types/guard";
 
 const isSubmitted = defineModel<boolean>({ default: false });
 
 const { t } = useI18n();
-// 校验提示随 locale 切换（中文/英文）
 const billingSchema = computed(() =>
   createBillingAddressSchema((k) => t(k)),
 );
@@ -53,207 +51,40 @@ const checkoutState = useState<CheckoutState>("checkoutState");
 const state = checkoutState.value.addressForm;
 
 const { data: countriesData } = await useAsyncGql("GetChannelCountries");
-
 const countries = computed(
   () =>
     countriesData.value?.activeChannel?.defaultShippingZone?.members.map(
-      (c) => ({
-        label: c.name,
-        code: c.code,
-      }),
+      (c) => ({ label: c.name, code: c.code }),
     ) ?? [],
 );
 
-// ===== 省市区街道四级联动（高德行政区划逐级下钻）=====
-interface LevelList {
-  current: string;
-  items: DistrictNode[];
-}
-const provinceSel = ref<LevelList>({ current: "", items: [] });
-const citySel = ref<LevelList>({ current: "", items: [] });
-const districtSel = ref<LevelList>({ current: "", items: [] });
-const streetSel = ref<LevelList>({ current: "", items: [] });
-const districtsLoading = ref(false);
+// ===== 省市区街道级联走共享组件 AmapRegionSelect，避免维护第二份 =====
+const regionRef = useTemplateRef("AmapRegionSelect");
+const region = computed<RegionValue>({
+  get: () => ({
+    province: state.province ?? "",
+    city: state.city ?? "",
+    district: state.district ?? "",
+    street: state.street ?? "",
+  }),
+  set: (v) => {
+    // 仅在选中项非空时才覆盖 state，避免地址簿回填后因下拉未能匹配而清空已存省市区
+    if (v.province) state.province = v.province;
+    if (v.city) state.city = v.city;
+    if (v.district) state.district = v.district;
+    if (v.street) state.street = v.street;
+    // 街道并入“详细地址”文本框人工填写，切换省市区时不得覆盖用户已输入的门牌号
+    if (!state.streetLine1) {
+      const addr = [v.province, v.city, v.district, v.street].filter(Boolean).join(" ");
+      if (addr) state.streetLine1 = addr;
+    }
+  },
+});
 
 function fullAddress(): string {
-  return [provinceSel.value.current, citySel.value.current, districtSel.value.current, streetSel.value.current]
+  return [region.value.province, region.value.city, region.value.district, region.value.street]
     .filter(Boolean)
     .join(" ");
-}
-
-function syncState() {
-  state.province = provinceSel.value.current;
-  state.city = citySel.value.current;
-  state.district = districtSel.value.current;
-  state.street = streetSel.value.current;
-  // 街道已并入“详细地址”文本框人工填写，切换省市区时不得覆盖用户已输入的门牌号
-  if (!state.streetLine1) state.streetLine1 = fullAddress();
-}
-
-async function loadDistrict(parentAdcode: string | null, target: LevelList) {
-  districtsLoading.value = true;
-  try {
-    const { mapDistricts } = await GqlGetMapDistricts({ parentAdcode });
-    target.items = (mapDistricts ?? []) as DistrictNode[];
-  } finally {
-    districtsLoading.value = false;
-  }
-}
-
-async function loadSub(
-  node: DistrictNode | undefined,
-  resetTarget: LevelList[],
-  target: LevelList,
-) {
-  for (const l of resetTarget) {
-    l.current = "";
-    l.items = [];
-  }
-  if (node) await loadDistrict(node.adcode, target);
-}
-
-async function onProvinceChange() {
-  state.province = provinceSel.value.current;
-  const node = provinceSel.value.items.find((p) => p.name === provinceSel.value.current);
-  await loadSub(node, [citySel.value, districtSel.value, streetSel.value], citySel.value);
-  syncState();
-}
-
-async function onCityChange() {
-  state.city = citySel.value.current;
-  const node = citySel.value.items.find((c) => c.name === citySel.value.current);
-  await loadSub(node, [districtSel.value, streetSel.value], districtSel.value);
-  syncState();
-}
-
-async function onDistrictChange() {
-  state.district = districtSel.value.current;
-  const node = districtSel.value.items.find((d) => d.name === districtSel.value.current);
-  await loadSub(node, [streetSel.value], streetSel.value);
-  syncState();
-}
-
-// 在给定候选名中尽量找到匹配节点；无匹配且列表只剩唯一项时自动选中该唯一项
-function pickBest(
-  level: LevelList,
-  ...names: Array<string | null | undefined>
-): DistrictNode | null {
-  if (!level.items.length) return null;
-  const candidates = names.filter(Boolean) as string[];
-  for (const n of candidates) {
-    const exact = level.items.find((x) => x.name === n);
-    if (exact) return exact;
-    const incl = level.items.find((x) => x.name.includes(n) || n.includes(x.name));
-    if (incl) return incl;
-  }
-  if (level.items.length === 1) return level.items[0] ?? null;
-  return null;
-}
-
-// 按定位逆地理结果（geo）自动默认选中 省→市→区→街道（街道唯一项也自动选）
-async function cascadeGeo(geo: ReverseGeocodeInfo) {
-  // 直辖市：省下直挂区/县（level != city），此时把区/县当作「市」级处理
-  const firstNode = citySel.value.items[0];
-  const isMunicipality = !!firstNode && firstNode.level !== "city";
-
-  const cityNode = pickBest(
-    citySel.value,
-    ...(isMunicipality ? [geo.district, geo.city] : [geo.city]),
-  );
-  if (!cityNode) {
-    if (citySel.value.items.length === 1) {
-      citySel.value.current = citySel.value.items[0]?.name ?? "";
-    }
-    return;
-  }
-  citySel.value.current = cityNode.name;
-
-  if (isMunicipality) {
-    // 直辖市：cityNode 实为区/县，其子级即街道
-    await loadDistrict(cityNode.adcode, streetSel.value);
-  } else {
-    await loadDistrict(cityNode.adcode, districtSel.value);
-    const distNode = pickBest(districtSel.value, geo.district);
-    if (distNode) {
-      districtSel.value.current = distNode.name;
-      await loadDistrict(distNode.adcode, streetSel.value);
-    } else if (districtSel.value.items.length === 1) {
-      districtSel.value.current = districtSel.value.items[0]?.name ?? "";
-    }
-  }
-
-  // 街道：匹配定位值；否则唯一一项自动选中
-  const streetNode = pickBest(streetSel.value, geo.street);
-  if (streetNode) streetSel.value.current = streetNode.name;
-  else if (streetSel.value.items.length === 1) {
-    streetSel.value.current = streetSel.value.items[0]?.name ?? "";
-  }
-}
-
-// 按定位自动默认省/市（优先完整逆地理 geo；无则用坐标补一次反查）
-async function preselectByLocation() {
-  let geo = locationStore.geo;
-  if (!geo && locationStore.coords) {
-    geo = await useGeoLocation().reverseGeocode(
-      locationStore.coords.lat,
-      locationStore.coords.lng,
-    );
-  }
-  // 省列表可能已在 onMounted 的 else 分支预加载，避免重复请求
-  if (provinceSel.value.items.length === 0) {
-    await loadDistrict(null, provinceSel.value);
-  }
-
-  if (!geo) {
-    // 反查失败：用首页定位城市兜底（仅回填市，供用户按需选省/区）
-    const fallbackCity = locationStore.cityName;
-    if (fallbackCity) state.city = state.city || fallbackCity;
-    return;
-  }
-
-  const prov = pickBest(provinceSel.value, geo.province);
-  if (!prov) return;
-  provinceSel.value.current = prov.name;
-
-  await loadDistrict(prov.adcode, citySel.value);
-  await cascadeGeo(geo);
-
-  // 街道并入详细地址：逆地理结果(省市区街道)在用户未手填时预填进 streetLine1
-  if (!state.streetLine1 && geo.formattedAddress) {
-    state.streetLine1 = geo.formattedAddress;
-  }
-
-  syncState();
-}
-
-async function applyExistingState() {
-  // 从已有 state 恢复四级下拉：先加载省列表，再逐级下钻子级，回填 current
-  // （否则只设 current 不填 items，下拉选项为空导致无法继续选择/更改）
-  await loadDistrict(null, provinceSel.value);
-  if (state.province) {
-    const prov = provinceSel.value.items.find((p) => p.name === state.province);
-    if (prov) {
-      provinceSel.value.current = prov.name;
-      await loadDistrict(prov.adcode, citySel.value);
-      if (state.city) {
-        const city = citySel.value.items.find((c) => c.name === state.city);
-        if (city) {
-          citySel.value.current = city.name;
-          await loadDistrict(city.adcode, districtSel.value);
-          if (state.district) {
-            const district = districtSel.value.items.find((d) => d.name === state.district);
-            if (district) {
-              districtSel.value.current = district.name;
-              await loadDistrict(district.adcode, streetSel.value);
-              if (state.street) {
-                streetSel.value.current = state.street;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 onMounted(async () => {
@@ -262,6 +93,7 @@ onMounted(async () => {
   const { fetchAddresses } = useAddressBook();
   const list = isAuthenticated.value ? await fetchAddresses() : [];
 
+  const amap = regionRef.value;
   if (list.length) {
     const first = list[0];
     if (first) {
@@ -274,15 +106,23 @@ onMounted(async () => {
       state.phoneNumber = first.phoneNumber ?? "";
       state.countryCode = first.countryCode ?? countryDefault.value;
       // 从省市区文本回填四级下拉选中项（含逐级加载子级选项）
-      await applyExistingState();
-      syncState();
+      await amap?.applyValue(region.value);
     }
   } else {
     state.fullName = activeCustomer.value?.firstName ?? "";
     state.countryCode = state.countryCode || countryDefault.value;
-    // 无地址簿：仍先加载省列表（即使无定位也能手选省份），再按定位城市默认省/市
-    await loadDistrict(null, provinceSel.value);
-    await preselectByLocation();
+    // 无地址簿：仍先加载省列表，再按定位城市默认省/市
+    let geo = locationStore.geo;
+    if (!geo && locationStore.coords) {
+      geo = await useGeoLocation().reverseGeocode(
+        locationStore.coords.lat,
+        locationStore.coords.lng,
+      );
+    }
+    await amap?.preselectByLocation(geo, locationStore.cityName);
+    if (!state.streetLine1 && geo?.formattedAddress) {
+      state.streetLine1 = geo.formattedAddress;
+    }
   }
 });
 
@@ -300,6 +140,7 @@ async function onSubmit(event: FormSubmitEvent<AddressForm>) {
 
   await orderStore.setOrderShippingAddress({
     fullName: state.fullName,
+    company: state.company,
     streetLine1: state.streetLine1 || fullAddress(),
     streetLine2: state.streetLine2,
     city: state.city,
@@ -317,6 +158,7 @@ async function onSubmit(event: FormSubmitEvent<AddressForm>) {
     const { createAddress, fetchAddresses } = useAddressBook();
     const ok = await createAddress({
       fullName: state.fullName,
+      company: state.company,
       streetLine1: state.streetLine1 || fullAddress(),
       streetLine2: state.streetLine2,
       city: state.city,
@@ -380,49 +222,13 @@ async function onError() {
     </UFormField>
 
     <!-- 国家 / 省 / 市 / 区 显示在一行（4格，含手机 390px 也强制一行） -->
-    <div class="col-span-2 grid grid-cols-4 gap-2">
-      <UFormField :label="t('messages.billing.country')" name="countryCode" class="w-full" size="xl">
-        <USelectMenu
-          v-model="state.countryCode"
-          value-key="code"
-          :items="countries"
-          class="w-full min-w-0"
-        />
-      </UFormField>
-
-      <UFormField :label="t('messages.billing.province')" name="province" class="w-full" size="xl">
-        <USelectMenu
-          v-model="provinceSel.current"
-          :items="provinceSel.items.map((p) => p.name)"
-          :disabled="districtsLoading"
-          @update:model-value="onProvinceChange"
-          class="w-full min-w-0"
-        />
-      </UFormField>
-
-      <UFormField :label="t('messages.billing.city')" name="city" class="w-full" size="xl">
-        <USelectMenu
-          v-model="citySel.current"
-          :items="citySel.items.map((c) => c.name)"
-          :disabled="districtsLoading"
-          @update:model-value="onCityChange"
-          class="w-full min-w-0"
-        />
-      </UFormField>
-
-      <UFormField :label="t('messages.billing.district')" name="district" class="w-full" size="xl">
-        <USelectMenu
-          v-model="districtSel.current"
-          :items="districtSel.items.map((d) => d.name)"
-          :disabled="districtsLoading"
-          @update:model-value="onDistrictChange"
-          class="w-full min-w-0"
-        />
-      </UFormField>
-    </div>
-    <p v-if="districtsLoading" class="col-span-2 -mt-2 text-xs text-neutral-400">
-      {{ t("messages.billing.loadingDistricts") }}
-    </p>
+    <AmapRegionSelect
+      ref="AmapRegionSelect"
+      v-model:region="region"
+      v-model:country-code="state.countryCode"
+      :countries="countries"
+      :disabled="!isMounted"
+    />
 
     <!-- 详细地址（联动生成，自动带上省市区街道） -->
     <UFormField
@@ -439,7 +245,7 @@ async function onError() {
       />
     </UFormField>
 
-    <!-- 地址 2（必填） -->
+    <!-- 地址 2（选填） -->
     <UFormField
       :label="t('messages.billing.address2')"
       class="col-span-2"
@@ -449,7 +255,17 @@ async function onError() {
       <UInput v-model="state.streetLine2" class="w-full" type="text" />
     </UFormField>
 
-    <!-- 邮编 -->
+    <!-- 公司（选填，公司/单位名称） -->
+    <UFormField
+      :label="t('messages.billing.company')"
+      class="col-span-2"
+      name="company"
+      size="xl"
+    >
+      <UInput v-model="state.company" class="w-full" type="text" />
+    </UFormField>
+
+    <!-- 邮编（物流必填） -->
     <UFormField
       :label="t('messages.billing.zip')"
       class="col-span-2 md:col-span-1"

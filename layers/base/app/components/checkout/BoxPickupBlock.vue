@@ -161,9 +161,24 @@ flow.submitFns.submitPickup = async () => {
       >
         <p class="mb-2 flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
           <span class="h-3.5 w-1 rounded-sm bg-primary-500" />
-          {{ t("messages.checkout.boxGroupTitle", { n: idx + 1 }) }}
+          <span>{{ box.tenantName }}</span>
           <span class="text-xs font-normal text-neutral-400">{{ box.profileName }}</span>
         </p>
+
+        <!-- 该箱商品明细（后端 orderBoxes.lines，含税） -->
+        <ul
+          v-if="(box.lines ?? []).length"
+          class="mb-3 space-y-1 border-b border-dashed border-neutral-200 pb-2 text-xs text-neutral-600 dark:border-neutral-800 dark:text-neutral-400"
+        >
+          <li
+            v-for="l in box.lines ?? []"
+            :key="l.orderLineId"
+            class="flex justify-between gap-2"
+          >
+            <span class="min-w-0 flex-1 truncate">{{ l.productName }} × {{ l.quantity }}</span>
+            <span class="shrink-0">¥{{ (l.lineTotal / 100).toFixed(2) }}</span>
+          </li>
+        </ul>
 
         <p class="mb-1 text-xs text-neutral-500">{{ t("messages.checkout.boxPickupOption") }}</p>
 
@@ -221,6 +236,25 @@ flow.submitFns.submitPickup = async () => {
         >
           {{ t("messages.checkout.needBoxDelivery") }}
         </p>
+
+        <!-- 该箱运费与小计（含税口径，与分账金额一致） -->
+        <dl class="mt-3 space-y-1 border-t border-dashed border-neutral-200 pt-2 text-xs text-neutral-500 dark:border-neutral-800">
+          <div v-if="(box.shippingCost ?? 0) > 0" class="flex items-center justify-between">
+            <dt>{{ t("messages.checkout.shipping") }}</dt>
+            <dd class="text-neutral-700 dark:text-neutral-300">
+              <template v-if="(box.shippingDiscount ?? 0) > 0">
+                <s class="text-neutral-400">¥{{ ((box.shippingCost + box.shippingDiscount) / 100).toFixed(2) }}</s>
+                <span class="ml-1 text-red-500">-¥{{ (box.shippingDiscount / 100).toFixed(2) }}</span>
+                <span class="ml-1">= ¥{{ (box.shippingCost / 100).toFixed(2) }}</span>
+              </template>
+              <template v-else>¥{{ (box.shippingCost / 100).toFixed(2) }}</template>
+            </dd>
+          </div>
+          <div class="flex items-center justify-between font-medium text-neutral-700 dark:text-neutral-300">
+            <dt>{{ t("messages.checkout.subtotal") }}</dt>
+            <dd>¥{{ ((box.subtotal ?? 0) / 100).toFixed(2) }}</dd>
+          </div>
+        </dl>
       </div>
 
       <!-- 收货人/电话：存在需联系方式的自提单才内嵌，与自提点连成一体 -->

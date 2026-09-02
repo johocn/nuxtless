@@ -18,6 +18,7 @@ import type {
   GetOrderBoxesQuery,
   SetOrderBoxShippingMethodMutation,
   CheckoutSplittedMutation,
+  GetOrderMerchantSplitQuery,
 } from "~~/.nuxt/gql/default";
 
 // ─────────────────────────────────────────────────────────────
@@ -90,6 +91,13 @@ export type SetOrderBoxShippingMethodResult =
   SetOrderBoxShippingMethodMutation["setOrderBoxShippingMethod"];
 
 export type CheckoutSplittedResult = CheckoutSplittedMutation["checkoutSplitted"];
+
+// 每商户（租户）分账汇总：合并单支付后各商家应计入金额（含税实收口径）
+export type MerchantSplitInfo = NonNullable<
+  GetOrderMerchantSplitQuery["orderMerchantSplit"]
+>[number];
+
+export type MerchantSplits = GetOrderMerchantSplitQuery["orderMerchantSplit"];
 
 // ─────────────────────────────────────────────────────────────
 // Aggregate

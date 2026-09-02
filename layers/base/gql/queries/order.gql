@@ -206,6 +206,33 @@ query GetOrderBoxes {
       businessHours
       coordinates
     }
+    tenantName
+    lines {
+      orderLineId
+      productVariantId
+      productName
+      unitPrice
+      quantity
+      lineTotal
+    }
+    availableCoupons {
+      code
+      name
+      condition
+      amount
+    }
+    shippingCost
+    shippingDiscount
+    subtotal
+  }
+}
+
+# 每商户（租户）分账汇总：含税实收口径，供结算页分账汇总展示
+query GetOrderMerchantSplit {
+  orderMerchantSplit {
+    tenantChannelId
+    tenantName
+    amount
   }
 }
 
@@ -220,8 +247,10 @@ mutation SetOrderBoxShippingMethod($boxKey: String!, $shippingMethodId: ID!, $pi
   }
 }
 
-mutation CheckoutSplitted($method: String!, $metadata: String) {
-  checkoutSplitted(method: $method, metadata: $metadata) {
+# boxKeys/lineIds 一律用 [String!]（boxKey 是非数字复合串 box:<profileId>，绝不能用 ID，
+# 否则 Vendure 会把 ID 标量强转为整数导致匹配不上）；未传=结算全部箱与行。
+mutation CheckoutSplitted($method: String!, $metadata: String, $boxKeys: [String!], $lineIds: [String!]) {
+  checkoutSplitted(method: $method, metadata: $metadata, boxKeys: $boxKeys, lineIds: $lineIds) {
     __typename
     ...OrderDetail
   }

@@ -63,6 +63,7 @@ function applyAddress(record: AddressRecord) {
 useState<CheckoutState>("checkoutState", () => ({
   addressForm: {
     fullName: "",
+    company: "",
     emailAddress: "",
     streetLine1: "",
     streetLine2: "",

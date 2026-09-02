@@ -5,6 +5,7 @@ function toRecord(a: any): AddressRecord {
     id: a.id,
     defaultShippingAddress: Boolean(a.defaultShippingAddress),
     fullName: a.fullName ?? null,
+    company: a.company ?? null,
     streetLine1: a.streetLine1 ?? null,
     streetLine2: a.streetLine2 ?? null,
     province: a.province ?? null,
@@ -52,6 +53,7 @@ export function useAddressBook() {
       await GqlCreateCustomerAddress({
         input: {
           fullName: d.fullName,
+          company: d.company,
           streetLine1: d.streetLine1,
           streetLine2: d.streetLine2,
           province: d.province,
@@ -79,6 +81,7 @@ export function useAddressBook() {
         input: {
           id,
           fullName: d.fullName,
+          company: d.company,
           streetLine1: d.streetLine1,
           streetLine2: d.streetLine2,
           province: d.province,
@@ -115,6 +118,7 @@ export function useAddressBook() {
   function recordToDraft(r: AddressRecord): AddressDraft {
     return {
       fullName: r.fullName ?? "",
+      company: r.company ?? "",
       streetLine1: r.streetLine1 ?? "",
       streetLine2: r.streetLine2 ?? "",
       province: r.province ?? "",
