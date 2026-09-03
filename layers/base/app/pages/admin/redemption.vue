@@ -98,14 +98,16 @@ const rawToken = ref("");
 
 /* ---------------- 核销码查询 / 核销 ---------------- */
 type RedemptionOrder = { id: string; code: string; state: string; totalWithTax: number; currencyCode: string; totalQuantity: number };
-type LookupRes = { redemptionLookup: { order: RedemptionOrder | null; claimed: boolean; claimedAt?: string } };
+type LookupRes = { redemptionLookup: { order: RedemptionOrder | null; claimed: boolean; claimedAt?: string; status?: string } };
 type ClaimRes = { redemptionClaim: { order: RedemptionOrder | null; claimed: boolean; message?: string } };
+type ReissueRes = { redemptionReissue: { claimed: boolean; message?: string } };
 
 const LOOKUP_QUERY = `
 query AdminRedemptionLookup($code: String!) {
   redemptionLookup(code: $code) {
     claimed
     claimedAt
+    status
     order { id code state totalWithTax currencyCode totalQuantity }
   }
 }`;
@@ -116,6 +118,17 @@ mutation AdminRedemptionClaim($code: String!) {
     claimedAt
     message
     order { id code state }
+  }
+}`;
+const REISSUE_QUERY = `
+mutation AdminRedemptionReissue($code: String!) {
+  redemptionReissue(code: $code) {
+    claimed
+    claimedAt
+    message
+    status
+    expiresAt
+    version
   }
 }`;
 
@@ -184,6 +197,48 @@ const statusLabel = computed(() => {
     default: return "";
   }
 });
+
+/* ---------------- 过期订单「重新生成」（作废旧码，下发新码；已核销不可重发） ---------------- */
+const reissuing = ref(false);
+const canReissue = computed(() => {
+  const r = lookup.value;
+  return !!r?.order && r.status === "expired" && !r.claimed;
+});
+async function onReissue() {
+  const input = code.value.trim().toUpperCase();
+  if (!input || !lookup.value) return;
+  message.value = "";
+  reissuing.value = true;
+  try {
+    const { data, error } = await adminGql<ReissueRes>(REISSUE_QUERY, { code: input });
+    if (error) {
+      message.value = error;
+      state.value = "error";
+      return;
+    }
+    const msg = data?.redemptionReissue?.message;
+    if (msg === "reissued") {
+      message.value = t('messages.order.redeemReissueSuccess');
+      state.value = "done";
+    } else {
+      message.value = t('messages.order.redeemReissueFailed');
+      state.value = "error";
+    }
+    // 重新查询刷新新码/状态（原码失效，后续以新码查询）
+    const refetch = await adminGql<LookupRes>(LOOKUP_QUERY, { code: input });
+    if (refetch.error) {
+      message.value = refetch.error;
+      state.value = "error";
+    } else if (refetch.data?.redemptionLookup) {
+      lookup.value = refetch.data.redemptionLookup;
+    }
+  } catch {
+    message.value = t('messages.order.redeemReissueFailed');
+    state.value = "error";
+  } finally {
+    reissuing.value = false;
+  }
+}
 </script>
 
 <template>
@@ -247,9 +302,10 @@ const statusLabel = computed(() => {
         <div v-if="lookup.claimedAt" class="flex justify-between"><dt class="text-neutral-500">{{ t('messages.order.claimedAt') }}</dt><dd>{{ new Date(lookup.claimedAt).toLocaleString() }}</dd></div>
       </dl>
 
-      <div class="mt-4">
+      <div class="mt-4 flex flex-wrap items-center gap-2">
         <UButton v-if="!lookup.claimed" color="primary" :loading="state === 'claiming'" :label="t('messages.order.confirmRedeem')" @click="claim" />
-        <UButton v-else variant="soft" :label="t('messages.order.nextOne')" @click="code = ''; lookup = null; state='idle'" />
+        <UButton v-if="canReissue" color="primary" variant="soft" :loading="reissuing" :label="t('messages.order.redeemReissueBtn')" @click="onReissue" />
+        <UButton v-if="lookup.claimed" variant="soft" :label="t('messages.order.nextOne')" @click="code = ''; lookup = null; state='idle'" />
       </div>
     </div>
   </main>
