@@ -25,3 +25,19 @@ mutation AdminRedemptionClaim($code: String!) {
     }
   }
 }
+
+mutation AdminRedemptionReissue($code: String!) {
+  redemptionReissue(code: $code) {
+    claimed
+    claimedAt
+    message
+    status
+    expiresAt
+    version
+    order {
+      id
+      code
+      state
+    }
+  }
+}

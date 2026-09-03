@@ -5,5 +5,9 @@ query OrderRedemptionCode($input: OrderRedemptionCodeInput!) {
     barcodePayload
     claimed
     canAccess
+    status
+    expiresAt
+    reissueable
+    version
   }
 }
