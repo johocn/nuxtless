@@ -2,12 +2,25 @@
 // 商品行子块：渲染单箱的商品行，支持行级勾选 / 数量步进 / 删除 / 图 / 规格名(SKU)。
 // 选择状态复用 usePerBoxSelection 单例，与箱头整箱勾选、汇总等保持一致，不在此重复实现。
 import type { OrderBoxInfo } from "~~/types/order";
+import { storeToRefs } from "pinia";
 import { assetSrc } from "../../utils/image";
 
 const props = defineProps<{ box: OrderBoxInfo }>();
 
 const sel = usePerBoxSelection();
 const { t } = useI18n();
+
+const orderStore = useOrderStore();
+const { loading: orderLoading } = storeToRefs(orderStore);
+
+/** 加减数量：改活动订单行数量→同步选中→重拉分箱联动金额。防抖由 loading 控制。 */
+async function adjustQty(l: OrderBoxInfo["lines"][number], newQty: number) {
+  if (orderLoading.value) return;             // 防抖：上一个调整未完成则忽略
+  if (newQty < 1 || newQty === l.quantity) return;
+  await orderStore.adjustOrderLine(l.orderLineId, newQty);
+  sel.setLineQty(props.box.boxKey, l.orderLineId, newQty);
+  await orderStore.fetchOrderBoxes();
+}
 
 // featureAssetSource 为相对 source 路径，需动态 origin 拼全（与 useGqlHostUrl 同源策略一致：
 // 生产 Nginx 同源反代，本地 dev 跟随当前 Host）
@@ -63,8 +76,23 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
 
     <span class="shrink-0 text-neutral-500 dark:text-neutral-400">{{ fmt(l.unitPrice) }}</span>
 
-    <!-- 整行粒度：数量锁定为购物车数量，不在结算页改动（后端 checkoutSplitted 不支持行内部分数量） -->
-    <b class="w-8 shrink-0 text-center text-neutral-700 dark:text-neutral-200">×{{ l.quantity }}</b>
+    <div class="flex shrink-0 items-center gap-0.5">
+      <button
+        type="button"
+        :disabled="orderLoading || l.quantity <= 1"
+        class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 text-neutral-600 disabled:cursor-not-allowed disabled:opacity-40"
+        aria-label="减少数量"
+        @click="adjustQty(l, l.quantity - 1)"
+      >−</button>
+      <b class="w-7 shrink-0 text-center text-neutral-700 dark:text-neutral-200">{{ l.quantity }}</b>
+      <button
+        type="button"
+        :disabled="orderLoading"
+        class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 text-neutral-600 disabled:cursor-not-allowed disabled:opacity-40"
+        aria-label="增加数量"
+        @click="adjustQty(l, l.quantity + 1)"
+      >＋</button>
+    </div>
 
     <span class="w-14 shrink-0 text-right font-medium text-neutral-900 dark:text-neutral-100">
       {{ fmt(l.lineTotal) }}
