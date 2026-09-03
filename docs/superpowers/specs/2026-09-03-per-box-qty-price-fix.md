@@ -1,0 +1,79 @@
+# 逐箱结算 · 数量/价格/实收一致性修复
+
+> 线上（youshop.cn）结算 bug 定位与修复定稿。目标：让**商品行数量、订单行金额、实收金额**三者在结算页到下单全程严格一致，杜绝「价格与数量打架」。
+>
+> 状态：待评审。根因与方案见下。
+
+---
+
+## 1. 线上现象（用户反馈）
+
+- 购物车数量 = 2，进入结算后订单行数量显示 1。
+- 点「−」或「＋」，订单行金额不变（不是 单价×数量），汇总金额也不变。
+- 提交订单后：后台实际操作为 1 件，且弹出「落购物车（回流）」提示；但价格却是 2 件的价、订单却显示 2 件——数量与价格互相打架。
+
+## 2. 根因（两处叠加）
+
+### 2.1 后端 `checkoutSplitted` 只支持「整行结算」，不支持行内部分数量
+
+`vendure/packages/cjk-plugin/src/order/order-split.service.ts`：
+
+- `performSplitCheckout` 入参仅 `boxKeys` / `lineIds`（行维度）；
+- 行迁移快照 `lineInfo` 取 `(line).quantity`（**行原始数量**，非前端选择数量）；
+- `buildItemsForGroup` 迁移到新单时用 `info.qty = 行原始数量`。
+
+**结论**：前端哪怕把行数量改成 1，订单行被迁走时仍是整行原数量 2；前端并未把「部分数量」传给后端。
+
+### 2.2 前端却按「行内可调数量」算金额与回流，两边对不上
+
+`usePerBoxSelection.ts`（`selectedAmount`）、`PerBoxSummary.vue`（`boxGoodsTotal`）、`BoxLines.vue`（行金额）都用**静态 `lineTotal`**（= 行原数量×单价）求和，不随 ± 后的数量变化 → **金额不变**。
+
+同时 `excludedItems()` 按「前端选择数量 < 行原数量」就回流差额：
+`L.quantity=2`、选择=1 → 差分 `2-1=1` 回流购物车；但订单实际迁走了整行 2 → **订单收了 2 件的价，购物车又多回 1 件，全链总量对不上**。
+
+> 叠加项：`usePerBoxSelection` 是模块级单例，成功过一次的会话后 `ensureBox` 只补缺失 key、不刷新已存在值，导致旧数量被截留（「显示 1」来源之一）。
+
+## 3. 修复方案（方案 A · 整行结算收敛）
+
+**定位：收敛结算粒度为「整行」。** 数量锁定 = 该行购物车数量（不可在结算页改），勾选 = 整行结算，不选 = 留在购物车回流。该方案与后端 `checkoutSplitted` 的真实能力**天然对齐**，金额 = `lineTotal`（= 单价×购物车数量）= 实收，数量·价格·实收三方严格一致，**零后端改动**。
+
+> 说明：逐箱设计文档曾规划过行内 `−数量＋` 步进；但后端从未拥有对应部分数量能力，此步进正是混乱源头。本次按「所见即所收」收敛为整行粒度。若未来确需在结算页改数量，则必须另行做后端接入（见 §5 后续项），不在本次范围。
+
+### 3.1 `BoxLines.vue`（商品行）
+
+- 删除行内 `−数量＋` 步进器按钮，数量区改为**只读显示** `l.quantity`（购物车数量）；
+- 勾选 = 整行选中（结算整行原数量），取消勾选 = 该行留在购物车不结算；
+- 行金额显示 `fmt(l.lineTotal)`（此时恒 = 单价×购物车数量，正确）；
+- 保留行尾「删除」（= 取消选中，回到购物车），保留复选框。
+
+### 3.2 `usePerBoxSelection.ts`（选择状态单例）
+
+- 删除 `setQty` 及一切按 ± 改数量的入口（数量跟随 `l.quantity`，不再可变）；
+- `setLineChecked`：checked → 该行 = `l.quantity`，否则 0（已是该逻辑，保持）；
+- `excludedItems()` 收敛：仅当整行未选（`selQty<=0`）才回流 `l.quantity`；**删除「0<selQty<l.quantity 回流差额」的中间分支**（整行模型下不存在中间值）；
+- **陈旧刷新加固**：按 `orderStore` 当前活动订单 `id` 记录，检测到订单变化（新单 / 结算后回流形成的单）时重建 `_singleton`，避免旧数量截留；
+- `selectedAmount()` 保持对选中行求和 `lineTotal`（整行模型下正确），注释标注「整行粒度」。
+
+### 3.3 `PerBoxSummary.vue`（汇总）
+
+- `boxGoodsTotal` / `boxSelectedQty` / `boxSubtotal` 逻辑不变（整行模型下 `lineTotal`、`qty` 均正确），更新注释说明「整行粒度、无可调数量」；
+- 确认汇总随「行勾选/取消（整行）」实时刷新即可（勾选本就是响应式的）。
+
+## 4. 验收标准
+
+1. 结算页每行数量 = 购物车数量，**无 ± 步进**，无法改数量；
+2. 行金额 = 单价 × 该行数量，且与购物车该行一致；
+3. 勾选某行 → 汇总/应付款 +该行 `lineTotal`；取消 → −该行，实时刷新；
+4. 提交整行选中 → 订单数量与价格 = 所见，**不弹回流提示**；取消整行 → 该行留在购物车，不产生多扣/多入；
+5. 切换账户 / 多单会话后无数量截留；
+6. 手机视口（390×844, dpr=2）截图核对上述场景并入操作手册。
+
+## 5. 不作本次范围
+
+- **不做**后端 `checkoutSplitted` 部分数量能力（方案 B）——需改 SDL/resolver/service、重建 `vendure lib` 并部署生产，本期不引入；
+- **不做**结算页内改数量（如需改数量请回购物车操作，与常见体验一致）。
+
+## 6. 部署与交付
+
+- 纯前端（nshop），改动文件仅 `layers/base/app/components/checkout/BoxLines.vue`、`layers/base/app/composables/usePerBoxSelection.ts`、`layers/base/app/components/checkout/PerBoxSummary.vue`；
+- 交付 = 实现 + typecheck（核对本文涉及文件零新增错误）+ 手机截图 + 操作手册补充 + `node scripts/deploy.mjs` 部署 `www.youshop.cn`。
