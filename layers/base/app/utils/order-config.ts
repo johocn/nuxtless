@@ -10,6 +10,12 @@ export interface OrderBlockCfg {
   visible?: boolean;
   title?: LocalizedText;
   text?: LocalizedText;
+  /** 核销码块：高光卡开关（默认 true） */
+  highlight?: boolean;
+  /** 核销码块：字体缩放 */
+  fontScale?: number;
+  /** 核销码块：卡片圆角 */
+  cardRadius?: number;
 }
 export interface OrderDetailConfig {
   version: number;
@@ -62,4 +68,14 @@ export function localizeOrderText(
   if (!text) return "";
   if (typeof text === "string") return text;
   return text[locale] ?? text[defaultLocale] ?? Object.values(text)[0] ?? "";
+}
+
+// 核销码块定制取值（L4 兜底：块定制 → 内建默认）
+export function orderBlockHighlight(cfg: OrderDetailConfig | null, key: string, dft = true): boolean {
+  const v = cfg?.blocks?.[key]?.highlight;
+  return v === undefined ? dft : v;
+}
+export function orderBlockNumber(cfg: OrderDetailConfig | null, key: string, name: 'fontScale' | 'cardRadius', dft: number): number {
+  const v = cfg?.blocks?.[key]?.[name];
+  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : dft;
 }
