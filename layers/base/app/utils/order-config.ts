@@ -40,6 +40,11 @@ const ORDER_DETAIL_DEFAULT_VISIBLE: Record<string, boolean> = {
 export function orderDetailLayout(cfg: OrderDetailConfig | null): OrderDetailLayout {
   return cfg?.layout === "classic" ? "classic" : "jd"; // 缺省/非法 → jd（默认京东版式）
 }
+
+/** 订单是否门店自提（核销码/自提信息块仅在自提单展示） */
+export function isPickupOrder(order: any): boolean {
+  return (order?.customFields?.deliveryType ?? "") === "pickup";
+}
 export function orderListLayout(_cfg: OrderListConfig | null): OrderListLayout {
   return "card"; // 本期仅卡片
 }
