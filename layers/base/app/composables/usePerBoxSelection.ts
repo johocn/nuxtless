@@ -75,6 +75,15 @@ export function usePerBoxSelection() {
     if (line) selection[boxKey]![lineId] = checked ? line.quantity : 0;
   }
 
+  /** 加减数量后同步该行选中数量：仅当该行已勾选(qty>0)时才更新为新整行数量，
+   *  保持选中并按新数量整行结算；未选中行保持 0（仍在购物车，不结算）。 */
+  function setLineQty(boxKey: string, lineId: string, newQty: number): void {
+    if (newQty < 1) return;
+    ensureBox(boxKey);
+    const cur = selection[boxKey]?.[lineId] ?? 0;
+    if (cur > 0) selection[boxKey]![lineId] = newQty;
+  }
+
   /** 删除该行：置 0，视为未选 */
   function removeLine(boxKey: string, lineId: string) {
     ensureBox(boxKey);
@@ -129,6 +138,7 @@ export function usePerBoxSelection() {
     toggleBox,
     isLineChecked,
     setLineChecked,
+    setLineQty,
     removeLine,
     selectedBoxes,
     selectedAmount,
