@@ -77,3 +77,24 @@
 
 - 纯前端（nshop），改动文件仅 `layers/base/app/components/checkout/BoxLines.vue`、`layers/base/app/composables/usePerBoxSelection.ts`、`layers/base/app/components/checkout/PerBoxSummary.vue`；
 - 交付 = 实现 + typecheck（核对本文涉及文件零新增错误）+ 手机截图 + 操作手册补充 + `node scripts/deploy.mjs` 部署 `www.youshop.cn`。
+
+---
+
+## 7. 上线验收（2026-09-03 已部署 www.youshop.cn）
+
+前端修改提交 `9f50263`，经 `node scripts/deploy.mjs` 部署生产生效。手机视口（390×844, dpr=2）线上核对如下，截图存 `scripts/shots/`：
+
+### 7.1 整行粒度商品行（wl1_checkout_wholeline.png）
+- 加购数量=2 → 结算页商品行数量**只读显示 `×2`**，**无 ± 步进器**；
+- 单价 `¥337.87`，行金额 = `单价 × 数量` = **¥675.74**（精确：337.87 × 2）；
+- 商品小计 / 行小计 / 底部合计 / 购物车角标 / 已选件数 全链一致 = **¥675.74 / 2 件**。
+
+### 7.2 取消勾选 → 整行不结算（wl2_unchecked.png）
+- 取消该行勾选 → 商品小计归 **¥0.00**、合计 **¥0.00**、已选 **0 件**；
+- 商品行仍显示原 ×2 / ¥675.74（供参考），但不计入结算 → 整行粒度回流商品到购物车。
+
+### 7.3 重新勾选 → 恢复（wl3_rechecked.png）
+- 重新勾选 → 商品小计 / 合计恢复 **¥675.74**、已选恢复 **2 件**。
+
+### 验收结论
+结算页「商品行数量 = 购物车数量、金额 = 单价×数量 = 实收」已三方严格一致，无 ± 步进，取消整行方回流，杜绝数量与价格打架。
