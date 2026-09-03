@@ -21,16 +21,6 @@ function lineImage(l: OrderBoxInfo["lines"][number]): string {
   return assetSrc(full, 48);
 }
 
-/** 该行当前选中数量（未初始化回落到原始数量） */
-function lineQty(l: OrderBoxInfo["lines"][number]): number {
-  return sel.selection[props.box.boxKey]?.[l.orderLineId] ?? l.quantity;
-}
-
-function setQty(l: OrderBoxInfo["lines"][number], delta: number) {
-  const next = Math.max(1, lineQty(l) + delta);
-  sel.setQty(props.box.boxKey, l.orderLineId, next);
-}
-
 const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
 </script>
 
@@ -73,20 +63,8 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
 
     <span class="shrink-0 text-neutral-500 dark:text-neutral-400">{{ fmt(l.unitPrice) }}</span>
 
-    <span class="flex shrink-0 items-center gap-1 rounded border border-neutral-200 px-1 dark:border-neutral-700">
-      <button
-        class="px-0.5 text-neutral-500 disabled:cursor-not-allowed disabled:opacity-40"
-        :disabled="lineQty(l) <= 1"
-        aria-label="decrease"
-        @click="setQty(l, -1)"
-      >−</button>
-      <b class="min-w-4 text-center text-neutral-900 dark:text-neutral-100">{{ lineQty(l) }}</b>
-      <button
-        class="px-0.5 text-neutral-500"
-        aria-label="increase"
-        @click="setQty(l, 1)"
-      >＋</button>
-    </span>
+    <!-- 整行粒度：数量锁定为购物车数量，不在结算页改动（后端 checkoutSplitted 不支持行内部分数量） -->
+    <b class="w-8 shrink-0 text-center text-neutral-700 dark:text-neutral-200">×{{ l.quantity }}</b>
 
     <span class="w-14 shrink-0 text-right font-medium text-neutral-900 dark:text-neutral-100">
       {{ fmt(l.lineTotal) }}

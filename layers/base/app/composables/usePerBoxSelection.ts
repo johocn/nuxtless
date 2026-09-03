@@ -6,9 +6,24 @@ export type BoxSelection = Record<string, Record<string, number>>;
 /** 模块级单例：所有调用方（BoxLines / 各箱块 / PaymentBlock / 汇总）共享同一选择状态 */
 let _singleton: BoxSelection | null = null;
 
+/** 结构指纹缓存：仅当箱/行集合发生变化（切单、结算后回流重新加购）才重建单例，避免数量截留 */
+let _boundFingerprint = "";
+
 export function usePerBoxSelection() {
   const orderStore = useOrderStore();
   const { orderBoxes } = storeToRefs(orderStore);
+
+  // 以「boxKey:lineId」全集作为指纹：结构不变则保留用户勾选状态；结构变了（新单）则作废旧选择
+  const fingerprint = computed(() =>
+    (orderBoxes.value ?? [])
+      .flatMap((b) => (b.lines ?? []).map((l) => `${b.boxKey}:${l.orderLineId}`))
+      .sort()
+      .join("|"),
+  );
+  if (_boundFingerprint !== fingerprint.value) {
+    _singleton = null;
+    _boundFingerprint = fingerprint.value;
+  }
 
   const selection = (_singleton ??= reactive<BoxSelection>({}));
 
@@ -52,19 +67,12 @@ export function usePerBoxSelection() {
     return (selection[boxKey]?.[lineId] ?? 0) > 0;
   }
 
-  /** 单行勾选/取消：选中=该行原 quantity，取消=0 */
+  /** 单行勾选/取消：整行粒度——选中=该行原 quantity（整行结算），取消=0（留在购物车回流） */
   function setLineChecked(boxKey: string, lineId: string, checked: boolean) {
     ensureBox(boxKey);
     const box = (orderBoxes.value ?? []).find((b) => b.boxKey === boxKey);
     const line = box?.lines.find((l) => l.orderLineId === lineId);
     if (line) selection[boxKey]![lineId] = checked ? line.quantity : 0;
-  }
-
-  /** 设置行数量；qty<=0 忽略 */
-  function setQty(boxKey: string, lineId: string, qty: number) {
-    ensureBox(boxKey);
-    if (qty <= 0) return;
-    selection[boxKey]![lineId] = qty;
   }
 
   /** 删除该行：置 0，视为未选 */
@@ -85,7 +93,7 @@ export function usePerBoxSelection() {
     return out;
   }
 
-  /** 被选行 lineTotal 求和 */
+  /** 被选行 lineTotal 求和（整行粒度：金额 = 行原数量×单价，无需乘当前数量） */
   function selectedAmount(): number {
     let sum = 0;
     for (const box of orderBoxes.value ?? []) {
@@ -97,9 +105,9 @@ export function usePerBoxSelection() {
   }
 
   /**
-   * 未选箱/未选行清单：结算成功后按 (variantId, qty) 回流到购物车。
+   * 未选行清单：结算成功后按 (variantId, qty) 回流到购物车。
    * 必须在 checkoutSplitted 之前捕获——成功后 store 会清空 orderBoxes/order。
-   * 规则：selQty<=0 → 回流整行原 quantity；0<selQty<原 quantity → 回流差额；selQty>=原 quantity → 不回流。
+   * 整行粒度：仅当整行未选（selQty<=0）才回流整行原 quantity；不存在行内部分数量，故无差额回流分支。
    */
   function excludedItems(): { variantId: string; qty: number }[] {
     const out: { variantId: string; qty: number }[] = [];
@@ -107,7 +115,6 @@ export function usePerBoxSelection() {
       for (const l of box.lines ?? []) {
         const selQty = selection[box.boxKey]?.[l.orderLineId] ?? l.quantity;
         if (selQty <= 0) out.push({ variantId: String(l.productVariantId), qty: l.quantity });
-        else if (selQty < l.quantity) out.push({ variantId: String(l.productVariantId), qty: l.quantity - selQty });
       }
     }
     return out;
@@ -122,7 +129,6 @@ export function usePerBoxSelection() {
     toggleBox,
     isLineChecked,
     setLineChecked,
-    setQty,
     removeLine,
     selectedBoxes,
     selectedAmount,

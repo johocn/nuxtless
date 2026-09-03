@@ -15,7 +15,7 @@ const { orderBoxes } = storeToRefs(orderStore);
 
 const fmt = (cents: number) => `¥${(cents / 100).toFixed(2)}`;
 
-/** 该箱被选行 lineTotal 求和（未选行不计入；noUncheckedIndexedAccess 空值兜底） */
+/** 该箱被选行 lineTotal 求和（整行粒度：不可调数量，金额=行原数量×单价；未选行不计入） */
 function boxGoodsTotal(box: OrderBoxInfo): number {
   let sum = 0;
   for (const l of box.lines ?? []) {
@@ -24,11 +24,11 @@ function boxGoodsTotal(box: OrderBoxInfo): number {
   return sum;
 }
 
-/** 该箱被选件数（qty 求和，未选行计 0） */
+/** 该箱被选件数（整行粒度下 qty = 该行原数量；未选行计 0） */
 function boxSelectedQty(box: OrderBoxInfo): number {
   let qty = 0;
   for (const l of box.lines ?? []) {
-    qty += sel.selection[box.boxKey]?.[l.orderLineId] ?? 0;
+    if ((sel.selection[box.boxKey]?.[l.orderLineId] ?? 0) > 0) qty += l.quantity;
   }
   return qty;
 }
