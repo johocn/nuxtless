@@ -10,7 +10,7 @@ const block = (key: string) => props.config?.blocks?.[key];
 <template>
   <OrderDetailStatusBlock v-if="visible('status')" :order="order" :block="block('status')" />
   <OrderDetailProgressBlock v-if="visible('progress')" :order="order" :block="block('progress')" />
-  <OrderDetailRedemptionBlock v-if="visible('redemption')" :order="order" :block="block('redemption')" />
+  <OrderDetailRedemptionBlock v-if="visible('redemption')" :order="order" :config="props.config" :block="block('redemption')" />
   <OrderDetailAddressBlock v-if="visible('address')" :order="order" :block="block('address')" />
   <OrderDetailItemsBlock v-if="visible('items')" :order="order" :block="block('items')">
     <template #line-actions="scope">
