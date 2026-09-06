@@ -13,7 +13,7 @@ const pickup = computed(() => isPickupOrder(props.order));
   <OrderDetailStatusBlock v-if="visible('status')" :order="order" :block="block('status')" />
   <OrderDetailProgressBlock v-if="visible('progress')" :order="order" :block="block('progress')" />
   <OrderDetailRedemptionBlock v-if="pickup && visible('redemption')" :order="order" :config="props.config" :block="block('redemption')" />
-  <OrderDetailAddressBlock v-if="visible('address')" :order="order" :block="block('address')" />
+  <OrderDetailAddressBlock v-if="!pickup && visible('address')" :order="order" :block="block('address')" />
   <OrderDetailItemsBlock v-if="visible('items')" :order="order" :block="block('items')">
     <template #line-actions="scope">
       <slot name="line-actions" v-bind="scope" />

@@ -20,18 +20,18 @@ const loc = computed(() => props.order.customFields?.selectedPickupLocationId ??
         {{ loc.businessHours }}
       </p>
       <p v-if="loc?.phoneNumber" class="text-neutral-500">
-        {{ t("messages.general.contactPhone") }}: {{ loc.phoneNumber }}
+        {{ t("messages.shop.contactPhone") }}: {{ loc.phoneNumber }}
       </p>
       <div
         v-if="order.customFields?.contactName || order.customFields?.contactPhone"
         class="mt-2 space-y-0.5 border-t border-neutral-100 pt-2 dark:border-neutral-800"
       >
         <p v-if="order.customFields?.contactName" class="text-neutral-500">
-          {{ t("messages.shop.contactName") }}:
+          {{ t("messages.account.contactName") }}:
           {{ order.customFields.contactName }}
         </p>
         <p v-if="order.customFields?.contactPhone" class="text-neutral-500">
-          {{ t("messages.general.contactPhone") }}:
+          {{ t("messages.shop.contactPhone") }}:
           {{ order.customFields.contactPhone }}
         </p>
       </div>

@@ -1,7 +1,36 @@
 import type { LocaleObject } from "@nuxtjs/i18n";
 import { appLocales } from "./i18n/locales";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+// 读取租户 code 白名单（与 useTenantChannel 共用同一份 data/tenant-channels.json）
+function tenantCodes(): string[] {
+  try {
+    const json = JSON.parse(
+      readFileSync(resolve(process.cwd(), "layers/base/data/tenant-channels.json"), "utf8"),
+    );
+    return (json.tenants || []).map((t: { code: string }) => t.code);
+  } catch {
+    return [];
+  }
+}
 
 export default defineNuxtConfig({
+  // 多租户路径前缀：在 i18n 之前为每条页面路由注入可选 :tenantCode 段。
+  // 默认中文 => /t2/product/x；英文 => /en/t2/product/x（i18n 会把整条 path 前缀上 locale）。
+  hooks: {
+    "pages:extend"(pages: { path: string }[]) {
+      const codes = tenantCodes();
+      if (!codes.length) return;
+      const rx = codes.slice(0, 200).join("|");
+      const seg = `:tenantCode(${rx})?`;
+      for (const route of pages) {
+        if (typeof route.path !== "string" || !route.path.startsWith("/")) continue;
+        route.path = route.path === "/" ? `/${seg}` : `/${seg}${route.path}`;
+      }
+    },
+  },
+
   modules: [
     "@nuxt/eslint",
     "@nuxt/fonts",
@@ -26,7 +55,11 @@ export default defineNuxtConfig({
   // App-Wide Settings
   app: {
     head: {
-      link: [{ rel: "icon", type: "image/svg+xml", href: "/favicon.svg" }],
+      link: [
+        // 显式声明 ico（浏览器地址栏/标签页兜底，避免 Nuxt 默认透明占位 ico 命中旧缓存）
+        { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
+        { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      ],
     },
   },
 
@@ -84,7 +117,7 @@ export default defineNuxtConfig({
         schema: "../graphql.schema.json",
         host: process.env.GQL_HOST!,
         headers: {
-          "vendure-channel-token": process.env.CHANNEL_TOKEN!,
+          "vendure-token": process.env.CHANNEL_TOKEN!,
         },
         // 让 requestMiddleware 以 `Authorization: Bearer <token>` 注入会话 token。
         // token 值 + 响应头捕获由 plugins/gql-session.ts 提供（游客/登录一致）。
