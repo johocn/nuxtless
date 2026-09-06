@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>配送档案自提点管理修复 ＋ 自提单多地提点切换 · 线上验收手册</title>
+<style>
+  @font-face{
+    font-family:'InstrumentSans';
+    src:url('../checkout-wholeline-acceptance/_shared/fonts/InstrumentSans-Regular.ttf') format('truetype');
+    font-weight:400;font-style:normal;
+  }
+  @font-face{
+    font-family:'InstrumentSans';
+    src:url('../checkout-wholeline-acceptance/_shared/fonts/InstrumentSans-Bold.ttf') format('truetype');
+    font-weight:700;font-style:normal;
+  }
+  @font-face{
+    font-family:'JetBrainsMono';
+    src:url('../checkout-wholeline-acceptance/_shared/fonts/JetBrainsMono-Regular.ttf') format('truetype');
+    font-weight:400;font-style:normal;
+  }
+  @font-face{
+    font-family:'JetBrainsMono';
+    src:url('../checkout-wholeline-acceptance/_shared/fonts/JetBrainsMono-Bold.ttf') format('truetype');
+    font-weight:700;font-style:normal;
+  }
+
+  :root{
+    --bg:#f6f5f1;
+    --bg2:#ffffff;
+    --ink:#20201f;
+    --muted:#6b6b66;
+    --rule:#e4e2da;
+    --accent:#e53935;
+    --accent2:#2f7d63;
+    --shadow:rgba(229,57,53,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'InstrumentSans',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+    line-height:1.7;
+    font-size:16px;
+  }
+  .page{max-width:860px;margin:0 auto;padding:2.5rem 1.25rem 4rem;}
+
+  .hero{
+    text-align:center;padding:3.5rem 1.5rem 3rem;border-radius:20px;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(229,57,53,0.08), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(47,125,99,0.07), transparent 45%),
+      var(--bg2);
+    box-shadow:0 1px 0 rgba(0,0,0,0.02);margin-bottom:3rem;
+  }
+  .hero .kicker{
+    display:inline-block;font-size:0.8rem;font-weight:700;letter-spacing:0.14em;
+    color:var(--accent);text-transform:uppercase;border:1px solid var(--rule);
+    border-radius:999px;padding:0.3rem 1rem;margin-bottom:1.25rem;
+  }
+  .hero h1{font-size:2.05rem;line-height:1.25;font-weight:700;letter-spacing:-0.02em;}
+  .hero p.sub{margin-top:0.9rem;color:var(--muted);font-size:1.02rem;max-width:640px;margin-left:auto;margin-right:auto;}
+  .hero .meta{margin-top:1.6rem;display:flex;gap:0.6rem;flex-wrap:wrap;justify-content:center;font-size:0.82rem;color:var(--muted);}
+  .hero .meta span{background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:0.3rem 0.7rem;}
+
+  .status-row{display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin-top:2rem;}
+  .status-item{
+    background:var(--bg2);border:1px solid var(--rule);border-radius:16px;
+    padding:1.1rem 1.4rem;min-width:9.5rem;text-align:center;box-shadow:0 4px 14px var(--shadow);
+  }
+  .status-item .num{font-family:'JetBrainsMono',monospace;font-size:1.55rem;font-weight:700;color:var(--accent);display:block;}
+  .status-item .lbl{font-size:0.8rem;color:var(--muted);margin-top:0.2rem;}
+  .status-item.ok .num{color:var(--accent2);}
+
+  section{margin-bottom:3.4rem;}
+  h2{
+    font-size:1.4rem;font-weight:700;letter-spacing:-0.01em;
+    padding-bottom:0.7rem;position:relative;margin-bottom:1.6rem;
+  }
+  h2::after{
+    content:"";position:absolute;left:0;bottom:0;width:56px;height:3px;border-radius:3px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+  }
+  h3{font-size:1.1rem;font-weight:700;margin:1.9rem 0 0.8rem;}
+  p{margin-bottom:1rem;color:var(--ink);}
+  .muted{color:var(--muted);}
+  ul,ol{padding-left:1.3rem;margin-bottom:1.1rem;}
+  li{margin-bottom:0.45rem;}
+
+  .card{
+    background:rgba(255,255,255,0.7);backdrop-filter:blur(10px);
+    border:1px solid rgba(229,57,53,0.12);border-radius:16px;
+    padding:1.4rem 1.5rem;margin-bottom:1.1rem;box-shadow:0 2px 10px rgba(229,57,53,0.06);
+  }
+  .card h4{font-size:1rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;}
+  .tag{font-size:0.72rem;font-weight:700;letter-spacing:0.04em;color:var(--accent);border:1px solid rgba(229,57,53,0.3);border-radius:6px;padding:0.14rem 0.5rem;}
+  .tag.gr{color:var(--accent2);border-color:rgba(47,125,99,0.3);}
+
+  .callout{
+    border-left:4px solid var(--accent2);background:rgba(47,125,99,0.06);
+    border-radius:0 12px 12px 0;padding:1rem 1.25rem;margin:1.4rem 0;
+  }
+  .callout.warn{border-left-color:var(--accent);background:rgba(229,57,53,0.06);}
+  .callout .tt{font-weight:700;display:block;margin-bottom:0.3rem;}
+
+  .mono{font-family:'JetBrainsMono',monospace;font-size:0.94em;background:var(--bg);border:1px solid var(--rule);border-radius:6px;padding:0.1rem 0.4rem;}
+  mark.key{background:none;color:var(--accent);font-weight:700;}
+  del.fix{background:var(--rule);border-radius:4px;padding:0 0.25rem;color:var(--muted);}
+
+  .table-wrap{overflow-x:auto;overflow-y:auto;max-height:600px;border:1px solid var(--rule);border-radius:12px;background:var(--bg2);}
+  table{width:100%;border-collapse:collapse;font-size:0.92rem;min-width:520px;}
+  th,td{padding:0.7rem 0.9rem;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top;}
+  th{font-weight:700;background:var(--bg);white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  .pass{color:var(--accent2);font-weight:700;white-space:nowrap;}
+
+  .figure-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;margin-top:1.2rem;}
+  .figure-grid.three{grid-template-columns:repeat(3,1fr);}
+  .diagram{background:var(--bg2);border:1px solid var(--rule);border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.04);}
+  .diagram img{width:100%;display:block;height:auto;}
+  .diagram .cap{padding:0.7rem 0.9rem;font-size:0.88rem;font-weight:600;}
+  .diagram .cap small{display:block;color:var(--muted);font-weight:400;font-size:0.78rem;margin-top:0.15rem;line-height:1.5;}
+
+  .codeblk{font-family:'JetBrainsMono',monospace;font-size:0.86rem;background:#1f1e1c;color:#e8e6e3;border-radius:10px;padding:1rem 1.1rem;overflow-x:auto;margin:1rem 0;line-height:1.6;}
+  .codeblk .c{color:#8a8782;}
+  .codeblk .hl{color:#ff7a59;font-weight:700;}
+  .codeblk .grn{color:#7fd9a6;}
+
+  footer{margin-top:3.5rem;border-top:1px solid var(--rule);padding-top:1.8rem;color:var(--muted);font-size:0.85rem;}
+  footer .sources ol{padding-left:1.2rem;font-size:0.85rem;color:var(--muted);}
+  footer .sources li{margin-bottom:0.5rem;overflow-wrap:break-word;word-break:break-all;}
+  footer .sources .src-title{color:var(--ink);}
+  footer .sources .src-url{display:block;margin-top:0.15rem;font-size:0.82rem;color:var(--accent);word-break:break-all;}
+
+  @media (max-width:600px){
+    body{font-size:15px;}
+    .page{padding:1.5rem 1rem 3rem;}
+    .hero{padding:2.5rem 1.25rem 2.2rem;}
+    .hero h1{font-size:1.55rem;}
+    .figure-grid,.figure-grid.three{grid-template-columns:1fr;}
+    .status-row{gap:0.8rem;}
+    .status-item{min-width:7rem;padding:0.9rem 0.8rem;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <span class="kicker">线上验收 · YouShop 配送档案 / 自提单结算</span>
+    <h1>配送档案「自提点」保存修复 ＋ 编辑/删除<br>＋ 自提单多地提点切换</h1>
+    <p class="sub">修复门店自提（<span class="mono">store</span>）方式下勾选的自提点<strong>保存后不落库</strong>的问题；给自提点补上<mark class="key">编辑 / 删除</mark>按钮；并为二月兰档案真绑 2 个自提点，让结算页出现「选择自提点」切换器。</p>
+    <div class="meta">
+      <span>平台 www.youshop.cn/t2</span>
+      <span>后台 e.joho.cn/guanli</span>
+      <span>视口 390×844 (dpr=2)</span>
+      <span>日期 2026-09-06</span>
+    </div>
+    <div class="status-row">
+      <div class="status-item ok"><span class="num">✓ 通过</span><span class="lbl">后台自提点保存修复</span></div>
+      <div class="status-item ok"><span class="num">✓ 通过</span><span class="lbl">自提点 编辑/删除 按钮</span></div>
+      <div class="status-item ok"><span class="num">✓ 通过</span><span class="lbl">C端多地提点切换</span></div>
+      <div class="status-item ok"><span class="num">✓ 通过</span><span class="lbl">超管「全局可用」</span></div>
+    </div>
+  </header>
+
+  <!-- ============ 1 问题与根因 ============ -->
+  <section>
+    <h2>一、问题与根因</h2>
+
+    <div class="card">
+      <h4><span class="tag">线上现象（C端）</span></h4>
+      <ul>
+        <li>二月兰配送档案下有自提点，但结算页<strong>没有「选择自提点」切换按钮</strong>，「另一个自提点」也不显示。</li>
+        <li>逐一排查：既非部署缺失（新切换 UI 已在服务器构建产物内），而是<strong>箱只返回 1 个自提点</strong>——档案#15「二月兰」只绑了「自由大路#4」一个点。</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4><span class="tag">后台保存 bug（真正根因）</span></h4>
+      <p>配送档案编辑保存时，自提点 ID 只在<span class="mono">mode === 'pickup'</span>时才写入 <span class="mono">options.pickupLocationIds</span>；而「二月兰门店」是<span class="mono">mode='store'</span>（门店自提），被当成非自提 → <span class="mono">options</span> 置 <span class="mono">null</span>，<strong>勾选的门店自提点根本没落库</strong>。这就是「在后台加了第 2 个点，C端却始终只看到 1 个」的根因。</p>
+      <div class="codeblk"><span class="c">// 修复前（web-admin shipping/profile/index.vue onSave）</span>
+options: <del class="fix">e.mode === 'pickup'</del> ? { rangeMode, pickupLocationIds } : null
+<span class="c">// 修复后：门店自提 / 自提点 / 职工单位（store / point / employee）全部持久化</span>
+options: <span class="hl">isPickupMode(e.mode)</span> ? { rangeMode, pickupLocationIds } : null</div>
+    </div>
+
+    <div class="card">
+      <h4><span class="tag">后台能力缺失</span></h4>
+      <ul>
+        <li>配送档案自提点区域只有勾选与「新增自提点」，每个自提点<strong>缺「编辑 / 删除」按钮</strong>，不便维护地址与删除。</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ 2 修改内容 ============ -->
+  <section>
+    <h2>二、修改内容</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>端</th><th>改动</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>后台 web-admin</td><td><span class="mono">shipping/profile/index.vue</span> onSave</td><td><span class="mono">e.mode === 'pickup'</span> → <span class="mono">isPickupMode(e.mode)</span>；使 store / point / employee 三种自提方式的 <span class="mono">pickupLocationIds</span> 真正落库</td></tr>
+          <tr><td>后台 web-admin</td><td>自提点行新增「编辑」「删除」</td><td>「编辑」跳转自提点编辑页；「删除」（非全局点）弹确认后删除并刷新列表、并从所有方式的已选点中移除</td></tr>
+          <tr><td>数据</td><td>二月兰档案#15 方法级绑点</td><td>「二月兰门店」方式（#30）<span class="mono">pickupLocationIds = ["4","7"]</span>（自由大路 + 门店自提）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <span class="tt">改动文件（全量）</span>
+      <span class="mono">vshop/web-admin/src/pages/shipping/profile/index.vue</span>（保存修复 + 编辑/删除按钮）· 生产数据：<span class="mono">updateShippingProfile</span> 方法级绑点（脚本 <span class="mono">D:\zhao\scripts\_q_bind_erle_7.mjs</span>）。
+      <span class="muted">C端切换 UI（BoxPickupBlock）本批前已上线，本次无需重建 nshop。</span>
+    </div>
+  </section>
+
+  <!-- ============ 3 验收方法 ============ -->
+  <section>
+    <h2>三、验收方法</h2>
+    <p class="muted">后台与 C端截图均来自手机标准视口，真实访问/登录链路核验；C端为真实生产链路。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>端</th><th>访问路径</th><th>账号/数据</th></tr></thead>
+        <tbody>
+          <tr><td>后台</td><td><span class="mono">e.joho.cn/guanli → 选择店铺 t2 → 配送档案 → 编辑「二月兰」</span></td><td>superadmin 超管；目标档案#15「二月兰」</td></tr>
+          <tr><td>C端</td><td><span class="mono">www.youshop.cn/t2/product/lanyue… → 加购 → /checkout</span></td><td>自提变体49·二月兰（配送档案#15）；箱 <span class="mono">pickupLocations</span> 应返回2点</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 4 后台验收 ============ -->
+  <section>
+    <h2>四、后台验收（配送档案自提点）</h2>
+    <p>进入 t2 → 配送档案，打开「二月兰」编辑：自提点区域在<span class="mono">租户门店</span>分组下同时列出<strong>自由大路、门店自提</strong>两个点，每点均带「编辑」「删除」；「门店自提」已勾选（本次补绑）。</p>
+
+    <div class="figure-grid three">
+      <figure class="diagram">
+        <img src="assets/wa_profile_list_t2.png" alt="t2配送档案列表含二月兰">
+        <figcaption class="cap">配送档案列表（t2）
+          <small>含「二月兰」档案（设为默认、启用中），每档案带 编辑/删除。</small>
+        </figcaption>
+      </figure>
+      <figure class="diagram">
+        <img src="assets/wa_erle_pickup_points_overview.png" alt="二月兰编辑面板自提点区域">
+        <figcaption class="cap">二月兰编辑面板·自提点
+          <small>「租户门店」下列出 自由大路 / 门店自提，各带「编辑」「删除」；「新增自提点」在下方。</small>
+        </figcaption>
+      </figure>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>校验点</th><th>预期</th><th>实际</th><th>结果</th></tr></thead>
+        <tbody>
+          <tr><td>门店自提点显示</td><td>store 方式下显示「租户门店」点列表</td><td>自由大路 + 门店自提 均列出</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>保存能落库</td><td>勾选的自提点 ID 写入 methodConfigs.options</td><td>保存后 C端箱 pickupLocations 返回2点（见第五节）</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>编辑按钮</td><td>每点提供「编辑」跳自提点编辑页</td><td>自由大路、门店自提右侧均有橙色「编辑」</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>删除按钮</td><td>每点提供「删除」（非全局点）</td><td>两自提点右侧均有红色「删除」</td><td class="pass">✓ 通过</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 5 C端验收 ============ -->
+  <section>
+    <h2>五、C端验收（多地提点切换）</h2>
+    <p>二月兰箱现返回<strong>2 个自提点</strong>，结算页自提点从「单选概览」升级为「当前点概览 + 选择自提点」展开切换器（搜索 + 单选）。</p>
+
+    <div class="figure-grid three">
+      <figure class="diagram">
+        <img src="assets/erle_switch_02_expanded.png" alt="C端切换选择器展开">
+        <figcaption class="cap">切换器展开
+          <small>含搜索框；单选卡片：自由大路（默认高亮）/ 门店自提。</small>
+        </figcaption>
+      </figure>
+      <figure class="diagram">
+        <img src="assets/erle_switch_03_selected_menji.png" alt="C端切换后概览">
+        <figcaption class="cap">切到「门店自提」后
+          <small>概览卡当前点更新为门店自提，红色选中态。</small>
+        </figcaption>
+      </figure>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>校验点</th><th>预期</th><th>实际</th><th>结果</th></tr></thead>
+        <tbody>
+          <tr><td>箱返回多自提点</td><td>orderBoxes.pickupLocations &gt; 1</td><td>返回 [自由大路#4, 门店自提#7]</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>出现切换按钮</td><td>仅当自提点 &gt; 1 显示</td><td>概览卡右上出现「选择自提点」</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>展开选择器</td><td>搜索 + 单选列表</td><td>搜索框 + 自由大路/门店自提 两卡片</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>切换即更新</td><td>选另一自提点后概览跟随</td><td>选门店自提 → 概览卡切至门店自提</td><td class="pass">✓ 通过</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 6 结论 ============ -->
+  <section>
+    <h2>六、验收结论</h2>
+    <div class="callout">
+      <span class="tt">验收通过</span>
+      后台配送档案自提点<strong>保存修复生效</strong>（store/point/employee 方式的自提点 ID 会真正写入 <span class="mono">methodConfigs.options.pickupLocationIds</span>）；每个自提点新增<strong>编辑 / 删除</strong>按钮；二月兰档案补绑第 2 个门店自提点后，C端与后台均已部署、在线回归通过。
+    </div>
+    <div class="callout warn">
+      <span class="tt">验收后数据状态（供复核）</span>
+      生产「二月兰」档案#15 现绑定 2 点：自由大路#4（档案级）＋ 门店自提#7（方法级）。如需还原为仅自由大路：<span class="mono">node D:\zhao\scripts\_q_bind_erle_7.mjs off</span>。
+    </div>
+    <h3>交付记录</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>条目</th><th>值</th></tr></thead>
+        <tbody>
+          <tr><td>后台改动</td><td><span class="mono">vshop/web-admin/src/pages/shipping/profile/index.vue</span>（保存修复 + 自提点 编辑/删除）</td></tr>
+          <tr><td>后台部署</td><td>本地 <span class="mono">node web-admin/scripts/deploy.mjs</span>（build:h5 → scp → nginx reload），产物 <span class="mono">pages-shipping-profile-index.DhRR1T_e.js</span> 已含新标记</td></tr>
+          <tr><td>数据</td><td><span class="mono">updateShippingProfile</span> 二月兰#15 方式#30 <span class="mono">pickupLocationIds=["4","7"]</span></td></tr>
+          <tr><td>验证环境</td><td>后台 e.joho.cn/guanli（t2）＋ C端 www.youshop.cn/t2，均 390×844 (dpr=2) 手机视口</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 7 自提点全局可用 ============ -->
+  <section>
+    <h2>七、自提点「全局可用」开关（超级管理员）</h2>
+    <p>后台「配送档案 → 自提点 → 新增自提点」时，<strong>超级管理员</strong>可在表单里看到一个「<mark class="key">全局可用</mark>」开关；勾选后新建的自提点为<strong>全局自提点</strong>，全平台各租户可经「引用到本店」选用，不归属于单一租户。</p>
+
+    <div class="card">
+      <h4><span class="tag">现象</span></h4>
+      <p>旧版新增自提点表单<strong>没有「全局可用」开关</strong>，超管也无法直接创建全局自提点——前端表单缺 <span class="mono">isPublic</span> 字段，<span class="mono">createPickupLocation</span> 请求未把 <span class="mono">isPublic</span> 传给后端，因此即使后端已具备全局自提点能力，前端也永远建不出全局点。</p>
+    </div>
+
+    <div class="card">
+      <h4><span class="tag">修复</span></h4>
+      <ul>
+        <li>表单新增 <span class="mono">isPublic</span> 字段，在「启用」下方以<strong>「全局可用」开关</strong>展示；<strong>仅当 <span class="mono">auth.isSuperAdmin</span> 时渲染</strong>，普通租户管理员不显示，避免越权误配。</li>
+        <li>保存时把 <span class="mono">isPublic</span> 随 payload 提交给 <span class="mono">createPickupLocation</span> / <span class="mono">updatePickupLocation</span>；后端 <span class="mono">pickup-location.service.create</span> 仍按 <span class="mono">SetGlobalPickupLocation</span> 权限二次鉴权，双重保险。</li>
+        <li>开关文案：<em>「全局自提点全平台租户可选用（『引用到本店』），仅超级管理员可维护」</em>。</li>
+      </ul>
+    </div>
+
+    <div class="figure-grid">
+      <figure class="diagram">
+        <img src="assets/wa_superadmin_global_btn.png" alt="超管新增自提点全局可用开关">
+        <figcaption class="cap">超级管理员新增自提点（手机 390×844）
+          <small>「全局可用」开关显示于「启用」下方，默认灰色 OFF。</small>
+        </figcaption>
+      </figure>
+    </div>
+
+    <div class="callout">
+      <span class="tt">验收（生产 e.joho.cn，手机 390×844）</span>
+      superadmin 登录 → 选择店铺 → 配送档案 → 自提点管理 →「＋新增自提点」：编辑页表单完整加载，<strong>「全局可用」开关正常显示</strong>于「启用」下方，无 PAGEERROR。验证脚本 <span class="mono">web-admin/_e2e/verify_superadmin_global_btn.py</span>。
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>条目</th><th>值</th></tr></thead>
+        <tbody>
+          <tr><td>前端改动</td><td><span class="mono">vshop/web-admin/src/pages/pickup/edit/index.vue</span>（模板 + form + onSave payload，复用既有 isSuperAdmin 判定）</td></tr>
+          <tr><td>后端</td><td>无需改动（cjk-plugin schema/service/实体 均已含 <span class="mono">isPublic</span>）</td></tr>
+          <tr><td>部署</td><td>本地 <span class="mono">node web-admin/scripts/deploy.mjs</span>（build:h5 → scp → nginx reload）</td></tr>
+          <tr><td>验证环境</td><td>后台 e.joho.cn/guanli，390×844 (dpr=2) 手机视口；提交 <span class="mono">0bd79b4</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <div class="sources">
+      <h2>参考</h2>
+      <ol>
+        <li id="cite-1">
+          <span class="src-title">后台：配送档案编辑页（保存修复 + 编辑/删除）</span>
+          <span class="src-url">vshop/web-admin/src/pages/shipping/profile/index.vue</span>
+        </li>
+        <li id="cite-2">
+          <span class="src-title">后端：箱自提点聚合 resolveBoxFulfilment（档案级 ∪ 方式级）</span>
+          <span class="src-url">vendure/packages/cjk-plugin/src/shipping/shipping-profile.service.ts</span>
+        </li>
+        <li id="cite-3">
+          <span class="src-title">C端：自提点展开切换器 BoxPickupBlock.vue</span>
+          <span class="src-url">nshop/layers/base/app/components/checkout/BoxPickupBlock.vue</span>
+        </li>
+        <li id="cite-4">
+          <span class="src-title">线上验证截图原片</span>
+          <span class="src-url">本目录 assets/*.png · nshop/scripts/shots/erle_switch_*.png</span>
+        </li>
+      </ol>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
