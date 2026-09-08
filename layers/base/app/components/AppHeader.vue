@@ -1,11 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
 import type { MenuCollections } from "~~/types/collection";
 import { assetSrc } from "../utils/image";
 
 const { logoTop } = useAppConfig();
 const route = useRoute();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 
 const menuCollections = useState<MenuCollections>("menuCollections");
 

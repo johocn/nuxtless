@@ -1,11 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 definePageMeta({ middleware: "account" });
 
 import type { ActiveCustomerDetail } from "~~/types/customer";
 import { isActiveCustomerDetail } from "~~/types/guard";
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const { customer } = storeToRefs(useCustomerStore());
 const { fetchCustomer } = useCustomerStore();
 const loading = ref(true);

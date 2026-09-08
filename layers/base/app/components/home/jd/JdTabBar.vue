@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // JD 风格移动端底部固定导航（首页/分类/购物车/我的）
 // 全部复用 nshop 既有能力，未动底层：
 //   - 首页 → /
@@ -7,7 +7,7 @@
 //   - 我的 → /account
 // 仅移动端显示(lg:hidden)，PC 端保留原顶部导航。
 const route = useRoute();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const { t } = useI18n();
 
 const isCartOpen = useState<boolean>("isCartOpen", () => false);

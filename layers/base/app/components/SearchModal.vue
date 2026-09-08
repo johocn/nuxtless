@@ -1,8 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { assetSrc } from "../utils/image";
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const open = ref(false);
 const inputElement = useTemplateRef("inputElement");
 

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { ActiveOrderDetail } from "~~/types/order";
 import type { CheckoutState } from "~~/types/general";
 import type { AddressRecord } from "~~/types/address";
@@ -14,7 +14,7 @@ const isCn = layout === "cn";
 const router = useRouter();
 const { t } = useI18n();
 const { countryCodeDefault } = useAppConfig();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const toast = useToast();
 const orderStore = useOrderStore();
 const { order } = storeToRefs(orderStore);
@@ -107,8 +107,8 @@ function successRedirect() {
   void router.push(localePath(`/checkout/confirmation/${orderCode}`));
   order.value = null;
   toast.add({
-    title: "Order Successful",
-    description: "Thank you for your order.",
+    title: t("messages.shop.orderSuccessful"),
+    description: t("messages.shop.thankYouForOrder"),
     color: "success",
   });
 }

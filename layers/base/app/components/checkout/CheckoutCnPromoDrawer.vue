@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // 中国本地化版式：优惠展开抽屉——展示已绑定券 + 可选券列表，复用 useCoupon 券能力。
 import type { Ref } from "vue";
 import type { ActiveOrderDetail } from "~~/types/order";
@@ -23,7 +23,7 @@ const isOpen = computed<boolean>({
 });
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const toast = useToast();
 const orderStore = useOrderStore();
 const { order } = storeToRefs(orderStore);

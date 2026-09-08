@@ -16,18 +16,27 @@ const flow = useCheckoutFlow();
 const { countryCodeDefault } = useAppConfig();
 const { isAuthenticated } = storeToRefs(useAuthStore());
 const { addresses, fetchAddresses } = useAddressBook();
+const { deliverySamples } = useSampleAddressBook();
+
+// 地址簿为空时展示示例配送地址池，便于演示「切换收货地址」；有真实地址则优先真实
+const switchList = computed(() =>
+  addresses.value.length ? addresses.value : deliverySamples,
+);
 
 const checkoutState = useState<CheckoutState>("checkoutState");
 const state = checkoutState.value.addressForm;
 
 const appliedAddressId = ref<string | null>(null);
 const editing = ref(false);
+/** 是否处于「新增地址」模式（表单留空，不预填地址簿第一条） */
+const newMode = ref(false);
 
 const addressSubmitted = ref(false);
 const editFormRef = useTemplateRef<ComponentPublicInstance & { submitAddress: () => void }>("editForm");
 
 function applyAddress(record: AddressRecord) {
   appliedAddressId.value = record.id;
+  newMode.value = false;
   state.fullName = record.fullName ?? "";
   state.streetLine1 = record.streetLine1 ?? "";
   state.streetLine2 = record.streetLine2 ?? "";
@@ -37,6 +46,16 @@ function applyAddress(record: AddressRecord) {
   state.countryCode = record.countryCode ?? countryCodeDefault;
   state.phoneNumber = record.phoneNumber ?? "";
   editing.value = false;
+}
+
+function startNewAddress() {
+  newMode.value = true;
+  editing.value = true;
+}
+
+function toggleSwitch() {
+  newMode.value = false;
+  editing.value = !editing.value;
 }
 
 const addressSummary = computed(() => {
@@ -119,14 +138,24 @@ onMounted(() => {
         <span class="h-3.5 w-1 rounded-sm bg-primary-500" />
         {{ t("messages.checkout.cnContactTitle") }}
       </h3>
-      <UButton
-        v-if="addressSummary.has"
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        :label="t('messages.checkout.switchAddress')"
-        @click="editing = !editing"
-      />
+      <div class="flex flex-wrap items-center gap-2">
+        <UButton
+          v-if="isAuthenticated && !editing"
+          color="primary"
+          variant="soft"
+          size="sm"
+          :label="t('messages.checkout.addAddress')"
+          @click="startNewAddress"
+        />
+        <UButton
+          v-if="addressSummary.has && isAuthenticated"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :label="t('messages.checkout.switchAddress')"
+          @click="toggleSwitch"
+        />
+      </div>
     </div>
 
     <!-- 空地址：引导新增 -->
@@ -138,7 +167,7 @@ onMounted(() => {
         size="sm"
         :label="t('messages.checkout.addAddress')"
         class="ml-2"
-        @click="editing = true"
+        @click="startNewAddress"
       />
     </div>
 
@@ -161,17 +190,18 @@ onMounted(() => {
       </p>
     </div>
 
-    <!-- 新增 / 切换：地址簿选择 + 内嵌可编辑表单 -->
+    <!-- 新增 / 切换：地址池选择 + 内嵌可编辑表单 -->
     <div v-if="editing" class="mt-2 space-y-4">
       <AddressPicker
-        v-if="isAuthenticated && addresses.length"
-        :addresses="addresses"
+        v-if="isAuthenticated && switchList.length"
+        :addresses="switchList"
         :default-id="appliedAddressId"
         @select="applyAddress"
       />
       <CheckoutAddressForm
         ref="editForm"
         v-model="addressSubmitted"
+        :blank="newMode"
         aria-labelledby="cn-contact-heading"
         novalidate
       />

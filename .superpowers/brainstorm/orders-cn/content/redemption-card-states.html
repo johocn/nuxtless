@@ -1,0 +1,125 @@
+<h2>核销码高光卡 · 状态机 + 机制入口（京东风增强，方案A）</h2>
+<p class="subtitle">第 2 节：单个订单详情靠上核销区域，横排展示五种核销状态与操作入口</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="active">
+    <div class="card-image">
+      <div class="phone">
+        <div class="p-banner"><span>待自提</span> 单号 #P20260903001</div>
+        <div class="p-redeem grad">
+          <div class="p-hint">自提核销码 · 到店请出示</div>
+          <div class="p-code">482 <b>913</b></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <div class="qr"></div>
+            <div class="p-store">旗舰店-上海嘉定<br/>营业 09:00-21:00<br/><b class="ok">有效期至 09-10</b></div>
+          </div>
+          <div class="p-tag on">未核销 · 待取货</div>
+        </div>
+        <div class="p-note">取货时向店员出示二维码或核销码</div>
+      </div>
+    </div>
+    <div class="card-body"><h3>active · 待取货</h3><p>默认态：大号码+二维码+门店/营业时间/有效期条</p></div>
+  </div>
+
+  <div class="card" data-choice="expiring">
+    <div class="card-image">
+      <div class="phone">
+        <div class="p-banner"><span>待自提</span> 单号 #P20260903002</div>
+        <div class="p-redeem grad warn">
+          <div class="p-hint">自提核销码 · 即将过期</div>
+          <div class="p-code">613 <b>284</b></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <div class="qr"></div>
+            <div class="p-store">旗舰店-上海嘉定<br/>有效期至 <b class="warn">今日 21:00</b></div>
+          </div>
+          <div class="p-tag warn">距过期 不足 24h</div>
+        </div>
+        <div class="p-note">请尽快到店核销，过期后可将相应重新生成</div>
+      </div>
+    </div>
+    <div class="card-body"><h3>expiring · 即将过期</h3><p>橙色警示条，提示尽快取货</p></div>
+  </div>
+
+  <div class="card" data-choice="expired">
+    <div class="card-image">
+      <div class="phone">
+        <div class="p-banner gray"><span>已过期</span> 单号 #P20260902005</div>
+        <div class="p-redeem grad off">
+          <div class="p-hint">核销码已过期</div>
+          <div class="p-code off">635 <b>120</b></div>
+          <div class="p-store dim">有效期至 2026-09-02<br/>已不可到店核销</div>
+          <div class="p-tag dead">已过期</div>
+        </div>
+        <div class="p-actions">
+          <div class="p-btn">重新生成核销码</div>
+          <div class="p-link">联系客服处理</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body"><h3>expired · 已过期</h3><p>置灰 + 「重新生成」一键补发（走 redeemCodeReissue）</p></div>
+  </div>
+
+  <div class="card" data-choice="void-reissued">
+    <div class="card-image">
+      <div class="phone">
+        <div class="p-banner"><span>待自提</span> 单号 #P20260903008</div>
+        <div class="p-redeem grad">
+          <div class="p-hint">已重新生成 · 请使用新码</div>
+          <div class="p-code small">901 <b>552</b></div>
+          <div class="p-store dim" style="margin-top:4px">旧码已作废 · 当前为第 2 个码</div>
+          <div class="p-tag on">未核销 · 待取货</div>
+        </div>
+        <div class="p-note">旧二维码与旧号码到店将无法核销</div>
+      </div>
+    </div>
+    <div class="card-body"><h3>void→reissued · 已重发</h3><p>重发后旧码作废，新码生效，版本号入载荷</p></div>
+  </div>
+
+  <div class="card" data-choice="redeemed">
+    <div class="card-image">
+      <div class="phone">
+        <div class="p-banner done"><span>已完成</span> 单号 #P20260901002</div>
+        <div class="p-redeem grad done">
+          <div class="p-hint">已核销 · 已完成自提</div>
+          <div class="p-code done">482 <b>913</b></div>
+          <div class="p-store dim">核销于 2026-09-01 18:32<br/>门店 旗舰店-上海嘉定</div>
+          <div class="p-tag dead">已核销</div>
+        </div>
+        <div class="p-note">核销码已失效，不可再次使用</div>
+      </div>
+    </div>
+    <div class="card-body"><h3>redeemed · 已核销</h3><p>核销后置灰，标示已取货，一次核销生效</p></div>
+  </div>
+
+</div>
+
+<style>
+.cards{display:flex;flex-wrap:wrap;gap:14px}
+.card{flex:1 1 210px;max-width:250px}
+.phone{width:205px;margin:0 auto;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;background:#fff;font-family:sans-serif}
+.p-banner{padding:9px 12px;font-size:11px;font-weight:600;color:#fff;background:#e23d3d}
+.p-banner gray,.p-banner{}.p-banner.gray{background:#6b7280}.p-banner.done{background:#16a34a}
+.p-banner span{background:rgba(255,255,255,.22);border-radius:4px;padding:1px 6px;margin-right:6px}
+.p-redeem{padding:12px;text-align:center;color:#1f2937}
+.p-redeem.grad{background:linear-gradient(135deg,#fde68a,#f97316);color:#431407}
+.p-redeem.warn{background:linear-gradient(135deg,#fef3c7,#f59e0b);color:#78350f}
+.p-redeem.off{background:#f1f5f9;color:#64748b;filter:grayscale(.3)}
+.p-redeem.done{background:#f0fdf4;color:#166534}
+.p-hint{font-size:10px;opacity:.85}
+.p-code{font-size:23px;font-weight:800;letter-spacing:3px;font-family:monospace}
+.p-code.small{font-size:19px}.p-code.off{color:#94a3b8}.p-code.done{color:#16a34a}
+.p-store{font-size:10px;line-height:1.6;text-align:left}
+.p-store.dim{color:#94a3b8}
+.p-tag{display:inline-block;margin-top:8px;border-radius:20px;padding:2px 10px;font-size:10px}
+.p-tag.on{background:#dcfce7;color:#166534}
+.p-tag.warn{background:#fef3c7;color:#b45309}
+.p-tag.dead{background:#e2e8f0;color:#64748b}
+.note{padding:8px 12px;font-size:10px;color:#9ca3af;background:#fff;border-top:1px solid #f1f5f9}
+.qr{width:42px;height:42px;background:repeating-conic-gradient(#000 0 25%,transparent 0 50%) 0 0/7px 7px;border:1px solid #ddd}
+.ok{color:#166534}.warn{color:#b45309}
+.dim{opacity:.6}
+.p-actions{padding:10px 12px;background:#fff}
+.p-btn{font-size:12px;font-weight:600;color:#fff;background:#e23d3d;border-radius:8px;padding:7px 0;text-align:center}
+.p-link{font-size:10px;color:#6b7280;text-align:center;margin-top:6px}
+</style>

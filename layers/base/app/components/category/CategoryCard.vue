@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { ChildCollection } from "~~/types/collection";
 import { assetSrc } from "../../utils/image";
 
@@ -11,7 +11,7 @@ if (!collection) {
   throw new Error("CollectionCard: 'collection' prop is required");
 }
 
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 
 const imageSrc = computed(
   () => assetSrc(collection?.featuredAsset?.preview, 700) || "/images/placeholder.webp",

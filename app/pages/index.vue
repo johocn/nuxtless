@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // 首页：京东风格商城首页（PC 全屏 + 窄屏自动降级为移动单列布局）
 // 底层逻辑不变，复用 nshop/Vendure 既有功能与数据：
 //   - 顶部分类(collection)（GetMenuCollections，已在 app.vue 加载）→ 分类导航/品质专区/PC 侧栏
@@ -17,12 +17,10 @@ import JdPcHeader from "../../layers/base/app/components/home/jd/JdPcHeader.vue"
 import JdPcCategorySidebar from "../../layers/base/app/components/home/jd/JdPcCategorySidebar.vue";
 import JdFunctionGrid from "../../layers/base/app/components/home/jd/JdFunctionGrid.vue";
 import JdBrandFloor from "../../layers/base/app/components/home/jd/JdBrandFloor.vue";
-import JdTabBar from "../../layers/base/app/components/home/jd/JdTabBar.vue";
-import JdAllCategoryDrawer from "../../layers/base/app/components/home/jd/JdAllCategoryDrawer.vue";
 import HomeBlockRenderer from "../../layers/base/app/components/home/HomeBlockRenderer.vue";
 
 const { t, tm } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 
 // 1) 顶部分类：菜单集合（含 featuredAsset / children）
 const menuCollections = useState<MenuCollections>("menuCollections");
@@ -210,10 +208,6 @@ const entries = computed(() =>
       </div>
     </template>
   </main>
-
-  <!-- ═══ 移动端底部固定导航 + 全部分类抽屉（仅移动端）═══ -->
-  <JdTabBar />
-  <JdAllCategoryDrawer />
 </template>
 
 <style lang="css" scoped></style>

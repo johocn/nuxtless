@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // JD 风格「全部分类」抽屉（移动端）：TabBar「分类」与功能宫格「全部分类」共用触发
 // 数据来源：顶部分类(collection)（GetMenuCollections 已加载到 menuCollections 状态，未动底层）
 // 通过全局 state isAllCatOpen 控制显隐，任何页面/组件都可 set true 打开。
@@ -6,7 +6,7 @@ import type { MenuCollections } from "~~/types/collection";
 import { assetSrc } from "../../../utils/image";
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const open = useState<boolean>("isAllCatOpen", () => false);
 
 const menuCollections = useState<MenuCollections>("menuCollections");

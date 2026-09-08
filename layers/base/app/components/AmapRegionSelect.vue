@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DistrictNode } from "~~/.nuxt/gql/default";
 import type { RegionValue } from "~~/types/region";
-import type { ReverseGeocodeInfo } from "~~/types/location";
+import type { CityInfo, ReverseGeocodeInfo } from "~~/types/location";
 
 // ===== 高德行政区划三级联动（省→市→区 下钻；街道并入详细地址）=====
 // 供结账表单（AddressForm.vue）与账号地址弹窗（AddressFormModal.vue）共享复用，
@@ -174,18 +174,57 @@ async function applyValue(value: RegionValue | undefined | null) {
   syncModel();
 }
 
-// 默认省/市：优先完整逆地理 geo；失败用首页定位城市兜底（仅回填市）
-async function preselectByLocation(geo: ReverseGeocodeInfo | null, fallbackCity: string | null) {
+// 省份 adcode 推导：直辖市已是省级（110000/310000/500000/120000 等以 0000 结尾）；
+// 普通市取其行政区划码前两位拼接 0000（如 440100 广州 → 440000 广东省）。
+function provinceAdcodeOf(cityAdcode: string | undefined): string | null {
+  if (!cityAdcode || !/^\d{6}$/.test(cityAdcode)) return null;
+  return cityAdcode.endsWith("0000") ? cityAdcode : `${cityAdcode.slice(0, 2)}0000`;
+}
+
+// 用首页城市信息（高德 adcode + 城市名）兜底填充 省/市 两级下拉（无逆地理定位时）。
+async function preselectByCity(fallbackCity: CityInfo | null | undefined) {
+  const name = fallbackCity?.name?.trim();
+  if (!name) return;
+  if (provinceSel.value.items.length === 0) {
+    await loadDistrict(null, provinceSel.value);
+  }
+  const provAdcode = provinceAdcodeOf(fallbackCity?.adcode);
+  let prov = provAdcode
+    ? provinceSel.value.items.find((p) => String(p.adcode) === provAdcode)
+    : undefined;
+  if (!prov) {
+    // 无 adcode 或省未命中 → 按城市名包含匹配省份，仅剩一项时自动选中
+    const base = normName(name);
+    prov =
+      provinceSel.value.items.find(
+        (p) => normName(p.name).includes(base) || base.includes(normName(p.name)),
+      ) ?? (provinceSel.value.items.length === 1 ? provinceSel.value.items[0] : undefined);
+  }
+  if (!prov) return;
+  provinceSel.value.current = prov.name;
+  await loadDistrict(prov.adcode, citySel.value);
+  const city =
+    pickBest(citySel.value, name) ??
+    citySel.value.items.find((c) => String(c.adcode) === fallbackCity?.adcode) ??
+    null;
+  if (city) citySel.value.current = city.name;
+  syncModel();
+}
+
+// 默认省/市：优先完整逆地理 geo；失败（无 geo 或省未命中）用首页定位城市兜底（省+市）
+async function preselectByLocation(geo: ReverseGeocodeInfo | null, fallbackCity: CityInfo | null | undefined) {
   if (provinceSel.value.items.length === 0) {
     await loadDistrict(null, provinceSel.value);
   }
   if (!geo) {
-    if (fallbackCity && !region.value.city) region.value.city = fallbackCity;
-    syncModel();
+    await preselectByCity(fallbackCity);
     return;
   }
   const prov = pickBest(provinceSel.value, geo.province);
-  if (!prov) return;
+  if (!prov) {
+    await preselectByCity(fallbackCity);
+    return;
+  }
   provinceSel.value.current = prov.name;
   await loadDistrict(prov.adcode, citySel.value);
   await cascadeGeo(geo);
@@ -200,7 +239,8 @@ defineExpose({
 </script>
 
 <template>
-  <div class="col-span-2 grid grid-cols-4 gap-2">
+  <!-- 国家/省/市/区 分两行显示（2列×2行），避免一行4格在窄屏过于拥挤 -->
+  <div class="col-span-2 grid grid-cols-2 gap-2">
     <UFormField v-if="showCountry" :label="t('messages.billing.country')" name="countryCode" class="w-full min-w-0" size="xl">
       <USelectMenu
         v-model="countryCode"

@@ -11,6 +11,7 @@ import { isActiveCustomerDetail } from "~~/types/guard";
 const isSubmitted = defineModel<boolean>({ default: false });
 
 const { t } = useI18n();
+const props = defineProps<{ blank?: boolean }>();
 const billingSchema = computed(() =>
   createBillingAddressSchema((k) => t(k)),
 );
@@ -51,10 +52,26 @@ const checkoutState = useState<CheckoutState>("checkoutState");
 const state = checkoutState.value.addressForm;
 
 const { data: countriesData } = await useAsyncGql("GetChannelCountries");
+// 国家名按 code 映射为中文（China→中国），未映射到则回退后端返回名，保证中国区显示"中国"
+const CN_COUNTRY_NAMES: Record<string, string> = {
+  CN: "中国",
+  US: "美国",
+  GB: "英国",
+  JP: "日本",
+  KR: "韩国",
+  DE: "德国",
+  FR: "法国",
+  AU: "澳大利亚",
+  CA: "加拿大",
+  SG: "新加坡",
+  HK: "中国香港",
+  MO: "中国澳门",
+  TW: "中国台湾",
+};
 const countries = computed(
   () =>
     countriesData.value?.activeChannel?.defaultShippingZone?.members.map(
-      (c) => ({ label: c.name, code: c.code }),
+      (c) => ({ label: CN_COUNTRY_NAMES[c.code] ?? c.name, code: c.code }),
     ) ?? [],
 );
 
@@ -91,7 +108,8 @@ onMounted(async () => {
   isMounted.value = true;
 
   const { fetchAddresses } = useAddressBook();
-  const list = isAuthenticated.value ? await fetchAddresses() : [];
+  // 新增模式（blank）：不预填地址簿，走空白 + 高德/首页城市兜底
+  const list = isAuthenticated.value && !props.blank ? await fetchAddresses() : [];
 
   const amap = regionRef.value;
   if (list.length) {
@@ -119,7 +137,7 @@ onMounted(async () => {
         locationStore.coords.lng,
       );
     }
-    await amap?.preselectByLocation(geo, locationStore.cityName);
+    await amap?.preselectByLocation(geo, locationStore.city);
     if (!state.streetLine1 && geo?.formattedAddress) {
       state.streetLine1 = geo.formattedAddress;
     }

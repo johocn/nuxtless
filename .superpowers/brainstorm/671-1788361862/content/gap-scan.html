@@ -1,0 +1,48 @@
+<h2>京东模板 Checkout：当前实现 vs 设计文档目标</h2>
+<p class="subtitle">左右对照识别差距。请先看下方 A/B 两张版式说明，然后选择你的理解方向。</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">A · 当前实现（薄装配）</div>
+    <div class="mockup-body" style="text-align:left;font-size:12px;line-height:1.5">
+      <div style="border:1px solid #ccc;border-radius:4px;padding:6px;margin:4px 0;background:#f7f7f7">返回结算 · 提交订单按钮</div>
+      <div style="border:1px dashed #888;border-radius:4px;padding:6px;margin:4px 0">[1] 供应商/配送档案 = 逐箱卡片切片</div>
+      <div style="border:1px solid #ccc;border-radius:4px;padding:6px;margin:4px 0">配送方式 ← 无"配送至：地址"头部</div>
+      <div style="border:1px solid #ccc;border-radius:4px;padding:6px;margin:4px 0">收货地址表单（与配送方式并列）</div>
+      <div style="border:1px dashed #888;border-radius:4px;padding:6px;margin:4px 0">[2] 自提点列表（按档案切片）</div>
+      <div style="border:1px solid #ccc;border-radius:4px;padding:6px;margin:4px 0">优惠/余额/支付方式</div>
+      <div style="border:1px solid #ccc;border-radius:4px;padding:6px;margin:4px 0">分账明细（PerBoxSummary）</div>
+      <div style="border:1px solid #ccc;border-radius:4px;padding:6px;margin:4px 0">商品清单 · 应付款</div>
+    </div>
+    <div class="card-body"><h3>当前 jd</h3><p style="font-size:12px">按"是否有物流箱/自提箱"拼装，无 deliveryMode 全页联动、无配送至地址头部、无自提近选</p></div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">B · 设计文档目标（京东风格）</div>
+    <div class="mockup-body" style="text-align:left;font-size:12px;line-height:1.5">
+      <div style="border:1px solid #ccc;border-radius:4px;padding:6px;margin:4px 0;background:#eef4ee;font-weight:600">配送至：收货人 138-0XXX-XXXX · 省市区</div>
+      <div style="border:1px solid #4a90d9;border-radius:4px;padding:6px;margin:4px 0;background:#eef3fb">配送方式（置顶，单一片段驱动 linkage）</div>
+      <div style="border:1px dashed #888;border-radius:4px;padding:6px;margin:4px 0">收货地址表单（点"配送至"可改）</div>
+      <div style="border:1px dashed #888;border-radius:4px;padding:6px;margin:4px 0">自提类型切换（门店/员工/网点）+ 最近预选</div>
+      <div style="border:1px solid #4a90d9;border-radius:4px;padding:6px;margin:4px 0;background:#eef3fb">支付（默认选余额/在线）· 摘要折叠</div>
+      <div style="border:1px solid #ccc;border-radius:4px;padding:6px;margin:4px 0">商品清单 · 应付款</div>
+    </div>
+    <div class="card-body"><h3>设计目标</h3><p style="font-size:12px">deliveryMode 全页单一事实源联动；地址区顶部"配送至"头部；自提类型分区块+最近预选</p></div>
+  </div>
+</div>
+
+<h3>差距需确认：选哪个方向？</h3>
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>我认同 A 是"薄装配"，按设计文档重构为 B</h3><p>保留当前实现为回退模块，新 jd 按 2026-08-27 京东风格设计文档重做</p></div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>以"逐箱"为基底增强 jd 版式</h3><p>不推翻 box 卡片，只把 deliveryMode 联动/配送至头部/自提近选 补进 jd 模板</p></div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content"><h3>其它/需先对齐设计文档某节</h3><p>选此并通过终端补充说明具体是哪份文档/哪一节为目标</p></div>
+  </div>
+</div>

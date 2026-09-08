@@ -1,12 +1,14 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { GuestOrderLookupQuery } from "#gql/default";
+import OrderDetailConfirmation from "../../../components/order/OrderDetailConfirmation.vue";
+import GuestOrderConfirmation from "../../../components/order/GuestOrderConfirmation.vue";
 
 definePageMeta({
   alias: ["/order/:code"],
 });
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
@@ -41,28 +43,32 @@ const {
 const order = computed(() => orderData.value?.orderByCode ?? null);
 const hasError = computed(() => !!error.value);
 
+// 订单不可用（无权限/无效码/未找到/HTTP 错误）→ 不轮询，立即走游客公开查询兜底或快速报错
+const orderUnavailable = computed(() => hasError.value || order.value == null);
+
 // 自提/核销信息展示
 const isPickupOrder = computed(
   () => (order.value?.customFields?.deliveryType ?? "") === "pickup",
 );
-const pickupLocation = computed(
-  () => order.value?.customFields?.selectedPickupLocationId ?? null,
-);
 const pickupClaimed = computed(
   () => order.value?.customFields?.pickupClaimed ?? false,
 );
-// 履约状态：取任一 fulfillment 的状态作为核销展示依据
-const fulfillmentState = computed(() => {
-  const f = order.value?.fulfillments?.[0];
-  return f?.state ?? null;
-});
 
 const GqlInstance = useGql();
 const pickupOverview = ref<GuestOrderLookupQuery["guestOrderLookup"] | null>(null);
+const guestOverview = ref<GuestOrderLookupQuery["guestOrderLookup"] | null>(null);
+const guestLoading = ref(false);
+const renderError = ref(false);
 const showAddPhone = ref(false);
 const addPhoneForm = reactive({ phone: '' });
 const savingPhone = ref(false);
 const savedPhoneMsgOpen = ref(false);
+
+const notFoundError = computed(() => ({
+  statusCode: 404,
+  statusMessage: t("messages.error.noOrder"),
+  message: t("messages.error.orderExpiredLink"),
+}));
 
 watch(order, async (o) => {
   if (o && isPickupOrder.value) {
@@ -90,18 +96,35 @@ async function savePhone() {
   }
 }
 
+// 游客公开查询兜底：orderByCode 对游客/无效码会返回 FORBIDDEN，改用公开查询接口
+async function tryGuestLookup() {
+  try {
+    const res = await GqlInstance('GuestOrderLookup', { input: { orderCode: code } });
+    guestOverview.value = res?.guestOrderLookup ?? null;
+    renderError.value = !guestOverview.value;
+  } catch {
+    guestOverview.value = null;
+    renderError.value = true;
+  }
+}
+
 const transitionalStates = ["AddingItems", "ArrangingPayment"];
 
 async function sleep(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// 仅当订单真实存在且处于过渡态时才轮询；订单一旦不可用立即停止
 async function pollOrder(maxAttempts = 20, interval = 2000) {
   let attempts = 0;
 
   while (attempts < maxAttempts) {
     attempts++;
     await refresh();
+
+    if (hasError.value || order.value == null) {
+      return false; // 请求失效，立即结束轮询
+    }
 
     const state = order.value?.state;
 
@@ -114,12 +137,6 @@ async function pollOrder(maxAttempts = 20, interval = 2000) {
   }
 
   return false;
-}
-
-function printReceipt() {
-  if (import.meta.client) {
-    window.print();
-  }
 }
 
 onMounted(async () => {
@@ -153,13 +170,20 @@ onMounted(async () => {
       } as Record<string, unknown>,
     });
 
-    // TODO: investigate why the active order state is not rehydrated/reset here
-    // like it is in the normal COD/non-redirect checkout success flow.
     orderStore.order = null;
 
     await router.replace(
       localePath(`/checkout/confirmation/${route.params.code}`),
     );
+    return;
+  }
+
+  // 订单不可用（游客无权限/无效码/未找到）：不轮询，立即用公开查询兜底，仍失败则快速报错
+  if (orderUnavailable.value) {
+    guestLoading.value = true;
+    await tryGuestLookup();
+    guestLoading.value = false;
+    return;
   }
 
   const state = order.value?.state;
@@ -168,6 +192,14 @@ onMounted(async () => {
     isPending.value = true;
     const resolved = await pollOrder();
     isPending.value = false;
+
+    if (!resolved && orderUnavailable.value) {
+      // 轮询期间订单突然不可用（session 失效等），改用公开查询
+      guestLoading.value = true;
+      await tryGuestLookup();
+      guestLoading.value = false;
+      return;
+    }
 
     if (!resolved) {
       console.error("Order confirmation polling timed out", {
@@ -186,111 +218,52 @@ onMounted(async () => {
 
 <template>
   <BaseLoader
-    v-if="(!isMounted && !order) || isPending"
+    v-if="!isMounted || isPending || guestLoading"
     width="sm:w-xs md:w-sm"
   />
 
   <UError
-    v-else-if="isMounted && hasError"
-    :error="{
-      statusCode: 404,
-      statusMessage: t('messages.error.noOrder'),
-      message: t('messages.error.orderNotFound'),
-    }"
+    v-else-if="renderError"
+    :error="notFoundError"
   >
     <template #links>
-      <UButton
-        :to="localePath('/account/login')"
-        :label="t('messages.account.login')"
-        class="px-7"
-      />
+      <div class="flex flex-wrap gap-3">
+        <UButton
+          :to="localePath('/order/lookup')"
+          :label="t('messages.order.lookupTitle')"
+          class="px-7"
+        />
+        <UButton
+          :to="localePath('/')"
+          variant="soft"
+          :label="t('messages.general.home')"
+          class="px-7"
+        />
+      </div>
     </template>
   </UError>
 
-  <main v-else-if="order" class="container mt-14">
-    <!-- 1. Heading -->
-    <header class="mb-14">
-      <h1 class="text-2xl font-semibold">
-        {{ t("messages.shop.orderReceived") }}
-      </h1>
-      <UBadge
-        color="error"
-        :label="t('messages.shop.thankYou')"
-        trailing-icon="i-lucide-heart"
-        class="text-sm font-bold"
+  <GuestOrderConfirmation
+    v-else-if="guestOverview && !order"
+    :overview="guestOverview"
+  />
+
+  <OrderDetailConfirmation
+    v-else-if="order"
+    :order="order"
+    :refresh="refresh"
+  >
+    <!-- 自提预约手机号补录（确认场景独有） -->
+    <template #phone-record>
+      <section
+        v-if="isPickupOrder"
+        aria-labelledby="pickup-phone-heading"
+        class="mb-6"
       >
-      </UBadge>
-    </header>
-
-    <!-- 2. Order meta -->
-    <section aria-labelledby="order-meta-heading" class="mb-14">
-      <h2 id="order-meta-heading" class="sr-only">Order Details</h2>
-      <dl
-        class="outline-primary grid grid-cols-2 gap-4 rounded outline-2 outline-offset-4 md:grid-cols-4"
-      >
-        <div>
-          <dt class="font-medium">{{ t("messages.shop.orderCode") }}</dt>
-          <dd>{{ order?.code }}</dd>
-        </div>
-        <div>
-          <dt class="font-medium">{{ t("messages.general.date") }}</dt>
-          <dd v-if="isMounted">
-            {{ new Date(order?.orderPlacedAt).toLocaleDateString() }}
-          </dd>
-          <USkeleton v-else class="h-4 w-full md:w-1/2" />
-        </div>
-        <div>
-          <dt class="font-medium">{{ t("messages.shop.rateEmail") }}</dt>
-          <dd>{{ order?.customer?.emailAddress }}</dd>
-        </div>
-        <div>
-          <dt class="font-medium">{{ t("messages.general.status") }}</dt>
-          <dd>{{ order?.state }}</dd>
-        </div>
-      </dl>
-    </section>
-
-    <!-- 2.5 自提/核销信息 -->
-    <section
-      v-if="isPickupOrder"
-      aria-labelledby="pickup-info-heading"
-      class="mb-14"
-    >
-      <h2 id="pickup-info-heading" class="text-xl font-semibold underline mb-4">
-        {{ t("messages.shop.pickupInfo") }}
-      </h2>
-      <div class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-        <h3 class="font-medium mb-1">{{ pickupLocation?.name }}</h3>
-        <p class="text-sm text-neutral-500 mb-1">{{ pickupLocation?.address }}</p>
-        <p class="text-sm text-neutral-500 mb-3">
-          {{ pickupLocation?.businessHours }}
-        </p>
-        <div class="flex items-center gap-2">
-          <UBadge
-            :color="pickupClaimed ? 'success' : 'warning'"
-            variant="outline"
-          >
-            {{
-              pickupClaimed
-                ? t("messages.shop.pickupClaimed")
-                : t("messages.shop.pickupPending")
-            }}
-          </UBadge>
-          <span v-if="fulfillmentState" class="text-sm text-neutral-500">
-            {{ t("messages.general.status") }}: {{ fulfillmentState }}
-          </span>
-        </div>
-        <!-- 提货码 -->
-        <div v-if="pickupOverview?.pickupCode" class="mt-3 flex items-center gap-2">
-          <span class="text-sm text-neutral-500">{{ t('messages.shop.pickupCode') }}:</span>
-          <span class="font-mono text-lg font-bold">{{ pickupOverview.pickupCode }}</span>
-        </div>
-        <p v-if="pickupOverview?.pickupCode" class="mt-1 text-sm text-warning">
-          {{ t('messages.order.pickupKeepHint') }}
-        </p>
-
-        <!-- 无手机号 → 补录手机号卡；保存成功后切换为成功提示（同帧卸载卡片会连带提示消失，故分开渲染） -->
-        <div v-if="showAddPhone" class="mt-4 rounded-lg border border-dashed border-neutral-300 p-4 dark:border-neutral-700">
+        <h2 id="pickup-phone-heading" class="text-xl font-semibold underline mb-4">
+          {{ t("messages.shop.pickupInfo") }}
+        </h2>
+        <div v-if="showAddPhone" class="rounded-lg border border-dashed border-neutral-300 p-4 dark:border-neutral-700">
           <p class="text-sm font-medium mb-1">{{ t('messages.order.addPhoneTitle') }}</p>
           <p class="text-xs text-neutral-500 mb-3">{{ t('messages.order.addPhoneHint') }}</p>
           <div class="flex items-center gap-2">
@@ -301,74 +274,9 @@ onMounted(async () => {
         <p v-else-if="savedPhoneMsgOpen" class="mt-4 text-sm font-medium text-success">
           {{ t('messages.order.phoneSaved') }}
         </p>
-      </div>
-    </section>
-
-    <!-- 3. Order summary -->
-    <section aria-labelledby="order-summary-heading" class="mb-14">
-      <h2 id="order-summary-heading" class="text-xl font-semibold underline">
-        {{ t("messages.shop.orderSummary") }}
-      </h2>
-      <OrderItems :order="order" />
-    </section>
-
-    <!-- 4. Order details -->
-    <section aria-labelledby="order-details-heading" class="mb-14">
-      <h2
-        id="order-details-heading"
-        class="mb-4 text-xl font-semibold underline"
-      >
-        {{ t("messages.shop.orderDetails") }}
-      </h2>
-
-      <div
-        class="order-details-grid grid grid-cols-1 gap-6 md:grid-cols-3 md:divide-x"
-      >
-        <!-- Column 1: Shipping -->
-        <div class="">
-          <OrderAddress :address="order?.shippingAddress ?? null" />
-        </div>
-
-        <!-- Column 2: Payment & Shipping method -->
-        <div class="">
-          <h3 class="mb-2 font-medium">
-            {{ t("messages.general.shippingDetails") }}
-          </h3>
-          <p>
-            {{ t("messages.general.paymentMethod") }}:
-            {{ order?.payments?.[0]?.method }}
-          </p>
-          <p>
-            {{ t("messages.general.shippingSelect") }}:
-            {{ order?.shippingLines?.[0]?.shippingMethod?.name }}
-          </p>
-        </div>
-
-        <!-- Column 3: Totals -->
-        <div>
-          <h3 class="mb-2 font-medium">{{ t("messages.general.amount") }}</h3>
-          <OrderTotals :order="order" />
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. Gratuity -->
-    <section class="no-print mb-14 text-sm">
-      <p>
-        {{ t("messages.shop.orderThanks") }}
-      </p>
-    </section>
-
-    <!-- 4. Actions -->
-    <section aria-labelledby="actions-heading" class="no-print mb-14">
-      <h2 id="actions-heading" class="sr-only">
-        {{ t("messages.general.actions") }}
-      </h2>
-      <UButton variant="soft" @click="printReceipt">{{
-        t("messages.general.printReceipt")
-      }}</UButton>
-    </section>
-  </main>
+      </section>
+    </template>
+  </OrderDetailConfirmation>
 </template>
 
 <style lang="css">
@@ -378,14 +286,6 @@ onMounted(async () => {
   footer,
   .no-print {
     display: none !important;
-  }
-  main {
-    padding: 0;
-  }
-  .order-details-grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 1rem !important;
   }
 }
 </style>

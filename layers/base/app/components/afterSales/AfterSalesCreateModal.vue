@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useAfterSales } from "../../composables/useAfterSales";
 
 const props = defineProps<{
@@ -10,7 +10,7 @@ const props = defineProps<{
 const isOpen = defineModel<boolean>("open", { default: false });
 const { loading, createRequest } = useAfterSales();
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 
 const typeItems = computed(() => [
   { value: "return_refund", label: t("messages.afterSales.typeReturnRefund") },

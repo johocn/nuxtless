@@ -1,0 +1,43 @@
+<style>
+.vp{border:2px solid #000;border-radius:26px;width:390px;margin:0 auto;overflow:hidden;background:#f5f5f5;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+.ah{background:#fff;padding:11px 14px;font-size:15px;font-weight:600;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
+.form{background:#fff;padding:4px 14px 14px}
+.fld{padding:9px 0;border-bottom:1px solid #f2f2f2}
+.fld label{font-size:12px;color:#333;display:flex;justify-content:space-between}
+.fld label b.req{color:#e63329}
+.fld .inp{margin-top:6px;background:#f7f7f7;border-radius:6px;padding:8px 10px;font-size:13px;color:#333;border:1px solid #eee}
+.fld .inp.which{display:flex;justify-content:space-between}.which .sel{color:#e63329}
+.casc{display:flex;gap:6px;margin-top:6px}
+.casc .bx{flex:1;background:#f7f7f7;border:1px solid #eee;border-radius:6px;padding:8px 8px;font-size:12px;text-align:center;color:#333;position:relative}
+.casc .bx small{color:#999}
+.reqflag{color:#999;font-size:11px;margin-top:4px}
+.gray{background:#f7f7f7}
+.gray .inp{background:#fafafa;border-color:#f0f0f0;color:#aaa}
+.save{background:linear-gradient(90deg,#e63329,#ff6b4a);color:#fff;text-align:center;border-radius:24px;padding:11px;font-size:14px;font-weight:600;margin:14px 14px 12px}
+.cap{text-align:center;color:#444;font-size:13px;font-weight:700;margin:14px 0 4px}
+.hint{text-align:center;color:#888;font-size:11px;margin-bottom:6px}
+</style>
+<div class="cap">物流配送 · 新增地址表单</div>
+<div class="hint">「+新增地址」→ 拉起 AddressFormModal（底部 sheet / 可全屏）</div>
+<div class="vp">
+  <div class="ah"><span>新增配送地址</span><span style="color:#999;font-weight:400;font-size:14px">✕</span></div>
+  <div class="form">
+    <div class="fld"><label>收货人 <b class="req">*</b></label><div class="inp">张三</div></div>
+    <div class="fld"><label>联系电话 <b class="req">*</b></label><div class="inp">138****1234</div></div>
+    <div class="fld">
+      <label>所在地区 <b class="req">*</b></label>
+      <div class="casc">
+        <div class="bx">广东省<small>▾</small></div>
+        <div class="bx">广州市<small>▾</small></div>
+        <div class="bx" style="border-color:#e63329;background:#fff5f4;color:#e63329">天河区<small>▾</small></div>
+      </div>
+      <div class="reqflag">高德省市区三级联动（adcode 存储），定位反查自动填充</div>
+    </div>
+    <div class="fld"><label>详细地址 <b class="req">*</b></label><div class="inp">天河区软件路 18 号 1 栋 501</div><div class="reqflag">省市区街道并入此处</div></div>
+    <div class="fld"><label>邮政编码 <b class="req">*</b><span class="req" style="color:#e63329;font-size:11px">物流必填</span></label><div class="inp">510630</div></div>
+    <div class="fld"><label>公司<i style="color:#999;font-style:normal;font-size:11px">（选填）</i></label><div class="inp">XX 科技有限公司</div></div>
+    <div class="fld gray"><label>地址 2<i style="color:#999;font-style:normal;font-size:11px">（选填·可隐藏）</i></label><div class="inp">—</div></div>
+    <div class="fld"><label>设为默认地址</label><div style="text-align:right;margin-top:-16px"><span style="width:40px;height:22px;border-radius:11px;background:#e63329;display:inline-block;position:relative"><span style="position:absolute;right:3px;top:3px;width:16px;height:16px;border-radius:8px;background:#fff"></span></span></div></div>
+  </div>
+  <div class="save">保存地址</div>
+</div>

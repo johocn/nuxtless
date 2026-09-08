@@ -1,0 +1,43 @@
+<h2>逐箱卡片结构（方案 A · 一张卡的骨架）</h2>
+<p class="subtitle">对齐设计文档 §2/§3：箱头整箱勾选 + 箱内地址/方式 + 商品行(部分选/节省/删除) + 券/运费/小计</p>
+
+<div class="mockup">
+  <div class="mockup-header">物流箱卡 · 商品行部分选择</div>
+  <div class="mockup-body" style="text-align:left;font-size:13px;line-height:1.6">
+    <div style="border-bottom:1px dashed #ccc;padding:6px 4px;font-weight:600">
+      ☑ 全选 · 张三自营店 · 京东物流(物流)
+    </div>
+    <div style="border-bottom:1px dashed #ccc;padding:6px 4px">
+      📍 配送至：张三 138-0000-0000 · 广东省 深圳市 南山区 …（<u>共享地址</u> · 可逐箱切换）
+    </div>
+    <div style="border-bottom:1px dashed #ccc;padding:6px 4px">
+      🚚 配送方式：(●) 京东快递 免邮　( ) 顺丰速运 +12
+    </div>
+    <div style="border-bottom:1px dashed #ccc;padding:5px 4px;font-size:12px;color:#333">
+      <div>☑ 无线蓝牙耳机 Pro &nbsp; <b>×2</b> &nbsp; <button class="mock-button" style="padding:0 4px">−</button>2<button class="mock-button" style="padding:0 4px">＋</button> &nbsp; ¥796.00 &nbsp; <span style="color:#c00">删除</span></div>
+      <div>☑ 便携充电宝 20000mAh &nbsp; <b>×1</b> &nbsp; <button class="mock-button" style="padding:0 4px">−</button>1<button class="mock-button" style="padding:0 4px">＋</button> &nbsp; ¥129.00 &nbsp; <span style="color:#c00">删除</span></div>
+      <div style="color:#999">☐ 次日达冰箱贴 &nbsp; <b>×1</b> &nbsp; … &nbsp; ¥39.00 &nbsp; <span style="color:#c00">删除</span> <span style="color:#999">(本行未选，将回流购物车)</span></div>
+    </div>
+    <div style="border-top:1px dashed #ccc;padding:6px 4px;font-size:12px">
+      优惠券：-¥20（满199减20）　运费：<s>¥12</s> 免邮<br/>
+      本箱小计：<b>¥905.00</b>
+    </div>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">自提箱卡 · 需联系方式</div>
+  <div class="mockup-body" style="text-align:left;font-size:13px;line-height:1.6">
+    <div style="border-bottom:1px dashed #ccc;padding:6px 4px;font-weight:600">
+      ☑ 全选 · 门店A · 门店自提(自提)
+    </div>
+    <div style="border-bottom:1px dashed #ccc;padding:6px 4px">
+      📍 自提点：(●) 南山旗舰店 距您 1.2km &nbsp;(切换)
+    </div>
+    <div style="border-bottom:1px dashed #ccc;padding:6px 4px">
+      👤 联系人：李四 139-0000-0000 &nbsp;(切换/新增)
+    </div>
+    <div style="border-bottom:1px dashed #ccc;padding:5px 4px;font-size:12px">☑ 商品行明细 ×n …</div>
+    <div style="padding:6px 4px;font-size:12px">本箱小计：<b>¥xxx</b></div>
+  </div>
+</div>

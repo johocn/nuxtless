@@ -1,11 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // JD 风格「品牌闪购」横向楼层（品牌 logo 横向滚动墙）
 // nshop 无独立品牌(channel)列表数据，不强造品牌，改为复用顶部分类(collection)的
 // 封面图( featuredAsset )作为品牌 logo，点击进入对应分类页，符合"系统中没有的功能用已有方案替换"。
 import type { MenuCollections } from "~~/types/collection";
 import { assetSrc } from "../../../utils/image";
 
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const { t } = useI18n();
 const menuCollections = useState<MenuCollections>("menuCollections");
 const cats = computed(() => menuCollections.value?.collections?.items ?? []);

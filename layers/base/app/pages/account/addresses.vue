@@ -1,10 +1,10 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 definePageMeta({ middleware: "account" });
 
 import type { AddressRecord, AddressDraft } from "~~/types/address";
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const toast = useToast();
 const {
   addresses,

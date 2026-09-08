@@ -7,6 +7,7 @@ const route = useRoute();
 const { i18NBaseUrl } = useRuntimeConfig().public;
 const colorMode = useColorMode();
 const { t, locale } = useI18n();
+const siteName = useSiteName();
 
 const ogColorMode = computed<"dark" | "light">(() =>
   colorMode.value === "dark" ? "dark" : "light",
@@ -178,7 +179,7 @@ useSeoMeta({
 defineOgImage("BlogPost.satori", {
   colorMode: ogColorMode,
   title: currentCollection?.name,
-  category: t("messages.site.title"),
+  category: siteName.value,
   backgroundImage: currentCollection?.featuredAsset?.preview,
 });
 

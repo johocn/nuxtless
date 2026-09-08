@@ -1,8 +1,10 @@
-<script setup lang="ts">
-const { channelToken } = useRuntimeConfig().public;
+﻿<script setup lang="ts">
+// 按 URL 首段租户动态取 channel token；未命中回退默认渠道
+const { token: channelToken } = useTenantChannel();
 const colorMode = useColorMode();
 const { t, locale } = useI18n();
 const toast = useToast();
+const siteName = useSiteName();
 
 // Set initial locale for Vendure requests (must run before any useAsyncGql,
 // otherwise queries like GetChannelTheme fall back to the baked GQL_HOST=localhost
@@ -27,7 +29,7 @@ useState("menuCollections", () => menuCollections.value);
 
 // Set GQL session and fetch current order
 onBeforeMount(async () => {
-  await useGqlSession(locale.value, useGqlHostUrl(), channelToken, "default");
+  await useGqlSession(locale.value, useGqlHostUrl(), channelToken.value, "default");
   await orderStore.fetchOrder();
 });
 
@@ -38,7 +40,7 @@ watch(locale, (val, oldVal) => {
   useGqlHost(`?languageCode=${val}`);
   // Workaround for refreshing Vendure data
   const route = useRoute();
-  const localePath = useLocalePath();
+  const localePath = useTenantLocalePath();
   window.location.href = localePath(route.fullPath);
 });
 
@@ -57,7 +59,7 @@ watch(error, (val) => {
 defineOgImage("BlogPost.satori", {
   colorMode: ogColorMode,
   title: t("messages.site.tagline"),
-  category: t("messages.site.title"),
+  category: siteName.value,
   author: t("messages.site.shortDescription"),
   backgroundImage: "logo-top.svg",
   // image: "/logo.png",
@@ -67,11 +69,11 @@ defineOgImage("BlogPost.satori", {
 // SchemaOrg
 useSchemaOrg([
   defineWebPage({
-    name: t("messages.site.title"),
+    name: siteName.value,
     description: t("messages.site.tagline"),
   }),
   defineWebSite({
-    name: t("messages.site.title"),
+    name: siteName.value,
     description: t("messages.site.tagline"),
   }),
 ]);

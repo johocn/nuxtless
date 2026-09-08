@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // JD 风格 PC 左侧「全部分类」侧边栏：顶部一级分类，悬浮展开二级子分类子菜单
 // 数据来源：顶部分类(collection)（GetMenuCollections 已加载到 menuCollections 状态）
 import type { TopLevelCollection } from "~~/types/collection";
@@ -6,7 +6,7 @@ import { assetSrc } from "../../../utils/image";
 
 const { t } = useI18n();
 defineProps<{ categories: TopLevelCollection[] }>();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 
 function linkFor(slug: string) {
   return slug ? localePath(`/category/${slug}`) : localePath("/");

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ResetPasswordForm } from "~~/layers/base/validators/resetPasswordForm";
 
 import type { FormSubmitEvent } from "@nuxt/ui";
@@ -6,7 +6,7 @@ import type { FormSubmitEvent } from "@nuxt/ui";
 const router = useRouter();
 const token = useRouteQuery("token");
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 
 const { resetPassword } = useCustomerStore();
 const toast = useToast();

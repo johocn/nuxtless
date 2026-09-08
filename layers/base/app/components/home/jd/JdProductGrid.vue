@@ -1,8 +1,9 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // JD 风格商品楼层：标题 + 2 列紧凑商品卡（图 / 标题 / 京东价 / 销量标签）
 // 数据来源：复用 SearchProducts 商品搜索结果（与 ProductCard 同源 Vendure 数据）
 import type { SearchResult } from "~~/types/product";
 import { assetSrc } from "../../../utils/image";
+import { pickDisplayPrice } from "../../../utils/display-price";
 
 type SearchItem = SearchResult[number];
 
@@ -11,17 +12,19 @@ defineProps<{
   title: string;
   products: SearchItem[];
 }>();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
+const { taxEnabled } = useTaxEnabled();
 
-function format(currencyCode?: string | null, price?: SearchItem["priceWithTax"] | null) {
-  if (!price) return "";
+function format(item?: SearchItem, currencyCode?: string | null) {
+  const sel = pickDisplayPrice(item, taxEnabled.value);
+  if (!sel) return "";
   const cur = currencyCode ?? "CNY";
-  if ("min" in price && "max" in price) {
-    const min = (price.min / 100).toFixed(2);
-    const max = (price.max / 100).toFixed(2);
+  if ("min" in sel && "max" in sel) {
+    const min = (sel.min / 100).toFixed(2);
+    const max = (sel.max / 100).toFixed(2);
     return min === max ? `¥${min}` : `${min}~${max}`;
   }
-  return `¥${(price.value / 100).toFixed(2)}`;
+  return `¥${(sel.value / 100).toFixed(2)}`;
 }
 </script>
 
@@ -54,7 +57,7 @@ function format(currencyCode?: string | null, price?: SearchItem["priceWithTax"]
         </div>
         <div class="p-2">
           <p class="line-clamp-2 min-h-8 text-xs leading-4 text-gray-700">{{ p.productName }}</p>
-          <p class="mt-1 text-base font-bold text-primary">{{ format(p.currencyCode, p.priceWithTax) }}</p>
+          <p class="mt-1 text-base font-bold text-primary">{{ format(p, p.currencyCode) }}</p>
         </div>
       </NuxtLink>
     </div>

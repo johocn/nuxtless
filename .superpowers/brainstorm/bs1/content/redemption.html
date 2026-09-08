@@ -1,0 +1,47 @@
+<style>
+.blk{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;margin-top:8px;font-size:12px;line-height:1.5}
+.blk b{display:block;color:#111}
+.blk em{color:#6b7280;font-size:11px;font-style:normal;display:block}
+.tag{font-size:10px;padding:1px 6px;border-radius:10px;margin-left:6px;font-weight:600;vertical-align:2px}
+.t-new{background:#dcfce7;color:#166534}
+.t-reuse{background:#e0f2fe;color:#075985}
+.col3{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.col3{grid-template-columns:1fr}}
+.hl{border:2px solid #f59e0b;background:#fffbeb}
+.hl b span.warn{color:#b45309}
+.qr{width:92px;height:92px;background:
+ repeating-conic-gradient(#111 0% 25%, #fff 0% 50%) 0 0/20px 20px;
+ -webkit-mask:repeating-conic-gradient(#000 0% 25%, transparent 0% 75%) 0 0/20px 20px; mask:repeating-conic-gradient(#000 0% 25%, transparent 0% 75%) 0 0/20px 20px; border:8px solid #fff}
+</style>
+
+<h2>详情页新增 · 核单码卡片（所有订单·加密·二维码）</h2>
+<p class="subtitle">橙色高亮为新模块「OrderRedemptionCard」，与既有卡片同处详情页信息流</p>
+
+<div class="col3">
+  <div class="mockup">
+    <div class="mockup-header">详情页 · 信息卡顺序（含核单码卡）</div>
+    <div class="mockup-body">
+      <div class="blk"><b>OrderStatusBanner</b><em>状态横幅</em><span class="tag t-new">新建</span></div>
+      <div class="blk"><b>OrderStateProgress</b><em>进度条</em><span class="tag t-reuse">复用</span></div>
+      <div class="blk" style="border:2px solid #f59e0b;background:#fffbeb"><b>OrderRedemptionCard 核单码卡 ⭐</b><em>所有订单展示 · 核单码（解密展示）+ 核单二维码；服务端加密存储下发</em><span class="tag t-new">新建</span></div>
+      <div class="blk"><b>OrderAddressCard</b><em>收货地址（含自提联系人）</em><span class="tag t-reuse">复用</span></div>
+      <div class="blk"><b>OrderItemsCard</b><em>商品清单+售后入口</em><span class="tag t-reuse">复用</span></div>
+      <div class="blk"><b>OrderPickupCard</b><em>deliveryType=pickup：自提点/提货码/核销状态</em><span class="tag t-new">新建</span></div>
+      <div class="blk"><b>OrderTotalsCard</b><em>金额明细</em><span class="tag t-reuse">复用</span></div>
+      <div class="blk"><b>OrderMetaCard</b><em>订单信息</em><span class="tag t-new">新建</span></div>
+      <div class="blk"><b>OrderActionsBar</b><em>底部操作条</em><span class="tag t-reuse">复用</span></div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">OrderRedemptionCard 卡内布局</div>
+    <div class="mockup-body">
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:12px;color:#6b7280;margin-bottom:8px">核单码（FPH-8VK9-ZWQ2-N3XT）</div>
+        <div class="qr" style="margin:0 auto"></div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:10px">到店出示本码 / 扫本码由门店核销</div>
+        <div style="font-size:11px;color:#b45309;margin-top:8px;border:1px dashed #f59e0b;border-radius:6px;padding:4px">⚠ 仅对本人订单解密下发 · 展示不持久化</div>
+      </div>
+    </div>
+  </div>
+</div>

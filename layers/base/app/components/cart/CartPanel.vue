@@ -1,6 +1,6 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const orderStore = useOrderStore();
 const { order, loading } = storeToRefs(orderStore);
 const isCartOpen = useState<boolean>("isCartOpen");

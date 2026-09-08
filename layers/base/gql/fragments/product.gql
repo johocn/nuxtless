@@ -87,5 +87,14 @@ fragment ProductSearchFragment on SearchResult {
       max
     }
   }
+  price {
+    ... on SinglePrice {
+      value
+    }
+    ... on PriceRange {
+      min
+      max
+    }
+  }
   currencyCode
 }

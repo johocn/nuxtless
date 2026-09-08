@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { ActiveOrderDetail } from "~~/types/order";
 import type {
   CouponStatus,
@@ -18,7 +18,7 @@ const { disabled, onSubmit } = defineProps<{
 }>();
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const toast = useToast();
 const orderStore = useOrderStore();
 const { order, loading } = storeToRefs(orderStore);

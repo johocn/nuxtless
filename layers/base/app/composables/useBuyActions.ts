@@ -1,8 +1,8 @@
-import { storeToRefs } from "pinia";
+﻿import { storeToRefs } from "pinia";
 
 export function useBuyActions() {
   const { t } = useI18n();
-  const localePath = useLocalePath();
+  const localePath = useTenantLocalePath();
   const toast = useToast();
   const orderStore = useOrderStore();
   const { loading } = storeToRefs(orderStore);

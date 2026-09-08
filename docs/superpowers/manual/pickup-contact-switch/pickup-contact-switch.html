@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自提单联系方式切换 + 多地提点切换 · 线上验收手册</title>
+<style>
+  @font-face{
+    font-family:'InstrumentSans';
+    src:url('../checkout-wholeline-acceptance/_shared/fonts/InstrumentSans-Regular.ttf') format('truetype');
+    font-weight:400;font-style:normal;
+  }
+  @font-face{
+    font-family:'InstrumentSans';
+    src:url('../checkout-wholeline-acceptance/_shared/fonts/InstrumentSans-Bold.ttf') format('truetype');
+    font-weight:700;font-style:normal;
+  }
+  @font-face{
+    font-family:'JetBrainsMono';
+    src:url('../checkout-wholeline-acceptance/_shared/fonts/JetBrainsMono-Regular.ttf') format('truetype');
+    font-weight:400;font-style:normal;
+  }
+  @font-face{
+    font-family:'JetBrainsMono';
+    src:url('../checkout-wholeline-acceptance/_shared/fonts/JetBrainsMono-Bold.ttf') format('truetype');
+    font-weight:700;font-style:normal;
+  }
+
+  :root{
+    --bg:#f6f5f1;
+    --bg2:#ffffff;
+    --ink:#20201f;
+    --muted:#6b6b66;
+    --rule:#e4e2da;
+    --accent:#e53935;
+    --accent2:#2f7d63;
+    --shadow:rgba(229,57,53,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'InstrumentSans',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+    line-height:1.7;
+    font-size:16px;
+  }
+  .page{max-width:860px;margin:0 auto;padding:2.5rem 1.25rem 4rem;}
+
+  .hero{
+    text-align:center;padding:3.5rem 1.5rem 3rem;border-radius:20px;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(229,57,53,0.08), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(47,125,99,0.07), transparent 45%),
+      var(--bg2);
+    box-shadow:0 1px 0 rgba(0,0,0,0.02);margin-bottom:3rem;
+  }
+  .hero .kicker{
+    display:inline-block;font-size:0.8rem;font-weight:700;letter-spacing:0.14em;
+    color:var(--accent);text-transform:uppercase;border:1px solid var(--rule);
+    border-radius:999px;padding:0.3rem 1rem;margin-bottom:1.25rem;
+  }
+  .hero h1{font-size:2.15rem;line-height:1.25;font-weight:700;letter-spacing:-0.02em;}
+  .hero p.sub{margin-top:0.9rem;color:var(--muted);font-size:1.02rem;max-width:600px;margin-left:auto;margin-right:auto;}
+  .hero .meta{margin-top:1.6rem;display:flex;gap:0.6rem;flex-wrap:wrap;justify-content:center;font-size:0.82rem;color:var(--muted);}
+  .hero .meta span{background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:0.3rem 0.7rem;}
+
+  .status-row{display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin-top:2rem;}
+  .status-item{
+    background:var(--bg2);border:1px solid var(--rule);border-radius:16px;
+    padding:1.1rem 1.4rem;min-width:9.5rem;text-align:center;box-shadow:0 4px 14px var(--shadow);
+  }
+  .status-item .num{font-family:'JetBrainsMono',monospace;font-size:1.9rem;font-weight:700;color:var(--accent);display:block;}
+  .status-item .lbl{font-size:0.8rem;color:var(--muted);margin-top:0.2rem;}
+  .status-item.ok .num{color:var(--accent2);}
+
+  section{margin-bottom:3.4rem;}
+  h2{
+    font-size:1.4rem;font-weight:700;letter-spacing:-0.01em;
+    padding-bottom:0.7rem;position:relative;margin-bottom:1.6rem;
+  }
+  h2::after{
+    content:"";position:absolute;left:0;bottom:0;width:56px;height:3px;border-radius:3px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+  }
+  h3{font-size:1.1rem;font-weight:700;margin:1.9rem 0 0.8rem;}
+  p{margin-bottom:1rem;color:var(--ink);}
+  .muted{color:var(--muted);}
+  ul,ol{padding-left:1.3rem;margin-bottom:1.1rem;}
+  li{margin-bottom:0.45rem;}
+
+  .card{
+    background:rgba(255,255,255,0.7);backdrop-filter:blur(10px);
+    border:1px solid rgba(229,57,53,0.12);border-radius:16px;
+    padding:1.4rem 1.5rem;margin-bottom:1.1rem;box-shadow:0 2px 10px rgba(229,57,53,0.06);
+  }
+  .card h4{font-size:1rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;}
+  .tag{font-size:0.72rem;font-weight:700;letter-spacing:0.04em;color:var(--accent);border:1px solid rgba(229,57,53,0.3);border-radius:6px;padding:0.14rem 0.5rem;}
+
+  .callout{
+    border-left:4px solid var(--accent2);background:rgba(47,125,99,0.06);
+    border-radius:0 12px 12px 0;padding:1rem 1.25rem;margin:1.4rem 0;
+  }
+  .callout.warn{border-left-color:var(--accent);background:rgba(229,57,53,0.06);}
+  .callout .tt{font-weight:700;display:block;margin-bottom:0.3rem;}
+
+  .mono{font-family:'JetBrainsMono',monospace;font-size:0.94em;background:var(--bg);border:1px solid var(--rule);border-radius:6px;padding:0.1rem 0.4rem;}
+  .fmath{font-family:'JetBrainsMono',monospace;font-weight:700;color:var(--accent);}
+  mark.key{background:none;color:var(--accent);font-weight:700;}
+
+  .table-wrap{overflow-x:auto;overflow-y:auto;max-height:600px;border:1px solid var(--rule);border-radius:12px;background:var(--bg2);}
+  table{width:100%;border-collapse:collapse;font-size:0.92rem;min-width:520px;}
+  th,td{padding:0.7rem 0.9rem;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top;}
+  th{font-weight:700;background:var(--bg);white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  .pass{color:var(--accent2);font-weight:700;white-space:nowrap;}
+
+  .figure-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;margin-top:1.2rem;}
+  .diagram{background:var(--bg2);border:1px solid var(--rule);border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.04);}
+  .diagram img{width:100%;display:block;height:auto;}
+  .diagram .cap{padding:0.7rem 0.9rem;font-size:0.88rem;font-weight:600;}
+  .diagram .cap small{display:block;color:var(--muted);font-weight:400;font-size:0.78rem;margin-top:0.15rem;line-height:1.5;}
+
+  .metric{display:inline-flex;align-items:baseline;gap:0.35rem;}
+  .metric b{font-family:'JetBrainsMono',monospace;font-size:1.05rem;color:var(--accent);font-weight:700;}
+
+  footer{margin-top:3.5rem;border-top:1px solid var(--rule);padding-top:1.8rem;color:var(--muted);font-size:0.85rem;}
+  footer .sources ol{padding-left:1.2rem;font-size:0.85rem;color:var(--muted);}
+  footer .sources li{margin-bottom:0.5rem;overflow-wrap:break-word;word-break:break-all;}
+  footer .sources .src-title{color:var(--ink);}
+  footer .sources .src-url{display:block;margin-top:0.15rem;font-size:0.82rem;color:var(--accent);word-break:break-all;}
+  sup a{color:var(--accent);text-decoration:none;font-size:0.75em;font-weight:700;}
+
+  @media (max-width:600px){
+    body{font-size:15px;}
+    .page{padding:1.5rem 1rem 3rem;}
+    .hero{padding:2.5rem 1.25rem 2.2rem;}
+    .hero h1{font-size:1.7rem;}
+    .figure-grid{grid-template-columns:1fr;}
+    .status-row{gap:0.8rem;}
+    .status-item{min-width:7rem;padding:0.9rem 0.8rem;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <span class="kicker">线上验收 · YouShop 自提单结算</span>
+    <h1>自提单「切换/新增联系人」提示优化<br>＋ 多地提点切换</h1>
+    <p class="sub">把「切换联系人」从易被忽略的下拉菜单改为<strong>直接可见的联系人 chips</strong>，点选即回填；同档自提点多时，自提点概览卡提供<span class="mono">选择自提点</span>展开切换器（搜索 + 单选）。</p>
+    <div class="meta">
+      <span>平台 www.youshop.cn/t2</span>
+      <span>视口 390×844 (dpr=2)</span>
+      <span>日期 2026-09-06</span>
+    </div>
+    <div class="status-row">
+      <div class="status-item ok"><span class="num">✓ 通过</span><span class="lbl">联系人 chips 切换</span></div>
+      <div class="status-item ok"><span class="num">✓ 通过</span><span class="lbl">多地提点展开切换</span></div>
+      <div class="status-item ok"><span class="num">10 联系</span><span class="lbl">示例联系人池中选中回填</span></div>
+    </div>
+  </header>
+
+  <!-- ============ 1 概览 ============ -->
+  <section>
+    <h2>一、问题与修改概览</h2>
+
+    <div class="card">
+      <h4><span class="tag">线上现象</span></h4>
+      <ul>
+        <li>自提单需填写「领取人/联系电话」时，<strong>切换联系人</strong>入口藏在<mark class="key">折叠的下拉菜单</mark>里，不点开根本看不到，用户常找不到切换/新增入口。</li>
+        <li>同一自提配送档案可配置<strong>多个自提点</strong>，但切换需要把整列表平铺展示，占版面且不直观。</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4><span class="tag">修改内容（纯前端）</span></h4>
+      <ul>
+        <li><strong>联系方式</strong>：改为「联系人 chips」直接可见、<mark class="key">高亮当前选中（✓）</mark>，点任意 chip 立即回填领取人/电话；末尾「＋ 新增联系人」清空输入进入新增态。仅登录用户显示切换池（有地址簿用真实地址，地址簿为空用示例联系人方便演示）；游客仍手填。</li>
+        <li><strong>多地提点</strong>：自提点改为「当前自提点概览卡 + 可展开选择器」——单选点时只显示概览；<mark class="key">多自提点时</mark>出现「选择自提点」按钮，点开是<strong>搜索框 + 单选点列表</strong>，就近默认、换点即写库。</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <span class="tt">改动文件</span>
+      <span class="mono">CheckoutPickupContactBlock.vue</span>（联系人 chips）· <span class="mono">BoxPickupBlock.vue</span>（多地提点展开器）· <span class="mono">zh-CN.ts</span> 等 i18n（新增词条）· <span class="mono">useSampleAddressBook.ts</span>（示例联系人池）。
+    </div>
+  </section>
+
+  <!-- ============ 2 验收方法 ============ -->
+  <section>
+    <h2>二、验收方法</h2>
+    <p class="muted">以下截图均来自手机标准视口，真实访问链路（注册 → 加购自提变体 → 结算）核验。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>条件</th><th>取值</th></tr></thead>
+        <tbody>
+          <tr><td>访问地址</td><td><span class="mono">https://www.youshop.cn/t2</span>（本地生产构建渲染同款 UI）</td></tr>
+          <tr><td>视口</td><td>390 × 844，dpr = 2（手机标准视口）</td></tr>
+          <tr><td>登录用户</td><td>新注册测试账号（无地址簿 → 走示例联系人池，展示 10 个联系人）</td></tr>
+          <tr><td>加购</td><td>自提变体 <span class="mono">49</span>·二月兰尊享年卡会员（配送档案#15「二月兰」requiresContact=<span class="mono">true</span>）</td></tr>
+          <tr><td>多自提点</td><td>档案#15「二月兰」已正式绑定 2 点（自由大路#4 ＋ 门店自提#7），详见「配送档案自提点管理修复」手册</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 3 联系方式 chips ============ -->
+  <section>
+    <h2>三、联系方式切换（chips）验收</h2>
+    <p>登录用户在自提单结算页，「领取联系方式」卡片内直接显示<strong>切换/新增联系人</strong> chips，<mark class="key">当前项高亮 + ✓</mark>，点选即回填。</p>
+
+    <div class="figure-grid">
+      <figure class="diagram">
+        <img src="assets/ck_contact_chips_region.png" alt="联系方式 chips 区域截图">
+        <figcaption class="cap">联系方式 chips 区域
+          <small>顶部「切换/新增联系人」提示，下一排胶囊联系人（姓名 + 手机号）。</small>
+        </figcaption>
+      </figure>
+      <figure class="diagram">
+        <img src="assets/ck_contact_chips_after_select.png" alt="选中第二个联系人后截图">
+        <figcaption class="cap">点击「李思思」后
+          <small>选中态红色高亮 + 白色 ✓；领取人 / 联系电话自动回填 <span class="mono">李思思 / 13800138002</span>。</small>
+        </figcaption>
+      </figure>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>校验点</th><th>预期</th><th>实际</th><th>结果</th></tr></thead>
+        <tbody>
+          <tr><td>切换提示可见性</td><td>直接可见，非折叠下拉</td><td>「切换/新增联系人」标题 + 一排胶囊 chips</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>选中高亮</td><td>当前联系人带 ✓ 且高亮</td><td>红色胶囊 + 白色 ✓，与其它浅色 chip 明显区分</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>点击切换回填</td><td>回填领取人/电话</td><td>点「李思思」→ 领取人=李思思、电话=13800138002</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>新增入口</td><td>提供「＋ 新增联系人」</td><td>虚线胶囊「＋ 新增联系人」，点击清空输入框</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>游客退路</td><td>游客仍手填名称/电话</td><td>未登录时不显示 chips 面板，保留三个输入框</td><td class="pass">✓ 通过</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 4 多地提点切换 ============ -->
+  <section>
+    <h2>四、多地提点切换验收</h2>
+    <p>同一自提箱有<strong>多个自提点</strong>时，概览卡出现「选择自提点」按钮，点开是<mark class="key">搜索框 + 单选点列表</mark>；单选点时只显示概览卡、无展开按钮。</p>
+
+    <div class="figure-grid">
+      <figure class="diagram">
+        <img src="assets/multi_pickup_overview.png" alt="多自提点概览卡截图">
+        <figcaption class="cap">当前自提点概览卡
+          <small>多自提点时右上角出现「选择自提点」展开按钮（待点开）。</small>
+        </figcaption>
+      </figure>
+      <figure class="diagram">
+        <img src="assets/multi_pickup_picker_expanded.png" alt="自提点选择器展开截图">
+        <figcaption class="cap">选择器展开后
+          <small>顶部搜索框「搜索自提点名称或地址」，下方单选点卡片：自由大路（选中高亮）/ 门店自提。</small>
+        </figcaption>
+      </figure>
+    </div>
+
+    <div class="card">
+      <h4><span class="tag">切换成功</span></h4>
+      <p>选择「自由大路 / 门店自提」其中一个后概览卡切至新点，主选中反馈即时生效；二月兰档案现正式绑定 2 点（配置与后台修复见「配送档案自提点管理修复」手册：<span class="mono">pickup-profile-pickup-admin/index.html</span>）。</p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>校验点</th><th>预期</th><th>实际</th><th>结果</th></tr></thead>
+        <tbody>
+          <tr><td>仅当多自提点才显示展开</td><td>自提点 &gt; 1 才见按钮</td><td>档案#15 现有 2 点 → 见「选择自提点」按钮</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>展开选择器</td><td>搜索 + 单选点列表</td><td>搜索框 + 自由大路/门店自提 两个单选卡片</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>就近默认</td><td>默认选中最近点</td><td>默认自由大路，选中红色高亮</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>切换即写库</td><td>换点写入配送方式/自提点</td><td>选「自由大路/门店自提」→ 概览与后端同步切换</td><td class="pass">✓ 通过</td></tr>
+          <tr><td>配置保持</td><td>二月兰永久绑定 2 点</td><td>档案#15 现正式绑定 自由大路#4 ＋ 门店自提#7（非临时）</td><td class="pass">✓ 通过</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 5 结论 ============ -->
+  <section>
+    <h2>五、验收结论</h2>
+    <div class="callout">
+      <span class="tt">验收通过</span>
+      自提单结算页「切换/新增联系人」改为<strong>直接可见的 chips</strong>（高亮 + ✓ + 点选回填 + 新增入口），未登录游客仍手填；同档自提点多时提供「选择自提点」<strong>展开切换器</strong>（搜索 + 单选、就近默认、换点即写库）。本修复均为纯前端改动，已随 <span class="mono">node scripts/deploy.mjs</span> 部署生产并在线回归通过。
+    </div>
+    <h3>交付记录</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>条目</th><th>值</th></tr></thead>
+        <tbody>
+          <tr><td>改动文件</td><td><span class="mono">CheckoutPickupContactBlock.vue</span> · <span class="mono">BoxPickupBlock.vue</span> · <span class="mono">useSampleAddressBook.ts</span> · <span class="mono">layers/base/i18n/locales/*.ts</span></td></tr>
+          <tr><td>部署方式</td><td><span class="mono">node scripts/deploy.mjs</span>（本地构建 → scp → pm2 restart，服务器不构建）</td></tr>
+          <tr><td>验证环境</td><td>生产 www.youshop.cn/t2 ＋ 本地生产构建(同款 UI)手机视口</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <div class="sources">
+      <h2>参考</h2>
+      <ol>
+        <li id="cite-1">
+          <span class="src-title">nshop 源码：自提单联系块（联系人 chips）</span>
+          <span class="src-url">layers/base/app/components/checkout/CheckoutPickupContactBlock.vue</span>
+        </li>
+        <li id="cite-2">
+          <span class="src-title">nshop 源码：自提箱多地提点展开切换器</span>
+          <span class="src-url">layers/base/app/components/checkout/BoxPickupBlock.vue</span>
+        </li>
+        <li id="cite-3">
+          <span class="src-title">线上验证截图原片</span>
+          <span class="src-url">nshop/scripts/shots/ck_contact_chips_*.png · multi_pickup_*.png</span>
+        </li>
+      </ol>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

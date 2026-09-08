@@ -2,6 +2,7 @@
 const { i18NBaseUrl } = useRuntimeConfig().public;
 const colorMode = useColorMode();
 const { t, locale } = useI18n();
+const siteName = useSiteName();
 
 const ogColorMode = computed<"dark" | "light">(() =>
   colorMode.value === "dark" ? "dark" : "light",
@@ -9,6 +10,7 @@ const ogColorMode = computed<"dark" | "light">(() =>
 
 const productStore = useProductStore();
 const { hasOptions, selectedVariant } = storeToRefs(productStore);
+const { taxEnabled } = useTaxEnabled();
 
 const slug = useRouteParam("slug");
 
@@ -38,6 +40,15 @@ watch(
   { immediate: true, flush: "post" },
 );
 
+// 实时库存：三种版式共用。切换 SKU 时刷新（含 quick/即时首刷），失败回退静态快照
+watch(
+  () => selectedVariant.value?.id,
+  () => {
+    productStore.refreshStock();
+  },
+  { immediate: true },
+);
+
 const formatPrice = (amount: number) =>
   new Intl.NumberFormat(locale.value, {
     style: "currency",
@@ -61,7 +72,7 @@ defineOgImage("ProductCard.satori", {
   price: formatPrice(selectedVariant.value?.price),
   // description: product.value?.description,
   image: product.value?.featuredAsset?.preview,
-  brand: t("messages.site.title"),
+  brand: siteName.value,
 });
 
 // SchemaOrg
@@ -88,7 +99,7 @@ if (product.value && selectedVariant.value) {
       offers: {
         "@type": "Offer",
         url: `${i18NBaseUrl}/products/${product.value.slug}`,
-        price: (selectedVariant.value.priceWithTax ?? 0) / 100,
+        price: ((taxEnabled.value ? selectedVariant.value.priceWithTax : (selectedVariant.value.price ?? selectedVariant.value.priceWithTax)) ?? 0) / 100,
         priceCurrency: selectedVariant.value.currencyCode ?? "EUR",
         availability:
           selectedVariant.value.stockLevel === "IN_STOCK"
@@ -97,7 +108,7 @@ if (product.value && selectedVariant.value) {
         itemCondition: "https://schema.org/NewCondition",
         seller: {
           "@type": "Organization",
-          name: t("messages.site.title"),
+          name: siteName.value,
         },
       },
     }),

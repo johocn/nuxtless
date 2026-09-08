@@ -42,7 +42,7 @@ export async function useGqlSession(
     headers.authorization = `Bearer ${token}`;
   }
   if (channelToken) {
-    headers["vendure-channel-token"] = channelToken;
+    headers["vendure-token"] = channelToken;
   }
   if (locale) {
     headers["Accept-Language"] = locale;

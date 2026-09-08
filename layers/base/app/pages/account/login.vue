@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 definePageMeta({
   alias: ["/login"],
   middleware: "guest",
@@ -6,7 +6,7 @@ definePageMeta({
 
 const router = useRouter();
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const submitted = ref(false);
 
 watch(submitted, (v) => {

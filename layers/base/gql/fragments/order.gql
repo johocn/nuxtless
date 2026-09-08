@@ -1,6 +1,7 @@
 fragment OrderBase on Order {
   id
   code
+  type
   couponCodes
   state
   totalQuantity

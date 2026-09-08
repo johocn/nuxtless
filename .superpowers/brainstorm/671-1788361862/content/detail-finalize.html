@@ -1,0 +1,60 @@
+<h2>定稿细节：(1) 优惠券切换 + (2) 多租户支付交集 + (3) 商品行预留槽位</h2>
+<p class="subtitle">三块是本次补充的实现级细节</p>
+
+<div class="section">
+<h3>(1) 优惠券切换 —— 整单一券</h3>
+<div class="mockup">
+  <div class="mockup-header">箱卡内「优惠券」行 → 点击 → 券选择抽屉</div>
+  <div class="mockup-body" style="text-align:left;font-size:13px;line-height:1.6">
+    <div style="border:1px solid #ccc;border-radius:6px;padding:6px 8px;display:flex;justify-content:space-between">本箱可用优惠券　<span style="color:#4a90d9">未使用 ▾</span></div>
+    <div style="margin:6px 0;text-align:center;color:#999">▼ 展开抽屉（弹层）</div>
+    <div style="border:1px solid #ccc;border-radius:6px;padding:8px;background:#fafafa">
+      <div style="font-weight:600;margin-bottom:4px">选择本店可用券（我持有的）</div>
+      <div style="border:1px solid #4a90d9;border-radius:4px;padding:4px 6px;margin:3px 0;background:#eef3fb">● 满199减20 &nbsp; <span style="color:#999">满199可用</span></div>
+      <div style="border:1px solid #ccc;border-radius:4px;padding:4px 6px;margin:3px 0">○ 8.5折 &nbsp; <span style="color:#999">满50可用</span></div>
+      <div style="border:1px solid #eee;border-radius:4px;padding:4px 6px;margin:3px 0;color:#bbb">不可用 · 已过期</div>
+    </div>
+    <div style="margin-top:6px;font-size:12px;color:#444">
+      ① 点「满199减20」→ <code>applyCouponToOrder(code)</code>（<b>整单一券</b>，替换旧券）→ 回填箱卡「已用：-20」+ toast「已使用优惠券，优惠¥20」<br/>
+      ② 换券「8.5折」→ 先 <code>clearCouponFromOrder()</code> 清旧 → 再 <code>applyCouponToOrder</code><br/>
+      <span style="color:#c00">约束：一单一券、不可叠加；折扣只作用于该券归属店商品行；接口作用整单</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="section">
+<h3>(2) 多租户支付交集 —— 全局支付区三态</h3>
+<div class="mockup">
+  <div class="mockup-header">已选箱白名单 → 求交集 → 判定合并/分箱</div>
+  <div class="mockup-body" style="text-align:left;font-size:13px;line-height:1.7">
+    <b>盒A</b>(J店·物流) 白名单 { 微信, 支付宝 }<br/>
+    <b>盒B</b>(顺丰·物流) 白名单 { 支付宝, 货到付款 }<br/>
+    <b>盒C</b>(门店·自提) 白名单 { 货到付款 }<br/><br/>
+    <b>场景① 全选 A+B+C</b> → 交集 ∩ = <b>空</b> → 顶部红条「各箱支付方式不同，将分箱支付」→ 支付区<b>按箱</b>列出各自唯一方式，提交<b>按箱拆单</b><br/>
+    <b>场景② 只选 A+B</b> → ∩ = { <b>支付宝</b> } 非空 → 提示「将合并 1 单，用 支付宝」→ 合并单统一收款，实收<b>按商户分账</b><br/>
+    <b>余额特例</b>：选「余额」→ 钱包充足且全箱支持 → 合并 1 单共享钱包扣；不足 → 余额禁用 + 提示「余额不足，分箱支付」<br/>
+    <span style="color:#4a90d9">规则：不放合并/分箱开关；系统按 ∩ + 余额自动判定</span>
+  </div>
+</div>
+</div>
+
+<div class="section">
+<h3>(3) 商品行预留槽位（需后端补字段）</h3>
+<div class="mockup">
+  <div class="mockup-header">BoxLines 行结构：图片 | 名称+规格名+SKU | 单价 | 数量 | 小计 | 删除</div>
+  <div class="mockup-body" style="text-align:left;display:flex;align-items:center;gap:8px;font-size:13px;border-bottom:1px dashed #ccc;padding:6px 2px">
+    <span>☑</span>
+    <span style="width:26px;height:26px;border:1px dashed #888;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;color:#999;font-size:10px">IMG</span>
+    <span style="flex:1;line-height:1.4"><b>无线蓝牙耳机 Pro</b><br/><span style="color:#666;font-size:11px">黑色 · 128G ｜ SKU: BT-PRO-C</span></span>
+    <span style="white-space:nowrap">¥398.00</span>
+    <span style="white-space:nowrap;border:1px dashed #888;border-radius:4px;padding:1px 4px">− 2 ＋</span>
+    <span style="white-space:nowrap">¥796.00</span>
+    <span style="color:#c00">删除</span>
+  </div>
+  <div style="text-align:left;font-size:12px;color:#666;margin-top:6px">
+    新字段（后端 <code>orderBoxes.lines</code> 需增补）：<code>featureAsset{source}</code>=图、<code>variantName</code>=规格名（Vendure <code>orderLine.productVariant.name</code>）、<code>sku</code>=SKU<br/>
+    现有可用：<code>productName</code>、<code>unitPrice</code>、<code>quantity</code>、<code>lineTotal</code>、<code>orderLineId</code>、<code>productVariantId</code>
+  </div>
+</div>
+</div>

@@ -1,0 +1,38 @@
+<h2>多租户 · 分箱（逐箱结算）：已实现 vs 本次新做</h2>
+<p class="subtitle">核心早已实现并部署到生产；本次只做「未覆盖」的增量。看图定边界。</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header" style="background:#e7f3e7">✅ 已实现 · 生产 www.youshop.cn 已部署</div>
+    <div class="mockup-body" style="text-align:left;font-size:12px;line-height:1.55">
+      <b>后端 (vendure, 已上线)</b><br/>
+      • 逐箱数据结构 <code>orderBoxes</code>：每箱=租户名/档案名/type/lines/availableCoupons/运费/小计<br/>
+      • 多租户必分箱；同档案跨租户也分箱（零交集）<br/>
+      • 局部结算 <code>checkoutSplitted(boxKeys,lineIds)</code>，<code>[String!]</code><br/>
+      • 支付合并/拆单 <code>decideAggregation</code>（交集+余额自动判定）<br/>
+      • 分账台账 <code>MerchantSettlementLedger</code> + 商户分账 <code>orderMerchantSplit</code><br/><br/>
+      <b>前端 (nshop, 已上线)</b><br/>
+      • cn 版式（收货信息一体卡/吸底栏/协议拦截）<br/>
+      • B1 box 适配（boxKey/line=String、totalWithTax 口径）<br/>
+      • B2 高德地址共享 AmapRegionSelect + city 修复<br/>
+      • B3 邮编物流必填 + company/streetLine2 + 分账汇总 PerBoxSummary<br/>
+      <span style="color:#2a7f2a;font-weight:600">提交 c273147 已部署</span>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header" style="background:#f8efdc">🆕 本次 perbox-card 才要新做（真实未实现）</div>
+    <div class="mockup-body" style="text-align:left;font-size:12px;line-height:1.55">
+      • 逐箱卡片容器统一 <code>CheckoutPerBoxList</code>（cn/jd 共用渲染）<br/>
+      • <b>商品行级选择</b>：整箱勾选/部分选择/数量步进/删除 —— 现为<b>只读列表</b><br/>
+      • 商品行预留 图片/规格名/SKU（<b>需后端 lines 增字段</b>：featureAsset/variantName/sku）<br/>
+      • 底部订单汇总完整（箱小计→商户分账→应付款+税）<br/>
+      • 回流：未选箱/行 → 放回购物车 + toast<br/>
+      • jd 模板重构为逐箱卡片 + jd-legacy 回退<br/>
+      • 券=整单一券 切换抽屉（沿用 applyCouponToOrder）<br/>
+      <span style="color:#9a6b11;font-weight:600">本次设计已定稿 fc8ec25，待实施</span>
+    </div>
+  </div>
+</div>
+
+<p style="font-size:12px;color:#666;margin-top:8px"><b>结论：</b>分箱/多租户的「骨」（数据结构、局部结算、分账、cn 版式）已在生产跑；缺的是把前端升级成「完整逐箱卡片 + 行级选择 + 商品图/规格名」的壳。</p>
