@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { ORDER_PROGRESS_STEPS, progressIndex } from "../../utils/order-state";
+import {
+  ORDER_PROGRESS_STEPS,
+  PROGRESS_PAID_INDEX,
+  isCodCollectPending,
+  progressIndex,
+} from "../../utils/order-state";
 
-const props = defineProps<{ state: string }>();
+const props = defineProps<{ state: string; order?: any }>();
 const { t } = useI18n();
-const current = computed(() => progressIndex(props.state));
+const current = computed(() => progressIndex(props.state, props.order));
 const isCancelled = computed(() => props.state === "Cancelled");
+const isCodPending = computed(() => isCodCollectPending(props.order));
 </script>
 
 <template>
@@ -19,7 +25,7 @@ const isCancelled = computed(() => props.state === "Cancelled");
               : 'bg-neutral-100 text-neutral-500'
           "
         >
-          {{ t(step) }}
+          {{ isCodPending && i === PROGRESS_PAID_INDEX ? t("messages.order.collectPending") : t(step) }}
         </div>
       </li>
       <li

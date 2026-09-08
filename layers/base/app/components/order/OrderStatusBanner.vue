@@ -7,7 +7,7 @@ const props = defineProps<{
 }>();
 const { t } = useI18n();
 
-const badge = computed(() => stateBadge(props.order.state));
+const badge = computed(() => stateBadge(props.order.state, props.order));
 
 const gradient: Record<string, string> = {
   neutral: "from-neutral-500 to-neutral-400",
