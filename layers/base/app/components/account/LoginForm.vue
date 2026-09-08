@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { LoginForm } from "~~/layers/base/validators/loginForm";
 
 import type { FormSubmitEvent } from "@nuxt/ui";
@@ -7,9 +7,9 @@ const emit = defineEmits<{
   (e: "success"): void;
 }>();
 
-const { channelToken } = useRuntimeConfig().public;
+const { token: channelToken } = useTenantChannel();
 const { t, locale } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const toast = useToast();
 const { fetchOrder } = useOrderStore();
 const { fetchCustomer } = useCustomerStore();
@@ -25,7 +25,7 @@ async function onSubmit(event: FormSubmitEvent<LoginForm>) {
   const result = await useGqlSession(
     locale.value,
     useGqlHostUrl(),
-    channelToken,
+    channelToken.value,
     "login",
     {
       emailAddress: event.data.email,

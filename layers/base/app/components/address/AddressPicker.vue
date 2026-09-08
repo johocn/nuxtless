@@ -59,6 +59,7 @@ function onSelect(id?: string) {
             {{ t("messages.account.defaultAddress") }}
           </UBadge>
         </template>
+        <span v-else class="text-neutral-400">{{ t("messages.account.selectAddress") }}</span>
       </span>
     </template>
   </USelectMenu>

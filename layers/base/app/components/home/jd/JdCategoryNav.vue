@@ -1,10 +1,10 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // JD 风格横向分类导航条（京东红底、横向滚动）
 // 数据来源：顶部分类(collection)，复用 GetMenuCollections 已加载的 menuCollections 状态
 const props = defineProps<{
   categories: Array<{ name: string; slug: string }>;
 }>();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const { t } = useI18n();
 
 function linkFor(cat: { slug?: string }) {

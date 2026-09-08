@@ -1,0 +1,64 @@
+<style>
+.vp{border:2px solid #000;border-radius:26px;width:390px;margin:0 auto 18px;overflow:hidden;background:#f5f5f5;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+.ah{background:#fff;padding:9px 12px;font-size:14px;font-weight:600;border-bottom:1px solid #eee}
+.tip{background:#fdeeee;color:#c00;font-size:11px;padding:6px 12px}
+.mh{display:flex;align-items:center;gap:6px;padding:7px 12px;font-size:13px;font-weight:700;background:#fff;border-bottom:1px solid #f0f0f0}
+.chip{background:#e63329;color:#fff;font-size:10px;border-radius:3px;padding:0 4px}
+.chip2{background:#f59a23;color:#fff}
+.card{background:#fff;margin:6px 8px;border-radius:8px;border:1px solid #eee;padding:9px 10px;font-size:12px;line-height:1.55}
+.small{color:#999;font-size:11px}
+.boxgrp{border:1px solid #eee;border-radius:8px;margin:8px;overflow:hidden}
+.boxgrp .gh{background:#fff;padding:7px 10px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;border-bottom:1px solid #f0f0f0}
+.rowi{background:#fff;display:flex;align-items:center;gap:9px;padding:9px 11px;font-size:12.5px}
+.rowi + .rowi{border-top:1px solid #f5f5f5}
+.rad{width:16px;height:16px;border-radius:8px;border:1px solid #bbb;flex:none;position:relative}
+.rowi.on{background:#fff5f4}
+.rowi.on .rad{border-color:#e63329}
+.rowi.on .rad:after{content:"";position:absolute;inset:3px;border-radius:5px;background:#e63329}
+.rowi .lbl{flex:1}
+.rowi .tag{background:#fdeeee;color:#e63329;font-size:10px;border-radius:3px;padding:0 4px;white-space:nowrap}
+.lock .rad{background:#e63329;border-color:#e63329}
+.lock .rad:after{content:"";position:absolute;inset:3px;border-radius:5px;background:#fff}
+.foot{position:sticky;bottom:0;background:#fff;border-top:1px solid #eee;padding:9px 12px}
+.split-sum{border-top:1px dashed #eee;margin:6px 0 0;padding:6px 2px 0;font-size:11px;color:#555;line-height:1.6}
+.submit{background:linear-gradient(90deg,#e63329,#ff6b4a);color:#fff;text-align:center;border-radius:24px;padding:9px;font-size:13px;font-weight:600}
+.cap{text-align:center;color:#444;font-size:13px;font-weight:700;margin:14px 0 4px}
+.hint{text-align:center;color:#888;font-size:11px;margin-bottom:6px}
+.less{background:#fdeeee;color:#c00;font-size:11px;border-radius:6px;padding:6px 10px;margin:6px 8px}
+</style>
+
+<div class="cap">重新设计 · 多租户多档案支付不一致 → 分箱支付</div>
+<div class="hint">核心：不再全选，改为「每箱一组单选，箱内互斥」；每单金额与方法一一对应</div>
+
+<div class="vp">
+  <div class="ah">确认订单（分箱支付）</div>
+  <div class="tip">⚠ 各箱支付方式不同 → 将拆分为多个订单，分别支付</div>
+
+  <div class="mh"><span class="chip">商家</span>京东自营旗舰店</div>
+  <div class="card">商品：耳机 ¥398×2 ｜ 本箱小计 <b>¥796</b><br/><span class="small" style="color:#e63329">本单由「微信支付」</span></div>
+
+  <div class="boxgrp">
+    <div class="gh"><span>京东箱 · 选择本单支付方式</span><span style="color:#999;font-weight:400">单 1/2 · ¥796</span></div>
+    <div class="rowi on"><span class="rad"></span><span class="lbl">微信支付</span><span class="tag">已选</span></div>
+    <div class="rowi"><span class="rad"></span><span class="lbl">支付宝</span></div>
+  </div>
+
+  <div class="mh" style="border-top:2px solid #f59a23"><span class="chip chip2">商家</span>顺丰快运（自提·门店档案）</div>
+  <div class="card">商品：保温杯 ¥59 ｜ 本箱小计 <b>¥59</b><br/><span class="small" style="color:#e63329">本单由「货到付款」</span></div>
+
+  <div class="boxgrp">
+    <div class="gh"><span>顺丰箱 · 选择本单支付方式</span><span style="color:#999;font-weight:400">单 2/2 · ¥59</span></div>
+    <div class="rowi lock"><span class="rad"></span><span class="lbl">货到付款 <span class="small" style="color:#999;margin-left:6px">（该箱唯一方式 · 自动锁定）</span></span></div>
+  </div>
+
+  <div class="foot">
+    <div class="split-sum">
+      分单对照：<b>单1 京东箱 ¥796 → 微信</b>（耳机）<br/>
+      <b style="margin-left:58px">单2 顺丰箱 ¥59 → 货到付款</b>（保温杯）<br/>
+      合计 ¥855 · 拆 2 单，各自支付，到账按商户分账
+    </div>
+    <div class="submit" style="margin-top:8px">确认拆单支付（2 单）</div>
+  </div>
+</div>
+
+<div class="less">▼ 旧方案的问题：三个支付方式全部打勾，无法分辨哪个属于哪箱 → 已改为上述「按箱分组单选」</div>

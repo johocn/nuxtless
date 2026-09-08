@@ -1,6 +1,6 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const isCartOpen = useState<boolean>("isCartOpen");
 </script>
 

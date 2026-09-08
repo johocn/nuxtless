@@ -1,6 +1,7 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { SearchResult } from "~~/types/product";
 import { assetSrc } from "../../utils/image";
+import { pickDisplayPrice } from "../../utils/display-price";
 
 const { product, serviceInfo, eager } = defineProps<{
   product: SearchResult[number];
@@ -16,12 +17,13 @@ if (!product) {
 }
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const locationStore = useLocationStore();
 const { isServiceable } = useCityService();
+const { taxEnabled } = useTaxEnabled();
 
 const productStartPrice = computed(() => {
-  const price = product.priceWithTax;
+  const price = pickDisplayPrice(product, taxEnabled.value);
   if (!price) return "";
 
   const currency = product.currencyCode ?? "EUR";

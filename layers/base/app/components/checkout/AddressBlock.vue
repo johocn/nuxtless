@@ -19,9 +19,12 @@ const state = checkoutState.value.addressForm;
 
 const appliedAddressId = ref<string | null>(null);
 const editing = ref(false);
+/** 是否处于「新增地址」模式（表单留空，不预填地址簿第一条） */
+const newMode = ref(false);
 
 function applyAddress(record: AddressRecord) {
   appliedAddressId.value = record.id;
+  newMode.value = false;
   state.fullName = record.fullName ?? "";
   state.streetLine1 = record.streetLine1 ?? "";
   state.streetLine2 = record.streetLine2 ?? "";
@@ -31,6 +34,16 @@ function applyAddress(record: AddressRecord) {
   state.countryCode = record.countryCode ?? countryCodeDefault;
   state.phoneNumber = record.phoneNumber ?? "";
   editing.value = false;
+}
+
+function startNewAddress() {
+  newMode.value = true;
+  editing.value = true;
+}
+
+function toggleSwitch() {
+  newMode.value = false;
+  editing.value = !editing.value;
 }
 
 // 京东式顶部摘要：收货人 电话 城市 街道
@@ -125,13 +138,22 @@ const showCreate = computed(() => {
       <h3 id="address-block-heading" class="font-medium">
         {{ t("messages.checkout.deliveryTo") }}
       </h3>
-      <div v-if="addressSummary.has" class="flex gap-2 text-sm">
+      <div class="flex gap-2 text-sm">
         <UButton
+          v-if="isAuthenticated"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :label="t('messages.checkout.addAddress')"
+          @click="startNewAddress"
+        />
+        <UButton
+          v-if="addressSummary.has"
           color="neutral"
           variant="ghost"
           size="sm"
           :label="t('messages.checkout.switchAddress')"
-          @click="editing = !editing"
+          @click="toggleSwitch"
         />
       </div>
     </div>
@@ -177,6 +199,7 @@ const showCreate = computed(() => {
       <CheckoutAddressForm
         ref="editForm"
         v-model="addressSubmitted"
+        :blank="newMode"
         aria-labelledby="address-block-heading"
         novalidate
       />

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { GetOrderHistoryQuery } from "#gql/default";
 import { NuxtLink } from "#components";
 
@@ -8,7 +8,7 @@ type OrderListOrder = NonNullable<
 
 defineProps<{ order: OrderListOrder }>();
 
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const emit = defineEmits<{ (e: "changed"): void }>();
 </script>
 

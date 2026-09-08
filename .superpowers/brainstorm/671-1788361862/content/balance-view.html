@@ -1,0 +1,108 @@
+<style>
+.viewport{border:2px solid #000;border-radius:28px;width:390px;margin:0 auto 16px;overflow:hidden;background:#f5f5f5;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+.apphead{background:#fff;padding:10px 12px;font-size:14px;font-weight:600;border-bottom:1px solid #eee}
+.tipbar{background:#e8f3ec;color:#2a7f2a;font-size:11px;padding:6px 12px}
+.merch{border-top:2px solid #e63329;background:#fff;margin-bottom:8px}
+.merch2{border-top:2px solid #f59a23;background:#fff}
+.merch-h{display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:13px;font-weight:700;border-bottom:1px solid #f0f0f0}
+.chip{background:#e63329;color:#fff;font-size:10px;border-radius:3px;padding:0 4px}
+.chip2{background:#f59a23;color:#fff}
+.boxcard{background:#fff;margin:6px 8px;border-radius:8px;border:1px solid #eee;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.box-h{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px dashed #eee;font-size:12px}
+.sel{width:14px;height:14px;border:1px solid #999;border-radius:3px;display:inline-block;vertical-align:middle;margin-right:6px;background:#e63329;border-color:#e63329;position:relative}
+.sel:after{content:"✓";color:#fff;font-size:10px;position:absolute;top:-2px;left:2px}
+.sub{color:#888;font-size:11px}
+.addr{padding:8px 10px;border-bottom:1px solid #f0f0f0;font-size:12px}
+.addr .v{font-weight:600;margin-bottom:2px}
+.addr .d{color:#666;font-size:11px}
+.prod-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #f0f0f0;font-size:12px}
+.thumb{width:26px;height:26px;border-radius:4px;background:#f0f0f0;flex:none}
+.pname{flex:1;line-height:1.3}
+.pspec{color:#999;font-size:10px}
+.boxtotal{display:flex;justify-content:space-between;padding:8px 10px;font-size:12px}
+.boxtotal b{font-size:13px}
+.paysec{background:#fff;margin:8px;border-radius:8px;border:1px solid #eee;padding:10px}
+.paysec h4{font-size:12px;margin:0 0 6px}
+.wallet{border:1px solid #e63329;background:#fff5f4;border-radius:6px;padding:8px 10px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.wallet .bal{color:#e63329;font-weight:700;font-size:13px}
+.payrow{border:1px solid #eee;border-radius:6px;padding:7px 9px;margin:6px 0;display:flex;justify-content:space-between;font-size:12px;color:#bbb}
+.payrow.dim{color:#bbb;background:#fafafa;cursor:not-allowed}
+.ded-note{background:#fff7e6;color:#8a6d00;font-size:11px;border-radius:4px;padding:5px 8px;margin:6px 0}
+.sum{background:#fff;margin:8px;border-radius:8px;border:1px solid #eee;padding:10px;font-size:12px}
+.sum h4{margin:0 0 6px;font-size:12px}
+.sum .row{display:flex;justify-content:space-between;padding:2px 0}
+.sum .mr{border-top:1px solid #eee;margin-top:5px;padding-top:5px}
+.foot{position:sticky;bottom:0;background:#fff;border-top:1px solid #eee;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
+.pay{color:#e63329;font-size:13px;font-weight:700}
+.pay small{color:#999;font-weight:400;font-size:11px;display:block}
+.submit{background:linear-gradient(90deg,#e63329,#ff6b4a);color:#fff;border:none;border-radius:24px;padding:8px 18px;font-size:13px;font-weight:600}
+.cap{text-align:center;color:#666;font-size:12px;margin:6px 0 2px;font-weight:600}
+</style>
+
+<div class="cap">场景：2 商家 3 档案（京东：物流＋自提；顺丰：物流）· 选中「余额」· 余额充足</div>
+<div class="viewport">
+  <div class="apphead">确认订单</div>
+  <div class="tipbar">✓ 已选余额 · 三箱全选 → 合并为 1 单，从共享钱包统一扣款</div>
+
+  <div class="merch">
+    <div class="merch-h"><span class="chip">商家</span>京东自营旗舰店</div>
+    <div class="boxcard">
+      <div class="box-h"><span><span class="sel"></span>默认物流配送档案 <span class="sub">物流</span></span></div>
+      <div class="addr"><div class="v">张三　138****1234</div><div class="d">广东省 广州市 天河区 软件路18号 · 510630</div></div>
+      <div class="prod-row"><span class="sel"></span><span class="thumb"></span><span class="pname">无线蓝牙耳机 Pro <b class="pspec" style="display:block;font-weight:400">黑色 · 128G</b></span><span>¥398×2</span></div>
+      <div class="boxtotal"><span>本箱小计</span><b>¥796.00</b></div>
+    </div>
+    <div class="boxcard">
+      <div class="box-h"><span><span class="sel"></span>门店自提·需联系 <span class="sub">自提</span></span></div>
+      <div class="addr"><div class="v">自提点：天河店（1.2km）· 联系人 李四</div></div>
+      <div class="prod-row"><span class="sel"></span><span class="thumb"></span><span class="pname">保温杯 500ml <b class="pspec" style="display:block;font-weight:400">蓝色</b></span><span>¥59</span></div>
+      <div class="boxtotal"><span>本箱小计</span><b>¥59.00</b></div>
+    </div>
+  </div>
+
+  <div class="merch merch2">
+    <div class="merch-h"><span class="chip chip2">商家</span>顺丰快运专营</div>
+    <div class="boxcard">
+      <div class="box-h"><span><span class="sel"></span>顺丰物流档案 <span class="sub">物流</span></span></div>
+      <div class="addr"><div class="v">张三　138****1234</div><div class="d">广东省 广州市 天河区 软件路18号 · 510630</div></div>
+      <div class="prod-row"><span class="sel"></span><span class="thumb"></span><span class="pname">机械键盘 87键 <b class="pspec" style="display:block;font-weight:400">青轴</b></span><span>¥299</span></div>
+      <div class="boxtotal"><span>本箱小计</span><b>¥299.00</b></div>
+    </div>
+  </div>
+
+  <div class="paysec">
+    <h4>支付方式</h4>
+    <div class="wallet"><span>余额（共享钱包）<span class="bal">可扣 ¥520.00</span></span><span style="font-size:10px;color:#e63329">》已选（合并1单）</span></div>
+    <div class="ded-note">本次从余额扣除 ¥913.00 · 扣后余额 ¥607.00（若不足将转分箱）</div>
+    <div class="payrow dim">微信支付（已选余额）</div>
+    <div class="payrow dim">支付宝（已选余额）</div>
+    <div class="payrow dim">货到付款（已选余额）</div>
+  </div>
+
+  <div class="sum">
+    <h4>订单汇总</h4>
+    <div class="row"><span>商品合计（4件）</span><span>¥1,154.00</span></div>
+    <div class="row"><span>运费合计</span><span>¥0.00</span></div>
+    <div class="row"><span>优惠券</span><span>-¥0.00</span></div>
+    <div class="row"><span>税额</span><span>¥0.00</span></div>
+    <div class="row mr"><span>商户分账（扣款后按商家入账）</span></div>
+    <div class="row"><span style="padding-left:10px">京东自营旗舰店</span><span>¥855.00</span></div>
+    <div class="row"><span style="padding-left:10px">顺丰快运专营</span><span>¥58.00</span></div>
+  </div>
+
+  <div class="foot"><span class="pay">¥913.00<small>将从余额扣除</small></span><button class="submit">余额支付 · 提交</button></div>
+</div>
+
+<div class="cap" style="margin-top:16px">对照：余额不足 → 自动分箱（余额行灰态不可选）</div>
+<div class="viewport">
+  <div class="apphead">确认订单</div>
+  <div class="tipbar" style="background:#fdeeee;color:#c00">余额不足（¥120）→ 自动转分箱，各箱按各自支付方式</div>
+  <div class="paysec">
+    <h4>支付方式</h4>
+    <div class="payrow dim"><span>余额（共享钱包）</span><span style="color:#c00">余额不足 ¥120</span></div>
+    <div class="payrow on" style="border-color:#e63329;background:#fff5f4;color:#e63329;font-weight:600"><span>微信支付</span><span>∩ 显示交集方式</span></div>
+    <div class="payrow on" style="border-color:#e63329;background:#fff5f4;color:#e63329;font-weight:600"><span>支付宝</span></div>
+    <div class="ded-note">交积分空时：顶部红条 + 三箱各自支付方式 + 按箱拆单</div>
+  </div>
+  <div class="foot"><span class="pay">¥913.00</span><button class="submit" style="filter:grayscale(.3)">转分箱支付</button></div>
+</div>

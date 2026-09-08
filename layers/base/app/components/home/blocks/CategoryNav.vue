@@ -1,9 +1,9 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 const props = defineProps<{
   block: { id: string; data: { items?: Array<{ name: string; slug: string }> } };
 }>();
 
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 </script>
 <template>
   <nav class="mx-auto max-w-5xl px-4 py-6" aria-label="分类导航">

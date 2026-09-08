@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { GetOrderByCodeQuery } from "#gql/default";
 
 const props = defineProps<{
@@ -8,7 +8,7 @@ const emit = defineEmits<{
   (e: "updated"): void;
 }>();
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const router = useRouter();
 const { loading, canCancel, cancelOrder, reorder, copyOrderLink } =
   useOrderActions();

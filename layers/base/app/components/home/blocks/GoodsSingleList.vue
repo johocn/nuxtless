@@ -1,7 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // 极简风商品单列：大图横卡（图左 + 价格/标题/按钮右）
 import type { SearchResult } from "~~/types/product";
 import { assetSrc } from "../../../utils/image";
+import { pickDisplayPrice } from "../../../utils/display-price";
 
 type SearchItem = SearchResult[number];
 
@@ -9,17 +10,19 @@ const props = defineProps<{
   title: string;
   products: SearchItem[];
 }>();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
+const { taxEnabled } = useTaxEnabled();
 
-function price(p?: SearchItem["priceWithTax"], cur?: string | null) {
-  if (!p) return "";
+function price(p?: SearchItem, cur?: string | null) {
+  const sel = pickDisplayPrice(p, taxEnabled.value);
+  if (!sel) return "";
   const c = cur ?? "CNY";
-  if ("min" in p && "max" in p) {
-    const min = (p.min / 100).toFixed(2);
-    const max = (p.max / 100).toFixed(2);
+  if ("min" in sel && "max" in sel) {
+    const min = (sel.min / 100).toFixed(2);
+    const max = (sel.max / 100).toFixed(2);
     return min === max ? `¥${min}` : `${min}~${max}`;
   }
-  return `¥${(p.value / 100).toFixed(2)}`;
+  return `¥${(sel.value / 100).toFixed(2)}`;
 }
 </script>
 
@@ -48,7 +51,7 @@ function price(p?: SearchItem["priceWithTax"], cur?: string | null) {
         <div class="min-w-0 flex-1">
           <p class="line-clamp-2 text-sm leading-5 text-gray-700">{{ p.productName }}</p>
           <div class="mt-1 flex items-center gap-2">
-            <span class="text-lg font-bold text-primary">{{ price(p.priceWithTax, p.currencyCode) }}</span>
+            <span class="text-lg font-bold text-primary">{{ price(p, p.currencyCode) }}</span>
             <span class="rounded bg-primary/10 px-1 text-[10px] text-primary">自营</span>
           </div>
         </div>

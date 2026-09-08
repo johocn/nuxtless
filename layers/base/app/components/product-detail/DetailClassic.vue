@@ -6,9 +6,10 @@ const { visible } = useDetailConfig();
 const { product, selectedVariant, productName, productServiceable } = useProductDetailView();
 const { t } = useI18n();
 const { canBuy, loading, addToCartHandler, buyNowHandler } = useBuyActions();
+const { stockLevel } = storeToRefs(useProductStore());
 
 const inStock = computed(
-  () => selectedVariant.value?.stockLevel === "IN_STOCK" || selectedVariant.value?.stockLevel === "LOW_STOCK",
+  () => stockLevel.value === "IN_STOCK" || stockLevel.value === "LOW_STOCK",
 );
 </script>
 

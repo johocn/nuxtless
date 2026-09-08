@@ -2,7 +2,7 @@
 // 兜底链：块级定制字段 → 块内建默认 → 全局默认(true / 'jd' / 占位)
 // 文案兜底链：当前 locale → defaultLocale → 首值 → ''（块内建占位 / i18n 兜底）
 
-export type OrderDetailLayout = "jd" | "classic";
+export type OrderDetailLayout = "jd" | "classic" | "confirmation";
 export type OrderListLayout = "card";
 export type LocalizedText = string | Record<string, string>;
 
@@ -38,7 +38,8 @@ const ORDER_DETAIL_DEFAULT_VISIBLE: Record<string, boolean> = {
 };
 
 export function orderDetailLayout(cfg: OrderDetailConfig | null): OrderDetailLayout {
-  return cfg?.layout === "classic" ? "classic" : "jd"; // 缺省/非法 → jd（默认京东版式）
+  // 缺省/非法 → jd（默认京东版式）；confirmation 为结算确认场景专用版式
+  return cfg?.layout === "classic" ? "classic" : cfg?.layout === "confirmation" ? "confirmation" : "jd";
 }
 
 /** 订单是否门店自提（核销码/自提信息块仅在自提单展示） */

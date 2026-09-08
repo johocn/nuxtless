@@ -122,12 +122,18 @@ export const useProductStore = defineStore("product", () => {
       return;
     }
 
-    const { product: variantStock } = await GqlGetProductVariantStock({
-      productId,
-      variantId,
-    });
-
-    liveStock.value = variantStock?.variantList.items?.[0]?.stockLevel ?? null;
+    const queriedVariant = variantId; // 竞态守卫：快切 SKU 时丢弃旧响应
+    try {
+      const { product: variantStock } = await GqlGetProductVariantStock({
+        productId,
+        variantId,
+      });
+      if (queriedVariant !== selectedVariant.value?.id) return;
+      liveStock.value = variantStock?.variantList.items?.[0]?.stockLevel ?? null;
+    } catch (e) {
+      console.error("[useProductStore] refreshStock 失败，回退静态库存", e);
+      liveStock.value = null;
+    }
   }
 
   return {

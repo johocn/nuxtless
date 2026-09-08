@@ -1,11 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
 import type { MenuCollections } from "~~/types/collection";
 import { assetSrc } from "../utils/image";
 
 const route = useRoute();
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 
 const menuCollections = useState<MenuCollections>("menuCollections");
 

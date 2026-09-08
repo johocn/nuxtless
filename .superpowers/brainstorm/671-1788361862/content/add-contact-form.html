@@ -1,0 +1,56 @@
+<style>
+.vp{border:2px solid #000;border-radius:26px;width:390px;margin:0 auto;overflow:hidden;background:#f5f5f5;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+.ah{background:#fff;padding:12px 14px;font-size:15px;font-weight:600;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
+.card{background:#fff;margin:8px;border-radius:8px;border:1px solid #eee;padding:10px 12px;font-size:12px;line-height:1.55}
+.small{color:#999;font-size:11px}
+.bh{display:flex;justify-content:space-between;font-weight:600;margin-bottom:2px;font-size:13px}
+.frm{background:#fff;padding:4px 14px 14px}
+.fld{padding:9px 0;border-bottom:1px solid #f2f2f2}
+.fld label{font-size:12px;color:#333;display:block}
+.b.req{color:#e63329}
+.inp{margin-top:6px;background:#f7f7f7;border-radius:6px;padding:9px 10px;font-size:13px;border:1px solid #eee}
+.onel{display:flex;justify-content:space-between;align-items:center}
+.onel .inp{flex:1;margin:0 8px 0 0}
+.tag{background:#fdeeee;color:#e63329;font-size:10px;border-radius:3px;padding:0 4px;white-space:nowrap}
+.save{background:linear-gradient(90deg,#e63329,#ff6b4a);color:#fff;text-align:center;border-radius:24px;padding:11px;font-size:14px;font-weight:600;margin:14px 14px 12px}
+.cap{text-align:center;color:#444;font-size:13px;font-weight:700;margin:14px 0 4px}
+.hint{text-align:center;color:#888;font-size:11px;margin-bottom:6px}
+.steps{display:flex;gap:6px;margin:8px;align-items:center}
+.sp{flex:1;text-align:center;font-size:11px;color:#999;padding:5px;border-radius:6px;background:#fff;border:1px solid #eee}
+.sp.done{color:#2a7f2a;border-color:#cfe8d5;background:#e8f3ec}
+.sp.now{color:#e63329;border-color:#f3c4be;background:#fff5f4;font-weight:600}
+</style>
+
+<div class="cap">自提需联系 · 新增联系人</div>
+<div class="hint">找联系人入口：自提卡片 → 「切换▾」→ 面板底部「＋新增联系人」</div>
+
+<div class="vp">
+  <div class="ah"><span>新增联系人</span><span style="color:#999;font-weight:400;font-size:14px">✕</span></div>
+  <div class="card"><span class="small">用于</span><div class="bh">门店自提·需联系 <span class="tag">自提</span></div><span class="small">自提点：天河店（1.2km）</span></div>
+  <div class="frm">
+    <div class="fld"><label><b class="req">联系人</b> <span class="small">· 收货人本人</span></label><div class="inp">王五</div></div>
+    <div class="fld onel"><div><label><b class="req">联系电话</b></label></div><div class="inp" style="flex:1;margin-left:0">135****5566</div></div>
+    <div style="font-size:11px;color:#999;margin-top:8px">仅姓名+电话，<b>无邮箱</b>；独立于物流地址存储（自提无邮寄地址）。</div>
+  </div>
+  <div class="save">保存联系人</div>
+</div>
+
+<div class="cap">新增后 → 列表出现新联系人并自动选中</div>
+<div class="vp">
+  <div class="ah">选择联系人</div>
+  <div class="frm" style="padding-bottom:4px">
+    <div class="fld" style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:12px;display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border:1px solid #e63329;border-radius:3px;background:#e63329;color:#fff;font-size:10px;text-align:center;line-height:13px">✓</span> 王五　135****5566</span>
+      <span class="tag">新增·已选</span>
+    </div>
+    <div class="fld" style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border:1px solid #ccc;border-radius:3px"></span> 李四　139****0000</span><span class="tag" style="background:#fdeeee">默认</span></div>
+  </div>
+  <div style="border:1px dashed #e63329;border-radius:6px;color:#e63329;text-align:center;padding:10px;margin:10px">＋ 新增联系人</div>
+</div>
+
+<div class="cap">三步提交链路</div>
+<div class="steps">
+  <div class="sp done">① 自提卡「切换」</div>
+  <div class="sp done">② 面板：+新增联系人</div>
+  <div class="sp now">③ 填姓名+电话保存</div>
+</div>

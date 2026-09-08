@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { BreadcrumbItem } from "@nuxt/ui";
 import type { ProductDetail } from "~~/types/product";
 
@@ -8,7 +8,7 @@ const { product = undefined, trail } = defineProps<{
 }>();
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 
 const collections =
   trail === "category" ? getCategoryTrail() : getProductTrail(product);

@@ -1,0 +1,105 @@
+<h2>订单详情页 · 中式本地化方向对比</h2>
+<p class="subtitle">三种「自提单订单详情」上半屏方案（状态 + 提货/核销码高光卡），点选最有感觉的一种</p>
+
+<div class="options">
+
+  <div class="option" data-choice="v1" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>京东风增强（现状延续）</h3>
+      <p>沿用 jd 主红 + 现状卡片；核销码卡做成醒目「渐变高光卡」，大号码 + 二维码 + 门店/营业时间，其余块微调</p>
+      <div class="phone">
+        <div class="p-banner red"><span>待自提</span> 订单号 #P20260903</div>
+        <div class="p-redeem grad">
+          <div style="font-size:11px;opacity:.85">自提核销码 · 到店请出示</div>
+          <div class="p-code">482 <b>913</b></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <div class="qr"></div>
+            <div style="font-size:11px;line-height:1.6">
+              旗舰店-上海嘉定<br/>营业 09:00-21:00<br/>下单后 7 天内可取
+            </div>
+          </div>
+          <div class="p-tag on">未核销 · 待取货</div>
+        </div>
+        <div class="p-steps"><i></i><i></i><i></i><i class="on"></i></div>
+        <div class="p-line"><div class="p-thumb"></div><div>三件套 KNIFE-SET-3<small>¥145.77 ×1</small></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="v2" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>中式功能分区重建</h3>
+      <p>状态横幅 → 提货码高光卡 → 门店信息卡 → 进度 → 商品；组件统一中式卡片、浅底分隔、橙红主色</p>
+      <div class="phone">
+        <div class="p-banner red"><span>待自提</span></div>
+        <div class="p-redeem white">
+          <div class="p-msg">核销凭证 · 到店出示二维码或代码</div>
+          <div class="p-code">482 913</div>
+          <div class="qr big"></div>
+          <div class="p-meta">
+            <div><b>门店</b> 旗舰店-上海嘉定</div>
+            <div><b>时间</b> 09:00-21:00</div>
+            <div><b>有效期</b> 2026-09-10 前</div>
+          </div>
+          <div class="p-tag on">未核销 · 待取货</div>
+        </div>
+        <div class="p-steps"><i></i><i></i><i></i><i class="on"></i></div>
+        <div class="p-line"><div class="p-thumb"></div><div>三件套 KNIFE-SET-3<small>¥145.77 ×1</small></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="v3" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>轻量极简·聚合成卡片</h3>
+      <p>白底为主、信息聚合到一张「凭证卡」；大号核销码 + 二维码居中，弱化其余装饰，突出可扫码</p>
+      <div class="phone">
+        <div class="p-banner plain"><span>待自提</span></div>
+        <div class="p-redeem minimal">
+          <div class="qr big center"></div>
+          <div class="p-label">自提核销码</div>
+          <div class="p-code minimal">482913</div>
+          <div class="p-sub">旗舰店-上海嘉定 · 09:00-21:00</div>
+          <div class="p-tag outline">未核销 · 待取货</div>
+        </div>
+        <div class="p-steps"><i></i><i></i><i></i><i class="on"></i></div>
+        <div class="p-line"><div class="p-thumb"></div><div>三件套 KNIFE-SET-3<small>¥145.77 ×1</small></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<style>
+.options{display:flex;flex-wrap:wrap;gap:16px}
+.option{flex:1 1 280px;max-width:320px}
+.phone{width:220px;margin:12px auto 0;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;background:#fff;font-family:sans-serif}
+.p-banner{padding:10px 12px;font-size:12px;font-weight:600;color:#fff}
+.p-banner.red{background:#e23d3d}
+.p-banner.plain{background:#334155;color:#fff}
+.p-banner span{background:rgba(255,255,255,.22);border-radius:4px;padding:1px 6px;margin-right:6px}
+.p-redeem{padding:12px;text-align:center;color:#1f2937}
+.p-redeem.grad{background:linear-gradient(135deg,#fde68a,#f97316);color:#431407}
+.p-redeem.white{background:#fff}
+.p-redeem.minimal{background:#fff;border-top:1px solid #f1f5f9}
+.p-code{font-size:26px;font-weight:800;letter-spacing:4px;font-family:monospace}
+.p-tag{display:inline-block;margin-top:8px;border-radius:20px;padding:2px 10px;font-size:11px}
+.p-tag.on{background:#dcfce7;color:#166534}
+.p-tag.outline{border:1px solid #16a34a;color:#166534;background:#fff}
+.p-steps{display:flex;gap:4px;padding:8px 12px}
+.p-steps i{flex:1;height:4px;border-radius:2px;background:#e5e7eb}
+.p-steps i.on{background:#e23d3d}
+.p-line{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid #f1f5f9;font-size:12px}
+.p-line small{display:block;color:#9ca3af;margin-top:2px}
+.p-thumb{width:34px;height:34px;border-radius:6px;background:#e5e7eb}
+.qr{width:44px;height:44px;background:repeating-conic-gradient(#000 0 25%,transparent 0 50%) 0 0/8px 8px;border:1px solid #ddd}
+.qr.big{width:58px;height:58px;margin:4px auto}
+.qr.center{margin:2px auto}
+.p-meta{font-size:11px;text-align:left;background:#f9fafb;border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.8}
+.p-meta b{display:inline-block;width:40px;color:#6b7280;font-weight:600}
+.p-label{font-size:11px;color:#6b7280;margin-top:4px}
+.p-sub{font-size:11px;color:#94a3b8;margin-top:4px}
+</style>

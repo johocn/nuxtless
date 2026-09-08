@@ -1,11 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 definePageMeta({
   alias: ["/request-password-reset"],
   middleware: "guest",
 });
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const submitted = ref(false);
 </script>
 

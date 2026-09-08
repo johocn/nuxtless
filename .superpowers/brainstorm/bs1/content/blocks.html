@@ -1,0 +1,55 @@
+<style>
+.blk{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;margin-top:8px;font-size:12px;line-height:1.5}
+.blk b{display:block;color:#111}
+.blk em{color:#6b7280;font-size:11px;font-style:normal;display:block}
+.tag{font-size:10px;padding:1px 6px;border-radius:10px;margin-left:6px;font-weight:600;vertical-align:2px}
+.t-new{background:#dcfce7;color:#166534}
+.t-reuse{background:#e0f2fe;color:#075985}
+.col3{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.col3{grid-template-columns:1fr}}
+.mock title{font-weight:700;margin-bottom:4px}
+</style>
+
+<h2>订单模块 · 积木结构设计（方案 A · 京东手机帮风）</h2>
+<p class="subtitle"><span class="tag t-new" style="vertical-align:0">绿=新建</span><span class="tag t-reuse">蓝=复用现有组件/逻辑</span>　单一京东风格·代码层组件化·块内建默认·响应式</p>
+
+<div class="col3">
+  <div class="mockup">
+    <div class="mockup-header">① 订单列表页 · OrderCard 积木</div>
+    <div class="mockup-body">
+      <div class="blk"><b>OrderTabBar 顶部状态TaB</b><em>复用 ORDER_TABS + tabOfState，全部分状态筛选</em><span class="tag t-reuse">复用</span></div>
+      <div class="blk">
+        <b>OrderCard（列表卡片容器·自适应列数）</b><span class="tag t-new">新建</span>
+        <div class="blk"><b>OrderCardHeader 卡头</b><em>店铺/站内标识 + 状态徽标 stateBadge；整卡可点跳详情</em><span class="tag t-reuse">复用 stateBadge</span></div>
+        <div class="blk"><b>OrderCardItems 商品缩略行</b><em>图 + 名称 + ×N + 单价；取 OrderBase.lines</em><span class="tag t-new">新建</span></div>
+        <div class="blk"><b>OrderCardFooter 合计</b><em>「共N件 实付 ¥X」totalWithTax</em><span class="tag t-new">新建</span></div>
+        <div class="blk"><b>OrderCardActions 操作条</b><em>按状态渲染：去支付/再次购买/查看详情/取消；复用 useOrderActions(canCancel/cancelOrder/reorder)</em><span class="tag t-reuse">复用</span></div>
+      </div>
+      <div class="blk"><b>OrderCardList 列表容器</b><em>取 totalItems + take 做「加载更多/滚动加载」</em><span class="tag t-new">新建</span></div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">② 订单详情页 · 竖排信息卡积木</div>
+    <div class="mockup-body">
+      <div class="blk"><b>OrderStatusBanner 状态横幅</b><em>渐变底 + 订单状态 + 附带说明；替代当前 header 区</em><span class="tag t-new">新建</span></div>
+      <div class="blk"><b>OrderStateProgress 进度条</b><em>复用 OrderProgress + progressIndex</em><span class="tag t-reuse">复用</span></div>
+      <div class="blk"><b>OrderAddressCard 收货地址卡</b><em>收货人/电话/地址（含自提点联系人）</em><span class="tag t-reuse">复用 OrderAddress</span></div>
+      <div class="blk"><b>OrderItemsCard 商品清单卡</b><em>商品行 + 售后入口（canApplyAfterSales）；移动端竖排</em><span class="tag t-reuse">复用 OrderItems</span></div>
+      <div class="blk"><b>OrderPickupCard 自提信息卡</b><em>deliveryType=pickup 时显示：提货码/自提点/核销状态</em><span class="tag t-new">新建</span></div>
+      <div class="blk"><b>OrderTotalsCard 金额明细卡</b><em>商品/运费/优惠/实付；复用 OrderTotals+OrderShippingBreakdown</em><span class="tag t-reuse">复用</span></div>
+      <div class="blk"><b>OrderMetaCard 订单信息卡</b><em>订单号/下单时间/支付方式/配送方式</em><span class="tag t-new">新建</span></div>
+      <div class="blk"><b>OrderActionsBar 底部操作条</b><em>去支付/再次购买/退款/售后/确认收货；复用 OrderActions</em><span class="tag t-reuse">复用</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:16px">
+  <h3>数据流</h3>
+  <ul style="font-size:13px;line-height:1.8;color:#374151">
+    <li>列表：<code>GetOrderHistory(totalItems/skip/take)</code> → <b>OrderCardList</b> 分页渲染 <b>OrderCard</b></li>
+    <li>详情：<code>GetOrderByCode(OrderDetail)</code> → 各功能卡按 <code>state / deliveryType / canApplyAfterSales / canCancel</code> 条件取块显隐</li>
+    <li>操作动作统一走 <code>useOrderActions</code>（取消/再次购买/去支付）+ 售后 Modal；成功后 <code>refresh()</code></li>
+    <li>响应式：列表卡片 <code>grid-cols-1 → md:grid-cols-2</code>；详情单列信息流宽度自适应</li>
+  </ul>
+</div>

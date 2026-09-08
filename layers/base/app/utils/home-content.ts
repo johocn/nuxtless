@@ -28,13 +28,14 @@ export function isFloor(data: unknown): data is FloorBlockData {
   );
 }
 
-// ProductCard 需要 SearchResult（productName/slug/productAsset{id,preview}/priceWithTax(union)/currencyCode），
+// ProductCard 需要 SearchResult（productName/slug/productAsset{id,preview}/priceWithTax(union)/price(union)/currencyCode），
 // 而 GetProductsByIds 返回 Product（name/slug/featuredAsset{id,preview}/variants{currencyCode,price}）。映射：
 export type ProductCardCompatible = {
   productName: string;
   slug: string;
   productAsset: { id: string; preview: string } | null;
   priceWithTax: { value: number } | { min: number; max: number };
+  price: { value: number } | { min: number; max: number };
   currencyCode?: string;
 };
 
@@ -47,6 +48,7 @@ export function toSearchResultCard(
     slug: p.slug,
     productAsset: p.featuredAsset ? { id: p.featuredAsset.id, preview: p.featuredAsset.preview } : null,
     priceWithTax: { value: price },
+    price: { value: price },
     currencyCode: p.variants?.[0]?.currencyCode ?? "CNY",
   };
 }

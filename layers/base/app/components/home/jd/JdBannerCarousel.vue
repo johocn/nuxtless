@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // JD 风格轮播 Banner：自动播放 + 左右箭头 + 圆点指示器 + 悬停暂停
 // 数据来源：首页运营内容里的 Banner 块（useHomeContent），无 Banner 时回退到占位图
 const { slides } = defineProps<{
@@ -6,7 +6,7 @@ const { slides } = defineProps<{
 }>();
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 
 // 缺省占位 Banner（无运营 Banner 时兜底展示）
 const DEFAULT_SLIDES = [

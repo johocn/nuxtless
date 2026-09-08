@@ -1,10 +1,10 @@
-<script setup lang="ts" size="xl">
+﻿<script setup lang="ts" size="xl">
 import { RegisterForm } from "~~/layers/base/validators/registerForm";
 
 import type { FormSubmitEvent } from "@nuxt/ui";
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const toast = useToast();
 const { register } = useCustomerStore();
 

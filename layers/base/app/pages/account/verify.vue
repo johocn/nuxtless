@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 definePageMeta({
   alias: ["/verify"],
   middleware: "guest",
@@ -6,7 +6,7 @@ definePageMeta({
 
 const token = useRouteQuery("token") || undefined;
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const toast = useToast();
 
 const { verify } = useCustomerStore();

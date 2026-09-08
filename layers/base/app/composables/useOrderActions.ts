@@ -1,4 +1,4 @@
-export interface ReorderLine {
+﻿export interface ReorderLine {
   productVariantId: string;
   quantity: number;
 }
@@ -8,7 +8,7 @@ export function useOrderActions() {
   const error = ref<string | null>(null);
   const toast = useToast();
   const { t } = useI18n();
-  const localePath = useLocalePath();
+  const localePath = useTenantLocalePath();
   const { copy } = useClipboard();
   const { i18NBaseUrl } = useRuntimeConfig().public;
 

@@ -56,18 +56,27 @@ export function useCheckout() {
   /**
    * 结算成功后把未选箱/未选行按 (variantId, qty) 加回购物车。
    * 幂等：成功（含 partial）即视为已回流；失败不抛异常、不做移除（防丢单）。
+   * 并行回流 + 限定单次重试，避免逐条串行 await 遇生产负载叠加成几分钟。
    * 回流总数 > 0 时 toast「剩余 N 件未结算，已放回购物车」。
    */
   async function flowBackUnselected(excluded: FlowBackItem[]) {
-    let total = 0;
-    for (const item of excluded) {
-      try {
-        const res = await orderStore.addItemToOrder(item.variantId, item.qty);
-        if (res.status === "success" || res.status === "partial") total += item.qty;
-      } catch {
-        // 单条失败不阻断其余回流，也不移除已回流项
-      }
-    }
+    const settledQty = await Promise.all(
+      excluded.map(async (item) => {
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const res = await orderStore.addItemToOrder(item.variantId, item.qty);
+            if (res.status === "success" || res.status === "partial") return item.qty;
+            return 0;
+          } catch {
+            if (attempt === 2) return 0;
+            // 单次重试：短暂让出事件循环后重试一次，仍失败则放弃本条，不阻断其余回流
+            await new Promise((r) => setTimeout(r, 300));
+          }
+        }
+        return 0;
+      }),
+    );
+    const total = settledQty.reduce((s, n) => s + n, 0);
     if (total > 0) {
       toast.add({
         title: t("messages.checkout.flowBackTitle"),

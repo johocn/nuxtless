@@ -1,7 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // 淘宝风商品瀑布流：双列大图卡（大图 + 价格 + 标题 + 底行）
 import type { SearchResult } from "~~/types/product";
 import { assetSrc } from "../../../utils/image";
+import { pickDisplayPrice } from "../../../utils/display-price";
 
 type SearchItem = SearchResult[number];
 
@@ -9,17 +10,19 @@ const props = defineProps<{
   title: string;
   products: SearchItem[];
 }>();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
+const { taxEnabled } = useTaxEnabled();
 
-function price(p?: SearchItem["priceWithTax"], cur?: string | null) {
-  if (!p) return "";
+function price(p?: SearchItem, cur?: string | null) {
+  const sel = pickDisplayPrice(p, taxEnabled.value);
+  if (!sel) return "";
   const c = cur ?? "CNY";
-  if ("min" in p && "max" in p) {
-    const min = (p.min / 100).toFixed(2);
-    const max = (p.max / 100).toFixed(2);
+  if ("min" in sel && "max" in sel) {
+    const min = (sel.min / 100).toFixed(2);
+    const max = (sel.max / 100).toFixed(2);
     return min === max ? `¥${min}` : `${min}~${max}`;
   }
-  return `¥${(p.value / 100).toFixed(2)}`;
+  return `¥${(sel.value / 100).toFixed(2)}`;
 }
 </script>
 
@@ -47,7 +50,7 @@ function price(p?: SearchItem["priceWithTax"], cur?: string | null) {
           alt=""
         />
         <div class="p-2">
-          <p class="text-base font-bold text-primary">{{ price(p.priceWithTax, p.currencyCode) }}</p>
+          <p class="text-base font-bold text-primary">{{ price(p, p.currencyCode) }}</p>
           <p class="line-clamp-2 mt-1 min-h-8 text-xs leading-4 text-gray-700">{{ p.productName }}</p>
           <div class="mt-1.5 flex items-center justify-between text-[10px] text-gray-400">
             <span class="rounded bg-primary/10 px-1 py-0.5 text-primary">自营</span>

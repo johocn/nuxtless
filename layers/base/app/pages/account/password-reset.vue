@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 definePageMeta({
   alias: ["/password-reset"],
   middleware: "guest",
@@ -6,7 +6,7 @@ definePageMeta({
 
 const token = useRouteQuery("token");
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const loading = ref(true);
 
 onMounted(() => {

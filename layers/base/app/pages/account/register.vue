@@ -1,11 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 definePageMeta({
   alias: ["/register"],
   middleware: "guest",
 });
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 </script>
 
 <template>

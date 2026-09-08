@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { MyAfterSalesRequestsQuery } from "#gql/default";
 import { formatMoney } from "../../utils/format-money";
 import { afterSalesTypeLabelKey, afterSalesStateInfo } from "../../utils/after-sales-state";
@@ -11,7 +11,7 @@ const props = defineProps<{
 const request = props.request;
 
 const { t, locale } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const stateInfo = computed(() => afterSalesStateInfo(request.state));
 const typeKey = computed(() => afterSalesTypeLabelKey(request.type));
 const amount = computed(() => formatMoney(request.refundAmount, "CNY", locale.value));

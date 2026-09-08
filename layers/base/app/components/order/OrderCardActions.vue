@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { GetOrderHistoryQuery } from "#gql/default";
 
 type OrderListOrder = NonNullable<
@@ -6,7 +6,7 @@ type OrderListOrder = NonNullable<
 >["orders"]["items"][number];
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const router = useRouter();
 const { canCancel, cancelOrder, reorder, loading } = useOrderActions();
 

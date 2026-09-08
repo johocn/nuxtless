@@ -1,9 +1,9 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { DropdownMenuItem } from "@nuxt/ui";
 
-const { channelToken } = useRuntimeConfig().public;
+const { token: channelToken } = useTenantChannel();
 const { t, locale } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const colorMode = useColorMode();
 const { isAuthenticated } = storeToRefs(useAuthStore());
 const { clearSession } = useAuthStore();
@@ -84,6 +84,12 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
       class: "items-center",
     },
     {
+      label: t("messages.account.messages"),
+      icon: "i-lucide-inbox",
+      to: localePath("/messages"),
+      class: "items-center",
+    },
+    {
       label: t("messages.order.lookupMenu"),
       icon: "i-lucide-search",
       to: localePath("/order/lookup"),
@@ -115,7 +121,7 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
         await navigateTo(localePath("/"), { replace: true });
         clearSession();
         await logout();
-        await useGqlSession(locale.value, useGqlHostUrl(), channelToken, "default");
+        await useGqlSession(locale.value, useGqlHostUrl(), channelToken.value, "default");
         await fetchOrder();
       },
     },

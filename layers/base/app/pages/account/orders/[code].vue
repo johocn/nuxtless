@@ -1,8 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 definePageMeta({ middleware: "account" });
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const code = useRouteParam("code");
 
 const { data, error, refresh } = await useAsyncGql("GetOrderByCode", { code });

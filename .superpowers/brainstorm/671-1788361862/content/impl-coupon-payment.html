@@ -1,0 +1,38 @@
+<h2>实现细节落地：(1) 优惠券切换 (2) 多租户支付交集 —— 映射到真实代码</h2>
+
+<div class="section">
+<h3>(1) 优惠券切换 —— 整单一券（复用既有骨架）</h3>
+<div class="mockup">
+  <div class="mockup-header">真实数据源 · 复用组件</div>
+  <div class="mockup-body" style="text-align:left;font-size:12px;line-height:1.7">
+    <b>已用券（整单唯一）</b>＝ <code>activeOrder.customFields.couponCode</code>（CheckoutCnPromoDrawer 已读，单值）<br/>
+    <b>本店可用券</b>＝ <code>box.availableCoupons[]</code>（后端已下发：<code>code / name / condition / amount</code>）<br/>
+    <b>我的未用券券包</b>＝ <code>getMyCoupons("UNUSED")</code>（useCoupon 已存在）<br/>
+    <b>抽屉组件</b>＝ 复用 <code>CheckoutCnPromoDrawer.vue</code>（USlideover，逻辑+UI 已具备）
+    <div style="border-top:1px dashed #ccc;margin:6px 0"></div>
+    <b>逐箱入 n口（新增）：</b>每张卡「优惠券」行 = 进入点，发起单一抽屉 <code>openCoupon</code><br/>
+    <b>名单过滤（新增，按箱）：</b>当前箱抽屉列表 = 券包中 <code>code ∈ 当前箱.availableCoupons[].code</code> 的券（门店隔离）<br/>
+    <b>应用：</b> <code>applyCouponToOrder(code)</code> → <code>refreshOrder()</code> → toast「已使用，优惠¥X」<br/>
+    <b>换券/清券：</b> <code>clearCouponFromOrder()</code> → <code>applyCouponToOrder(新code)</code> / 仅清券
+    <div style="border-top:1px dashed #ccc;margin:6px 0"></div>
+    <span style="color:#c00">注意：应用是整单级（写 order.customFields.couponCode），箱/卡只是入口；任选一箱即替换整单单一券 → 一单最多一券不可叠加</span>
+  </div>
+</div>
+</div>
+
+<div class="section">
+<h3>(2) 多租户支付交集 —— 现为「并集」需改为「交集 + 三态」</h3>
+<div class="mockup">
+  <div class="mockup-header">现状 vs 目标</div>
+  <div class="mockup-body" style="text-align:left;font-size:12px;line-height:1.7">
+    <b>现状（PaymentBlock.vue 已读）：</b> <code>allowedCodes = ∪ 全箱.availablePaymentMethodCodes</code>（<span style="color:#c00">并集＝错误</span>）；提交仅一个 <code>state.code</code> → <code>checkoutSplitted(method)</code>，真分合并/拆分在后端 decideAggregation
+    <div style="border-top:1px dashed #ccc;margin:6px 0"></div>
+    <b>目标（需改）：</b><code>intersection = ∩ 被选箱.availablePaymentMethodCodes</code><br/>
+    &nbsp;• <b>∩非空</b> → 显示交集内方式 + 「将合并 1 单」，选任一项 submit（后端合并+分账）<br/>
+    &nbsp;• <b>∩＝空</b> → 顶部红条「支付方式不统一，分箱」+ 按箱列出各自白名单；submit 仍 checkoutSplitted，后端按箱拆单各自默认方式<br/>
+    &nbsp;• <b>余额</b> → 仅当 所有被选箱白名单支持 balance 且钱包足 → 可选合并；否则禁用 + 「余额不足，分箱」
+    <div style="border-top:1px dashed #ccc;margin:6px 0"></div>
+    <span style="color:#4a90d9">判定/提交复用后端 decideAggregation；boxKeys 传被选箱 <code>[String!]</code>，lineIds 传被选行</span>
+  </div>
+</div>
+</div>

@@ -129,11 +129,40 @@ export function usePerBoxSelection() {
     return out;
   }
 
+  /** 以真实 orderBoxes 为唯一真源重建勾选：为缺失的箱/行补全默认全选与最新数量，
+   *  消除「数量加减/删除/换单后勾选单例与实际订单不同步」导致的漏选回流。
+   *  保留用户显式置 0 的未选项（不覆盖已存在选择），仅补齐不存在项。 */
+  function syncWithOrderBoxes() {
+    for (const box of orderBoxes.value ?? []) {
+      ensureBox(box.boxKey);
+      const sel = selection[box.boxKey]!;
+      for (const l of box.lines ?? []) {
+        if (sel[l.orderLineId] == null) sel[l.orderLineId] = l.quantity;
+      }
+    }
+  }
+
+  /** 是否全选：所有箱的所有行均已选中（qty>0）。全选时应走后端「无限定」路径，杜绝漏行回流。 */
+  function isFullSelection(): boolean {
+    const boxes = orderBoxes.value ?? [];
+    if (!boxes.length) return false;
+    for (const box of boxes) {
+      const sel = selection[box.boxKey];
+      if (!sel) return false;
+      for (const l of box.lines ?? []) {
+        if ((sel[l.orderLineId] ?? 0) <= 0) return false;
+      }
+    }
+    return true;
+  }
+
   initAll();
 
   return {
     selection,
     initAll,
+    syncWithOrderBoxes,
+    isFullSelection,
     isBoxChecked,
     toggleBox,
     isLineChecked,

@@ -5,6 +5,8 @@ import { reactive } from "vue";
 const sel = reactive<Record<string, { methodId: string; pickupId: string }>>({});
 // 每箱独立的自提点搜索关键词（跨实例共享，boxKey 全局唯一）
 const boxSearch = reactive<Record<string, string>>({});
+// 每箱自提点选择器展开态：多自提点时默认折叠，点「选择自提点」展开切换（跨实例共享）
+const boxExpanded = reactive<Record<string, boolean>>({});
 </script>
 
 <script setup lang="ts">
@@ -61,6 +63,33 @@ function distanceKm(loc: PickupLocation): number {
   const c = parseCoordinates(loc.coordinates);
   if (!locationStore.coords || !c) return Infinity;
   return haversineKm(locationStore.coords, c);
+}
+
+/** 距离文案（m/km） */
+function distanceLabel(loc: PickupLocation): string {
+  const d = distanceKm(loc);
+  if (d === Infinity) return "";
+  return d < 1 ? `${Math.round(d * 1000)}m` : `${d.toFixed(1)}km`;
+}
+
+/** 当前生效自提点：优先用户已选，否则就近默认 */
+function currentPickup(box: OrderBoxInfo): PickupLocation | null {
+  const locs = (box.pickupLocations ?? []) as PickupLocation[];
+  const pid = sel[box.boxKey]?.pickupId;
+  if (pid) {
+    const f = locs.find((l) => String(l.id) === pid);
+    if (f) return f;
+  }
+  return nearestPickup(box);
+}
+
+/** 选择器是否展开：仅当多自提点且用户点击「选择自提点」才展开；单自提点常驻展示当前点 */
+function pickerOpen(box: OrderBoxInfo): boolean {
+  return (box.pickupLocations?.length ?? 0) > 1 && !!boxExpanded[box.boxKey];
+}
+
+function togglePickupPicker(box: OrderBoxInfo) {
+  boxExpanded[box.boxKey] = !boxExpanded[box.boxKey];
 }
 
 /** 自提点较多时支持按名称/地址就近本地过滤 */
@@ -211,53 +240,93 @@ flow.submitFns.submitPickup = async () => {
 
         <p class="mb-1 text-xs text-neutral-500">{{ t("messages.checkout.boxPickupOption") }}</p>
 
-        <UInput
-          v-if="(box.pickupLocations ?? []).length > 1"
-          v-model="boxSearch[box.boxKey]"
-          size="sm"
-          :placeholder="t('messages.checkout.searchPickupPlaceholder')"
-          class="mb-2 w-full"
-          trailing
-        >
-          <template #trailing>
-            <UIcon name="i-heroicons:magnifying-glass" class="size-4 text-neutral-400" />
-          </template>
-        </UInput>
+        <!-- 当前自提点概览 + 切换入口（多自提点时点开选择器） -->
+        <template v-if="currentPickup(box)">
+          <div
+            class="flex items-start justify-between gap-2 rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-900/40"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 font-medium text-neutral-800 dark:text-neutral-200">
+                <UIcon name="i-lucide:map-pin" class="size-4 shrink-0 text-primary-500" />
+                <span class="truncate">{{ currentPickup(box)!.name }}</span>
+                <span
+                  v-if="distanceLabel(currentPickup(box)!)"
+                  class="shrink-0 rounded-sm bg-primary-50 px-1 text-[11px] font-normal text-primary-600 dark:bg-primary-900/40 dark:text-primary-300"
+                >
+                  {{ distanceLabel(currentPickup(box)!) }}
+                </span>
+              </div>
+              <p v-if="currentPickup(box)!.address" class="mt-0.5 truncate text-xs text-neutral-500">
+                {{ currentPickup(box)!.address }}
+              </p>
+              <p
+                v-if="currentPickup(box)!.businessHours || currentPickup(box)!.phoneNumber"
+                class="mt-0.5 text-xs text-neutral-400"
+              >
+                {{ currentPickup(box)!.businessHours || currentPickup(box)!.phoneNumber }}
+              </p>
+            </div>
+            <UButton
+              v-if="(box.pickupLocations ?? []).length > 1"
+              color="primary"
+              variant="soft"
+              size="sm"
+              :label="pickerOpen(box) ? t('messages.checkout.cnCollapseDetails') : t('messages.checkout.choosePickup')"
+              :icon="pickerOpen(box) ? 'i-lucide:chevron-up' : 'i-lucide:chevron-down'"
+              @click="togglePickupPicker(box)"
+            />
+          </div>
 
-        <p
-          v-if="boxSearch[box.boxKey] && !filteredPickups(box).length"
-          class="mb-2 text-sm text-neutral-500"
-        >
-          {{ t("messages.checkout.noPickup") }}
-        </p>
+          <!-- 自提点选择器：多自提点时点「选择自提点」展开切换 -->
+          <div v-if="pickerOpen(box)" class="mt-2 space-y-2">
+            <UInput
+              v-model="boxSearch[box.boxKey]"
+              size="sm"
+              :placeholder="t('messages.checkout.searchPickupPlaceholder')"
+              class="mb-1 w-full"
+              trailing
+            >
+              <template #trailing>
+                <UIcon name="i-heroicons:magnifying-glass" class="size-4 text-neutral-400" />
+              </template>
+            </UInput>
 
-        <label
-          v-for="loc in filteredPickups(box)"
-          :key="loc.id"
-          class="flex cursor-pointer items-start gap-3 rounded-md border border-neutral-200 p-3 text-sm transition hover:border-primary-300 dark:border-neutral-800"
-          :class="sel[box.boxKey]?.pickupId === String(loc.id) ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/20' : ''"
-        >
-          <input
-            type="radio"
-            name="box-pickup"
-            :value="String(loc.id)"
-            :checked="sel[box.boxKey]?.pickupId === String(loc.id)"
-            class="mt-0.5 h-4 w-4 accent-primary-500"
-            @change="choosePickup(box, String(loc.id))"
-          />
-          <span class="flex-1">
-            <span class="block font-medium">
-              {{ loc.name }}
-              <span v-if="distanceKm(loc) !== Infinity" class="ml-1 text-xs text-neutral-400">
-                {{ distanceKm(loc) < 1 ? `${Math.round(distanceKm(loc) * 1000)}m` : `${distanceKm(loc).toFixed(1)}km` }}
+            <p
+              v-if="boxSearch[box.boxKey] && !filteredPickups(box).length"
+              class="mb-2 text-sm text-neutral-500"
+            >
+              {{ t("messages.checkout.noPickup") }}
+            </p>
+
+            <label
+              v-for="loc in filteredPickups(box)"
+              :key="loc.id"
+              class="flex cursor-pointer items-start gap-3 rounded-md border border-neutral-200 p-3 text-sm transition hover:border-primary-300 dark:border-neutral-800"
+              :class="sel[box.boxKey]?.pickupId === String(loc.id) ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/20' : ''"
+            >
+              <input
+                type="radio"
+                :name="'box-pickup-' + box.boxKey"
+                :value="String(loc.id)"
+                :checked="sel[box.boxKey]?.pickupId === String(loc.id)"
+                class="mt-0.5 h-4 w-4 accent-primary-500"
+                @change="choosePickup(box, String(loc.id))"
+              />
+              <span class="flex-1">
+                <span class="block font-medium">
+                  {{ loc.name }}
+                  <span v-if="distanceLabel(loc)" class="ml-1 text-xs text-neutral-400">
+                    {{ distanceLabel(loc) }}
+                  </span>
+                </span>
+                <span class="block text-neutral-500">{{ loc.address }}</span>
+                <span v-if="loc.businessHours || loc.phoneNumber" class="block text-xs text-neutral-400">
+                  {{ loc.businessHours || loc.phoneNumber }}
+                </span>
               </span>
-            </span>
-            <span class="block text-neutral-500">{{ loc.address }}</span>
-            <span v-if="loc.businessHours || loc.phoneNumber" class="block text-xs text-neutral-400">
-              {{ loc.businessHours || loc.phoneNumber }}
-            </span>
-          </span>
-        </label>
+            </label>
+          </div>
+        </template>
 
         <p
           v-if="!(sel[box.boxKey]?.methodId && sel[box.boxKey]?.pickupId)"

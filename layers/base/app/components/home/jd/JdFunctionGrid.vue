@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // JD 风格功能宫格（京东模板为十宫格圆形图标）。
 // 系统里没有的功能(秒送/领券/会员/生活等)不强凑，全部换成 nshop 已有真实能力：
 //   - 顶部分类入口（前 4 个动态取分类，跳对应分类页）
@@ -32,7 +32,7 @@ const props = withDefaults(
   },
 );
 
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const isCartOpen = useState<boolean>("isCartOpen", () => false);
 const isAllCatOpen = useState<boolean>("isAllCatOpen", () => false);
 const { t } = useI18n();
