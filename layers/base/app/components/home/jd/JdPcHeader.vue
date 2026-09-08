@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // JD 风格 PC 顶栏：品牌 + 实时搜索 + 热词
 // 搜索复用 nshop 的 useSimpleSearch（与 SearchModal 同数据源，商品点按进详情页），
 // 无需独立的搜索结果页路由。
@@ -7,7 +7,7 @@ import { assetSrc } from "../../../utils/image";
 
 const { t } = useI18n();
 defineProps<{ categories: TopLevelCollection[] }>();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const { term, results, pending } = useSimpleSearch();
 
 const focused = ref(false);
@@ -17,7 +17,8 @@ function onBlur() {
 }
 function submit() {
   if (results.value.length === 1) {
-    navigateTo(localePath(`/product/${results.value[0].slug}`));
+    const first = results.value[0];
+    if (first?.slug) navigateTo(localePath(`/product/${first.slug}`));
   }
 }
 </script>
@@ -27,9 +28,9 @@ function submit() {
     <div class="mx-auto flex max-w-[1240px] items-center gap-6 px-4 py-4">
       <NuxtLink
         :to="localePath('/')"
-        class="shrink-0 text-2xl font-bold italic text-[#e6162d]"
+        class="shrink-0 text-xl font-bold italic text-[#e6162d]"
       >
-        youShop<sup class="align-super text-[9px] text-black/70">JD</sup>
+        youShop<sup class="align-super text-[10px] text-[#e6162d]/80">.cn</sup>
       </NuxtLink>
 
       <!-- 搜索区 -->

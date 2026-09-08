@@ -94,9 +94,10 @@ function applyDefaultSelection() {
   }
   const stillOk = list.some((m) => m.code === state.code);
   if (state.code && stillOk) return;
-  const balance =
-    isAuthenticated.value && list.find((m) => /balance|wallet|余额/i.test(m.code));
-  state.code = (balance ?? list[0]).code;
+  const balance = isAuthenticated.value
+    ? list.find((m) => /balance|wallet|余额/i.test(m.code))
+    : undefined;
+  state.code = (balance ?? list[0]!).code;
 }
 
 // 分箱态默认选中：每箱回填其首个可见方式；无方法则置空
@@ -132,14 +133,18 @@ function fail(key: string) {
 
 // 注册提交：合并 1 单 或 分箱逐单
 flow.submitFns.submitPayment = async () => {
+  // 以真实 orderBoxes 为唯一真源重建勾选，消除漏选导致的后端误判「部分结算」回流
+  sel.syncWithOrderBoxes();
   const boxesSel = sel.selectedBoxes();
+  // 全选：走后端「无限定」路径（不传 boxKeys/lineIds），codegen 不上送，杜绝全选时漏行回流
+  const fullSelection = sel.isFullSelection();
   // 空选中阻止提交：未选任何商品行时直接提示，不调用 checkoutSplitted
   if (!boxesSel.length) {
     fail("messages.checkout.emptySelection");
     return false;
   }
   // 结算前捕获未选项清单：checkoutSplitted 成功后 orderBoxes 会被清空，须先缓存再回流
-  const excluded = sel.excludedItems();
+  const excluded = fullSelection ? [] : sel.excludedItems();
 
   if (canMerge.value) {
     // 合并 1 单：交集中单选，一次提交全部被选箱/行
@@ -149,10 +154,16 @@ flow.submitFns.submitPayment = async () => {
     }
     orderStore.error = null;
     orderStore.loading = true;
-    const settled = await orderStore.checkoutSplitted(state.code, undefined, {
-      boxKeys: boxesSel.map((b) => b.boxKey),
-      lineIds: boxesSel.flatMap((b) => b.lineIds),
-    });
+    const settled = await orderStore.checkoutSplitted(
+      state.code,
+      undefined,
+      fullSelection
+        ? undefined
+        : {
+            boxKeys: boxesSel.map((b) => b.boxKey),
+            lineIds: boxesSel.flatMap((b) => b.lineIds),
+          },
+    );
     orderStore.loading = false;
     if (orderStore.error) return false;
     if (settled.length) {

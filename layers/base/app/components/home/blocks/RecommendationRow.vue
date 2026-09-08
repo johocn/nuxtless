@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // 简单实现路径：读取 data.items（[{name, slug, imageUrl, price}]）横向渲染卡片，
 // 避免额外 GraphQL 取数（productIds -> GetProductsByIds）的复杂度。
 import { assetSrc } from "../../../utils/image";
@@ -10,7 +10,8 @@ const props = defineProps<{
   };
 }>();
 
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
+const { t } = useI18n();
 </script>
 <template>
   <section v-if="(block.data?.items ?? []).length" class="mx-auto max-w-5xl px-4 py-8" aria-label="推荐">

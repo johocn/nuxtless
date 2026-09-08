@@ -180,8 +180,11 @@ export const useOrderStore = defineStore("order", () => {
     error.value = null;
 
     try {
-      const result = (await GqlSetCustomerForOrder({ input }))
-        .setCustomerForOrder;
+      const result = (
+        await GqlSetCustomerForOrder({
+          input: { ...input, emailAddress: input.emailAddress ?? "" },
+        })
+      ).setCustomerForOrder;
       const res = useOrderMutation(order, result);
 
       if (res.status === "error") {

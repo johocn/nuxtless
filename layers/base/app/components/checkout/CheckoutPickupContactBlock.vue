@@ -6,9 +6,11 @@ import { useCheckoutFlow } from "~~/layers/base/app/composables/useCheckoutFlow"
 const { t } = useI18n();
 const toast = useToast();
 const orderStore = useOrderStore();
+const { order: activeOrderRef } = storeToRefs(orderStore);
 const flow = useCheckoutFlow();
 const { isAuthenticated } = storeToRefs(useAuthStore());
 const { addresses, fetchAddresses, createAddress } = useAddressBook();
+const { pickupSamples } = useSampleAddressBook();
 const { countryCodeDefault } = useAppConfig();
 
 const contactName = ref("");
@@ -18,6 +20,11 @@ const selectedContactId = ref<string | null>(null);
 const saving = ref(false);
 
 const PHONE_RE = /^1\d{10}$/;
+
+// 地址簿为空时展示示例联系人池，便于演示「切换自提联系人」；有真实联系人则优先真实
+const contactSource = computed(() =>
+  addresses.value.length ? addresses.value : pickupSamples,
+);
 
 // 存在自提箱且需联系方式才自显（父组件已按同条件门控，这里兜底）
 const needShow = computed(() =>
@@ -32,28 +39,10 @@ function applyContact(rec: AddressRecord | null) {
   contactPhone.value = rec?.phoneNumber ?? "";
 }
 
-// 联系人下拉：登录 + 地址本非空时交互；选中项即回填，选「新增」则清空
-const contactOptions = computed(() => {
-  const opts = addresses.value.map((a) => ({
-    value: a.id,
-    label: [a.fullName, a.phoneNumber].filter(Boolean).join(" · "),
-  }));
-  return [{ value: "__new__", label: t("messages.checkout.newContact") }, ...opts];
-});
-
-function onChangeContact(id: string) {
-  if (id === "__new__" || id === "") {
-    applyContact(null);
-    return;
-  }
-  const rec = addresses.value.find((a) => a.id === id) ?? null;
-  applyContact(rec);
-}
-
 onMounted(async () => {
   if (!isAuthenticated.value) return;
   await fetchAddresses();
-  if (addresses.value.length) applyContact(addresses.value[0]); // 默认联系人
+  if (contactSource.value.length) applyContact(contactSource.value[0] ?? null); // 默认联系人
 });
 
 // 需联系方式时把新联系人持久化进地址本（仅登录且为新联系人）
@@ -111,8 +100,9 @@ flow.submitFns.submitContact = async () => {
       },
     },
   });
-  const outcome = useOrderMutation(orderStore.order, res.setOrderCustomFields);
-  orderStore.error = outcome.status === "success" ? null : outcome.message ?? null;
+  const outcome = useOrderMutation(activeOrderRef, res.setOrderCustomFields);
+  orderStore.error =
+    outcome.status === "success" ? null : ("message" in outcome ? outcome.message : null);
   if (outcome.status !== "success") {
     toast.add({
       title: t("messages.checkout.invalidPhone"),
@@ -136,27 +126,40 @@ flow.submitFns.submitContact = async () => {
       </h3>
     </div>
 
-    <!-- 登录 + 已有联系人：下拉选择/新增 -->
+    <!-- 联系人切换：chips 直接可见（非折叠下拉），高亮当前，点选即回填；含「新增」 -->
     <div
-      v-if="isAuthenticated && contactOptions.length"
-      class="mb-3 flex flex-col gap-1 rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-900/40"
+      v-if="isAuthenticated && contactSource.length"
+      class="mb-3 rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-900/40"
     >
-      <label class="text-sm text-neutral-500">
-        {{ t("messages.checkout.pickContactPerson") }}
-      </label>
-      <select
-        class="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-        :value="selectedContactId ?? '__new__'"
-        @change="onChangeContact(($event.target as HTMLSelectElement).value)"
-      >
-        <option
-          v-for="opt in contactOptions"
-          :key="opt.value"
-          :value="opt.value"
+      <p class="mb-2 text-sm text-neutral-500">
+        {{ t("messages.checkout.switchContact") }}
+      </p>
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          v-for="c in contactSource"
+          :key="c.id"
+          type="button"
+          class="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm transition"
+          :class="selectedContactId === c.id
+            ? 'border-primary-500 bg-primary-500 font-medium text-white dark:border-primary-500 dark:bg-primary-600'
+            : 'border-neutral-200 bg-white text-neutral-700 hover:border-primary-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200'"
+          @click="applyContact(c)"
         >
-          {{ opt.label }}
-        </option>
-      </select>
+          <UIcon v-if="selectedContactId === c.id" name="i-lucide:check" class="size-3.5" />
+          <span class="font-medium">{{ c.fullName }}</span>
+          <span :class="selectedContactId === c.id ? 'text-white/80' : 'text-neutral-400'">
+            {{ c.phoneNumber }}
+          </span>
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1 rounded-full border border-dashed border-neutral-300 px-3 py-1 text-sm text-neutral-500 transition hover:border-primary-300 hover:text-primary-500 dark:border-neutral-600"
+          @click="applyContact(null)"
+        >
+          <UIcon name="i-lucide:plus" class="size-3.5" />
+          {{ t("messages.checkout.newContact") }}
+        </button>
+      </div>
     </div>
 
     <div class="space-y-3">

@@ -6,11 +6,13 @@ const route = useRoute();
 const { t, locale } = useI18n();
 const siteName = useSiteName();
 const head = useLocaleHead();
+const metaTitle = route.meta.title as string | undefined;
+const metaDescription = route.meta.description as string | undefined;
 const title = computed(() =>
-  route.meta.title ? t(route.meta.title) : siteName.value,
+  metaTitle ? t(metaTitle) : siteName.value,
 );
 const description = computed(() =>
-  t(route.meta.description || "messages.site.description"),
+  t(metaDescription || "messages.site.description"),
 );
 
 // 功能路径前缀：多租户(:tenantCode)与多语言(/en)前缀会改变 route.path，
