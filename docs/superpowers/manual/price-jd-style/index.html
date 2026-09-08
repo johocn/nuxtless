@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>详情页价格块 · 京东风格(jsA/jdB)验收手册</title>
+<style>
+  :root { --jd:#E1251B; --link:#2b7cff; --line:#eee; --muted:#888; }
+  body { font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; max-width: 860px; margin: 0 auto; padding: 24px 20px 60px; line-height: 1.7; color:#222; }
+  h1 { font-size: 24px; border-bottom: 2px solid var(--jd); padding-bottom: 10px; }
+  h2 { font-size: 18px; margin-top: 32px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #fafafa; }
+  code { background: #f4f4f4; padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+  .note { background: #fff7e6; border: 1px solid #ffe1a8; border-radius: 8px; padding: 12px 14px; margin: 16px 0; }
+  .ok { color: #16a34a; font-weight: 600; }
+  .shot { max-width: 340px; border: 1px solid var(--line); border-radius: 10px; margin: 8px 0; }
+  a { color: var(--link); }
+</style>
+</head>
+<body>
+  <h1>详情页价格块 · 京东风格(jdA/jdB) 验收手册</h1>
+  <p><span class="ok">已部署</span> nshop 前端 · web-admin 后台切换入口，生产 <code>www.youshop.cn / t2</code> 于 2026-09-08。</p>
+
+  <h2>一、功能说明</h2>
+  <p>商品详情页价格块新增两种京东风格版式，均在 <b>后台「店铺信息」页</b> 一键切换；原经典版保留。京东风格固定走<b>京东红 #E1251B</b>，不随商店主题主色。</p>
+  <table>
+    <tr><th>版式</th><th>说明</th><th>适用</th></tr>
+    <tr><td><code>classic</code></td><td>经典：现价(主题色) + 库存/SKU</td><td>默认，跟随主题主色</td></tr>
+    <tr><td><code>jdA</code></td><td>京东A 横幅促销价：现价 + 划线原价 + 降价额 + 促销标签</td><td>有划线价时展示促销感氛围</td></tr>
+    <tr><td><code>jdB</code></td><td>京东B 深色价签条：整条京东红价签 + 白字现价 + 划线原价 + 秒杀角标</td><td>强促销、抢眼价签</td></tr>
+  </table>
+
+  <div class="note"><b>注意：</b>划线价(京东A/B 的「原价划线」、京东A 的「降价额/标签」)仅在商品设置了<b>划线价(listPrice)且高于现价</b>时展示。若商品未设划线价，京东风格仅展示现价本身，不显示划线/promo。</div>
+
+  <h2>二、后台切换路径</h2>
+  <ol>
+    <li>登录后台（生产 <a href="https://e.joho.cn/guanli/">e.joho.cn/guanli</a>）</li>
+    <li>进入 <b>店铺信息</b> 页</li>
+    <li>「详情页价格块样式」选择 经典 / 京东A / 京东B</li>
+    <li>点 <b>保存</b></li>
+  </ol>
+  <p>保存逻辑：仅改写 <code>Channel.customFields.detailConfig → blocks.price.style</code>，保留 detailConfig 其余字段；后端 <code>myUpdateChannelCustomFields</code> 仅合并传入字段，不触碰安全字段。</p>
+
+  <h2>三、生效链路</h2>
+  <p>前端 <code>useDetailConfig</code>(读 detailConfig) → <code>blockStyle(config,'price','classic')</code> → <code>PriceBlock.vue</code> 按 style 渲染 <code>PriceBlockJdA/JdB</code> 或 classic。划线价数据来自 <code>ProductVariant.customFields.listPrice</code>（<code>usePriceWithList</code> 计算现价/划线价/降价额，含税率开关判断）。</p>
+
+  <h2>四、回归验证（手机视口 390×844 dpr2，现网 www.youshop.cn）</h2>
+  <table>
+    <tr><th>版式</th><th>截图</th><th>关键点</th></tr>
+    <tr>
+      <td><code>classic</code></td>
+      <td><img class="shot" src="shots/detail_classic_live.png" alt="classic现网截图" /></td>
+      <td>现价 ¥101.70 + 有货 + SKU，颜色/卡片/CTA 无回归</td>
+    </tr>
+    <tr>
+      <td><code>jdA</code></td>
+      <td><img class="shot" src="shots/detail_jdA_live.png" alt="jdA现网截图" /></td>
+      <td>京东红横幅促销：划线原价 ¥159.00 + 降价 ¥57.30 + 直降/到手价标签</td>
+    </tr>
+    <tr>
+      <td><code>jdB</code></td>
+      <td><img class="shot" src="shots/detail_jdB_live.png" alt="jdB现网截图" /></td>
+      <td>深红价签条：秒杀角标 + 白字现价 + 划线原价，SKU/库存居右</td>
+    </tr>
+  </table>
+  <p class="ok">演示时临时在默认渠道写入 price.style 并为该商品设划线价（listPrice=15900，¥159），演示完已复原（style 回 classic、listPrice 置 0）。</p>
+
+  <h2>五、已知问题已修复</h2>
+  <p>发现并修复 web-admin「店铺信息」保存的 <span class="ok">GRAPHQL_VALIDATION_FAILED</span> 隐患：<code>myUpdateChannelCustomFields</code> 返回类型为 <code>JSON!</code> 标量，无法带 <code>{ id }</code> 选择集，否则保存必失败。已去掉该选择并重新部署 web-admin。</p>
+
+  <h2>六、涉及文件</h2>
+  <table>
+    <tr><th>仓库</th><th>文件</th><th>改动</th></tr>
+    <tr><td rowspan="2">nshop</td><td><code>layers/base/app/utils/detail-config.ts</code></td><td>DetailBlockCfg.style + blockStyle()</td></tr>
+    <tr><td><code>layers/base/app/components/product-detail/PriceBlock.vue / PriceBlockJdA.vue / PriceBlockJdB.vue</code>、<code>composables/usePriceWithList.ts</code>、<code>gql/fragments/product.gql</code>、i18n zh-CN/en-US</td><td>划线价查询 + 京东版式 + 语料</td></tr>
+    <tr><td rowspan="2">web-admin</td><td><code>src/pages/decorate/shop-info/index.vue</code></td><td>价格块样式分段选择器</td></tr>
+    <tr><td><code>src/apis/channel.ts</code></td><td>查询/字段补 detailConfig</td></tr>
+  </table>
+
+  <h2>七、后续</h2>
+  <ul>
+    <li>给商品设置划线价后切 jdA/jdB 即可看到完整京东促销效果（本例已在现网验证并复原，见四）。</li>
+  </ul>
+</body>
+</html>
