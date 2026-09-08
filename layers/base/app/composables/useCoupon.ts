@@ -6,7 +6,7 @@
  *   改用 `graphql-request`（nshop 已依赖 7.4.0）以运行时字符串查询实现，携带本地 TS 类型。
  * - 鉴权/渠道/语言头统一复用既有会话约定（参考 useGqlSession.ts / plugins/gql-session.ts）：
  *   `Authorization: Bearer <token>`（登录态 authStore → 游客 cookie）、
- *   `vendure-channel-token`（runtime public.channelToken）、`Accept-Language`（当前 locale）。
+ *   `vendure-token`（runtime public.channelToken）、`Accept-Language`（当前 locale）。
  */
 import { GraphQLClient } from "graphql-request";
 import { useAuthStore } from "../../stores/useAuthStore";
@@ -106,9 +106,30 @@ function toVendureLocale(locale: string): string {
   return VENDURE_LOCALE_MAP[locale] ?? locale;
 }
 
+/**
+ * 只读当前 locale。禁止在事件回调里直接调用 `useI18n()`——vue-i18n 要求组件 setup 上下文，
+ * 在点击/提交等 handler 中 getCurrentInstance() 为 null，会抛 vue-i18n 错误 26
+ * (MUST_BE_CALL_SETUP_TOP)，导致领券等请求在发出前就同步失败。
+ * 这里优先全局 $i18n 实例（不依赖 setup 上下文），失败再回退默认 zh-CN。
+ */
+function readLocale(): string {
+  try {
+    const $i18n = useNuxtApp().$i18n as
+      | { global?: { locale?: { value?: string } }; locale?: { value?: string } }
+      | undefined;
+    return $i18n?.global?.locale?.value ?? $i18n?.locale?.value ?? "zh-CN";
+  } catch {
+    try {
+      return useI18n().locale.value;
+    } catch {
+      return "zh-CN";
+    }
+  }
+}
+
 function resolveClient(): GraphQLClient {
-  const { channelToken } = useRuntimeConfig().public;
-  const i18n = useI18n();
+  const { token: channelToken } = useTenantChannel();
+  const locale = readLocale();
   const gqlHost = useGqlHostUrl();
   const authStore = useAuthStore();
 
@@ -117,10 +138,11 @@ function resolveClient(): GraphQLClient {
   // 优先登录态 token，游客回退 cookie 中的匿名会话 token（与 useGqlSession 一致）
   const token = authStore.session?.token ?? readVendureSessionToken();
   if (token) headers.authorization = `Bearer ${token}`;
-  if (channelToken) headers["vendure-channel-token"] = channelToken;
-  if (i18n.locale.value) headers["Accept-Language"] = i18n.locale.value;
+  if (channelToken.value) headers["vendure-token"] = channelToken.value;
+  if (locale) headers["Accept-Language"] = locale;
 
-  const client = new GraphQLClient(`${gqlHost}?languageCode=${toVendureLocale(i18n.locale.value)}`, {
+  const client = new GraphQLClient(`${gqlHost}?languageCode=${toVendureLocale(locale)}`, {
+    headers,
     // 复刻 gql-session 插件：捕获响应头 `vendure-auth-token` 持久化，保证游客/登录同会话
     responseMiddleware: (response: any) => {
       const headersObj = response?.headers ?? response?.response?.headers;

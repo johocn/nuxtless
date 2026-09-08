@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type {
   CouponStatus,
   CouponTemplate,
@@ -18,7 +18,7 @@ definePageMeta({
 });
 
 const { t } = useI18n();
-const localePath = useLocalePath();
+const localePath = useTenantLocalePath();
 const toast = useToast();
 const { isAuthenticated } = storeToRefs(useAuthStore());
 
@@ -80,18 +80,34 @@ function switchTab(t: TabKey) {
   if (t === "wallet" && myCoupons.value.length === 0) loadMy();
 }
 
+// 鉴权就绪后兜底加载券包：规避登录态/持久化水合未完成时切到「我的券包」
+// 导致 loadMy 在 isAuthenticated 为 false 时被提前 return、券包静默为空的问题。
+watch(isAuthenticated, (ok) => {
+  if (ok && myCoupons.value.length === 0) loadMy();
+}, { immediate: true });
+
 function switchWallet(t: WalletKey) {
   walletTab.value = t;
 }
 
 // ── 领取 ──
+function heldCount(templateId: string): number {
+  return myCoupons.value.filter(
+    (mc) =>
+      mc.templateId === templateId &&
+      !["RETURNED", "INVALID", "EXPIRED"].includes(mc.status.toUpperCase()),
+  ).length;
+}
+
 function canClaim(c: CouponTemplate): boolean {
   if (c.totalCount && c.claimedCount != null && c.claimedCount >= c.totalCount) return false;
+  if (c.perUserLimit > 0 && heldCount(c.id) >= c.perUserLimit) return false;
   return true;
 }
 
 function claimBtnText(c: CouponTemplate): string {
   if (c.totalCount && c.claimedCount != null && c.claimedCount >= c.totalCount) return t("messages.coupon.soldOut");
+  if (c.perUserLimit > 0 && heldCount(c.id) >= c.perUserLimit) return t("messages.coupon.perUserReached");
   return t("messages.coupon.claim");
 }
 
@@ -107,7 +123,7 @@ async function claim(c: CouponTemplate) {
     toast.add({ title: t("messages.coupon.claimSuccess"), color: "success" });
     c.claimedCount += 1;
   } catch (e) {
-    toast.add({ title: t("messages.coupon.claim"), description: couponErrorMessage(e), color: "error" });
+    toast.add({ title: t("messages.coupon.claimFailed"), description: couponErrorMessage(e), color: "error" });
   } finally {
     claimingId.value = null;
   }

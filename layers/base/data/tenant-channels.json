@@ -1,0 +1,124 @@
+{
+  "tenants": [
+    {
+      "code": "official-01",
+      "token": "official-1",
+      "name": "官方自营01"
+    },
+    {
+      "code": "official-02",
+      "token": "official-2",
+      "name": "官方自营02"
+    },
+    {
+      "code": "official-03",
+      "token": "official-3",
+      "name": "官方自营03"
+    },
+    {
+      "code": "official-04",
+      "token": "official-4",
+      "name": "官方自营04"
+    },
+    {
+      "code": "official-05",
+      "token": "official-5",
+      "name": "官方自营05"
+    },
+    {
+      "code": "official-06",
+      "token": "official-6",
+      "name": "官方自营06"
+    },
+    {
+      "code": "official-07",
+      "token": "official-7",
+      "name": "官方自营07"
+    },
+    {
+      "code": "official-08",
+      "token": "official-8",
+      "name": "官方自营08"
+    },
+    {
+      "code": "official-09",
+      "token": "official-9",
+      "name": "官方自营09"
+    },
+    {
+      "code": "official-10",
+      "token": "official-10",
+      "name": "官方自营10"
+    },
+    {
+      "code": "official-11",
+      "token": "official-11",
+      "name": "官方自营11"
+    },
+    {
+      "code": "official-12",
+      "token": "official-12",
+      "name": "官方自营12"
+    },
+    {
+      "code": "official-13",
+      "token": "official-13",
+      "name": "官方自营13"
+    },
+    {
+      "code": "official-14",
+      "token": "official-14",
+      "name": "官方自营14"
+    },
+    {
+      "code": "official-15",
+      "token": "official-15",
+      "name": "官方自营15"
+    },
+    {
+      "code": "official-16",
+      "token": "official-16",
+      "name": "官方自营16"
+    },
+    {
+      "code": "official-17",
+      "token": "official-17",
+      "name": "官方自营17"
+    },
+    {
+      "code": "official-18",
+      "token": "official-18",
+      "name": "官方自营18"
+    },
+    {
+      "code": "official-19",
+      "token": "official-19",
+      "name": "官方自营19"
+    },
+    {
+      "code": "official-20",
+      "token": "official-20",
+      "name": "官方自营20"
+    },
+    {
+      "code": "t1",
+      "token": "a6fn474hhiqasmyiyrfl",
+      "name": "新生"
+    },
+    {
+      "code": "t2",
+      "token": "66ruvnhh34svhckaa2i",
+      "name": "二月兰会员"
+    },
+    {
+      "code": "t3",
+      "token": "jmjobmq5lak9o50kevf",
+      "name": "陈记烘焙馆·手机版"
+    },
+    {
+      "code": "test-marketplace-shop",
+      "token": "test-marketplace-shop-token",
+      "name": "test-marketplace-shop"
+    }
+  ]
+}

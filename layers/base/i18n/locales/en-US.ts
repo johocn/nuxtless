@@ -3,7 +3,7 @@ import { zhFallbackLocale } from "./merge";
 export default defineI18nLocale(() =>
   zhFallbackLocale({
     site: {
-      title: "Nuxtless",
+      title: "youshop.cn",
       tagline: "Nuxt Level Headless E-commerce",
       shortDescription:
         "A modern, fast, and secure foundation for building headless online stores with Nuxt and Vendure.",
@@ -110,6 +110,8 @@ export default defineI18nLocale(() =>
       claimed: 'Claimed',
       soldOut: 'Sold Out',
       claimSuccess: 'Coupon claimed',
+      claimFailed: 'Claim failed',
+      perUserReached: 'Claimed',
       unused: 'Unused',
       used: 'Used',
       expired: 'Expired',
@@ -263,6 +265,8 @@ export default defineI18nLocale(() =>
       selectedCount: "Selected {n} item(s)",
     },
     account: {
+      messages: 'Messages',
+      noMessages: 'No messages yet',
       password: "Password",
       newPassword: "New Password",
       confirmNewPassword: "Confirm New Password",
@@ -384,6 +388,23 @@ export default defineI18nLocale(() =>
       stepReturning: "Returning",
       stepReceived: "Received",
       stepRefunded: "Refunded",
+      evidence: "Evidence",
+      noEvidence: "No evidence uploaded",
+      viewEvidence: "View evidence",
+      createdAt: "Requested At",
+      updatedAt: "Last Updated",
+      hours: "Service Hours",
+      customerService: "Contact Support",
+      customerServiceHint: "For after-sales updates or assistance, reach us via:",
+      wechat: "WeChat",
+      wechatCopied: "WeChat ID copied, add us on WeChat",
+      cancelConfirm: "Cancel this after-sales request?",
+      cancelConfirmDesc: "This action cannot be undone. Please confirm.",
+      keepRequest: "Keep Request",
+      confirmCancel: "Confirm Cancel",
+      refresh: "Refresh",
+      loadFailed: "Failed to load, please check your network",
+      retry: "Retry",
     },
     shop: {
       category: "Category | Categories",
@@ -435,6 +456,8 @@ export default defineI18nLocale(() =>
       shippingAdjustmentCharge: "Extra Charge",
       shippingAdjustmentRefund: "Refund",
       contactPhone: "Contact",
+      orderSuccessful: "Order Successful",
+      thankYouForOrder: "Thank you for your order.",
     },
     order: {
       tabAll: "All",
@@ -528,6 +551,19 @@ export default defineI18nLocale(() =>
       redemptionStatus: 'Redemption status',
       collectPending: 'Awaiting in-store payment',
       collected: 'Collected',
+      paymentMethods: {
+        'balance-wallet': 'Wallet Balance',
+        'stripe-payment': 'Stripe',
+        stripe: 'Stripe',
+        alipay: 'Alipay',
+        wechat: 'WeChat Pay',
+        'wechat-pay': 'WeChat Pay',
+        paypal: 'PayPal',
+        'cash-on-delivery': 'Cash on Delivery',
+        cod: 'Cash on Delivery',
+        'cod-payment-template': 'Pay at Store',
+        'cloud-payment-template': 'Pay at Store',
+      },
       claimedAt: 'Redeemed at',
       quantityAmount: 'Items / Amount',
       unit: 'item(s)',
@@ -578,6 +614,13 @@ export default defineI18nLocale(() =>
       noOrder: "Order not found",
       orderNotFound:
         "We couldn't find your order. Please log in to view your orders.",
+      orderExpiredLink:
+        "This order does not exist or the link has expired. Please check the order number, verify via \"Order Lookup\", or contact support.",
+      guestOrderTitle: "Order Confirmation",
+      guestOrderHint:
+        "Here is the order you looked up. Please verify the pickup code to redeem it at the store.",
+      guestNotFound:
+        "No matching order found. It may have expired or the link is incorrect. Please verify via \"Order Lookup\".",
     },
   }),
 );
