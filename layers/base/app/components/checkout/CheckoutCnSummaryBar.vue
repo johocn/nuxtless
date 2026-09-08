@@ -81,16 +81,16 @@ async function onGoCheckout() {
 </script>
 
 <template>
-  <!-- 移动端底部吸底结算栏 -->
+  <!-- 移动端底部吸底结算栏（z 高于全局 JdTabBar z-60，防双底条同现时结算按钮被盖） -->
   <div
-    class="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white px-4 pb-[env(safe-area-inset-bottom)] pt-2.5 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] dark:border-neutral-800 dark:bg-neutral-900 md:hidden"
+    class="fixed inset-x-0 bottom-0 z-[70] border-t border-neutral-200 bg-white px-4 pb-[env(safe-area-inset-bottom)] pt-2.5 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] dark:border-neutral-800 dark:bg-neutral-900 md:hidden"
   >
     <!-- 金额明细（默认收起，点击展开） -->
     <div
       v-if="expandState"
       class="mb-2 flex flex-col gap-1 border-b border-neutral-100 pb-2 text-sm dark:border-neutral-700"
     >
-      <div v-if="(activeOrder?.lines.length ?? 0) > 0" class="max-h-24 overflow-y-auto">
+      <div v-if="(activeOrder?.lines.length ?? 0) > 0" class="max-h-56 overflow-y-auto overscroll-contain">
         <CartItem v-for="line in activeOrder?.lines" :key="line.id" :line="line" class="border-b border-neutral-100 py-1 last:border-0 dark:border-neutral-800" />
       </div>
       <div class="mt-1 flex justify-between"><span>{{ t("messages.shop.subtotal") }}</span><span>{{ subTotal }}</span></div>

@@ -13,13 +13,25 @@ const { t } = useI18n();
 const orderStore = useOrderStore();
 const { loading: orderLoading } = storeToRefs(orderStore);
 
-/** 加减数量：改活动订单行数量→同步选中→重拉分箱联动金额。防抖由 loading 控制。 */
+/** 加减数量：改活动订单行数量→同步选中→重拉分箱联动金额。防抖由 loading 控制。减到 0 等价删除订单行。 */
 async function adjustQty(l: OrderBoxInfo["lines"][number], newQty: number) {
   if (orderLoading.value) return;             // 防抖：上一个调整未完成则忽略
-  if (newQty < 1 || newQty === l.quantity) return;
+  if (newQty === l.quantity) return;
+  if (newQty < 1) {
+    await removeLine(l);
+    return;
+  }
   await orderStore.adjustOrderLine(l.orderLineId, newQty);
   sel.setLineQty(props.box.boxKey, l.orderLineId, newQty);
   await orderStore.fetchOrderBoxes();
+}
+
+/** 删除订单行：真正从活动订单移除（而非仅置 0 未选），避免残留行导致结算误判空选择/回流 */
+async function removeLine(l: OrderBoxInfo["lines"][number]) {
+  if (orderLoading.value) return;
+  await orderStore.removeItemFromOrder(l.orderLineId);
+  await orderStore.fetchOrderBoxes();
+  sel.removeLine(props.box.boxKey, l.orderLineId);
 }
 
 // featureAssetSource 为相对 source 路径，需动态 origin 拼全（与 useGqlHostUrl 同源策略一致：
@@ -79,7 +91,7 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
     <div class="flex shrink-0 items-center gap-0.5">
       <button
         type="button"
-        :disabled="orderLoading || l.quantity <= 1"
+        :disabled="orderLoading"
         class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 text-neutral-600 disabled:cursor-not-allowed disabled:opacity-40"
         aria-label="减少数量"
         @click="adjustQty(l, l.quantity - 1)"
@@ -99,8 +111,9 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
     </span>
 
     <button
-      class="shrink-0 text-red-500"
-      @click="sel.removeLine(box.boxKey, l.orderLineId)"
+      :disabled="orderLoading"
+      class="shrink-0 text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+      @click="removeLine(l)"
     >{{ t("messages.account.delete") }}</button>
   </li>
 </template>
