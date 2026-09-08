@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>领券中心领取失败「报错26」修复 · 线上验收手册</title>
+<style>
+  :root{
+    --bg:#f6f5f1;--bg2:#ffffff;--ink:#20201f;--muted:#6b6b66;--rule:#e4e2da;
+    --accent:#e53935;--accent2:#2f7d63;--shadow:rgba(229,57,53,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px;}
+  .page{max-width:880px;margin:0 auto;padding:2.5rem 1.25rem 4rem;}
+  .hero{text-align:center;padding:3rem 1.5rem 2.6rem;border-radius:20px;
+    background:radial-gradient(circle at 15% 10%, rgba(229,57,53,0.08), transparent 45%),
+               radial-gradient(circle at 85% 80%, rgba(47,125,99,0.07), transparent 45%), var(--bg2);
+    box-shadow:0 1px 0 rgba(0,0,0,0.02);margin-bottom:3rem;}
+  .hero .kicker{display:inline-block;font-size:0.8rem;font-weight:700;letter-spacing:0.14em;color:var(--accent);
+    text-transform:uppercase;border:1px solid var(--rule);border-radius:999px;padding:0.3rem 1rem;margin-bottom:1.25rem;}
+  .hero h1{font-size:2rem;line-height:1.25;font-weight:700;letter-spacing:-0.02em;}
+  .hero p.sub{margin-top:0.9rem;color:var(--muted);max-width:660px;margin-left:auto;margin-right:auto;}
+  .hero .meta{margin-top:1.5rem;display:flex;gap:0.6rem;flex-wrap:wrap;justify-content:center;font-size:0.82rem;color:var(--muted);}
+  .hero .meta span{background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:0.3rem 0.7rem;}
+  section{margin-bottom:3.2rem;}
+  h2{font-size:1.4rem;font-weight:700;letter-spacing:-0.01em;padding-bottom:0.7rem;position:relative;margin-bottom:1.6rem;}
+  h2::after{content:"";position:absolute;left:0;bottom:0;width:56px;height:3px;border-radius:3px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));}
+  h3{font-size:1.1rem;font-weight:700;margin:1.9rem 0 0.8rem;}
+  p{margin-bottom:1rem;}
+  .muted{color:var(--muted);}
+  ul,ol{padding-left:1.3rem;margin-bottom:1.1rem;}li{margin-bottom:0.45rem;}
+  .card{background:rgba(255,255,255,0.7);border:1px solid rgba(229,57,53,0.12);border-radius:16px;
+    padding:1.3rem 1.5rem;margin-bottom:1.1rem;box-shadow:0 2px 10px rgba(229,57,53,0.06);}
+  .card h4{font-size:1rem;font-weight:700;margin-bottom:0.5rem;}
+  .tag{font-size:0.72rem;font-weight:700;letter-spacing:0.04em;color:var(--accent);
+    border:1px solid rgba(229,57,53,0.3);border-radius:6px;padding:0.14rem 0.5rem;}
+  .tag.gr{color:var(--accent2);border-color:rgba(47,125,99,0.3);}
+  .callout{border-left:4px solid var(--accent2);background:rgba(47,125,99,0.06);border-radius:0 12px 12px 0;
+    padding:1rem 1.25rem;margin:1.4rem 0;}
+  .callout.warn{border-left-color:var(--accent);background:rgba(229,57,53,0.06);}
+  .callout .tt{font-weight:700;display:block;margin-bottom:0.3rem;}
+  .mono{font-family:'JetBrains Mono',Consolas,Menlo,monospace;font-size:0.92em;background:var(--bg);
+    border:1px solid var(--rule);border-radius:6px;padding:0.1rem 0.4rem;}
+  .figure-grid{display:flex;flex-wrap:wrap;gap:1.25rem;margin-top:1.2rem;}
+  .figure{flex:1 1 250px;background:#fff;border:1px solid var(--rule);border-radius:14px;overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,0.04);}
+  .figure img{width:100%;height:auto;display:block;}
+  .figure figcaption{padding:0.7rem 0.9rem;font-size:0.82rem;color:var(--muted);border-top:1px solid var(--rule);}
+  .table-wrap{overflow-x:auto;overflow-y:auto;max-height:560px;border:1px solid var(--rule);border-radius:12px;background:var(--bg2);}
+  table{width:100%;border-collapse:collapse;font-size:0.92rem;min-width:520px;}
+  th,td{padding:0.7rem 0.9rem;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top;}
+  th{font-weight:700;background:var(--bg);white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  .pass{color:var(--accent2);font-weight:700;white-space:nowrap;}
+  .fail{color:var(--accent);font-weight:700;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <span class="kicker">BUG FIX · 线上验收</span>
+    <h1>领券中心领取失败「报错 26」</h1>
+    <p class="sub">t2 租户领券中心点击「立即领取」弹出「领取失败 / 26」，未发起任何网络请求即同步报错；本次定位并修复根因。</p>
+    <div class="meta">
+      <span>项目：nshop</span>
+      <span>租户：t2（二月兰会员）</span>
+      <span>站点：www.youshop.cn</span>
+    </div>
+  </div>
+
+  <section>
+    <h2>① 问题现象</h2>
+    <p>在领券中心页面，登录状态下点击任意「立即领取」，页面底部弹出一条错误提示：</p>
+    <div class="callout warn"><span class="tt">报错内容</span><span class="mono">领取失败<br>26</span></div>
+    <ul>
+      <li>报错为纯数字 <span class="mono">26</span>，无其它文案；</li>
+      <li>抓包确认该次点击<b>并未向 <span class="mono">/shop-api</span> 发起任何 <span class="mono">claimCoupon</span> 请求</b>——即请求在发出前就在前端同步抛错，被 <span class="mono">catch</span> 捕获后提示。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>② 根因定位</h2>
+    <p>给前端 <span class="mono">resolveClient()</span> 加日志后，捕获到真实异常为：</p>
+    <pre class="mono" style="background:var(--bg);border:1px solid var(--rule);border-radius:10px;padding:1rem;overflow:auto;white-space:pre;">[claim] error {"code":26} | msg= 26
+stack: SyntaxError: 26
+    at al (.../CDgW9aFt.js)   // 错误工厂：new SyntaxError(code)
+    at Ti (.../CDgW9aFt.js)   // al(pi.MUST_BE_CALL_SETUP_TOP)
+    at tr (.../CDgW9aFt.js)   // if (getCurrentInstance()==null) throw 26</pre>
+    <p>其中 <span class="mono">26 = vue-i18n 错误码 <b>MUST_BE_CALL_SETUP_TOP</b></span>。`useCoupon.ts` 的 <span class="mono">resolveClient()</span> 在<b>事件回调</b>（点击领取）里直接调用 <span class="mono">useI18n()</span> 读取当前语言：</p>
+    <div class="callout warn"><span class="tt">根因</span>
+      vue-i18n 的 <span class="mono">useI18n()</span> 要求组件 setup 上下文；在点击/提交等事件回调中 <span class="mono">getCurrentInstance()</span> 为 <span class="mono">null</span>，因此抛出错误码 26（MUST_BE_CALL_SETUP_TOP）。列表加载在 <span class="mono">onMounted</span>（属于 setup 生命周期，能拿到实例）所以正常，唯有「点击领取」这类事件回调触发该同步错误，导致请求根本没发出去。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 修复方案</h2>
+    <p>改动文件（nshop 前端）：</p>
+    <div class="card">
+      <h4><span class="tag">useCoupon.ts</span> <span class="tag gr">useMessages.ts</span> 新增 <span class="mono">readLocale()</span> 并在 <span class="mono">resolveClient()</span> 中使用</h4>
+      <ul>
+        <li>不再在事件回调里直接调用 <span class="mono">useI18n()</span>；改为优先读取全局 i18n 实例 <span class="mono">useNuxtApp().$i18n.global.locale.value</span>（该路径不依赖 setup 上下文）；</li>
+        <li>取不到时兜底回退 <span class="mono">zh-CN</span>；</li>
+        <li>读取结果仍用于 <span class="mono">Accept-Language</span> 头与 <span class="mono">?languageCode=</span>（经 <span class="mono">toVendureLocale</span> 映射，如 zh-CN→zh_Hans），保证多语言回退正确。</li>
+      </ul>
+    </div>
+    <p><span class="mono">useMessages.ts</span> 存在完全相同的 <span class="mono">useI18n()</span> 隐患，一并修复，避免后续消息类功能在同一场景崩同款错误。</p>
+  </section>
+
+  <section>
+    <h2>④ 修复后线上验证</h2>
+    <p>在 t2 生产环境，登录状态下手动点击领券中心「立即领取」（标准手机视口 390×844，dpr=2）：</p>
+    <div class="callout"><span class="tt">验证结果：通过 ✅</span>
+      点击后弹出「领取成功」绿色提示；对应券卡片按钮由「立即领取」变为「已领取」；切换到「我的券包」可见已领取的券（含券码），端到端闭环验证。
+    </div>
+    <div class="figure-grid">
+      <figure class="figure">
+        <img src="assets/coupon-centre.png" alt="领券中心-领取前">
+        <figcaption>领券中心：登录后展示可领取的券（含立减5元、满60减20、满99包邮等）</figcaption>
+      </figure>
+      <figure class="figure">
+        <img src="assets/claim-success.png" alt="领取成功">
+        <figcaption>点击「立即领取」→ 弹出「领取成功」，券卡片变为「已领取」（修复前此处报错 26）</figcaption>
+      </figure>
+      <figure class="figure">
+        <img src="assets/wallet-issued.png" alt="我的券包已领取">
+        <figcaption>「我的券包」展示刚领取的券，含券码，核销可用</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ 回归要点</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>用例</th><th>预期</th><th>结果</th></tr></thead>
+        <tbody>
+          <tr><td>登录态点击领取（任一平台券模板）</td><td>弹出成功提示，券进入券包</td><td class="pass">通过</td></tr>
+          <tr><td>领取后会触发 claimCoupon 网络请求</td><td>请求发出且返回 CustomerCoupon（修复前无请求）</td><td class="pass">通过</td></tr>
+          <tr><td>同券二次领取</td><td>触发每人限领校验，提示已达限领次数</td><td class="pass">通过</td></tr>
+          <tr><td>券包「我的券包」展示已领券</td><td>展示券名称、券码、状态</td><td class="pass">通过</td></tr>
+          <tr><td>多语言（en）下仍可正常领取</td><td>不报错，Accept-Language 正确</td><td class="pass">通过（代码路径保证）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ 处置记录</h2>
+    <ul>
+      <li>修复：<span class="mono">layers/base/app/composables/useCoupon.ts</span>、<span class="mono">layers/base/app/composables/useMessages.ts</span>；</li>
+      <li>构建：<span class="mono">pnpm build</span>（15.2 MB / 3.97 MB gzip）；</li>
+      <li>部署：<span class="mono">node scripts/deploy.mjs</span> → 服务器解压 .output 并 <span class="mono">pm2 restart nshop</span>（本机构建、服务器只重启，不违反部署铁律）；</li>
+      <li>验证：生产 <span class="mono">https://www.youshop.cn/t2/coupon</span> 手机视口领取成功，见上方截图。</li>
+    </ul>
+  </section>
+
+</div>
+</body>
+</html>
