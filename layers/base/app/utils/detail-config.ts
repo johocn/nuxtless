@@ -9,7 +9,8 @@ export type LocalizedText = string | Record<string, string>;
 
 export interface DetailBlockCfg {
   visible?: boolean;
-  /* L3 样式字段预留：fontScale / imageWidth / radius 等，后续迭代再扩展 */
+  /* L3 样式字段预留：price.style 用于价格块版式（classic/jdA/jdB），其余 fontScale/imageWidth/radius 等后续再扩展 */
+  style?: string;
   title?: LocalizedText;
   text?: LocalizedText;
 }
@@ -44,6 +45,11 @@ export function detailLayout(cfg: DetailConfig | null): DetailLayout {
 // 逐级兜底：层1 块定制 visible → 层2 内建默认 → true
 export function blockVisible(cfg: DetailConfig | null, key: string): boolean {
   return cfg?.blocks?.[key]?.visible ?? BLOCK_DEFAULT_VISIBLE[key] ?? true;
+}
+
+// 块定制 style 兜底：块级 style → 内建默认（传入）
+export function blockStyle(cfg: DetailConfig | null, key: string, def = ''): string {
+  return cfg?.blocks?.[key]?.style ?? def;
 }
 
 // 解析；坏 JSON / 缺 sections 等价字段 → null

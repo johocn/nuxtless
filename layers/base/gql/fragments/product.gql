@@ -25,6 +25,7 @@ fragment ProductVariantFragment on ProductVariant {
   }
   customFields {
     videoUrl
+    listPrice
   }
 }
 
