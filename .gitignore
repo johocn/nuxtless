@@ -56,3 +56,25 @@ skills-lock.json
 .wrangler
 worker-configuration.d.ts
 wrangler.jsonc
+
+# 本地调试/测试脚本与截图（不纳入仓库，避免工作树反复堆积脏文件）
+# 运维脚本（seed-*/generate-tenant-map/verify-* 等）不在此列，正常提交。
+_e2e/
+_local_proxy.mjs
+_shot_c_price.py
+/scripts/shots/
+/scripts/scripts/shots/
+/scripts/_shot_*
+/scripts/_shots_*
+/scripts/_dbg_*
+/scripts/_diag_*
+/scripts/_verify_*
+/scripts/_preview_manual.py
+/scripts/_check_svg_text.py
+/scripts/_local_proxy.mjs
+/scripts/debug-*
+/scripts/probe-*
+/scripts/repro-*
+/scripts/shots-*.py
+/scripts/test-cartqty-*
+/scripts/test-checkout-submit.py
