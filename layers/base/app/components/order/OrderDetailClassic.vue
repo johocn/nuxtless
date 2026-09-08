@@ -8,7 +8,7 @@ function isPickup(order: any) { return isPickupOrder(order); }
 
 <template>
   <OrderStatusBanner :order="props.order" class="mb-4" />
-  <OrderProgress :state="props.order.state" class="mb-8" />
+  <OrderProgress :state="props.order.state" :order="props.order" class="mb-8" />
 
   <OrderRedemptionCard
     v-if="isPickup(props.order)"

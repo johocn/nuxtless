@@ -39,13 +39,16 @@ export interface StateBadge {
   color: "neutral" | "warning" | "info" | "success" | "error";
 }
 
-export function stateBadge(state: string): StateBadge {
+export function stateBadge(state: string, order?: any): StateBadge {
   switch (state) {
     case "AddingItems":
     case "ArrangingPayment":
       return { labelKey: "messages.order.statePaymentPending", color: "warning" };
     case "PaymentAuthorized":
     case "PaymentSettled":
+      if (isCodCollectPending(order)) {
+        return { labelKey: "messages.order.collectPending", color: "warning" };
+      }
       return { labelKey: "messages.order.statePaid", color: "info" };
     case "PartiallyShipped":
     case "Shipped":
@@ -67,9 +70,31 @@ export const ORDER_PROGRESS_STEPS = [
   "messages.order.progressCompleted",
 ];
 
-export function progressIndex(state: string): number {
+/** 进度条中「支付」步骤的索引 */
+export const PROGRESS_PAID_INDEX = 1;
+
+/**
+ * 是否「到店/货到付款（COD）」且尚未确认收款。
+ * 到店支付自提单下单后仅 PaymentAuthorized、未扫码核销收款（collected=false）时，
+ * 支付环节应视为「待收款」，不能让进度条把「支付」标为已完成。
+ */
+export function isCodCollectPending(order: any): boolean {
+  if (!order) return false;
+  const method = (order.payments?.[0] as any)?.method || "";
+  const cf: any = order.customFields ?? {};
+  const cod =
+    [
+      "cash-on-delivery",
+      "cod",
+      "cod-payment-template",
+      "cloud-payment-template",
+    ].includes(method) || cf.paymentType === "cod";
+  return cod && !cf.collected;
+}
+
+export function progressIndex(state: string, order?: any): number {
   if (CANCELLED.has(state)) return -1;
-  if (TO_SHIP.has(state)) return 1;
+  if (TO_SHIP.has(state)) return isCodCollectPending(order) ? 0 : 1;
   if (TO_RECEIVE.has(state)) return 2;
   if (COMPLETED.has(state)) return 3;
   return 0;
