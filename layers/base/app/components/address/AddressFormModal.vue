@@ -113,7 +113,7 @@ watch(isOpen, async (open) => {
   } else {
     await amap.preselectByLocation(
       locationStore.geo ?? null,
-      locationStore.cityName ?? null,
+      locationStore.city ?? null,
     );
   }
 });

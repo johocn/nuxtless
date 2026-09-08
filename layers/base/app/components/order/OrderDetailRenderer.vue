@@ -5,7 +5,11 @@ import { useOrderDetailConfig } from "../../composables/useOrderDetailConfig";
 const props = defineProps<{ order: any; refresh: () => void }>();
 const emit = defineEmits<{ (e: "apply", line: any): void }>();
 const { layout, config } = useOrderDetailConfig();
-const map = { jd: OrderDetailJd, classic: OrderDetailClassic } as const;
+const map = {
+  jd: OrderDetailJd,
+  classic: OrderDetailClassic,
+  confirmation: OrderDetailJd,
+} as const;
 </script>
 
 <template>

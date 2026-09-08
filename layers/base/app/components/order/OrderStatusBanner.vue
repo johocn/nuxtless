@@ -29,11 +29,10 @@ const gradient: Record<string, string> = {
         {{ t("messages.shop.orderCode") }}: {{ order.code }}
       </p>
     </div>
-    <UBadge
-      color="white"
-      variant="solid"
-      :label="t(badge.labelKey)"
-      class="shrink-0"
-    />
+    <span
+      class="shrink-0 rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold text-white"
+    >
+      {{ t(badge.labelKey) }}
+    </span>
   </div>
 </template>
