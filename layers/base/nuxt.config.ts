@@ -131,6 +131,5 @@ export default defineNuxtConfig({
     baseUrl: process.env.I18N_BASE_URL,
     locales: appLocales as LocaleObject[],
     defaultLocale: "zh-CN",
-    fallbackLocale: "zh-CN",
   },
 });
