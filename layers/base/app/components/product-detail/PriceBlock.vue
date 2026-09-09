@@ -2,10 +2,11 @@
 // 当前 variant 价格徽章。版式由 detailConfig.blocks.price.style 决定：
 //   jdA = 京东横幅促销价 / jdB = 京东深色价签条 / 缺省或 classic = 原版(仅现价)
 import { blockStyle } from "../../utils/detail-config";
+import { displayCentsFromNet, type TaxMode } from "../../utils/tax-price";
 import { useDetailConfig } from "../../composables/useDetailConfig";
 const { selectedVariant } = storeToRefs(useProductStore());
 const { locale } = useI18n();
-const { taxEnabled } = useTaxEnabled();
+const { taxMode } = useTaxMode();
 const { config } = useDetailConfig();
 
 const priceStyle = computed(() => blockStyle(config.value, "price", "classic"));
@@ -13,7 +14,7 @@ const priceStyle = computed(() => blockStyle(config.value, "price", "classic"));
 const priceLabel = computed(() => {
   const v = selectedVariant.value;
   if (!v) return "";
-  const might = (taxEnabled.value ? v.priceWithTax : (v.price ?? v.priceWithTax)) ?? 0;
+  const might = displayCentsFromNet(v.price ?? 0, (taxMode.value ?? "inclusive") as TaxMode);
   return new Intl.NumberFormat(locale.value, {
     style: "currency",
     currency: v.currencyCode || "CNY",

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { displayCentsFromNet } from "../../utils/tax-price";
+
 const { i18NBaseUrl } = useRuntimeConfig().public;
 const colorMode = useColorMode();
 const { t, locale } = useI18n();
@@ -10,7 +12,7 @@ const ogColorMode = computed<"dark" | "light">(() =>
 
 const productStore = useProductStore();
 const { hasOptions, selectedVariant } = storeToRefs(productStore);
-const { taxEnabled } = useTaxEnabled();
+const { taxMode } = useTaxMode();
 
 const slug = useRouteParam("slug");
 
@@ -99,7 +101,7 @@ if (product.value && selectedVariant.value) {
       offers: {
         "@type": "Offer",
         url: `${i18NBaseUrl}/products/${product.value.slug}`,
-        price: ((taxEnabled.value ? selectedVariant.value.priceWithTax : (selectedVariant.value.price ?? selectedVariant.value.priceWithTax)) ?? 0) / 100,
+        price: displayCentsFromNet(selectedVariant.value.price ?? 0, taxMode.value) / 100,
         priceCurrency: selectedVariant.value.currencyCode ?? "EUR",
         availability:
           selectedVariant.value.stockLevel === "IN_STOCK"
