@@ -20,7 +20,7 @@ query GetChannelTheme {
       detailConfig
       orderDetailConfig
       orderListConfig
-      taxEnabled
+      taxMode
     }
   }
 }
