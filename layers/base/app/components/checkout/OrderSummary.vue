@@ -36,6 +36,14 @@ const orderTaxTotal = computed(() => {
   return taxTotal != null ? (taxTotal / 100).toFixed(2) : null;
 });
 
+const { taxMode } = useTaxMode();
+
+const showTaxRow = computed(
+  () =>
+    (taxMode.value === "inclusive" || taxMode.value === "exclusive") &&
+    orderTaxTotal.value != null,
+);
+
 const shippingWithTax = computed(() =>
   (activeOrder.value?.shippingWithTax / 100).toFixed(2),
 );
@@ -261,7 +269,7 @@ onMounted(async () => {
             {{ subTotal }}
           </span>
         </div>
-        <div class="flex justify-between">
+        <div v-if="showTaxRow" class="flex justify-between">
           <span>{{ t("messages.general.tax") }}</span>
           <span>
             {{ orderTaxTotal }}
