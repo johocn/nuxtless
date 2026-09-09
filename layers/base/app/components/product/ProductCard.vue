@@ -20,10 +20,10 @@ const { t } = useI18n();
 const localePath = useTenantLocalePath();
 const locationStore = useLocationStore();
 const { isServiceable } = useCityService();
-const { taxEnabled } = useTaxEnabled();
+const { taxMode } = useTaxMode();
 
 const productStartPrice = computed(() => {
-  const price = pickDisplayPrice(product, taxEnabled.value);
+  const price = pickDisplayPrice(product, taxMode.value);
   if (!price) return "";
 
   const currency = product.currencyCode ?? "EUR";

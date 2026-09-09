@@ -1,8 +1,10 @@
-// 仅详情页价格块用：按 taxEnabled 取展示现价，叠加划线价(listPrice)与降价额。SSR 友好纯计算。
+// 仅详情页价格块用：以「净价 price」为基准，按渠道税档 taxMode 换算展示现价与划线价。SSR 友好纯计算。
+import { displayCentsFromNet, type TaxMode } from "../utils/tax-price";
+
 export function usePriceWithList() {
   const { selectedVariant } = storeToRefs(useProductStore());
   const { locale } = useI18n();
-  const { taxEnabled } = useTaxEnabled();
+  const { taxMode } = useTaxMode();
 
   const v = selectedVariant;
 
@@ -12,17 +14,16 @@ export function usePriceWithList() {
       currency: v.value?.currencyCode || "CNY",
     }).format((amount ?? 0) / 100);
 
-  // 现价展示值（分）：含税价或不含税净价，与 PriceBlock 原逻辑一致
-  const current = computed(() => {
-    if (!v.value) return 0;
-    return taxEnabled.value ? (v.value.priceWithTax ?? 0) : (v.value.price ?? v.value.priceWithTax) ?? 0;
-  });
+  // 展示现价(分)：以「净价 price」为基准，按 taxMode 换算。exclusive 档下绝不能用 priceWithTax。
+  const current = computed(() =>
+    displayCentsFromNet(v.value?.price ?? 0, (taxMode.value ?? "inclusive") as TaxMode),
+  );
 
-  // 划线原价（分）；无/非法 → null
+  // 划线原价(分)：同为净基准，按同系数换算展示；无/非法 → null
   const list = computed<number | null>(() => {
     const cf = (v.value as any)?.customFields as any;
-    const p = cf?.listPrice;
-    return typeof p === "number" && p > 0 ? p : null;
+    const p = typeof cf?.listPrice === "number" && cf.listPrice > 0 ? cf.listPrice : null;
+    return p == null ? null : displayCentsFromNet(p, (taxMode.value ?? "inclusive") as TaxMode);
   });
 
   // 仅当划线价大于现价时才展示划线（避免倒挂）

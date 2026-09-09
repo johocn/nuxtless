@@ -11,10 +11,10 @@ const props = defineProps<{
   products: SearchItem[];
 }>();
 const localePath = useTenantLocalePath();
-const { taxEnabled } = useTaxEnabled();
+const { taxMode } = useTaxMode();
 
 function price(p?: SearchItem, cur?: string | null) {
-  const sel = pickDisplayPrice(p, taxEnabled.value);
+  const sel = pickDisplayPrice(p, taxMode.value);
   if (!sel) return "";
   const c = cur ?? "CNY";
   if ("min" in sel && "max" in sel) {
