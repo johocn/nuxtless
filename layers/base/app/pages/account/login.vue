@@ -5,13 +5,52 @@ definePageMeta({
 });
 
 const router = useRouter();
+const route = useRoute();
 const { t } = useI18n();
 const localePath = useTenantLocalePath();
+const toast = useToast();
+const authStore = useAuthStore();
+const { hasPendingCallback, exchangeSsoAccessToken, clearSsoState } = useSso();
 const submitted = ref(false);
 
 watch(submitted, (v) => {
   if (v) {
     router.push(localePath("/account"));
+  }
+});
+
+// SSO 回调：h.joho.cn 统一页登录成功后回跳本页（?token=xxx），用 accessToken 直验换 Vendure 会话
+onMounted(async () => {
+  const token = route.query.token as string | undefined;
+  if (!hasPendingCallback(token)) return;
+  const providerKey = sessionStorage.getItem("youshop_sso_provider");
+  if (!providerKey) return;
+  try {
+    const result = await exchangeSsoAccessToken(providerKey, token as string);
+    clearSsoState();
+    await router.replace({ query: {} });
+    if (result?.id) {
+      authStore.setUser({ id: result.id, email: result.identifier || "" });
+      toast.add({
+        title: t("messages.account.loginSuccess"),
+        description: t("messages.account.successMessage"),
+        color: "success",
+      });
+      router.push(localePath("/account"));
+    } else {
+      toast.add({
+        title: t("messages.account.loginFail"),
+        description: result?.message || t("messages.account.failMessage"),
+        color: "error",
+      });
+    }
+  } catch (e) {
+    clearSsoState();
+    toast.add({
+      title: t("messages.account.loginFail"),
+      description: t("messages.error.generalMessage"),
+      color: "error",
+    });
   }
 });
 </script>
