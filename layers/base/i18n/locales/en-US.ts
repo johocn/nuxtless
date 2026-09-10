@@ -271,6 +271,7 @@ export default defineI18nLocale(() =>
       newPassword: "New Password",
       confirmNewPassword: "Confirm New Password",
       updatePassword: "Update Password",
+      otherLogin: "Other login methods",
       forgotPassword: "Forgot Password?",
       rememberPassword: "Remembered your password?",
       passwordPlaceholder: "Enter your password",

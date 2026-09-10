@@ -268,6 +268,7 @@ export const zhMessages = {
       newPassword: '新密码',
       confirmNewPassword: '确认新密码',
       updatePassword: '更新密码',
+      otherLogin: '其他登录方式',
       forgotPassword: '忘记密码？',
       rememberPassword: '想起密码了？',
       passwordPlaceholder: '请输入密码',

@@ -7,6 +7,12 @@ const emit = defineEmits<{
   (e: "success"): void;
 }>();
 
+const { fetchProviders, loginWithSso } = useSso();
+const providers = ref<Awaited<ReturnType<typeof fetchProviders>>>([]);
+onMounted(async () => {
+  providers.value = await fetchProviders();
+});
+
 const { token: channelToken } = useTenantChannel();
 const { t, locale } = useI18n();
 const localePath = useTenantLocalePath();
@@ -102,6 +108,25 @@ async function onSubmit(event: FormSubmitEvent<LoginForm>) {
     <UButton size="xl" loading-auto class="w-full justify-center" type="submit">
       {{ t("messages.account.login") }}
     </UButton>
+
+    <template v-if="providers.length">
+      <div class="flex items-center gap-3 py-2" aria-hidden="true">
+        <span class="h-px flex-1 bg-(--ui-border)" />
+        <span class="text-xs text-(--ui-text-muted)">{{ t("messages.account.otherLogin") }}</span>
+        <span class="h-px flex-1 bg-(--ui-border)" />
+      </div>
+      <UButton
+        v-for="p in providers"
+        :key="p.providerKey"
+        size="xl"
+        variant="outline"
+        class="w-full justify-center"
+        @click="loginWithSso(p)"
+      >
+        {{ p.name }}
+      </UButton>
+    </template>
+
     <ULink
       :to="localePath('/account/request-password-reset')"
       class="block text-center underline"
