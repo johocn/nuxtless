@@ -6,6 +6,9 @@
 //   - SearchProducts 搜索结果 → 商品楼层
 // 顶部 AppHeader（城市选择 + 多语言 + 搜索 + 购物车）保持不变。
 import { isHero } from "../../layers/base/app/utils/home-content";
+import { enrichWithListPrice, listCentsMap } from "../../layers/base/app/utils/display-price";
+import type { SearchResult } from "~~/types/product";
+import type { TaxMode } from "../../layers/base/app/utils/tax-price";
 import type { MenuCollections, TopLevelCollection } from "~~/types/collection";
 // 显式 import Jd 组件并以其注册名使用，避免字符串组件名被当作 custom element 渲染成空标签
 // （SSR 输出 <!---->、客户端输出 <jdcategorynav></jdcategorynav>）——与既有 home 区块修复模式一致。
@@ -21,6 +24,9 @@ import HomeBlockRenderer from "../../layers/base/app/components/home/HomeBlockRe
 
 const { t, tm } = useI18n();
 const localePath = useTenantLocalePath();
+
+// 微信内置浏览器访问首页且未登录时，自动走 SSO 微信静默授权登录（回跳首页换会话）
+useAutoWechatSsoLogin();
 
 // 1) 顶部分类：菜单集合（含 featuredAsset / children）
 const menuCollections = useState<MenuCollections>("menuCollections");
@@ -50,13 +56,32 @@ const hasBlocks = computed(() => shopSections.value.length > 0);
 //    注意：单个 useAsyncData handler 内只 await 一次 useAsyncGql——连续 await 多个
 //    useAsyncGql 会丢失 Nuxt 实例上下文（nuxt 4 withAsyncContext 跨 await 限制），
 //    导致 SSR 抛 "[nuxt] A composable that requires access to the Nuxt instance..." 错误、数据被移除。
+//    GqlGetProductsByIds 为 Nuxt composable，在单个 useAsyncData handler 内再次 await 会丢
+//    Nuxt 实例上下文抛 "[nuxt] instance unavailable"，故此处用 setup 顶层绑定的原始 gql client
+//    （普通 async 函数）二次取数补齐首页商品卡划线价（listPrice），SSR 安全。
+const rawGql = useGql();
+const { taxMode } = useTaxMode();
 const { data: fallbackSearch } = await useAsyncData(
   "home-fallback-search",
   async () => {
     if (hasBlocks.value) return { hot: [], more: [] };
     const r = await useAsyncGql("SearchProducts", { term: "", take: 20, skip: 0 });
-    const items = r.data.value?.search?.items ?? [];
-    return { hot: items.slice(0, 10), more: items.slice(10, 20) };
+    const items = (r.data.value?.search?.items ?? []) as SearchResult;
+    // 补齐首页商品卡划线价：SearchItem 不带变体 listPrice，按 productId 拉主数据并注入 listPriceCents。
+    // 失败/无商品时静默降级为「无划线价」，不影响现价展示。
+    const mode = (taxMode.value ?? "inclusive") as TaxMode;
+    let enriched: SearchResult = items;
+    try {
+      const ids = items.map((i) => i.productId).filter(Boolean);
+      if (ids.length) {
+        const res = await rawGql("GetProductsByIds", { ids });
+        const listCents = listCentsMap(res?.products?.items ?? [], mode);
+        enriched = enrichWithListPrice(items, listCents) as SearchResult;
+      }
+    } catch {
+      /* 划线价补拉失败时保留原结果 */
+    }
+    return { hot: enriched.slice(0, 10), more: enriched.slice(10, 20) };
   },
   { server: true },
 );
@@ -208,6 +233,10 @@ const entries = computed(() =>
       </div>
     </template>
   </main>
+
+  <!-- 微信分享 + 邀请登录引导（固定定位，PC/移动统一生效） -->
+  <WechatInviteLoginBar />
+  <WechatShare :title="t('messages.site.title')" />
 </template>
 
 <style lang="css" scoped></style>

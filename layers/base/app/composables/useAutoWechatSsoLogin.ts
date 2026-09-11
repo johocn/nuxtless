@@ -7,6 +7,7 @@ const AUTO_JUMP_KEY = "youshop_sso_auto_jumped";
  *  授权回调落在 sso-callback 页，再由其回跳首页。 */
 export function useAutoWechatSsoLogin() {
   const localePath = useTenantLocalePath();
+  const route = useRoute();
   const { fetchProviders, loginWithWechat } = useSso();
 
   async function run(): Promise<void> {
@@ -20,7 +21,13 @@ export function useAutoWechatSsoLogin() {
       const provider = providers[0];
       if (provider) {
         sessionStorage.setItem(AUTO_JUMP_KEY, "1");
-        loginWithWechat(provider, { returnUrl: `${window.location.origin}${localePath("/")}` });
+        // 分享链接落到首页时保留 ?invite，避免自动登录丢失邀请码
+        const invite = typeof route.query.invite === "string" ? route.query.invite : "";
+        const home = `${window.location.origin}${localePath("/")}`;
+        loginWithWechat(provider, {
+          inviteCode: invite || undefined,
+          returnUrl: invite ? `${home}?invite=${encodeURIComponent(invite)}` : home,
+        });
       }
     }
   }
