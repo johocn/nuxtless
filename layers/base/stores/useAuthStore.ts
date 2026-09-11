@@ -9,6 +9,7 @@ export const useAuthStore = defineStore(
       user?: {
         id: string;
         email: string;
+        inviteCode?: string;
       };
     } | null>(null);
 
@@ -21,7 +22,7 @@ export const useAuthStore = defineStore(
       writeVendureSessionToken(token);
     }
 
-    function setUser(user: { id: string; email: string }) {
+    function setUser(user: { id: string; email: string; inviteCode?: string }) {
       if (session.value?.token) {
         session.value = { ...session.value, user };
       }

@@ -185,12 +185,12 @@ export function useSso() {
     if (!sso?.accessToken) return null;
     const result = await exchangeSsoAccessToken(provider.providerKey, sso.accessToken);
     if (result?.id) {
-      const payload: { id: string; email: string } = {
+      const authStore = useAuthStore();
+      authStore.setUser({
         id: result.id,
         email: result.identifier ?? "",
-      };
-      const authStore = useAuthStore();
-      authStore.setUser(payload);
+        inviteCode: sso.user?.inviteCode || "",
+      });
     }
     return result;
   }
