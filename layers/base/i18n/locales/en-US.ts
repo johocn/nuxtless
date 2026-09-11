@@ -2,6 +2,23 @@ import { zhFallbackLocale } from "./merge";
 
 export default defineI18nLocale(() =>
   zhFallbackLocale({
+    share: {
+      title: "Share to Friends / Moments",
+      openingTip: "① Tap ··· in the top right　② Choose \"Share to Chat / Moments\"",
+      inviteTip: "Your invite link includes your code — friends who sign up and order get linked to you",
+      copyLink: "Copy Link",
+      copied: "Copied",
+      copyTalk: "Copy Invite Message",
+      talkPrefix: "Come browse with me, there are awesome deals → ",
+      inviteCount: "{n} invited",
+      wechatLogin: "Login with WeChat",
+      inviteBar: "Log in with WeChat to get exclusive perks & bind your inviter",
+      inviteBarClose: "Not now",
+      loginSuccess: "Signed in",
+      loginFail: "Sign-in failed",
+      callbackFail: "Login callback failed. Please try again.",
+      callbackProcessing: "Completing sign-in and redirecting…",
+    },
     site: {
       title: "youshop.cn",
       tagline: "Nuxt Level Headless E-commerce",

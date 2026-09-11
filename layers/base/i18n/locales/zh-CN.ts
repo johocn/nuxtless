@@ -2,6 +2,23 @@ export const zhMessages = {
   // 中文为默认语言 / 兜底语言（defaultLocale、fallbackLocale 均为 zh-CN）。
   // 其它语言包通过 deepMerge 以本对象为基底递归合并自身翻译，缺失词条自动回退到中文，
   // 规避 vue-i18n 懒加载下 fallback 失效导致页面显示原始 key 的问题。
+  share: {
+    title: '分享给好友 / 朋友圈',
+    openingTip: '① 点右上角 ···　② 选「分享给朋友 / 分享到朋友圈」',
+    inviteTip: '邀请链接已带上你的专属码，朋友注册下单后自动绑定',
+    copyLink: '复制链接',
+    copied: '已复制',
+    copyTalk: '复制邀请话术',
+    talkPrefix: '跟我一起逛，还有好物补贴，点进来看看 →',
+    inviteCount: '已邀 {n} 人',
+    wechatLogin: '微信一键登录',
+    inviteBar: '微信一键登录，领专属补贴并绑定推荐',
+    inviteBarClose: '暂不',
+    loginSuccess: '登录成功',
+    loginFail: '登录失败',
+    callbackFail: '登录回调处理失败，请稍后重试',
+    callbackProcessing: '正在完成登录并返回页面…',
+  },
   site: {
       // 品牌名与国际化 tagline 保留英文（非 UI 操作文案）
       title: "优商铺",
