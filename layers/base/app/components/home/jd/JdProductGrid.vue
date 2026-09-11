@@ -3,7 +3,7 @@
 // 数据来源：复用 SearchProducts 商品搜索结果（与 ProductCard 同源 Vendure 数据）
 import type { SearchResult } from "~~/types/product";
 import { assetSrc } from "../../../utils/image";
-import { pickDisplayPrice } from "../../../utils/display-price";
+import { pickDisplayPrice, pickCurrentCents } from "../../../utils/display-price";
 
 type SearchItem = SearchResult[number];
 
@@ -13,10 +13,10 @@ defineProps<{
   products: SearchItem[];
 }>();
 const localePath = useTenantLocalePath();
-const { taxMode } = useTaxMode();
+const { taxMode, pricesIncludeTax } = useTaxMode();
 
 function format(item?: SearchItem, currencyCode?: string | null) {
-  const sel = pickDisplayPrice(item, taxMode.value);
+  const sel = pickDisplayPrice(item, taxMode.value, pricesIncludeTax.value);
   if (!sel) return "";
   const cur = currencyCode ?? "CNY";
   if ("min" in sel && "max" in sel) {
@@ -25,6 +25,15 @@ function format(item?: SearchItem, currencyCode?: string | null) {
     return min === max ? `¥${min}` : `${min}~${max}`;
   }
   return `¥${(sel.value / 100).toFixed(2)}`;
+}
+
+// 划线原价（分→文本）：仅当带 listPriceCents 且大于现行价时输出删除线原价，避免倒挂
+function listText(item?: SearchItem, currencyCode?: string | null) {
+  const list = (item as any)?.listPriceCents;
+  if (typeof list !== "number" || list <= 0) return "";
+  const current = pickCurrentCents(item, taxMode.value, pricesIncludeTax.value);
+  if (current != null && list <= current) return "";
+  return `¥${(list / 100).toFixed(2)}`;
 }
 </script>
 
@@ -57,7 +66,13 @@ function format(item?: SearchItem, currencyCode?: string | null) {
         </div>
         <div class="p-2">
           <p class="line-clamp-2 min-h-8 text-xs leading-4 text-gray-700">{{ p.productName }}</p>
-          <p class="mt-1 text-base font-bold text-primary">{{ format(p, p.currencyCode) }}</p>
+          <p class="mt-1 text-base font-bold text-primary">
+            {{ format(p, p.currencyCode) }}
+            <span
+              v-if="listText(p, p.currencyCode)"
+              class="ml-1 align-baseline text-xs font-normal text-gray-400 line-through"
+            >{{ listText(p, p.currencyCode) }}</span>
+          </p>
         </div>
       </NuxtLink>
     </div>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>验收手册 — COD 到店支付自提单 支付状态显示</title>
+<style>
+  body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:880px;margin:0 auto;padding:24px;color:#1f2937;line-height:1.6;background:#f9fafb}
+  h1{font-size:22px;border-bottom:2px solid #e5e7eb;padding-bottom:8px}
+  h2{font-size:17px;margin-top:28px}
+  table{border-collapse:collapse;width:100%;background:#fff;font-size:14px}
+  th,td{border:1px solid #e5e7eb;padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#f3f4f6}
+  code{background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:13px}
+  .ok{color:#16a34a;font-weight:600}
+  .warn{color:#b45309;font-weight:600}
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin:12px 0}
+  img{max-width:360px;border:1px solid #e5e7eb;border-radius:10px;display:block;margin:10px auto}
+  .tag{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;background:#dcfce7;color:#15803d}
+</style>
+</head>
+<body>
+<h1>验收手册 — COD 到店支付自提单：下单后支付环节显示「待到店收款」</h1>
+<p>提交：<code>ba08929</code>（nshop）&nbsp;·&nbsp;状态：<span class="tag">已部署生产 www.youshop.cn</span></p>
+
+<div class="card">
+<b>背景</b>
+<p>到店/货到付款（COD）自提单下单后，订单仅进入 <code>PaymentAuthorized</code>（支付“已授权”）、数据库 <code>collected=null</code>（未确认收款）、<code>redeemClaimed=false</code>（未核销）。此前订单详情页进度条把「支付」环节标为已完成（高亮），误导用户以为已支付。</p>
+</div>
+
+<h2>修复口径（业务规则）</h2>
+<p>扫码核销并确认收款（<code>collected=true</code>，台账 PENDING_SIGN→PAID）后才算「支付完成」；在此之前，COD 自提单的支付环节一律显示<b>「待到店收款」</b>。</p>
+
+<h2>改动文件</h2>
+<table>
+<tr><th>文件</th><th>说明</th></tr>
+<tr><td><code>utils/order-state.ts</code></td><td>新增 <code>isCodCollectPending(order)</code>；<code>progressIndex</code>/<code>stateBadge</code> 在 COD 未收款时支付进度降为「待收款」。</td></tr>
+<tr><td><code>components/order/OrderProgress.vue</code></td><td>支持传 <code>order</code>；COD 未收款时支付格文案显示「待到店收款」且不高亮。</td></tr>
+<tr><td><code>components/order/OrderStatusBanner.vue</code></td><td>COD 未收款时状态横幅显示「待到店收款」（警告色）。</td></tr>
+<tr><td><code>components/order/OrderDetailClassic.vue</code><br><code>OrderDetailProgressBlock.vue</code></td><td>把 <code>order</code> 透传给 <code>OrderProgress</code>。</td></tr>
+</table>
+
+<h2>验证</h2>
+<h3>验证环境</h3>
+<p>生产 https://www.youshop.cn，<b>t2 租户</b>（/t2），手机视口 390×844，账号：<code>t2verify_1788855362957@test.com</code>，订单：<code>H4CUU9G59GRUUAB3</code>（自提单 · cod-payment-template · PaymentAuthorized · 未收款 · 未核销）。</p>
+
+<table>
+<tr><th>展示位置</th><th>修复前</th><th>修复后</th></tr>
+<tr><td>顶部状态横幅</td><td>待发货</td><td class="ok">待到店收款（警告色）</td></tr>
+<tr><td>进度条第 2 格</td><td class="warn">支付（高亮为已完成）</td><td class="ok">待到店收款</td></tr>
+<tr><td>支付方式行</td><td>待到店收款（原本已对）</td><td class="ok">待到店收款</td></tr>
+<tr><td>核销凭证</td><td>—</td><td class="ok">未核销 · 待取货</td></tr>
+</table>
+
+<h3>手机视口截图</h3>
+<img src="order-detail-mobile.png" alt="订单详情手机视口截图">
+<p style="text-align:center;color:#6b7280;font-size:13px">图中黄色横幅、进度条第 2 格、支付方式行均为「待到店收款」，全程无「支付完成/已支付」。</p>
+
+<h3>验证结论</h3>
+<p><span class="ok">通过</span>：订单详情页对 COD 到店支付自提单，在下单后（未核销、未收款）正确显示「待到店收款」，不再把支付环节标为完成；待扫码核销并确认收款后，订单自动推进至 Delivered/Completed，进度条随之显示完成。</p>
+
+</body>
+</html>

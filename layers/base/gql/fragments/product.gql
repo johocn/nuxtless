@@ -41,6 +41,9 @@ fragment ProductBaseFragment on Product {
   variants {
     currencyCode
     price
+    customFields {
+      listPrice
+    }
   }
   customFields {
     belongCity

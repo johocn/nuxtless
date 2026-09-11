@@ -42,13 +42,14 @@ export type ProductCardCompatible = {
 export function toSearchResultCard(
   p: NonNullable<GetProductsByIdsQuery["products"]>["items"][number],
 ): ProductCardCompatible {
-  const price = (p.variants?.[0]?.price ?? 0) / 100;
+  // 价格一律存「分」（与 search 返回一致），由 ProductCard 按渠道 taxMode 换算展示；勿先 ÷100 否则会二次除分显示偏小
+  const priceCents = p.variants?.[0]?.price ?? 0;
   return {
     productName: p.name,
     slug: p.slug,
     productAsset: p.featuredAsset ? { id: p.featuredAsset.id, preview: p.featuredAsset.preview } : null,
-    priceWithTax: { value: price },
-    price: { value: price },
+    priceWithTax: { value: priceCents },
+    price: { value: priceCents },
     currencyCode: p.variants?.[0]?.currencyCode ?? "CNY",
   };
 }

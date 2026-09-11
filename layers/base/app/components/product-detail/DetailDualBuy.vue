@@ -33,7 +33,7 @@ const { t } = useI18n();
 
   <div
     v-if="visible('purchase')"
-    class="sticky bottom-0 z-10 mt-4 flex items-center gap-3 border-t border-gray-100 bg-white/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-2px_12px_rgba(0,0,0,0.06)] backdrop-blur sm:justify-end sm:bg-white/70 sm:pb-3 sm:shadow-none sm:border-0"
+    class="mt-4 hidden items-center gap-3 border-t border-gray-100 bg-white/95 p-3 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] lg:flex"
   >
     <UButton
       class="flex-1 justify-center text-base sm:min-w-32 sm:flex-none"

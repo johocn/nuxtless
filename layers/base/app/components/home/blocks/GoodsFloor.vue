@@ -3,13 +3,18 @@
 import JdProductGrid from "../jd/JdProductGrid.vue";
 import GoodsMasonryGrid from "./GoodsMasonryGrid.vue";
 import GoodsSingleList from "./GoodsSingleList.vue";
+import type { SearchResult } from "~~/types/product";
 import { goodsLayout } from "../../../utils/shop-content";
 import type { GoodsSection, GoodsLayout } from "../../../utils/shop-content";
 import { localizeText } from "../../../utils/detail-config";
-import type { SearchResult } from "~~/types/product";
+import { pickListCents } from "../../../utils/display-price";
 
 const props = defineProps<{ section: GoodsSection }>();
 const { t, locale } = useI18n();
+const { taxMode } = useTaxMode();
+// 单个 useAsyncData handler 内二次 await GqlGetProductsByIds/useAsyncGql 会丢 Nuxt 实例上下文
+// （底层 useGql() 依赖 useNuxtApp()），在此 setup 顶层绑定原始 gql client（普通函数）SSR 安全。
+const rawGql = useGql();
 
 const layout = computed<GoodsLayout>(() => goodsLayout(props.section.layout));
 const title = computed(() =>
@@ -29,11 +34,34 @@ const { data } = await useAsyncData(
       take: take.value,
       skip: 0,
     });
-    return (res.data.value?.search?.items ?? []) as SearchResult;
+    const items = (res.data.value?.search?.items ?? []) as SearchResult;
+    // SearchItem 不带变体 listPrice，二次拉产品主数据补齐「slug → 划线展示价」。
+    // 非商品集（无 productId）或查询失败时静默降级为「无划线价」。
+    const ids = items.map((i) => i.productId).filter(Boolean);
+    if (!ids.length) {
+      return { items, listCents: new Map() as Map<string, number | null> };
+    }
+    let byIds;
+    try {
+      byIds = await rawGql("GetProductsByIds", { ids });
+    } catch {
+      return { items, listCents: new Map() as Map<string, number | null> };
+    }
+    const products = byIds?.products?.items ?? [];
+    const mode = (taxMode.value ?? "inclusive") as "inclusive" | "zero" | "exclusive";
+    const listCents = new Map<string, number | null>();
+    for (const p of products) {
+      if (p?.slug) listCents.set(p.slug, pickListCents(p.variants ?? null, mode));
+    }
+    return { items, listCents };
   },
   { server: true },
 );
-const products = computed(() => data.value ?? []);
+const products = computed(() => {
+  const d = data.value;
+  if (!d) return [] as SearchResult;
+  return d.items.map((i) => ({ ...i, listPriceCents: d.listCents.get(i.slug) ?? null })) as SearchResult;
+});
 </script>
 
 <template>

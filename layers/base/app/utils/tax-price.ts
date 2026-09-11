@@ -9,3 +9,15 @@ export function displayCentsFromNet(netCents: number, mode: TaxMode, ratePercent
   if (mode !== 'exclusive' || !ratePercent) return Math.round(netCents);
   return Math.round(netCents * (1 + ratePercent / 100));
 }
+
+/**
+ * 从「含税金额(gross, 分)」反向拆分税额（分）。inclusive/exclusive 均据此把税额展示给用户：
+ *  - inclusive(含税)：gross = 录入价即最终售价，tax = gross − gross/(1+rate)（价内拆税，展示不加收）。
+ *  - exclusive(不含税)：gross = 净价×(1+rate)，tax = gross − gross/(1+rate) = 净价×rate。
+ *  - zero：返回 null（零税不显示税额行）。
+ * 返回 null 表示本档无需展示税额。
+ */
+export function taxFromGross(grossCents: number, mode: TaxMode, ratePercent = TAX_RATE_PERCENT): number | null {
+  if (mode === 'zero' || !ratePercent) return null;
+  return Math.round(grossCents - grossCents / (1 + ratePercent / 100));
+}

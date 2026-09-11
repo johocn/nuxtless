@@ -34,15 +34,22 @@ async function removeLine(l: OrderBoxInfo["lines"][number]) {
   sel.removeLine(props.box.boxKey, l.orderLineId);
 }
 
-// featureAssetSource 为相对 source 路径，需动态 origin 拼全（与 useGqlHostUrl 同源策略一致：
-// 生产 Nginx 同源反代，本地 dev 跟随当前 Host）
+// featureAssetSource 为相对 source 路径（未含 assets/ 前缀，如 `source/05/0.png`），
+// 需按 Vendure assets 约定在动态 origin 前补 `/assets/` 拼全（与 useGqlHostUrl 同源策略一致：
+// 生产 Nginx 同源反代，本地 dev 跟随当前 Host）。
 const { origin } = useRequestURL();
 
 function lineImage(l: OrderBoxInfo["lines"][number]): string {
   if (!l.featureAssetSource) return "";
-  const full = /^https?:\/\//.test(l.featureAssetSource)
-    ? l.featureAssetSource
-    : `${origin}${l.featureAssetSource}`;
+  const s = l.featureAssetSource;
+  let full: string;
+  if (/^https?:\/\//.test(s)) {
+    full = s;
+  } else if (/^assets\//.test(s)) {
+    full = `${origin}/${s}`;
+  } else {
+    full = `${origin}/assets/${s}`;
+  }
   return assetSrc(full, 48);
 }
 

@@ -61,16 +61,73 @@
     </tr>
     <tr>
       <td><code>jdB</code></td>
-      <td><img class="shot" src="shots/detail_jdB_live.png" alt="jdB现网截图" /></td>
-      <td>深红价签条：秒杀角标 + 白字现价 + 划线原价，SKU/库存居右</td>
+      <td><img class="shot" src="shots/detail_jdB_live_listprice.png" alt="jdB现网完整效果截图" /></td>
+      <td>深红价签条：秒杀角标 + 白字现价 ¥200.00 + 划线原价 ¥300.00（默认渠道 id=1 已启 jdB；商品60 已设 listPrice=30000）</td>
     </tr>
   </table>
   <p class="ok">演示时临时在默认渠道写入 price.style 并为该商品设划线价（listPrice=15900，¥159），演示完已复原（style 回 classic、listPrice 置 0）。</p>
+  <div class="note"><b>排查结论（价格块未应用 jdB 之根因）：</b>前端渲染链（<code>usePriceWithList → PriceBlock.vue → ProductDetailPriceBlockJdB</code>）无 bug，style 为 <code>jdB</code> 即渲染红色价签条。此前「选了 jdB 但前台不生效」的原因是 <b>web-admin「店铺信息」只写入登录账号所关联的 <code>activeChannel</code></b>；而 <code>www.youshop.cn</code> 前台经 GetChannelTheme 解析的是 <b><code>__default_channel__</code>(id=1)</b>。当两者不一致时，保存落点 ≠ 展示渠道，前台自然仍是 classic。故要切换某域名前台的价格块样式，须在该域名解析到的实际 channel（如 id=1）上保存。另：jdB/jdA 的「秒杀角标/划线价」只有在商品设置 <code>listPrice &gt; 现价</code> 时才展示；未设划线价时 jdB 仅呈现红色价签条 + 白字现价，属预期。</div>
 
-  <h2>五、已知问题已修复</h2>
+  <h2>五、税率三态价格展示（含税价 / 零税价 / 不含税价）</h2>
+  <p>渠道税率由原先的布尔开关升级为<b>三态</b> <code>Channel.customFields.taxMode</code>：<code>inclusive</code>(含税价)、<code>zero</code>(零税价)、<code>exclusive</code>(不含税价)。C端商品价/划线价经纯函数 <code>displayCentsFromNet()</code> 按模式换算展示，结算页税额行 <code>OrderSummary.showTaxRow</code> 按模式显隐；运营端录入口径：<code>price</code> 字段<b>直存录入原值</b>，后台价格不做任何税率再计算（详见 §五 口径定稿），前台展示/结算价按各渠道 taxMode 在前台层换算。</p>
+  <p><span class="ok">设置入口</span>：后台(b.e.joho.cn/guanli) → <b>店铺信息</b> → 「税率方式」三态下拉（含税价 / 零税率 / 不含税价）→ 保存。保存经 <code>myUpdateChannelCustomFields</code> 合并写入 taxMode 字段。</p>
+  <table>
+    <tr><th>模式</th><th>商品价 / 划线价展示</th><th>结算页税额行</th></tr>
+    <tr><td><code>inclusive</code> 含税价</td><td>录入价原样展示（录入价=展示价=应付价）</td><td>显示「税费」行（如标准税率13%）为<b>价内拆税</b>——税额已含在商品价内，<b>仅展示拆分、不加收</b>，应付总额 = 录入价</td></tr>
+    <tr><td><code>zero</code> 零税价</td><td>录入价原样展示</td><td>不显示税额行，总额 = 录入价</td></tr>
+    <tr><td><code>exclusive</code> 不含税价</td><td>录入价 ×(1+税率) 换算为含税应付价展示（价税分离）</td><td>显示税额行（加收），总额 = 录入价 + 税额</td></tr>
+  </table>
+
+  <h3>5.1 <code>inclusive</code> 含税价（默认渠道 root，已修复结算口径，实测定稿）</h3>
+  <div class="note"><b>口径（已按后台价格一致性定稿）：</b>含税价 = 运营录入价 = 展示价 = 结算应付价。<b>「税费」为「价内拆税」</b>——该税额已包含在商品价格内，结算页仅作<b>展示拆分、不加收</b>，应付/合计 = 录入价本身。</div>
+  <p>以录入价 <code>¥200.00</code>（标准税率13%）为例：商品页与结算页「商品价格」均显示 <code>¥200.00</code>；结算页「税费」行显示 <code>¥23.01</code>(=200−200/1.13)；<b>应付/合计仍为 <code>¥200.00</code></b>，不是 200+23.01。</p>
+  <table>
+    <tr><th>场景</th><th>截图</th><th>关键点</th></tr>
+    <tr><td>商品页</td><td><img class="shot" src="shots/taxmode_root_product_200.png" alt="root含税商品页" /></td><td>现价 ¥200.00（录入价即售价）+ 有货</td></tr>
+    <tr><td>结算页(移动)</td><td><img class="shot" src="shots/repro-box-checkout.png" alt="root含税结算页移动" /></td><td>商品价格 ¥400（2件×200）+ 税费 ¥46.02（价内拆）+ 应付 ¥400；商品行图片正常渲染</td></tr>
+    <tr><td>结算页(订单摘要-桌面)</td><td><img class="shot" src="shots/repro-box-checkout-desktop.png" alt="root含税订单摘要桌面" /></td><td>小计(商品价格) ¥200.00 + 税费 ¥23.01 + 配送 ¥0.00 + 合计 ¥200.00</td></tr>
+  </table>
+
+  <h3>5.2 <code>zero</code> 零税价（显示逻辑）</h3>
+  <p>零税 = 商品不涉税。以录入价 <code>¥200.00</code>（标准税率13%）为例：商品页展示 <code>¥200.00</code>；结算页 商品价格 <code>¥200.00</code>、<b>不显示「税费」行</b>（taxSummary 为空）、应付/合计 <code>¥200.00</code>。</p>
+  <table>
+    <tr><th>场景</th><th>关键点</th></tr>
+    <tr><td>商品页</td><td>现价 ¥200.00（录入价原样，无税）</td></tr>
+    <tr><td>结算页(移动)</td><td>商品价格 ¥200.00 + 应付 ¥200.00，无税费行</td></tr>
+    <tr><td>结算页(订单摘要-桌面)</td><td>小计(商品价格) ¥200.00 + 合计 ¥200.00，无税费行</td></tr>
+  </table>
+  <div class="note"><b>配置说明：</b>现网当前<b>所有渠道均为 <code>inclusive</code></b>（含税价；t2 已对齐 <code>pricesIncludeTax=true</code>，无零税渠道）。zero 为可选税率方式——后台「店铺信息→税率方式」切换后 C 端即时生效，商品价原样展示、免税额行；上表为 P=200 的换算逻辑示例。</div>
+
+  <h3>5.3 <code>exclusive</code> 不含税价（价税分离，显示逻辑）</h3>
+  <div class="note"><b>口径：</b>exclusive = 商品价不含税，对客展示<b>含税应付价</b> = 录入价 ×(1+税率)；税额<b>另加</b>（价税分离），应付总额 = 净价 + 税。</div>
+  <p>以录入价 <code>¥200.00</code>（标准税率13%）为例：商品页主价显示 <b>含税价 <code>¥226.00</code></b>(=200×1.13)；结算页 商品价格(净) <code>¥200.00</code> + 税费 <code>¥26.00</code>(=200×0.13，<b>加收</b>) → 应付/合计 <code>¥226.00</code>。</p>
+  <table>
+    <tr><th>场景</th><th>关键点</th></tr>
+    <tr><td>商品页</td><td>主价显示含税价 ¥226.00（价税分离，净价隐含 200）</td></tr>
+    <tr><td>结算页(移动)</td><td>商品价格 ¥200.00 + 税费 ¥26.00（加收）+ 应付 ¥226.00</td></tr>
+    <tr><td>结算页(订单摘要-桌面)</td><td>小计(商品价格) ¥200.00 + 税费 ¥26.00 + 合计 ¥226.00</td></tr>
+  </table>
+  <div class="note"><b>配置说明：</b>现网当前无 exclusive 渠道；切换后由纯前端 <code>displayCentsFromNet()</code> + <code>taxFromGross()</code> 即时换算生效，上表为 P=200/13% 的换算逻辑示例。</div>
+
+  <h3>5.4 分类列表价 = 详情价（t2 已修复，含税/零税显示一致）</h3>
+  <p><span class="ok">本次修复</span>（2026-09-10）：此前 <b>t2 分类列表页温泉票显示 <code>176.99 CNY</code></b>，而详情页显示 <code>¥200.00</code>，两处不一致。根因：</p>
+  <ul>
+    <li>分类列表 <code>ProductCard/GoodsGrid</code> 用 <code>pickDisplayPrice()</code> 直接取 <code>price</code>（Vendure 恒为<b>净价</b>）；而 t2 渠道 <code>pricesIncludeTax=true</code> 时 price=录入价/1.13=176.99。</li>
+    <li>详情页 <code>usePriceWithList()</code> 用 <code>priceWithTax</code>（该渠道解释下的<b>含税总价</b>，=录入价 200）。两处基准不同 → 列表比详情少 13%。</li>
+  </ul>
+  <p><b>修复口径（渠道感知、统一列表/详情）：</b>同一商品在列表页与详情页显示同一价。运营端录入基准价在 <code>pricesIncludeTax=false</code> 渠道=<code>price</code>、<code>true</code> 渠道=<code>priceWithTax</code>；价签展示 <code>inclusive/zero</code> → 录入基准价，<code>exclusive</code> → <code>priceWithTax</code>（价税分离总价）。<code>pickDisplayPrice()</code> 与 <code>usePriceWithList()</code> 现共用同一规则，<code>useTaxMode()</code> 同时暴露 <code>taxMode</code> + <code>pricesIncludeTax</code>（GetChannelTheme 增加该字段）。</p>
+  <table>
+    <tr><th>场景</th><th>截图（手机 390×844 dpr2，现网 www.youshop.cn/t2）</th><th>关键点</th></tr>
+    <tr><td>分类列表 · 休闲娱乐</td><td><img class="shot" src="shots/t2_category_prices.png" alt="t2分类列表价格" /></td><td>温泉票 <b>200.00 CNY</b>（此前 176.99，含税口径已与详情一致）</td></tr>
+    <tr><td>商品详情 · 温泉票(jdA)</td><td><img class="shot" src="shots/t2_detail.png" alt="t1详情页" /></td><td>现价 <b>¥200.00</b> + 划线 ¥300.00 + 降价 ¥100.00（列表/详情一致）</td></tr>
+  </table>
+
+  <h2>六、已知问题已修复</h2>
   <p>发现并修复 web-admin「店铺信息」保存的 <span class="ok">GRAPHQL_VALIDATION_FAILED</span> 隐患：<code>myUpdateChannelCustomFields</code> 返回类型为 <code>JSON!</code> 标量，无法带 <code>{ id }</code> 选择集，否则保存必失败。已去掉该选择并重新部署 web-admin。</p>
+  <p><span class="ok">· 结算环节金额修复（inclusive）</span>：桌面端「订单摘要」的商品价格(小计)此前直接取 Vendure 整单 <code>subTotal</code>(净 176.99)，含税渠道下错误显示为 176.99+税费23.01。现 <code>OrderSummary.vue</code> 按渠道 <code>taxMode</code> 出对客「商品价格」——inclusive 显示含税商品价(净×1.13=200)、税费23.01为价内拆税；exclusive/zero 显示净价200。移动端结算栏(CheckoutCnSummaryBar / PerBoxSummary)本就用箱行 <code>lineTotal</code>(含税)，口径已一致。</p>
+  <p><span class="ok">· 商品行图片缺失修复</span>：① 后端 <code>order-box-shop.resolver.ts</code> 为 <code>orderBoxes</code> 补加载 <code>lines.featuredAsset</code> / 变体 / 商品级 featuredAsset，令 <code>featureAssetSource</code> 有值；② 前端 <code>BoxLines.vue</code> 的 <code>lineImage()</code> 为相对路径补 <code>/assets/</code> 前缀，拼成全 URL 商品图。两处均已部署。</p>
 
-  <h2>六、涉及文件</h2>
+  <h2>七、涉及文件</h2>
   <table>
     <tr><th>仓库</th><th>文件</th><th>改动</th></tr>
     <tr><td rowspan="2">nshop</td><td><code>layers/base/app/utils/detail-config.ts</code></td><td>DetailBlockCfg.style + blockStyle()</td></tr>
@@ -79,9 +136,22 @@
     <tr><td><code>src/apis/channel.ts</code></td><td>查询/字段补 detailConfig</td></tr>
   </table>
 
-  <h2>七、后续</h2>
+  <h2>八、涉及文件（税率三态补充）</h2>
+  <table>
+    <tr><th>仓库</th><th>文件</th><th>改动</th></tr>
+    <tr><td rowspan="5">nshop</td><td><code>layers/base/app/utils/tax-price.ts</code>、<code>composables/useTaxMode.ts</code></td><td>税价换算纯函数 displayCentsFromNet + 渠道 taxMode/pricesIncludeTax 读取</td></tr>
+    <tr><td><code>layers/base/app/utils/display-price.ts</code>（pickDisplayPrice）、<code>composables/usePriceWithList.ts</code></td><td>价签基准渠道感知（pricesIncludeTax=true→priceWithTax，否则 price），列表/详情共用同口径</td></tr>
+    <tr><td><code>layers/base/app/components/product/ProductCard.vue</code>、<code>home/blocks/GoodsMasonryGrid.vue</code>、<code>home/blocks/GoodsSingleList.vue</code>、<code>home/jd/JdProductGrid.vue</code></td><td>pickDisplayPrice 调用点补传 pricesIncludeTax，使列表价=详情价</td></tr>
+    <tr><td><code>layers/base/app/components/checkout/OrderSummary.vue</code></td><td>showTaxRow 按 taxMode 显隐税额行</td></tr>
+    <tr><td><code>gql/queries/context.gql</code></td><td>GetChannelTheme 改用 taxMode（旧 taxEnabled 已移除）+ 增加 pricesIncludeTax</td></tr>
+    <tr><td>vendure</td><td><code>cjk-plugin/src/tenant/tenant-channel-custom-fields.ts</code>、<code>cjk-plugin/src/tax/channel-tax-line-calculation-strategy.ts</code></td><td>渠道级 taxMode 字段 + 订单税额计算</td></tr>
+    <tr><td>web-admin</td><td><code>src/components/product-tabs/ProductVariantMatrixTab.vue</code>、<code>src/composables/useVariantMatrix.ts</code>、<code>src/apis/product.ts</code></td><td>基础信息(价/划线价/成本价/库存)自动填入变体 + 税价换算</td></tr>
+  </table>
+
+  <h2>九、后续</h2>
   <ul>
     <li>给商品设置划线价后切 jdA/jdB 即可看到完整京东促销效果（本例已在现网验证并复原，见四）。</li>
+    <li>exclusive(不含税)模式为纯前端换算，上线渠道切换后需补一次现网回归截图。zero 模式共享变体的「商品页价 ≠ 结算合计」口径差异按共享变体单源价格机制处理。</li>
   </ul>
 </body>
 </html>
