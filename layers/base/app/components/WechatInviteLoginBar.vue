@@ -48,7 +48,7 @@ function dismiss() {
       <UButton
         icon="i-lucide-x"
         variant="ghost"
-        color="gray"
+        color="neutral"
         class="h-8 w-8 !p-0"
         :aria-label="t('messages.share.inviteBarClose')"
         @click="dismiss"

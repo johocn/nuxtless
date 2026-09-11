@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { displayCentsFromNet } from "../../utils/tax-price";
 
 const { i18NBaseUrl } = useRuntimeConfig().public;
 const colorMode = useColorMode();
@@ -12,7 +11,7 @@ const ogColorMode = computed<"dark" | "light">(() =>
 
 const productStore = useProductStore();
 const { hasOptions, selectedVariant } = storeToRefs(productStore);
-const { taxMode } = useTaxMode();
+const { taxMode, pricesIncludeTax } = useTaxMode();
 
 const slug = useRouteParam("slug");
 
@@ -67,11 +66,19 @@ useSeoMeta({
   twitterDescription: product.value?.description,
 });
 
-// OgImage
+// OgImage —— 分享卡价格须与页面价签同口径（按渠道 taxMode/pricesIncludeTax 换算展示价），
+// 避免分享卡显示净价(¥88.50)而页面显示含税价(¥100.00)的不一致
+const ogPriceCents = computed(() => {
+  const v = selectedVariant.value;
+  if (!v) return 0;
+  const mode = (taxMode.value ?? "inclusive") as "inclusive" | "zero" | "exclusive";
+  const useWithTax = mode === "exclusive" || !!pricesIncludeTax.value;
+  return Math.round(useWithTax ? (v.priceWithTax ?? 0) : (v.price ?? 0));
+});
 defineOgImage("ProductCard.satori", {
   colorMode: ogColorMode,
   productName: product.value?.name,
-  price: formatPrice(selectedVariant.value?.price),
+  price: formatPrice(ogPriceCents.value),
   // description: product.value?.description,
   image: product.value?.featuredAsset?.preview,
   brand: siteName.value,
@@ -101,7 +108,7 @@ if (product.value && selectedVariant.value) {
       offers: {
         "@type": "Offer",
         url: `${i18NBaseUrl}/products/${product.value.slug}`,
-        price: displayCentsFromNet(selectedVariant.value.price ?? 0, taxMode.value) / 100,
+        price: (selectedVariant.value.priceWithTax ?? 0) / 100,
         priceCurrency: selectedVariant.value.currencyCode ?? "EUR",
         availability:
           selectedVariant.value.stockLevel === "IN_STOCK"
@@ -137,6 +144,12 @@ if (product.value && selectedVariant.value) {
 <template>
   <main class="container">
     <ProductDetailRenderer />
+    <WechatInviteLoginBar />
+    <WechatShare
+      :title="product?.name"
+      :description="product?.description"
+      :image-url="product?.featuredAsset?.preview"
+    />
   </main>
 </template>
 

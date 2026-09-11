@@ -24,7 +24,7 @@ const copyLabel = computed(() => t(copied.value ? "messages.share.copied" : "mes
 
 // 邀请码优先级：显式 props（页面传入登录用户码）> 会话用户邀请码 > 当前 URL 已带 invite
 const inviteCode = computed(
-  () => props.inviteCode || authStore.user?.inviteCode || (route.query.invite as string) || "",
+  () => props.inviteCode || authStore.session?.user?.inviteCode || (route.query.invite as string) || "",
 );
 
 const shareUrl = computed(() => {
@@ -77,7 +77,7 @@ function loadWechatSdk(): Promise<void> {
 // 微信内且拿到签名 → wx.config 绑定自定义分享卡片；任一环节失败静默降级为「仅复制引导」
 async function bindShare() {
   try {
-    const sig = await fetchJssdkSignature(window.location.href.split("#")[0]);
+    const sig = await fetchJssdkSignature(window.location.href.split("#")[0] || "");
     if (!sig?.signature) return;
     await loadWechatSdk();
     const wx = (window as any).wx;
@@ -111,7 +111,7 @@ onMounted(() => {
   <div>
     <!-- 页内分享触发按钮 -->
     <UButton
-      color="gray"
+      color="neutral"
       variant="soft"
       :icon="open ? 'i-lucide-x' : 'i-lucide-share-2'"
       class="fixed bottom-[92px] right-3 z-[70] h-11 w-11 !rounded-full !p-0 shadow-md"
