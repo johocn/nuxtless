@@ -5,12 +5,12 @@ import type {
   CustomerCoupon,
   CouponTemplate,
 } from "~~/layers/base/app/composables/useCoupon";
-import {
-  getMyCoupons,
+import { getMyCoupons,
   applyCouponToOrder,
   clearCouponFromOrder,
   couponErrorMessage,
 } from "~~/layers/base/app/composables/useCoupon";
+import { displayCentsFromNet } from "~~/layers/base/app/utils/tax-price";
 
 const { disabled, onSubmit } = defineProps<{
   disabled?: boolean;
@@ -25,7 +25,17 @@ const { order, loading } = storeToRefs(orderStore);
 const { isAuthenticated } = storeToRefs(useAuthStore());
 const activeOrder = order as Ref<ActiveOrderDetail>;
 
-const subTotal = computed(() => (activeOrder.value?.subTotal / 100).toFixed(2));
+// 商品价格行（小计）：以 Vendure subTotal(净价) 为基，按渠道 taxMode 出对客「商品价格」。
+//  inclusive(含税)：显示含税商品价 = 净价×(1+13%)，即最终售价（200）；税额 23.01 为价内拆税，已含在商品价内。
+//  exclusive/zero(不含税/零税)：显示净价（200）。
+const subTotal = computed(() => {
+  const netGoods = activeOrder.value?.subTotal ?? 0;
+  const cents =
+    taxMode.value === "inclusive"
+      ? Math.round(displayCentsFromNet(netGoods, "exclusive"))
+      : netGoods;
+  return (cents / 100).toFixed(2);
+});
 
 const orderTotal = computed(() =>
   (activeOrder.value?.totalWithTax / 100).toFixed(2),

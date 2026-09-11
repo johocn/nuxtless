@@ -4,6 +4,7 @@
 import type { Ref } from "vue";
 import type { ActiveOrderDetail } from "~~/types/order";
 import { usePerBoxSelection } from "~~/layers/base/app/composables/usePerBoxSelection";
+import { taxFromGross } from "~~/layers/base/app/utils/tax-price";
 
 const props = defineProps<{
   disabled?: boolean;
@@ -59,8 +60,14 @@ const selectedQty = computed(() => {
 
 const subTotal = computed(() => (selectedGoods.value / 100).toFixed(2));
 const orderTotal = computed(() => (payableCents.value / 100).toFixed(2));
-// 已选项口径无法精确拆分税额（activeOrder.taxSummary 含未选行），隐藏税额行避免口径不一致
-const orderTaxTotal = computed(() => null);
+
+// 已选商品(含税)反向拆分税额：inclusive/exclusive 展示税额行，zero 不显示。
+// 以「已选项」口径计算（box.lineTotal 为含税行小计），与应付总额同源，避免 taxSummary 含未选行导致的偏差。
+const { taxMode } = useTaxMode();
+const taxFromSelectedGoods = computed(() => taxFromGross(selectedGoods.value, taxMode.value));
+const orderTaxTotal = computed(() =>
+  taxFromSelectedGoods.value != null ? (taxFromSelectedGoods.value / 100).toFixed(2) : null,
+);
 const shippingWithTax = computed(() => {
   let shipping = 0;
   for (const box of selectedBoxList.value) shipping += box.shippingCost ?? 0;

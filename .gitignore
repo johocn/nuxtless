@@ -78,3 +78,13 @@ _shot_c_price.py
 /scripts/shots-*.py
 /scripts/test-cartqty-*
 /scripts/test-checkout-submit.py
+
+# 根目录调试截图与诊断 scratch（不进仓库）
+/shots/
+/e2e-shots/
+/tmp_shots/
+/tmp-*.ps1
+/tmp-*.sh
+/tmp-*.txt
+/tmp-*.log
+/tmp-*.mjs

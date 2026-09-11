@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>首页微信环境自动 SSO 登录 · 验收手册</title>
+<style>
+  :root { --jd:#07c160; --link:#2b7cff; --line:#eee; --muted:#888; }
+  body { font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; max-width: 860px; margin: 0 auto; padding: 24px 20px 60px; line-height: 1.7; color:#222; }
+  h1 { font-size: 24px; border-bottom: 2px solid var(--jd); padding-bottom: 10px; }
+  h2 { font-size: 18px; margin-top: 32px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #fafafa; }
+  code { background: #f4f4f4; padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+  .note { background: #fff7e6; border: 1px solid #ffe1a8; border-radius: 8px; padding: 12px 14px; margin: 16px 0; }
+  .ok { color: #16a34a; font-weight: 600; }
+  .shot { max-width: 340px; border: 1px solid var(--line); border-radius: 10px; margin: 8px 0; }
+  a { color: var(--link); }
+</style>
+</head>
+<body>
+  <h1>首页微信环境自动 SSO 登录 · 验收手册</h1>
+  <p><span class="ok">已部署</span> nshop 前端，生产 <code>www.youshop.cn</code> 于 2026-09-11。</p>
+
+  <h2>一、功能说明</h2>
+  <p>在<b>微信内置浏览器</b>中访问商城首页且<b>未登录</b>时，自动发起 SSO 微信静默授权登录：自动跳转 h.joho.cn 统一登录页 → 微信授权 → 回跳首页并携带 token → 用 accessToken 直验换 Vendure 会话，登录完成后停留在首页。无需手动点「登录」。</p>
+  <ul>
+    <li>仅触发条件：客户端 + 微信内置浏览器（UA 含 <code>MicroMessenger</code>）+ 当前未登录。</li>
+    <li>已登录、非微信、或桌面浏览器访问首页：不做任何自动跳转，正常浏览。</li>
+    <li>一次会话只自动跳一次（<code>youshop_sso_auto_jumped</code>），避免循环打断浏览；失败则停留首页，不无限重试。</li>
+  </ul>
+
+  <h2>二、实现链路</h2>
+  <p><code>useAutoWechatSsoLogin.ts</code>（<code>app/composables</code>）在首页 <code>app/pages/index.vue</code> <code>&lt;script setup&gt;</code> 顶层调用。核心：<code>isInWechatBrowser()</code> 检测 UA → <code>useSso.fetchProviders()</code> 从当前渠道 <code>shop-api ssoProviders</code> 动态读 zhao-sso 提供商（不硬编码域名）→ <code>loginWithSso(provider, { returnUrl: 首页 })</code> 跳 h.joho.cn 统一登录页。回调携带 <code>?token=</code> 回跳首页后，<code>hasPendingCallback → exchangeSsoAccessToken → authStore.setUser</code> 完成会话建立。</p>
+  <p>提供商配置存于 Vendure <code>Channel.customFields.authConfig → ssoProviders</code>，前端经 <code>ssoProviders</code> GraphQL 字段动态读取。</p>
+
+  <h2>三、环境准备（2026-09-11 已执行）</h2>
+  <div class="note"><b>数据库清理：</b>为真机测试准备干净环境，已清理 Vendure 中除保留账号外的所有测试客户。保留：<code>superadmin</code>、<code>jiang</code>、<code>chendi-demo/mobile</code>（超管）、<code>zhao@163.com</code>（t1租户管理员 + C端客户）、<code>tang@163.com</code>（平台运营）、<code>test-merchant@e.joho.cn</code>（租户管理员）、<code>admin-official-01~20</code>（官方租户管理员）、<code>johocn@163.com</code>，以及真实微信用户 ssoId=2（赵义涛·吉林银行）、ssoId=3（优佳商贸）。连带删除 77 个测试客户订单；strapi <code>sso_users</code> 中 e2e_t/e2e_cb/e2e_full 测试账号已删。</div>
+  <p class="ok">部署方式：本地 <code>pnpm run build</code> → <code>scripts/deploy.mjs (SKIP_BUILD=1)</code> scp <code>.output</code> → pm2 restart（遵守部署铁律，服务器不构建）。</p>
+
+  <h2>四、真机回归验证（手机微信视口 390×844 dpr2，现网 www.youshop.cn）</h2>
+  <ol>
+    <li>手机打开微信，在聊天/扫一扫中进入 <b>https://www.youshop.cn/</b>。</li>
+    <li>首次访问（未登录）应<b>自动跳转</b>到 h.joho.cn 统一登录页完成微信授权。</li>
+    <li>授权后<b>自动回跳首页</b>，顶部应显示已登录状态（可进「我的/个人中心」确认 ssoId 对应客户已登录）。</li>
+    <li>同一微信 openid 再次访问：应为同一直验会话，复用同一 ssoId（同一 openid → 同一本地客户），不再重复建档。</li>
+  </ol>
+  <table>
+    <tr><th>步骤</th><th>截图</th><th>关键点</th></tr>
+    <tr><td>微信内访问首页 → 自动跳统一登录页</td><td><img class="shot" src="shots/sso_home_redirect.png" alt="微信内自动跳转SSO" /><br/><span style="color:var(--muted)">待真机补充截图</span></td><td>未登录 + 微信UA → 自动跳 h.joho.cn 统一页</td></tr>
+    <tr><td>授权页 / 回跳首页</td><td><img class="shot" src="shots/sso_home_after_login.png" alt="授权后回跳首页" /><br/><span style="color:var(--muted)">待真机补充截图</span></td><td>授权后自动回跳首页并建立登录态</td></tr>
+  </table>
+
+  <h2>五、桌面/非微信降级验证</h2>
+  <table>
+    <tr><th>场景</th><th>预期</th><th>结果</th></tr>
+    <tr><td><code>curl https://www.youshop.cn/shop-api</code> 查 <code>ssoProviders</code></td><td>返回 zhao-sso 提供商（providerKey / baseUrl / clientId / channelCode）</td><td><span class="ok">通过</span>：返回 <code>zhao-sso-youshop-__default_channel__</code></td></tr>
+    <tr><td>桌面浏览器打开首页</td><td>不跳转，正常浏览（isInWechatBrowser=false）</td><td><span class="ok">通过</span>：URL 保持 www.youshop.cn，无跳转</td></tr>
+    <tr><td>站点健康</td><td>nshop :3000 与域名 200</td><td><span class="ok">通过</span></td></tr>
+  </table>
+
+  <h2>六、常见问题排查</h2>
+  <ul>
+    <li><b>微信内不自动跳转</b>：确认提供商已配置（后台 店铺信息 → 统一登录/SSO 配置，须含 <code>__default_channel__</code> 的 zhao-sso 提供项）；确认未设置 <code>youshop_sso_auto_jumped</code>（换会话/清缓存后重试）。</li>
+    <li><b>回跳后未登录</b>：检查 <code>?token=</code> 回跳参数与 <code>sessionStorage.youshop_sso_provider</code> 是否一致；token 失效时前端静默清除状态，用户可手动走登录页。</li>
+    <li><b>同一微信二次建档</b>：确认 zhao-sso 后端按 openid/unionid 命中已绑定 ssoId，未命中才新建（见 SSO 微信登录逻辑）。</li>
+  </ul>
+</body>
+</html>

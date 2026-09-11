@@ -12,7 +12,7 @@ const { t } = useI18n();
       <span class="jdA-save">{{ t("messages.shop.priceSave") }} {{ fmt(save) }}</span>
     </template>
     <div v-if="showList" class="jdA-tags">
-      <span class="jdA-tag">{{ t("messages.shop.priceFlash") }}</span>
+      <!-- <span class="jdA-tag">{{ t("messages.shop.priceFlash") }}</span> -->
       <span class="jdA-tag">{{ t("messages.shop.priceFinal") }}</span>
     </div>
   </div>

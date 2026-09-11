@@ -6,6 +6,7 @@
 // 数据源 orderStore.orderBoxes + usePerBoxSelection（商户分账按已选箱租户聚合，不依赖后端整单 split）。
 import type { OrderBoxInfo } from "~~/types/order";
 import { usePerBoxSelection } from "~~/layers/base/app/composables/usePerBoxSelection";
+import { taxFromGross } from "~~/layers/base/app/utils/tax-price";
 
 const { t } = useI18n();
 const orderStore = useOrderStore();
@@ -49,6 +50,17 @@ const selectedBoxList = computed<OrderBoxInfo[]>(() =>
 /** 应付款总额 = 各被选箱小计之和（合并/分箱同口径，均按已选项） */
 const payableTotal = computed(() =>
   selectedBoxList.value.reduce((acc, b) => acc + boxSubtotal(b), 0),
+);
+
+/** 已选商品总额（含税，跨箱求和），用于反向拆分税额行展示 */
+const totalSelectedGoods = computed(() =>
+  selectedBoxList.value.reduce((acc, b) => acc + boxGoodsTotal(b), 0),
+);
+
+/** 税额（含税口径反拆）：inclusive/exclusive 展示，zero 隐藏 */
+const { taxMode } = useTaxMode();
+const goodsTaxCents = computed(() =>
+  taxFromGross(totalSelectedGoods.value, taxMode.value),
 );
 
 /** 已选 N 件 */
@@ -131,6 +143,15 @@ const merchantRows = computed<{ key: string; name: string; amount: number }[]>((
         </div>
       </dl>
     </template>
+
+    <!-- 税额行（含税口径反拆）：inclusive/exclusive 展示，zero 不显示 -->
+    <div
+      v-if="goodsTaxCents != null"
+      class="mt-2 flex items-center justify-between rounded-md bg-neutral-50 px-3 py-2 text-sm text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300"
+    >
+      <span>{{ t("messages.general.tax") }}</span>
+      <span class="font-medium">{{ fmt(goodsTaxCents) }}</span>
+    </div>
 
     <!-- 应付款总额 + 已选 N 件 -->
     <div class="mt-3 flex items-center justify-between border-t border-neutral-200 pt-2 text-sm font-semibold dark:border-neutral-800">

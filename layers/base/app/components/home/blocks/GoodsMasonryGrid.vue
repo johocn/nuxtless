@@ -2,7 +2,7 @@
 // 淘宝风商品瀑布流：双列大图卡（大图 + 价格 + 标题 + 底行）
 import type { SearchResult } from "~~/types/product";
 import { assetSrc } from "../../../utils/image";
-import { pickDisplayPrice } from "../../../utils/display-price";
+import { pickDisplayPrice, pickCurrentCents } from "../../../utils/display-price";
 
 type SearchItem = SearchResult[number];
 
@@ -11,10 +11,10 @@ const props = defineProps<{
   products: SearchItem[];
 }>();
 const localePath = useTenantLocalePath();
-const { taxMode } = useTaxMode();
+const { taxMode, pricesIncludeTax } = useTaxMode();
 
 function price(p?: SearchItem, cur?: string | null) {
-  const sel = pickDisplayPrice(p, taxMode.value);
+  const sel = pickDisplayPrice(p, taxMode.value, pricesIncludeTax.value);
   if (!sel) return "";
   const c = cur ?? "CNY";
   if ("min" in sel && "max" in sel) {
@@ -23,6 +23,15 @@ function price(p?: SearchItem, cur?: string | null) {
     return min === max ? `¥${min}` : `${min}~${max}`;
   }
   return `¥${(sel.value / 100).toFixed(2)}`;
+}
+
+// 划线原价（分→文本）：仅当带 listPriceCents 且大于现行价时输出删除线原价，避免倒挂
+function listText(p?: SearchItem, cur?: string | null) {
+  const list = (p as any)?.listPriceCents;
+  if (typeof list !== "number" || list <= 0) return "";
+  const current = pickCurrentCents(p, taxMode.value, pricesIncludeTax.value);
+  if (current != null && list <= current) return "";
+  return `¥${(list / 100).toFixed(2)}`;
 }
 </script>
 
@@ -50,7 +59,13 @@ function price(p?: SearchItem, cur?: string | null) {
           alt=""
         />
         <div class="p-2">
-          <p class="text-base font-bold text-primary">{{ price(p, p.currencyCode) }}</p>
+          <p class="flex items-baseline gap-1">
+            <span class="text-base font-bold text-primary">{{ price(p, p.currencyCode) }}</span>
+            <span
+              v-if="listText(p, p.currencyCode)"
+              class="text-xs text-gray-400 line-through"
+            >{{ listText(p, p.currencyCode) }}</span>
+          </p>
           <p class="line-clamp-2 mt-1 min-h-8 text-xs leading-4 text-gray-700">{{ p.productName }}</p>
           <div class="mt-1.5 flex items-center justify-between text-[10px] text-gray-400">
             <span class="rounded bg-primary/10 px-1 py-0.5 text-primary">自营</span>

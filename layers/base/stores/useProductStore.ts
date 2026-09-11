@@ -53,7 +53,7 @@ export const useProductStore = defineStore("product", () => {
     () => liveStock.value ?? selectedVariant.value?.stockLevel,
   );
 
-  // 当前选中变体的主图（featuredAsset 优先，回退该变体 assets 首张 -> null）
+  // 当前选中变体的主图（featuredAsset 优先，回退该变体 assets 首张）
   const variantImage = computed(() => {
     const v = selectedVariant.value;
     if (v?.featuredAsset?.preview) return v.featuredAsset.preview;
@@ -63,15 +63,21 @@ export const useProductStore = defineStore("product", () => {
   const galleryAssets = computed(() => {
     const variantAssets = selectedVariant.value?.assets ?? [];
     const productAssets = product.value?.assets ?? [];
-    const hasVariantImage = variantImage.value != null && variantImage.value !== '';
-    // 变体主图切换：有变体图则以变体 featuredAsset 为主图首项，其余变体图跟随（去重）
-    const imgs =
-      hasVariantImage || variantAssets.length > 0
-        ? [
-            ...(hasVariantImage ? [{ id: "variant-main", preview: variantImage.value! }] : []),
-            ...variantAssets.filter((a) => a.preview !== variantImage.value),
-          ]
-        : productAssets;
+    const productFeatured = product.value?.featuredAsset;
+    // 合并「变体主图 → 变体资产 → 商品主图 → 商品资产」并去重：
+    // 兼容 web-admin 把多图挂在商品级/变体级 assets，也兼容仅挂 featuredAsset 的单图商品
+    // （assets 数组为空时仍回退展示主图，避免顶部画廊落到"暂无图片"占位）。
+    const imgs: Array<{ id: string; preview: string }> = [];
+    const seen = new Set<string>();
+    const add = (id: string, preview: string) => {
+      if (!preview || seen.has(preview)) return;
+      seen.add(preview);
+      imgs.push({ id, preview });
+    };
+    add("variant-main", variantImage.value ?? "");
+    for (const a of variantAssets) add(a.id, a.preview);
+    add("product-main", productFeatured?.preview ?? "");
+    for (const a of productAssets) add(a.id, a.preview);
     if (imgs.length > 0) return imgs;
     return [{ id: "placeholder", preview: assetPlaceholderSrc() } as any];
   });

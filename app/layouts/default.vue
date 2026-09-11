@@ -78,8 +78,9 @@ useSeoMeta({
         </template>
       </Head>
       <Body>
+        <!-- 底部常驻栏显示到 lg（统一底部操作栏/全局 TabBar 均 lg:hidden），内容底部留白随之扩展到 lg，防 sm~lg 区间被遮挡 -->
         <div
-          :class="{ 'pb-18 sm:pb-0': needsBottomPadding }"
+          :class="{ 'pb-18 lg:pb-0': needsBottomPadding }"
           class="flex min-h-svh flex-col"
         >
           <AppHeader />

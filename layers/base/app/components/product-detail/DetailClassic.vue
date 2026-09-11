@@ -58,7 +58,7 @@ const inStock = computed(
 
       <ProductVariants v-if="visible('variants')" />
 
-      <!-- 双按钮购买栏：加入购物车(功能) + 立即购买(主红) -->
+      <!-- 购买区：双按钮移动端由统一吸底操作栏接管，此按钮行仅 PC 展示；配送警示/城市面板移动端保留 -->
       <section v-if="visible('purchase')" class="mt-1">
         <UAlert
           v-if="!productServiceable"
@@ -69,7 +69,7 @@ const inStock = computed(
           title="该商品暂不支持配送至当前城市"
           description="可切换上方城市后查看，或浏览其他商品。"
         />
-        <div class="flex flex-col-reverse gap-3 sm:flex-row">
+        <div class="hidden flex-col-reverse gap-3 sm:flex-row lg:flex">
           <UButton
             class="flex-1 justify-center"
             color="secondary"
