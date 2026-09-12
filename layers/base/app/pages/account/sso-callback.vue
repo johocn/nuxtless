@@ -8,19 +8,18 @@ const { t } = useI18n();
 const toast = useToast();
 const authStore = useAuthStore();
 const localePath = useTenantLocalePath();
-const { fetchProviders, exchangeSsoAccessToken, ssoLoginWithCode, clearSsoState } = useSso();
+const { fetchProviders, exchangeSsoAccessToken, ssoLoginWithCode, clearSsoState, readSsoReturnUrl, clearSsoReturnUrl } = useSso();
 
 const tokenEl = computed(() => (typeof route.query.token === "string" ? route.query.token : ""));
 const codeEl = computed(() => (typeof route.query.code === "string" ? route.query.code : ""));
-const returnUrl = computed<string>(() => {
-  const raw = typeof route.query.return_url === "string" ? route.query.return_url : "";
-  try {
-    return new URL(raw, window.location.origin).origin === window.location.origin ? raw : "";
-  } catch {
-    return "";
-  }
-});
-const target = computed(() => returnUrl.value || localePath("/account"));
+const target = computed(() => readSsoReturnUrl() || localePath("/account"));
+
+/** 先读取回跳目标（同源校验后），清掉 sessionStorage 记录，再跳转；防止旧目标被复用 */
+function leave() {
+  const tgt = target.value;
+  clearSsoReturnUrl();
+  router.replace(tgt);
+}
 
 /** 解析统一页回跳的 ?user 参数（base64(encodeURIComponent(JSON))），取用户自有邀请码 */
 function parseUserInviteCode(userParam: string): string {
@@ -40,7 +39,7 @@ async function run() {
   // 统一页回跳：token 直验换 Vendure 会话
   if (tokenEl.value) {
     if (!provider) {
-      router.replace(target.value);
+      leave();
       return;
     }
     try {
@@ -63,14 +62,14 @@ async function run() {
       clearSsoState();
       toast.add({ title: t("messages.share.loginFail"), color: "error" });
     }
-    router.replace(target.value);
+    leave();
     return;
   }
 
   // 直连授权回跳：code 兑令牌（保留兼容）
   if (codeEl.value) {
     if (!provider) {
-      router.replace(target.value);
+      leave();
       return;
     }
     const redirectUriStr =
@@ -88,11 +87,11 @@ async function run() {
       clearSsoState();
       toast.add({ title: t("messages.share.loginFail"), color: "error" });
     }
-    router.replace(target.value);
+    leave();
     return;
   }
 
-  router.replace(target.value);
+  leave();
 }
 
 onMounted(() => {
