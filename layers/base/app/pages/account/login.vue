@@ -12,7 +12,7 @@ const { t } = useI18n();
 const localePath = useTenantLocalePath();
 const toast = useToast();
 const authStore = useAuthStore();
-const { hasPendingCallback, exchangeSsoAccessToken, clearSsoState, fetchProviders, loginWithWechat } = useSso();
+const { hasPendingCallback, exchangeSsoAccessToken, clearSsoState, fetchProviders, loginWithSso } = useSso();
 const submitted = ref(false);
 const wechatLogging = ref(false);
 
@@ -23,7 +23,7 @@ async function wechatLogin() {
   const provider = providers[0];
   if (provider) {
     sessionStorage.setItem("youshop_sso_auto_jumped", "1");
-    loginWithWechat(provider, { returnUrl: `${window.location.origin}${localePath("/account")}` });
+    loginWithSso(provider, { returnUrl: `${window.location.origin}${localePath("/account")}` });
   } else {
     wechatLogging.value = false;
   }
@@ -61,7 +61,7 @@ onMounted(async () => {
     return;
   }
 
-  // 微信内置浏览器且未在进行微信登录 → 自动直连微信登录
+  // 微信内置浏览器且未在进行微信登录 → 自动跳转 h.joho.cn 统一登录页
   if (isWechatBrowser() && !wechatLogging.value) {
     void wechatLogin();
   }
