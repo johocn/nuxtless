@@ -88,3 +88,10 @@ _shot_c_price.py
 /tmp-*.txt
 /tmp-*.log
 /tmp-*.mjs
+
+# tmp/ 目录一次性调试/探针脚本与截图输出（不进仓库；verify-*/query-*/fix-* 回归脚本正常提交）
+tmp/_*
+tmp/dbg-*
+tmp/debug-*
+tmp/probe-tables.mjs
+tmp-shots/
