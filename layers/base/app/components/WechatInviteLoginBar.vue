@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { isWechatBrowser, useSso } from "../composables/useSso";
 
-// 条件引导条：URL 带 ?invite 且未登录 → 底部弹「微信一键登录」，登录走直连授权并精确回跳本页。
+// 条件引导条：URL 带 ?invite 且未登录 → 底部弹「微信一键登录」。
+// 登录走 h.joho.cn 统一登录页，invite_code 透传绑定分销关系，sso-callback 兑换后精确回跳本页。
 // 一次性提示（可关闭），本会话后不再打扰。
 const route = useRoute();
 const localePath = useTenantLocalePath();
 const { t } = useI18n();
 const authStore = useAuthStore();
-const { fetchProviders, loginWithWechat } = useSso();
+const { fetchProviders, loginWithSso } = useSso();
 
 const SKIP_KEY = "youshop_invite_bar_skipped";
 const invite = computed(() => (route.query.invite as string) || "");
@@ -17,7 +18,7 @@ async function goLogin() {
   const providers = await fetchProviders();
   const provider = providers[0];
   if (provider) {
-    loginWithWechat(provider, { inviteCode: invite.value, returnUrl: route.fullPath });
+    loginWithSso(provider, { inviteCode: invite.value, returnUrl: route.fullPath });
   }
 }
 

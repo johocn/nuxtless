@@ -19,6 +19,8 @@ interface SsoLoginResult {
 
 const UNIFIED_LOGIN_PATH = "/#/pages/sso/login";
 const CALLBACK_PATH = "/account/sso-callback";
+const SSO_PROVIDER_KEY = "youshop_sso_provider";
+const SSO_BASE_URL_KEY = "youshop_sso_base_url";
 
 /** 微信内置浏览器 UA 检测（首个发起点：首页/登录页/引导条共用） */
 export function isWechatBrowser(): boolean {
@@ -77,15 +79,30 @@ export function useSso() {
     return `${origin}${UNIFIED_LOGIN_PATH}`;
   }
 
-  /** 跳转到 h.joho.cn 统一登录页；登录成功后回跳 returnUrl（默认登录页），并携带 token。
-   *  首页自动登录可传 opts.returnUrl 指定回跳首页。 */
-  function loginWithSso(provider: SsoProviderInfo, opts?: { returnUrl?: string; redirectPath?: string }) {
+  /** 构造统一登录页的回跳落点：nshop 自带 sso-callback 页 + ?return_url=<最终目标页>。
+   *  统一页登录成功后回跳该落点携带 token，sso-callback 兑换后精确回跳目标页。 */
+  function callbackWithReturn(returnUrl: string): string {
+    const localePath = useTenantLocalePath();
+    const callbackUrl = `${window.location.origin}${localePath(CALLBACK_PATH)}`;
+    return `${callbackUrl}?return_url=${encodeURIComponent(returnUrl)}`;
+  }
+
+  /** 跳转到 h.joho.cn 统一登录页（token 直验换 Vendure 会话）。
+   *  支持邀请码：invite_code 透传给统一页 → 微信授权时服务端 buildReferralRelation 幂等绑分销关系；
+   *  登录成功后回跳 sso-callback 落点，再由其精确回跳目标页（opts.returnUrl/redirectPath 优先，缺省回 /account）。 */
+  function loginWithSso(provider: SsoProviderInfo, opts?: { inviteCode?: string; returnUrl?: string; redirectPath?: string }) {
+    const fallback = opts?.returnUrl ?? redirectUri(opts?.redirectPath);
+    const returnUrl = opts?.returnUrl && isSameHost(opts.returnUrl)
+      ? opts.returnUrl
+      : (isSameHost(fallback) ? fallback : redirectUri());
     const params: Record<string, string> = {
       app_code: provider.clientId,
-      return_url: opts?.returnUrl ?? redirectUri(opts?.redirectPath),
+      return_url: callbackWithReturn(returnUrl),
     };
     if (provider.channelCode) params.channel_code = provider.channelCode;
-    sessionStorage.setItem("youshop_sso_provider", provider.providerKey);
+    if (opts?.inviteCode) params.invite_code = opts.inviteCode;
+    sessionStorage.setItem(SSO_PROVIDER_KEY, provider.providerKey);
+    sessionStorage.setItem(SSO_BASE_URL_KEY, provider.baseUrl);
     const url = `${unifiedLoginUrl(provider)}?${new URLSearchParams(params).toString()}`;
     window.location.href = url;
   }
