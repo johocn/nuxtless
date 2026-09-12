@@ -90,7 +90,17 @@ node --experimental-strip-types tests/checkout-navigation.test.mjs
 6. **联系人地址簿**：新账号（地址簿为空）进入自提单结算 → 联系人区无「王小明」等示例 chip，仅手填姓名/电话；有地址簿时显示真实联系人 chip 可切换。
 7. **i18n**：切换英文，结算页「返回/导航/去导航」等文案应显示英文。
 
-## 五、注意事项
+## 五、线上验证记录（2026-09-13，部署后）
+
+> 站点：https://www.youshop.cn（openresty → nshop:3000）｜脚本：`tmp/verify-checkout-online.py`｜回归：`tmp/regress-shipping-profile.mjs`
+
+1. **可达性**：首页 / `/checkout` 均 HTTP 200，`/shop-api` 端点正常。
+2. **结算页渲染**：加购变体 58（¥880）→ 结算页正常渲染「门店自提配送档案」自提箱，自提点显示 **国信南山温泉酒店**（自由大路店误显示已修复，与档案 1 绑定一致）；返回按钮位于页首左上角，见 `assets/s1_back_button_online.png`。
+3. **自提点切换**：线上档案 1 当前仅绑定 1 个自提点，按「数量 >1 才显示」规则不显示「选择自提点」按钮——符合预期；多自提点档案（如本地双点档案）仍按规则显示。
+4. **导航弹层**：点击地图图标按钮（`aria-label=导航`）打开高德弹层，含「去导航」按钮，页面无 JS 错误，见 `assets/s3_navigation_modal_online.png`。
+5. **回归套件**：`node tmp/regress-shipping-profile.mjs` → **10 PASS / 0 FAIL**（档案可见性、全局权限、租户管理员权限、档案 1 绑定一致性）。
+
+## 六、注意事项
 - 自提点无城市字段，「同城」以距当前定位 ≤50km 衡量（Haversine）。
 - 高德 SDK Key 由服务端 `GqlGetMapSdkConfig` 下发，前端不硬编码，未配置 provider 时「导航」按钮不显示/导航弹层给出「地图加载失败」提示。
 - 上述截图建议：步骤 2、4、5 每步补一张手机截图到本手册 `assets/`，与既有 `pickup-contact-switch` 手册风格一致。
