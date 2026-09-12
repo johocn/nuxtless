@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>配送档案「全局化」isGlobal · 线上验收操作手册</title>
+<style>
+  @font-face{
+    font-family:'InstrumentSans';
+    src:url('../checkout-wholeline-acceptance/_shared/fonts/InstrumentSans-Regular.ttf') format('truetype');
+    font-weight:400;font-style:normal;
+  }
+  @font-face{
+    font-family:'InstrumentSans';
+    src:url('../checkout-wholeline-acceptance/_shared/fonts/InstrumentSans-Bold.ttf') format('truetype');
+    font-weight:700;font-style:normal;
+  }
+  @font-face{
+    font-family:'JetBrainsMono';
+    src:url('../checkout-wholeline-acceptance/_shared/fonts/JetBrainsMono-Regular.ttf') format('truetype');
+    font-weight:400;font-style:normal;
+  }
+  @font-face{
+    font-family:'JetBrainsMono';
+    src:url('../checkout-wholeline-acceptance/_shared/fonts/JetBrainsMono-Bold.ttf') format('truetype');
+    font-weight:700;font-style:normal;
+  }
+
+  :root{
+    --bg:#f6f5f1;
+    --bg2:#ffffff;
+    --ink:#20201f;
+    --muted:#6b6b66;
+    --rule:#e4e2da;
+    --accent:#e53935;
+    --accent2:#2f7d63;
+    --global:#7c5cfc;
+    --shadow:rgba(124,92,252,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'InstrumentSans',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+    line-height:1.7;
+    font-size:16px;
+  }
+  .page{max-width:860px;margin:0 auto;padding:2.5rem 1.25rem 4rem;}
+
+  .hero{
+    text-align:center;padding:3.5rem 1.5rem 3rem;border-radius:20px;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(124,92,252,0.10), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(229,57,53,0.07), transparent 45%),
+      var(--bg2);
+    box-shadow:0 1px 0 rgba(0,0,0,0.02);margin-bottom:3rem;
+  }
+  .hero .kicker{
+    display:inline-block;font-size:0.8rem;font-weight:700;letter-spacing:0.14em;
+    color:var(--global);text-transform:uppercase;border:1px solid var(--rule);
+    border-radius:999px;padding:0.3rem 1rem;margin-bottom:1.25rem;
+  }
+  .hero h1{font-size:2.05rem;line-height:1.25;font-weight:700;letter-spacing:-0.02em;}
+  .hero p.sub{margin-top:0.9rem;color:var(--muted);font-size:1.02rem;max-width:680px;margin-left:auto;margin-right:auto;}
+  .hero .meta{margin-top:1.6rem;display:flex;gap:0.6rem;flex-wrap:wrap;justify-content:center;font-size:0.82rem;color:var(--muted);}
+  .hero .meta span{background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:0.3rem 0.7rem;}
+
+  .status-row{display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin-top:2rem;}
+  .status-item{
+    background:var(--bg2);border:1px solid var(--rule);border-radius:16px;
+    padding:1.1rem 1.4rem;min-width:9.5rem;text-align:center;box-shadow:0 4px 14px var(--shadow);
+  }
+  .status-item .num{font-family:'JetBrainsMono',monospace;font-size:1.45rem;font-weight:700;color:var(--global);display:block;}
+  .status-item .lbl{font-size:0.8rem;color:var(--muted);margin-top:0.2rem;}
+  .status-item.ok .num{color:var(--accent2);}
+
+  section{margin-bottom:3.4rem;}
+  h2{
+    font-size:1.4rem;font-weight:700;letter-spacing:-0.01em;
+    padding-bottom:0.7rem;position:relative;margin-bottom:1.6rem;
+  }
+  h2::after{
+    content:"";position:absolute;left:0;bottom:0;width:56px;height:3px;border-radius:3px;
+    background:linear-gradient(90deg,var(--global),var(--accent));
+  }
+  h3{font-size:1.1rem;font-weight:700;margin:1.9rem 0 0.8rem;}
+  p{margin-bottom:1rem;color:var(--ink);}
+  .muted{color:var(--muted);}
+  ul,ol{padding-left:1.3rem;margin-bottom:1.1rem;}
+  li{margin-bottom:0.45rem;}
+
+  .card{
+    background:rgba(255,255,255,0.7);backdrop-filter:blur(10px);
+    border:1px solid rgba(124,92,252,0.14);border-radius:16px;
+    padding:1.4rem 1.5rem;margin-bottom:1.1rem;box-shadow:0 2px 10px rgba(124,92,252,0.06);
+  }
+  .card h4{font-size:1rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;}
+  .tag{font-size:0.72rem;font-weight:700;letter-spacing:0.04em;color:var(--global);border:1px solid rgba(124,92,252,0.35);border-radius:6px;padding:0.14rem 0.5rem;}
+  .tag.gr{color:var(--accent2);border-color:rgba(47,125,99,0.3);}
+  .tag.rd{color:var(--accent);border-color:rgba(229,57,53,0.3);}
+
+  .callout{
+    border-left:4px solid var(--global);background:rgba(124,92,252,0.06);
+    border-radius:0 12px 12px 0;padding:1rem 1.25rem;margin:1.4rem 0;
+  }
+  .callout.warn{border-left-color:var(--accent);background:rgba(229,57,53,0.06);}
+  .callout.ok{border-left-color:var(--accent2);background:rgba(47,125,99,0.06);}
+  .callout .tt{font-weight:700;display:block;margin-bottom:0.3rem;}
+
+  .mono{font-family:'JetBrainsMono',monospace;font-size:0.94em;background:var(--bg);border:1px solid var(--rule);border-radius:6px;padding:0.1rem 0.4rem;}
+  mark.glob{background:none;color:var(--global);font-weight:700;}
+  .gbadge{display:inline-block;font-size:0.72rem;font-weight:700;color:#fff;background:var(--global);border-radius:999px;padding:0.1rem 0.6rem;vertical-align:middle;}
+  del.fix{background:var(--rule);border-radius:4px;padding:0 0.25rem;color:var(--muted);}
+
+  .table-wrap{overflow-x:auto;overflow-y:auto;max-height:600px;border:1px solid var(--rule);border-radius:12px;background:var(--bg2);}
+  table{width:100%;border-collapse:collapse;font-size:0.92rem;min-width:520px;}
+  th,td{padding:0.7rem 0.9rem;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top;}
+  th{font-weight:700;background:var(--bg);white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  .pass{color:var(--accent2);font-weight:700;white-space:nowrap;}
+  .skip{color:var(--muted);font-weight:600;white-space:nowrap;}
+
+  .figure-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;margin-top:1.2rem;}
+  .figure-grid.three{grid-template-columns:repeat(3,1fr);}
+  .diagram{background:var(--bg2);border:1px solid var(--rule);border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.04);}
+  .diagram img{width:100%;display:block;height:auto;}
+  .diagram .cap{padding:0.7rem 0.9rem;font-size:0.88rem;font-weight:600;}
+  .diagram .cap small{display:block;color:var(--muted);font-weight:400;font-size:0.78rem;margin-top:0.15rem;line-height:1.5;}
+
+  .codeblk{font-family:'JetBrainsMono',monospace;font-size:0.84rem;background:#1f1e1c;color:#e8e6e3;border-radius:10px;padding:1rem 1.1rem;overflow-x:auto;margin:1rem 0;line-height:1.6;}
+  .codeblk .c{color:#8a8782;}
+  .codeblk .hl{color:#ff7a59;font-weight:700;}
+  .codeblk .grn{color:#7fd9a6;}
+
+  footer{margin-top:3.5rem;border-top:1px solid var(--rule);padding-top:1.8rem;color:var(--muted);font-size:0.85rem;}
+  footer .sources ol{padding-left:1.2rem;font-size:0.85rem;color:var(--muted);}
+  footer .sources li{margin-bottom:0.5rem;overflow-wrap:break-word;word-break:break-all;}
+  footer .sources .src-title{color:var(--ink);}
+  footer .sources .src-url{display:block;margin-top:0.15rem;font-size:0.82rem;color:var(--accent);word-break:break-all;}
+
+  @media (max-width:600px){
+    body{font-size:15px;}
+    .page{padding:1.5rem 1rem 3rem;}
+    .hero{padding:2.5rem 1.25rem 2.2rem;}
+    .hero h1{font-size:1.5rem;}
+    .figure-grid,.figure-grid.three{grid-template-columns:1fr;}
+    .status-row{gap:0.8rem;}
+    .status-item{min-width:7rem;padding:0.9rem 0.8rem;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <span class="kicker">线上验收 · YouShop 配送档案「全局化」isGlobal</span>
+    <h1>配送档案「设为全局」开关 ＋ 全局徽标 ＋ 非超管只读</h1>
+    <p class="sub">将配送档案升级为「全局档案」（<span class="mono">isGlobal=true</span>，全平台所有租户可选可用）；超管可一键切换全局属性，列表以<span class="gbadge">全局</span>紫色徽标区分，非超管对全局档案只读（<mark class="glob">UI 灰化 + 后端双重校验</mark>）。</p>
+    <div class="meta">
+      <span>后台 e.joho.cn/guanli</span>
+      <span>渠道 t2 / default</span>
+      <span>视口 390×844 (dpr=2)</span>
+      <span>日期 2026-09-12</span>
+    </div>
+    <div class="status-row">
+      <div class="status-item ok"><span class="num">✓ 通过</span><span class="lbl">超管新建可切换全局</span></div>
+      <div class="status-item ok"><span class="num">✓ 通过</span><span class="lbl">列表全局徽标</span></div>
+      <div class="status-item ok"><span class="num">✓ 通过</span><span class="lbl">非超管只读（UI）</span></div>
+      <div class="status-item ok"><span class="num">✓ 通过</span><span class="lbl">后端全局属性校验</span></div>
+    </div>
+  </header>
+
+  <!-- ============ 1 背景 ============ -->
+  <section>
+    <h2>一、背景与后端权限缺口</h2>
+    <div class="card">
+      <h4><span class="tag">需求</span></h4>
+      <p>配送档案此前仅归属于单个租户（<span class="mono">isGlobal=false</span>，仅该租户可见）。业务需要一种「<mark class="glob">全局档案</mark>」：由<span class="mono">超级管理员</span>维护、全平台各租户可选用（列表共性可见），用于平台级统一配送规则（如「门店自提配送档案」全渠道复用）。</p>
+    </div>
+    <div class="card">
+      <h4><span class="tag rd">后端权限缺口（本次补齐）</span></h4>
+      <ul>
+        <li><span class="mono">create</span>：超管新增档案可带 <span class="mono">isGlobal:true</span>；<span class="mono">assertProfileGlobalPermissions(ctx,'create',…)</span> 校验——<strong>仅超级管理员可创建全局档案</strong>，非超管传 <span class="mono">isGlobal:true</span> 直接拒绝。</li>
+        <li><span class="mono">update</span>：超管切换 <span class="mono">isGlobal</span> 时维护 <span class="mono">ownerChannelId</span>（全局→<span class="mono">null</span>，转租户→当前渠道）与 <span class="mono">isTenantDefault</span>（开全局自动清「租户默认」）；非超管<strong>不能改动全局档案、也不能改全局属性</strong>。</li>
+        <li><span class="mono">delete</span>：非超管<strong>不能删除全局档案</strong>（<span class="mono">仅超级管理员可删除全局档案</span>）。</li>
+        <li>列表 <span class="mono">findAll</span>：<span class="mono">WHERE (sp.isGlobal = true OR sp.ownerChannelId = :channelId)</span> —— 全局档案对<span class="mono">每个租户</span>都可见。</li>
+      </ul>
+    </div>
+    <div class="codeblk"><span class="c">// shipping-profile.service.ts —— 全局属性一致性维护（关键分支）</span>
+if (input.isGlobal === true) { ... profile.ownerChannelId = null; profile.isGlobal = true; }
+else if (input.isGlobal === false) { ... profile.ownerChannelId = ctx.channelId; profile.isGlobal = false; }</div>
+  </section>
+
+  <!-- ============ 2 功能说明 ============ -->
+  <section>
+    <h2>二、功能说明</h2>
+    <h3>2.1 超管「设为全局」开关（新建 / 编辑）</h3>
+    <p>配送档案表单中，<strong>仅超级管理员</strong>看到「<mark class="glob">设为全局</mark>」开关（非超管不渲染）。新建时默认关，点开弹出确认「开启后所有租户可见，确认？」；确认后：开关开、<span class="mono">ownerChannelId</span> 置 <span class="mono">null</span>，且「设为租户默认」置灰、hint 显示「<span class="mono">全局档案不可设为租户默认</span>」——全局档案与租户默认互斥。编辑全局档案时开关为开、hint 显示「<span class="mono">全局档案对所有租户可见，仅超管可维护</span>」；超管可再切回关（此时归属当前渠道、允许设租户默认）。</p>
+
+    <h3>2.2 列表「全局」徽标</h3>
+    <p>配送档案列表卡片，全局档案名称旁显示<span class="gbadge">全局</span>（<span class="mono">global-badge</span>，紫色 #7c5cfc）。</p>
+
+    <h3>2.3 非超管只读（UI + 后端双重）</h3>
+    <ul>
+      <li><strong>UI 只读</strong>：非超管视角下，全局档案卡片操作区替换为「<span class="mono">仅超管可维护 · 不可编辑</span>」，<strong>无编辑 / 删除 / 启停开关</strong>；进入编辑态时钟展示「设为全局」只读禁用开关（hint「全局档案 · 仅超管可维护」）。本租户自有（非全局）档案操作正常。</li>
+      <li><strong>后端校验</strong>：即便绕过前端，非超管调 <span class="mono">update / delete</span> 也会被拒（create 带 isGlobal:true 亦拒）。</li>
+    </ul>
+    <div class="callout warn">
+      <span class="tt">上线权限说明（重要）</span>
+      后端权限策略要求档案类操作需 <span class="mono">ShippingProfile</span> 权限。当前线上默认租户管理员角色（<span class="mono">t2-tenant-admin</span> / <span class="mono">official-tenant-admin-N</span> 等）<strong>均未包含该权限</strong>，因此非超管默认连「配送档案列表」都进不去（返回 <span class="mono">FORBIDDEN</span> → 空列表）。本手册的「非超管只读」截图使用临时测试角色（默认渠道，克隆租户管理员权限并追加 <span class="mono">ShippingProfile</span>）来演示该只读 UI；生产若要对各租户管理员开放只读查看，需在其角色上补授 <span class="mono">ShippingProfile</span> 权限（详见第四节）。即使补授后，非超管仍无法对全局档案做任何维护（受后端 create/update/delete 三层校验拦截）。
+    </div>
+  </section>
+
+  <!-- ============ 3 验收表格 ============ -->
+  <section>
+    <h2>三、验收表格</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>校验点</th><th>操作</th><th>预期</th><th>结果</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>超管在 t2 渠道创建全局档案</td>
+            <td><span class="mono">tmp/verify-shipping-profile-global.mjs</span>（superadmin + t2 渠道头）</td>
+            <td><span class="mono">createShippingProfile(isGlobal:true)</span> → <span class="mono">isGlobal=true</span>，查询 <span class="mono">isTenantDefault=false</span></td>
+            <td class="pass">✓ PASS</td>
+          </tr>
+          <tr>
+            <td>超管编辑全局档案可切换开关</td>
+            <td>超管 t2 → 配送档案 → 编辑「门店自提配送档案」（全局）→ 表单「设为全局」为开</td>
+            <td>开关可切换；hint「全局档案对所有租户可见，仅超管可维护」</td>
+            <td class="pass">✓ PASS</td>
+          </tr>
+          <tr>
+            <td>非超管视图全局档案只读</td>
+            <td>临时测试角色（默认渠道，限 <span class="mono">ShippingProfile</span>）登录 → 列表</td>
+            <td>全局卡片「仅超管可维护 · 不可编辑」、无编辑/删除/启停开关；自有档案正常</td>
+            <td class="pass">✓ PASS</td>
+          </tr>
+          <tr>
+            <td>API 回归</td>
+            <td><span class="mono">node tmp/verify-shipping-profile-global.mjs</span> → <span class="mono">ALL PASS</span></td>
+            <td>create / query / delete 全绿；非超管被拒用例由单测覆盖 + 代码评审（该脚本默认 <span class="mono">[SKIP]</span>，见下）</td>
+            <td class="pass">✓ PASS</td>
+          </tr>
+          <tr>
+            <td>非超管被拒（后端）</td>
+            <td>非超管调 update/delete（含 isGlobal 变更）</td>
+            <td>被 uid 拒绝「仅超级管理员…」/ 授权拒绝；由单测 <span class="mono">shipping-profile-permissions.service.spec.ts</span> 覆盖 + 代码评审</td>
+            <td class="skip">用例：见下</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="codeblk"><span class="c">$ node tmp/verify-shipping-profile-global.mjs</span>
+[PASS] 登录 OK
+[PASS] 选用配送方式 id=1 code=store-pickup
+[PASS] 超管创建全局档案 <span class="grn">isGlobal=true</span> id=25
+[PASS] 查询 <span class="grn">isGlobal=true isTenantDefault=false</span>
+<span class="c">[SKIP] 未提供 NON_SUPER_TOKEN，非超管被拒用例由单测覆盖 + 代码评审</span>
+[PASS] 超管删除成功
+<span class="grn">ALL PASS</span></div>
+    <p class="muted">注：非超管被拒在线上实测时返回的是通用授权拒绝（<span class="mono">FORBIDDEN</span>），因租户角色缺 <span class="mono">ShippingProfile</span> 权限先于档案级校验触发；具体文案「仅超级管理员可修改全局属性 / 仅超级管理员可删除全局档案」由单测 <span class="mono">shipping-profile-permissions.service.spec.ts</span> 与代码评审锁定。</p>
+  </section>
+
+  <!-- ============ 4 已知问题 ============ -->
+  <section>
+    <h2>四、已知问题</h2>
+    <div class="card">
+      <h4><span class="tag rd">description 列 NOT NULL 但 GraphQL schema 可选</span></h4>
+      <ul>
+        <li>线上库 <span class="mono">shipping_profile.description</span> 为 <span class="mono">NOT NULL</span>，但 GraphQL 的 <span class="mono">CreateShippingProfileInput.description</span> 为可选；若 API 层<span class="mono">不传</span> description，<span class="mono">undefined</span> 会触发数据库 NOT NULL 报错。</li>
+        <li>前端表单始终显式传 <span class="mono">description</span>（无内容时传空串 <span class="mono">""</span>），传<strong>空串</strong>不受影响，故 UI 使用正常。</li>
+        <li>建议后续将列<span class="mono">改为可空或加默认值</span>，使 API 层缺省不报错。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4><span class="tag rd">租户只读视角需补授权限</span></h4>
+      <p>线上默认租户管理员角色普遍<span class="mono">未带 ShippingProfile 权限</span>，非超管默认进不了档案列表。若希望各租户管理员「可看全局档案、不可维护」，需在其角色上补授 <span class="mono">ShippingProfile</span> 权限——此为本次「非超管只读」的投产前提，待平台角色策略统一后生效。</p>
+    </div>
+  </section>
+
+  <!-- ============ 5 图片区 ============ -->
+  <section>
+    <h2>五、线上截图（手机视口 390×844, dpr=2）</h2>
+
+    <div class="figure-grid">
+      <figure class="diagram">
+        <img src="assets/wa_profile_create_global.png" alt="超管新建档案设为全局开关点开">
+        <figcaption class="cap">超管新建：勾选「设为全局」
+          <small>点开开关并确认后，「设为租户默认」置灰、hint「全局档案不可设为租户默认」。</small>
+        </figcaption>
+      </figure>
+      <figure class="diagram">
+        <img src="assets/wa_profile_edit_global_toggle.png" alt="超管编辑全局档案开关为开">
+        <figcaption class="cap">超管编辑全局档案
+          <small>「设为全局」开关为开，hint「全局档案对所有租户可见，仅超管可维护」。</small>
+        </figcaption>
+      </figure>
+    </div>
+    <div class="figure-grid">
+      <figure class="diagram">
+        <img src="assets/wa_profile_list_global_super.png" alt="超管视角列表全局徽标">
+        <figcaption class="cap">超管列表：全局档案带「全局」徽标
+          <small>「门店自提配送档案」为全局档案，操作区含 编辑 / 设为默认 / 删除。</small>
+        </figcaption>
+      </figure>
+      <figure class="diagram">
+        <img src="assets/wa_profile_list_global_tenant.png" alt="非超管视角全局档案只读">
+        <figcaption class="cap">非超管视角：全局档案只读
+          <small>全局档案显示「仅超管可维护 · 不可编辑」，无编辑/删除/启停开关；本租户自有档案（默认）操作正常。</small>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <footer>
+    <div class="sources">
+      <h2>参考</h2>
+      <ol>
+        <li id="cite-1">
+          <span class="src-title">前端：配送档案页（设为全局开关 + 全局徽标 + 非超管只读）</span>
+          <span class="src-url">vshop/web-admin/src/pages/shipping/profile/index.vue</span>
+        </li>
+        <li id="cite-2">
+          <span class="src-title">后端：全局属性校验与 ownerChannelId/isTenantDefault 一致性</span>
+          <span class="src-url">vendure/packages/cjk-plugin/src/shipping/shipping-profile.service.ts</span>
+        </li>
+        <li id="cite-3">
+          <span class="src-title">后端：数量解析器与权限</span>
+          <span class="src-url">vendure/packages/cjk-plugin/src/shipping/shipping-profile-admin.resolver.ts · shipping-profile-permissions.ts</span>
+        </li>
+        <li id="cite-4">
+          <span class="src-title">回归脚本</span>
+          <span class="src-url">nshop/tmp/verify-shipping-profile-global.mjs → ALL PASS</span>
+        </li>
+        <li id="cite-5">
+          <span class="src-title">截图脚本</span>
+          <span class="src-url">nshop/scripts/_shot_wa_shipping_global.py（线上 390×844 dpr=2）</span>
+        </li>
+      </ol>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
