@@ -41,7 +41,7 @@ const errContains = (body, sub) => JSON.stringify(body?.errors || body).includes
   // a. 超管在 t2 渠道创建全局档案
   const cRes = await gql(
     `mutation($i:CreateShippingProfileInput!){ createShippingProfile(input:$i){ id name isGlobal isTenantDefault } }`,
-    { i: { name: '全局回归测试' + ts, code, isGlobal: true, shippingMethodIds: [methodId] } },
+    { i: { name: '全局回归测试' + ts, code, description: '', isGlobal: true, shippingMethodIds: [methodId] } },
     hAdmin(T2_TOKEN)
   );
   console.log('create result: ' + JSON.stringify(cRes.body));
