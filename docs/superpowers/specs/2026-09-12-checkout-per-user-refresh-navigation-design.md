@@ -86,3 +86,23 @@
 - 每项改动用手机视口（390×844，dpr=2）截图并补入操作手册。
 - API/e2e 回归：切换用户重置、自提点就近、联系人地址簿、导航弹层。
 - 数据层不改动（纯前端结算体验）。
+
+### 验证记录（2026-09-12 已完成）
+
+| 项 | 结果 | 证据 |
+| --- | --- | --- |
+| 单元测试 `tests/checkout-navigation.test.mjs` | ✅ 21/21 通过 | parseCoordinates / haversineKm / nearbyPickups(50km 就近) / 导航 URI 生成 |
+| typecheck | ✅ 通过 | 仅既有 duplicated imports 警告（非本次引入） |
+| 返回按钮（结算页页首左上） | ✅ 有浏览历史时 `router.back()` 实测返回上一页；无历史回退首页（默认值已从失效的 `/cart` 修正为 `/`） | s1_checkout_page.png |
+| 自提点就近（50km）默认选中 | ✅ 单元测试覆盖；挂载 `ensurePickupDefaults()` + 登录态切换 watch 重置重算 | — |
+| 切换用户重置选择状态 | ✅ `usePickupSelection().resetSelection()` + `usePerBoxSelection().resetPerBox()` 在登录态 watch 中调用 | — |
+| 硬编码示例数据删除 | ✅ `useSampleAddressBook.ts` 无残留；联系表单仅占位符 | s1_checkout_page.png |
+| 导航弹层高德地图 | ✅ 地图渲染、门店蓝色标记、高德 Logo 正常 | s2_navigation_modal.png |
+| 「去导航」唤起 URI | ✅ `https://uri.amap.com/navigation?to=经度,纬度,店名&mode=car&src=nshop&coordinate=gaode&callnative=1` 实测生成正确 | — |
+
+### 关键修复记录
+
+- **UModal 内容须放 `<template #body>` 插槽**：默认插槽内容不会渲染（弹层仅剩标题栏）。
+- **defineModel 必须显式声明 name**：父组件 `v-model:open="navOpen"` 要求子组件 `defineModel<boolean>("open", ...)`，否则默认绑定 `modelValue` 收不到父值，`watch(open)` 恒为 false，地图永不初始化。
+- **地图容器在 `#body` 插槽内模板 ref 不可靠**：改用唯一 `data-pickup-map-el` 属性 DOM 兜底探测 + rAF 轮询等容器就绪（有元素且高度>0）再初始化。
+- **Marker 需传 `map` 参数**：`new AMap.Marker({..., map})` 才会挂到地图实例，否则门店标记不显示。

@@ -10,7 +10,6 @@ const { order: activeOrderRef } = storeToRefs(orderStore);
 const flow = useCheckoutFlow();
 const { isAuthenticated } = storeToRefs(useAuthStore());
 const { addresses, fetchAddresses, createAddress } = useAddressBook();
-const { pickupSamples } = useSampleAddressBook();
 const { countryCodeDefault } = useAppConfig();
 
 const contactName = ref("");
@@ -21,10 +20,8 @@ const saving = ref(false);
 
 const PHONE_RE = /^1\d{10}$/;
 
-// 地址簿为空时展示示例联系人池，便于演示「切换自提联系人」；有真实联系人则优先真实
-const contactSource = computed(() =>
-  addresses.value.length ? addresses.value : pickupSamples,
-);
+// 联系人仅取用户真实地址簿；为空时隐藏切换chip，只保留手填
+const contactSource = computed<AddressRecord[]>(() => addresses.value);
 
 // 存在自提箱且需联系方式才自显（父组件已按同条件门控，这里兜底）
 const needShow = computed(() =>

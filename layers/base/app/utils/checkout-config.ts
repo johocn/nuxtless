@@ -99,3 +99,29 @@ export function haversineKm(
     Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(s));
 }
+
+/** 自提点「同城就近」过滤半径（公里）。自提点无城市字段，用距当前定位的距离衡量。 */
+export const PICKUP_RADIUS_KM = 50;
+
+/**
+ * 按「距当前定位 ≤ PICKUP_RADIUS_KM」就近过滤并升序；纯函数，SSR 友好。
+ * 有定位且过滤后有结果则返回就近列表；无定位或无结果时回退全部（保持原序），
+ * 确保任何坏数据/缺定位下结算页仍可展示完整自提点。
+ */
+export function nearbyPickups<T>(
+  pickups: readonly T[],
+  coords: { lat: number; lng: number } | null,
+  getLatLng: (p: T) => { lat: number; lng: number } | null,
+  restrict = true,
+): T[] {
+  if (!pickups.length) return [];
+  if (!coords || !restrict) return [...pickups];
+  const near = pickups
+    .map((p) => {
+      const c = getLatLng(p);
+      return { p, km: c ? haversineKm(coords, c) : Number.POSITIVE_INFINITY };
+    })
+    .filter((x) => x.km <= PICKUP_RADIUS_KM);
+  if (!near.length) return [...pickups];
+  return near.sort((a, b) => a.km - b.km).map((x) => x.p);
+}
