@@ -90,6 +90,12 @@ export function usePerBoxSelection() {
     selection[boxKey]![lineId] = 0;
   }
 
+  /** 作废旧选择单例与结构指纹：切换用户/重新进入结算页时调用，下次调用按新订单结构重建 */
+  function resetPerBox() {
+    _singleton = null;
+    _boundFingerprint = "";
+  }
+
   /** 被选箱及其被选行，供 checkoutSplitted 的 boxKeys/lineIds 使用 */
   function selectedBoxes(): { boxKey: string; lineIds: string[] }[] {
     const out: { boxKey: string; lineIds: string[] }[] = [];
@@ -162,6 +168,7 @@ export function usePerBoxSelection() {
     selection,
     initAll,
     syncWithOrderBoxes,
+    resetPerBox,
     isFullSelection,
     isBoxChecked,
     toggleBox,

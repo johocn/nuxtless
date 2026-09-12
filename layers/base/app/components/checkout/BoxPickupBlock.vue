@@ -1,12 +1,6 @@
 <script lang="ts">
-import { reactive } from "vue";
-// 模块级共享选择状态：CheckoutPerBoxList 按租户分区渲染会产生多个块实例，
-// 每箱自提点/承运方式选择必须跨实例共享（提交校验按全箱遍历读取）。
-const sel = reactive<Record<string, { methodId: string; pickupId: string }>>({});
-// 每箱独立的自提点搜索关键词（跨实例共享，boxKey 全局唯一）
-const boxSearch = reactive<Record<string, string>>({});
-// 每箱自提点选择器展开态：多自提点时默认折叠，点「选择自提点」展开切换（跨实例共享）
-const boxExpanded = reactive<Record<string, boolean>>({});
+// 自提点「已选/搜索/展开」状态集中在 usePickupSelection（可重置单例），
+// 切换用户/重新进入结算页时由 checkout/index.vue 调 resetSelection() 清空，避免沿用上一用户的选择。
 </script>
 
 <script setup lang="ts">
@@ -21,6 +15,7 @@ import type { OrderBoxInfo } from "~~/types/order";
 import { useCheckoutFlow } from "~~/layers/base/app/composables/useCheckoutFlow";
 import {
   haversineKm,
+  nearbyPickups,
   parseCoordinates,
 } from "~~/layers/base/app/utils/checkout-config";
 
@@ -34,6 +29,19 @@ const toast = useToast();
 const orderStore = useOrderStore();
 const flow = useCheckoutFlow();
 const locationStore = useLocationStore();
+const nav = usePickupNavigation();
+
+// 跨实例共享选择/搜索/展开状态（可重置单例）
+const { sel, boxSearch, boxExpanded } = usePickupSelection();
+const { ensurePickupDefaults } = usePickupDefaults();
+
+// 自提点导航弹层
+const navOpen = ref(false);
+const navPickup = ref<PickupLocation | null>(null);
+function openNav(loc: PickupLocation) {
+  navPickup.value = loc;
+  navOpen.value = true;
+}
 
 const { orderBoxes } = storeToRefs(orderStore);
 const allPickupBoxes = computed<OrderBoxInfo[]>(() =>
@@ -92,9 +100,18 @@ function togglePickupPicker(box: OrderBoxInfo) {
   boxExpanded[box.boxKey] = !boxExpanded[box.boxKey];
 }
 
-/** 自提点较多时支持按名称/地址就近本地过滤 */
+/** 该箱自提点按「当前定位 50km 同城就近」过滤排序；无定位回退全部 */
+function nearbyForBox(box: OrderBoxInfo): PickupLocation[] {
+  return nearbyPickups(
+    (box.pickupLocations ?? []) as PickupLocation[],
+    locationStore.coords,
+    (l) => parseCoordinates(l.coordinates),
+  );
+}
+
+/** 自提点较多时支持按名称/地址就近本地过滤（先 50km 就近，再关键词） */
 function filteredPickups(box: OrderBoxInfo): PickupLocation[] {
-  const locs = (box.pickupLocations ?? []) as PickupLocation[];
+  const locs = nearbyForBox(box);
   const kw = (boxSearch[box.boxKey] ?? "").trim().toLowerCase();
   if (!kw) return locs;
   return locs.filter((loc) =>
@@ -104,12 +121,10 @@ function filteredPickups(box: OrderBoxInfo): PickupLocation[] {
   );
 }
 
-/** 有定位时按就近取最近自提点，否则取列表首个 */
+/** 有定位时按就近取最近自提点，否则取列表首个（已含 50km 就近） */
 function nearestPickup(box: OrderBoxInfo): PickupLocation | null {
-  const locs = (box.pickupLocations ?? []) as PickupLocation[];
-  if (!locs.length) return null;
-  if (!locationStore.coords) return locs[0] ?? null;
-  return [...locs].sort((a, b) => distanceKm(a) - distanceKm(b))[0] ?? null;
+  const locs = nearbyForBox(box);
+  return locs[0] ?? null;
 }
 
 function carrierId(box: OrderBoxInfo): string {
@@ -148,15 +163,11 @@ function choosePickup(box: OrderBoxInfo, pickupId: string) {
 }
 
 onMounted(() => {
-  // 兜底应用：让每箱初始即有承运方式 + 自提点（按全箱遍历，跨实例幂等）
+  // 就近默认：让每箱初始即有承运方式 + 自提点（按当前定位就近；跨实例幂等）
+  ensurePickupDefaults();
   for (const box of allPickupBoxes.value) {
-    if (sel[box.boxKey]) continue;
-    const cid = carrierId(box);
-    const nearest = nearestPickup(box);
-    if (cid && nearest) {
-      sel[box.boxKey] = { methodId: cid, pickupId: String(nearest.id) };
-      void applyBox(box, sel[box.boxKey]!, true);
-    }
+    const s = sel[box.boxKey];
+    if (s?.methodId && s?.pickupId) void applyBox(box, s, true);
   }
 });
 
@@ -245,10 +256,18 @@ flow.submitFns.submitPickup = async () => {
           <div
             class="flex items-start justify-between gap-2 rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-900/40"
           >
-            <div class="min-w-0 flex-1">
+            <div class="min-w-0 flex-1"
+              :class="nav.hasCoords(currentPickup(box)) ? 'cursor-pointer' : ''"
+              @click="nav.hasCoords(currentPickup(box)) && openNav(currentPickup(box)!)"
+            >
               <div class="flex items-center gap-1.5 font-medium text-neutral-800 dark:text-neutral-200">
                 <UIcon name="i-lucide:map-pin" class="size-4 shrink-0 text-primary-500" />
                 <span class="truncate">{{ currentPickup(box)!.name }}</span>
+                <UIcon
+                  v-if="nav.hasCoords(currentPickup(box))"
+                  name="i-lucide:navigation"
+                  class="size-3.5 shrink-0 text-neutral-400"
+                />
                 <span
                   v-if="distanceLabel(currentPickup(box)!)"
                   class="shrink-0 rounded-sm bg-primary-50 px-1 text-[11px] font-normal text-primary-600 dark:bg-primary-900/40 dark:text-primary-300"
@@ -266,15 +285,26 @@ flow.submitFns.submitPickup = async () => {
                 {{ currentPickup(box)!.businessHours || currentPickup(box)!.phoneNumber }}
               </p>
             </div>
-            <UButton
-              v-if="(box.pickupLocations ?? []).length > 1"
-              color="primary"
-              variant="soft"
-              size="sm"
-              :label="pickerOpen(box) ? t('messages.checkout.cnCollapseDetails') : t('messages.checkout.choosePickup')"
-              :icon="pickerOpen(box) ? 'i-lucide:chevron-up' : 'i-lucide:chevron-down'"
-              @click="togglePickupPicker(box)"
-            />
+            <div class="flex shrink-0 items-center gap-2">
+              <UButton
+                v-if="nav.hasCoords(currentPickup(box))"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                icon="i-lucide:map"
+                :aria-label="t('messages.checkout.navigation')"
+                @click="openNav(currentPickup(box)!)"
+              />
+              <UButton
+                v-if="(box.pickupLocations ?? []).length > 1"
+                color="primary"
+                variant="soft"
+                size="sm"
+                :label="pickerOpen(box) ? t('messages.checkout.cnCollapseDetails') : t('messages.checkout.choosePickup')"
+                :icon="pickerOpen(box) ? 'i-lucide:chevron-up' : 'i-lucide:chevron-down'"
+                @click="togglePickupPicker(box)"
+              />
+            </div>
           </div>
 
           <!-- 自提点选择器：多自提点时点「选择自提点」展开切换 -->
@@ -363,6 +393,9 @@ flow.submitFns.submitPickup = async () => {
       <!-- 收货人/电话：存在需联系方式的自提单才内嵌，与自提点连成一体（卡片版式由 CheckoutPerBoxList 统一渲染一次） -->
       <CheckoutPickupContactBlock v-if="renderContact && hasPickupContactBox" />
     </div>
+
+    <!-- 自提点导航弹层（高德地图） -->
+    <AppPickupNavigationModal v-model:open="navOpen" :pickup="navPickup" />
   </section>
 </template>
 

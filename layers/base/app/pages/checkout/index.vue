@@ -20,6 +20,10 @@ const orderStore = useOrderStore();
 const { order } = storeToRefs(orderStore);
 const isMounted = ref(false);
 
+// 重新进入结算页/切换用户时：清空自提点选择与行勾选单例，按当前用户定位就近重新默认（BoxPickupBlock 挂载时执行）
+usePickupSelection().resetSelection();
+usePerBoxSelection().resetPerBox();
+
 // 京东版式：全页联动单一事实源（deliveryMode + 各功能块提交函数）
 const flow = provideCheckoutFlow();
 
@@ -201,6 +205,16 @@ onMounted(() => {
     void orderStore.fetchOrder("detail");
   }
 });
+
+// 登录态变化：清空旧选择 → 按当前用户重拉订单/分箱/地址簿 → 就近重新默认（不沿用上一用户）
+watch(isAuthenticated, async (nowAuth) => {
+  usePickupSelection().resetSelection();
+  usePerBoxSelection().resetPerBox();
+  await orderStore.fetchOrder("detail");
+  await orderStore.fetchOrderBoxes();
+  usePickupDefaults().ensurePickupDefaults();
+  if (nowAuth) await fetchAddresses();
+});
 </script>
 
 <template>
@@ -211,6 +225,10 @@ onMounted(() => {
     aria-labelledby="checkout-title"
   >
     <h1 id="checkout-title" class="sr-only">Checkout</h1>
+
+    <div v-if="(activeOrder?.lines.length ?? 0) >= 1" class="mb-4 -mt-6">
+      <AppBackButton />
+    </div>
 
     <div v-if="(activeOrder?.lines.length ?? 0) < 1">
       <section aria-labelledby="cart-empty-title">

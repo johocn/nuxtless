@@ -16,12 +16,9 @@ const flow = useCheckoutFlow();
 const { countryCodeDefault } = useAppConfig();
 const { isAuthenticated } = storeToRefs(useAuthStore());
 const { addresses, fetchAddresses } = useAddressBook();
-const { deliverySamples } = useSampleAddressBook();
 
-// 地址簿为空时展示示例配送地址池，便于演示「切换收货地址」；有真实地址则优先真实
-const switchList = computed(() =>
-  addresses.value.length ? addresses.value : deliverySamples,
-);
+// 地址切换仅取用户真实地址簿；为空时走「新增地址」引导，不再展示示例
+const switchList = computed<AddressRecord[]>(() => addresses.value);
 
 const checkoutState = useState<CheckoutState>("checkoutState");
 const state = checkoutState.value.addressForm;
