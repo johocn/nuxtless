@@ -47,17 +47,6 @@ const { openPhotoSwipe } = useProductLightbox({ select });
 
 <template>
   <div class="relative w-full flex-1">
-    <!-- 营销标签角标：商品图片/视频右上角叠层 -->
-    <div
-      v-if="marketingTagTexts.length"
-      class="absolute right-2 top-2 z-10 flex flex-col items-end gap-1"
-    >
-      <span
-        v-for="tag in marketingTagTexts"
-        :key="tag"
-        class="rounded bg-red-500/90 px-1.5 py-0.5 text-xs font-medium text-white"
-      >{{ tag }}</span>
-    </div>
     <video
       v-if="firstIsVideo"
       id="gallery-video"
@@ -72,7 +61,7 @@ const { openPhotoSwipe } = useProductLightbox({ select });
     />
     <div class="relative w-full">
       <UCarousel
-        v-else
+        v-if="!firstIsVideo"
         ref="carousel"
         v-slot="{ item }"
         :items="galleryAssets"
@@ -136,6 +125,17 @@ const { openPhotoSwipe } = useProductLightbox({ select });
           placeholder-class="blur-xl"
         />
       </div>
+    </div>
+    <!-- 营销标签角标：商品图片/视频右上角叠层 -->
+    <div
+      v-if="marketingTagTexts.length"
+      class="absolute right-2 top-2 z-10 flex flex-col items-end gap-1"
+    >
+      <span
+        v-for="tag in marketingTagTexts"
+        :key="tag"
+        class="rounded bg-red-500/90 px-1.5 py-0.5 text-xs font-medium text-white"
+      >{{ tag }}</span>
     </div>
   </div>
 </template>
