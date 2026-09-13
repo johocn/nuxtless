@@ -17,7 +17,11 @@ const componentMap: Record<string, any> = {
 
 <template>
   <div>
-    <component :is="componentMap[layout] ?? DetailClassic" :config="config" />
+    <!-- hotel 版式：商品变体已配置 hotelRoomConfig 时渲染酒店块；否则回退经典版式（DetailHotel v-else 槽位） -->
+    <DetailHotel v-if="layout === 'hotel'" :config="config">
+      <DetailClassic :config="config" />
+    </DetailHotel>
+    <component v-else :is="componentMap[layout] ?? DetailClassic" :config="config" />
     <!-- 统一吸底操作栏：三版式共用，移动端常驻；内容区已在 default 布局预留底部留白防遮挡 -->
     <ProductDetailBottomBar v-if="visible('purchase')" />
   </div>
