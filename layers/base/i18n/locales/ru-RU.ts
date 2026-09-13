@@ -38,6 +38,9 @@ export default defineI18nLocale(() =>
       noMatchProducts: "Нет подходящих товаров",
       qualityZone: "Зона качества",
     },
+    detail: {
+      marketingTags: { new: 'Новинка', hot: 'Хит', special: 'Спеццена', sale: 'Скидка', freeShip: 'Бесплатная доставка', cut: 'Скидка', clearance: 'Распродажа', instock: 'В наличии', 'flash-sale': 'Блиц-распродажа', limited: 'Лимитированное предложение', 'price-drop': 'Снижение цены', 'new-arrival': 'Новинка' },
+    },
     home: {
       newsTitle: "Новости JD",
       adsAlt: "Реклама акций",

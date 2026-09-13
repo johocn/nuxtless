@@ -38,6 +38,9 @@ export default defineI18nLocale(() =>
       noMatchProducts: "Aucun produit correspondant",
       qualityZone: "Zone qualité",
     },
+    detail: {
+      marketingTags: { new: 'Nouveau', hot: 'Populaire', special: 'Spécial', sale: 'Vente flash', freeShip: 'Livraison gratuite', cut: 'Réduction', clearance: 'Déstockage', instock: 'En stock', 'flash-sale': 'Vente éclair', limited: 'Édition limitée', 'price-drop': 'Baisse de prix', 'new-arrival': 'Nouveauté' },
+    },
     home: {
       newsTitle: "Actualités JD",
       adsAlt: "Publicité d'action",
