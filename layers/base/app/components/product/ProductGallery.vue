@@ -49,33 +49,41 @@ const { openPhotoSwipe } = useProductLightbox({ select });
       preload="metadata"
       controls
     />
-    <UCarousel
-      v-else
-      ref="carousel"
-      v-slot="{ item }"
-      :items="galleryAssets"
-      :prev="{ onClick: onClickPrev }"
-      :next="{ onClick: onClickNext }"
-      class="mx-auto w-full"
-      @select="onSelect"
-    >
-      <NuxtImg
-        class="mx-auto h-62.5 cursor-pointer rounded-lg object-contain transition-transform hover:opacity-90 sm:h-87.5 sm:object-cover"
-        :src="assetSrc(item.preview, 700)"
-        :alt="`${selectedVariant?.name || product?.name || 'Product image'} – Slide ${activeIndex + 1}`"
-        :loading="activeIndex === 0 ? 'eager' : 'lazy'"
-        :preload="activeIndex === 0"
-        sizes="350px sm:40vw"
-        placeholder
-        placeholder-class="blur-xl"
-        role="button"
-        tabindex="0"
-        @click="() => openPhotoSwipe(activeIndex)"
-      />
-    </UCarousel>
+    <div class="relative w-full">
+      <UCarousel
+        v-else
+        ref="carousel"
+        v-slot="{ item }"
+        :items="galleryAssets"
+        :prev="{ onClick: onClickPrev }"
+        :next="{ onClick: onClickNext }"
+        class="mx-auto w-full"
+        @select="onSelect"
+      >
+        <NuxtImg
+          class="mx-auto h-62.5 cursor-pointer rounded-lg object-contain transition-transform hover:opacity-90 sm:h-87.5 sm:object-cover"
+          :src="assetSrc(item.preview, 700)"
+          :alt="`${selectedVariant?.name || product?.name || 'Product image'} – Slide ${activeIndex + 1}`"
+          :loading="activeIndex === 0 ? 'eager' : 'lazy'"
+          :preload="activeIndex === 0"
+          sizes="350px sm:40vw"
+          placeholder
+          placeholder-class="blur-xl"
+          role="button"
+          tabindex="0"
+          @click="() => openPhotoSwipe(activeIndex)"
+        />
+      </UCarousel>
+      <span
+        v-if="!firstIsVideo && galleryAssets.length > 1"
+        class="absolute left-2 top-2 z-10 rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium text-white"
+        >{{ activeIndex + 1 }}/{{ galleryAssets.length }}</span
+      >
+    </div>
 
-    <div class="mx-auto flex max-w-xs items-center justify-center gap-4 pt-4">
-      <div v-if="firstIsVideo" class="relative shrink-0">
+    <!-- 缩略图条：可横滑，图多时完整滑动查看（去掉 max-w-xs 固定宽与居中） -->
+    <div class="no-scrollbar mx-auto flex w-full items-center gap-3 overflow-x-auto px-4 pt-4 snap-x">
+      <div v-if="firstIsVideo" class="relative shrink-0 snap-start">
         <video
           :src="videoSrc"
           class="h-11.25 w-11.25 rounded-lg object-cover"
@@ -92,7 +100,7 @@ const { openPhotoSwipe } = useProductLightbox({ select });
       <div
         v-for="(item, index) in galleryAssets"
         :key="item.id"
-        class="opacity-25 transition-opacity hover:opacity-100"
+        class="shrink-0 snap-start opacity-25 transition-opacity hover:opacity-100"
         :class="{ 'opacity-100': activeIndex === index }"
         @click="select(index)"
       >
@@ -111,4 +119,12 @@ const { openPhotoSwipe } = useProductLightbox({ select });
   </div>
 </template>
 
-<style lang="css" scoped></style>
+<style lang="css" scoped>
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
