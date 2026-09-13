@@ -3,6 +3,10 @@ import type {
   NearStockLocation,
   NearbyResult,
 } from "~~/layers/base/app/composables/useNearbyStock";
+import {
+  formatNearbyDistance,
+  serviceCityLabel,
+} from "~~/layers/base/app/utils/nearby-stock";
 
 const props = defineProps<{
   /** 商品 ID（必填） */
@@ -16,11 +20,6 @@ const locationStore = useLocationStore();
 const { loading, error, fetchNearbyStock } = useNearbyStock();
 
 const result = ref<NearbyResult | null>(null);
-
-function formatDistance(km: number | null): string {
-  if (km == null) return "距离未知";
-  return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
-}
 
 /** 汇总该仓所有 SKU 的在库库存 */
 function totalOnHand(loc: NearStockLocation): number {
@@ -93,7 +92,7 @@ watch(() => props.variantId, loadStock);
         <div class="flex items-center justify-between gap-2">
           <p class="font-medium">{{ loc.location.name }}</p>
           <UBadge color="primary" variant="soft" size="sm">
-            {{ formatDistance(loc.distanceKm) }}
+            {{ formatNearbyDistance(loc.distanceKm) }}
           </UBadge>
         </div>
         <p v-if="loc.location.description" class="mt-1 text-sm text-neutral-500">
@@ -132,8 +131,8 @@ watch(() => props.variantId, loadStock);
         <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-400">
           <span>在库 {{ totalOnHand(loc) }} 件</span>
           <span>已占用 {{ totalAllocated(loc) }} 件</span>
-          <span v-if="loc.location.serviceCities?.length" class="truncate">
-            服务城市：{{ loc.location.serviceCities.join("、") }}
+          <span class="truncate">
+            服务城市：{{ serviceCityLabel(loc.location.serviceCities) }}
           </span>
         </div>
       </li>
