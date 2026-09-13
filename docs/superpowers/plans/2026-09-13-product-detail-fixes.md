@@ -1309,12 +1309,13 @@ git commit -m "fix(detail): 底栏仅保留返回/首页+双按钮，宽窄屏�
 - Create: `tmp-shots/verify-final-*.png`（手机视口截图，390×844 dpr=2）
 - Create: `d:\zhao\docs\manual\product-detail\index.md`（操作手册）
 
-- [ ] **Step 1: 全量单测**
+- [x] **Step 1: 全量单测**
 
 Run: `pnpm test`（cwd `d:\zhao\nshop`）
 Expected: 全部 PASS（Task 2/4/5 新增 3 个 spec 全绿）。
+✅ 结果：36 个单测全绿（commit a06bb0a）。
 
-- [ ] **Step 2: 本地手机视口回归截图（六项验收）**
+- [x] **Step 2: 本地手机视口回归截图（六项验收）**
 
 新建 `tmp/verify-final.py`（复用 `verify-gallery.py` 的手机视口上下文：390×844、dpr=2、is_mobile）：
 
@@ -1377,12 +1378,14 @@ if __name__ == "__main__":
 
 Run: `python tmp/verify-final.py`（cwd `d:\zhao\nshop`）
 Expected: 截图生成；`n/m` 有值、`no_coords_hint_count=0`、tags 含标签、`crumb_ok=True`、底栏 = `返回 | 首页 | 加入购物车 | 立即购买`。
+✅ 结果：hotel `1/2` 角标 + 标签 `['降价','新品']`；ticket 单图无角标（数据本身）；`no_coords_hint_count=1` 为无定位无城市场景的定位引导（符合预期）。
 
-- [ ] **Step 3: 操作手册补截图与说明**
+- [x] **Step 3: 操作手册补截图与说明**
 
 创建 `d:\zhao\docs\manual\product-detail\index.md`，将 `tmp-shots/verify-final-*.png` 复制到同目录，记录六项修复验收点：图片多图横滑/`n/m` 角标、促销服务回退链配置入口（店铺信息-方案库 → 商品-品牌营销）、就近库存城市兜底、营销标签角标、面包屑 `首页 > 休闲娱乐`、底栏宽窄屏差异。
+✅ 结果：4 张截图已复制到 `d:\zhao\docs\manual\product-detail\assets\`，手册第 4 章已引用。
 
-- [ ] **Step 4: 部署 vendure（后端 customFields）**
+- [x] **Step 4: 部署 vendure（后端 customFields）**
 
 ```bash
 # 本地：确认 vendure 代码已提交并推送（Task 2 Step 18）
@@ -1392,13 +1395,15 @@ ssh root@<SERVER_HOST> "cd <vendure-dir> && git pull && pm2 restart <vendure-app
 ```
 
 Expected: vendure 重启后，`Product.customFields.promos/services` 与 `Channel.customFields.promoSchemes/serviceSchemes` 在 Shop API / Admin API schema 可用。
+✅ 结果：线上 schema 已含新自定义字段（pm2 restart vendure online）。
 
-- [ ] **Step 5: 部署 nshop（C 端）**
+- [x] **Step 5: 部署 nshop（C 端）**
 
 Run: `pnpm deploy`（cwd `d:\zhao\nshop`，脚本读取 `.env` 的 SERVER_HOST/REMOTE_DIR）
 Expected: 本地构建 → scp `.output/` → 服务器解压 → `pm2 restart`。
+✅ 结果：node scripts/deploy.mjs 完成，pm2 restart nshop online，站点 http://qing:3000/ 验证通过。
 
-- [ ] **Step 6: 部署 web-admin**
+- [x] **Step 6: 部署 web-admin**
 
 ```bash
 # 本地构建（vshop/web-admin）
@@ -1408,18 +1413,21 @@ scp -r dist/build/h5/* root@<SERVER_HOST>:<web-admin-site-dir>/
 ```
 
 Expected: 管理后台可见方案库编辑与商品多选。
+✅ 结果：web-admin 已部署（10c04c5），店铺信息方案库与商品品牌营销多选可用。
 
-- [ ] **Step 7: 部署后线上回归**
+- [x] **Step 7: 部署后线上回归**
 
 Run: `python tmp/verify-final.py`（cwd `d:\zhao\nshop`，跑线上 `www.youshop.cn`）
 Expected: 六项验收全过（断言输出见 Step 2）；将最终截图补充到操作手册。
+✅ 结果（2026-09-13 线上）：缩略图横滑 ✓、n/m 角标 ✓、促销/服务条 ✓、城市兜底库存 ✓（默认仓 96 件可售，无定位提示）、营销标签角标 ✓（降价/新品）、面包屑 `首页 > 休闲娱乐` ✓、底栏宽窄屏 ✓（360px 首页视觉隐藏）。脚本断言修正两处：营销标签选择器改为 `span[class*=bg-red-500]`（非 `.marketing-tag`）；窄屏底栏改用 `is_visible()` 判定（`inner_text` 会把 `hidden` 元素计入）。
 
-- [ ] **Step 8: Commit 最终脚本与手册**
+- [x] **Step 8: Commit 最终脚本与手册**
 
 ```bash
 git add tmp/verify-final.py docs/manual/product-detail/
 git commit -m "docs(detail): 商品详情修复验收截图与操作手册"
 ```
+✅ 结果：commit 20ba958（nshop，tmp/verify-final.py）；手册位于独立目录 `d:\zhao\docs`（非 git 仓库），截图已就地补充。
 
 ---
 
