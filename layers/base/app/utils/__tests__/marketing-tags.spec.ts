@@ -23,4 +23,21 @@ describe("resolveMarketingTagTexts", () => {
   it("过滤空文案", () => {
     expect(resolveMarketingTagTexts(["", "flash-sale"], dict)).toEqual(["限时秒杀"]);
   });
+
+  it("Vendure text 字段返回 JSON 字符串时解析为数组", () => {
+    expect(resolveMarketingTagTexts('["flash-sale","price-drop"]', dict)).toEqual([
+      "限时秒杀",
+      "降价",
+    ]);
+  });
+
+  it("JSON 字符串为空数组或 null 返回空数组", () => {
+    expect(resolveMarketingTagTexts("[]", dict)).toEqual([]);
+    expect(resolveMarketingTagTexts(null, dict)).toEqual([]);
+    expect(resolveMarketingTagTexts(undefined, dict)).toEqual([]);
+  });
+
+  it("非法 JSON 字符串按单个原文兜底", () => {
+    expect(resolveMarketingTagTexts("秒杀", dict)).toEqual(["秒杀"]);
+  });
 });

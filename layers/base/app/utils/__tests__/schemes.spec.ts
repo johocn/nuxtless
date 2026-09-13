@@ -41,4 +41,11 @@ describe("schemes", () => {
     expect(resolveSchemeTexts(schemes, [], "zh-CN")).toEqual(["满99元包邮", "支持7天无理由退换"]);
     expect(resolveSchemeTexts(null, [], "zh-CN")).toEqual([]);
   });
+
+  it("Vendure text 字段返回 JSON 字符串时兼容解析", () => {
+    expect(resolveSchemeTexts(schemes, '["refund7"]', "zh-CN")).toEqual(["支持7天无理由退换"]);
+    expect(resolveSchemeTexts(schemes, "[]", "zh-CN")).toEqual(["满99元包邮", "支持7天无理由退换"]);
+    expect(resolveSchemeTexts(schemes, null, "zh-CN")).toEqual(["满99元包邮", "支持7天无理由退换"]);
+    expect(resolveSchemeTexts(null, '["refund7"]', "zh-CN")).toEqual([]);
+  });
 });
