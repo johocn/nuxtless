@@ -50,11 +50,6 @@ function totalOnHand(loc: NearStockLocation): number {
   return loc.variants.reduce((sum, v) => sum + v.stockOnHand, 0);
 }
 
-/** 汇总该仓所有 SKU 的已分配（占用）库存 */
-function totalAllocated(loc: NearStockLocation): number {
-  return loc.variants.reduce((sum, v) => sum + v.stockAllocated, 0);
-}
-
 async function loadStock() {
   if (!props.productId) {
     result.value = { state: "no-stock", items: [], message: null };
