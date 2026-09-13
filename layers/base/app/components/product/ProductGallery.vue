@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { assetSrc } from "../../utils/image";
+import { resolveMarketingTagTexts } from "../../utils/marketing-tags";
 
 const { product, selectedVariant, galleryAssets, mediaAssets } =
   storeToRefs(useProductStore());
@@ -8,6 +9,15 @@ const { product, selectedVariant, galleryAssets, mediaAssets } =
 const firstIsVideo = computed(() => mediaAssets.value[0]?.type === "video");
 // 首帧视频 src（仅在 firstIsVideo 时使用）
 const videoSrc = computed(() => mediaAssets.value[0]?.src ?? "");
+
+// 营销标签：customFields.marketingTags（code 数组）→ i18n 字典映射，未知 code 按原文兜底
+const { tm } = useI18n();
+const marketingTagTexts = computed(() =>
+  resolveMarketingTagTexts(
+    product.value?.customFields?.marketingTags ?? [],
+    (tm("messages.detail.marketingTags") ?? {}) as Record<string, string>,
+  ),
+);
 
 function scrollVideoTop() {
   document.getElementById("gallery-video")?.scrollIntoView({ behavior: "smooth" });
@@ -36,7 +46,18 @@ const { openPhotoSwipe } = useProductLightbox({ select });
 </script>
 
 <template>
-  <div class="w-full flex-1">
+  <div class="relative w-full flex-1">
+    <!-- 营销标签角标：商品图片/视频右上角叠层 -->
+    <div
+      v-if="marketingTagTexts.length"
+      class="absolute right-2 top-2 z-10 flex flex-col items-end gap-1"
+    >
+      <span
+        v-for="tag in marketingTagTexts"
+        :key="tag"
+        class="rounded bg-red-500/90 px-1.5 py-0.5 text-xs font-medium text-white"
+      >{{ tag }}</span>
+    </div>
     <video
       v-if="firstIsVideo"
       id="gallery-video"

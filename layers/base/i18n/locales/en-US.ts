@@ -28,6 +28,7 @@ export default defineI18nLocale(() =>
         "Nuxtless is a flexible and modular starter project for headless e-commerce, designed for high performance, excellent SEO, and clean architecture. It offers ready integrations with Vendure, Nuxt UI, and Payload, type-safe code, and professional security practices — a solid foundation for any professional online store.",
     },
     nav: {
+      back: "Back",
       home: "Home",
       categories: "Categories",
       allCategories: "All Categories",
@@ -77,6 +78,7 @@ export default defineI18nLocale(() =>
       ],
     },
     detail: {
+      marketingTags: { 'flash-sale': 'Flash Sale', limited: 'Limited', 'price-drop': 'Price Drop', 'new-arrival': 'New Arrival' },
       reviews: 'Reviews',
       reviewsEmpty: 'No reviews yet. Be the first to review this product.',
       serviceItems: ['Genuine Products', 'Fast Dispatch', 'After-sales Support'],

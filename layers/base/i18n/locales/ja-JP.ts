@@ -12,6 +12,7 @@ export default defineI18nLocale(() =>
         "Nuxtless はヘッドレス E コマース向けの柔軟でモジュール性の高いスタータープロジェクトです。高いパフォーマンス、優れた SEO、クリーンな設計を追求しています。Vendure・Nuxt UI・Payload とのすぐに使える連携、型安全なコード、プロフェッショナルなセキュリティ対策を備えており、あらゆる専門店の堅牢な土台となります。",
     },
     nav: {
+      back: "戻る",
       home: "ホーム",
       categories: "カテゴリ",
       allCategories: "すべてのカテゴリ",
@@ -39,6 +40,7 @@ export default defineI18nLocale(() =>
       qualityZone: "品質ステーション",
     },
     detail: {
+      marketingTags: { 'flash-sale': 'タイムセール', limited: '数量限定', 'price-drop': '値下げ', 'new-arrival': '新着' },
       reviews: "商品レビュー",
       reviewsEmpty: "まだレビューがありません。最初のレビュアーになりましょう",
       serviceItems: ["品質保証", "スピード配送", "アフターサービス充実"],
