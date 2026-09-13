@@ -39,7 +39,7 @@ export default defineI18nLocale(() =>
       qualityZone: "품질 특가 존",
     },
     detail: {
-      marketingTags: { 'flash-sale': '특가', limited: '한정판매', 'price-drop': '가격인하', 'new-arrival': '신상품' },
+      marketingTags: { new: '신상', hot: '인기', special: '특가', sale: '한정 할인', freeShip: '무료배송', cut: '할인', clearance: '재고정리', instock: '재고있음', 'flash-sale': '특가', limited: '한정판매', 'price-drop': '가격인하', 'new-arrival': '신상품' },
       reviews: "상품 평가",
       reviewsEmpty: "아직 평가가 없습니다. 첫 번째 평가자가 되어주세요",
       serviceItems: ["정품 보장", "초고속 배송", "A/S 걱정 없음"],

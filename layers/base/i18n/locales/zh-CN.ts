@@ -57,7 +57,7 @@ export const zhMessages = {
       qualityZone: '品质专区',
     },
     detail: {
-      marketingTags: { 'flash-sale': '秒杀', limited: '限量', 'price-drop': '降价', 'new-arrival': '新品' },
+      marketingTags: { new: '新品', hot: '热卖', special: '特价', sale: '限时折扣', freeShip: '包邮', cut: '满减', clearance: '清仓', instock: '有货', 'flash-sale': '秒杀', limited: '限量', 'price-drop': '降价', 'new-arrival': '新品' },
       reviews: '商品评价',
       reviewsEmpty: '暂无评价，成为第一个评价的人',
       serviceItems: ['正品保障', '极速发货', '售后无忧'],

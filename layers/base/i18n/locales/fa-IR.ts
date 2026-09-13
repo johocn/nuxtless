@@ -38,6 +38,9 @@ export default defineI18nLocale(() =>
       noMatchProducts: "هیچ محصول مطابقی یافت نشد",
       qualityZone: "منطقه باکیفیت",
     },
+    detail: {
+      marketingTags: { new: 'نئ', hot: 'داغ', special: 'ویژه', sale: 'تخفیف ویژه', freeShip: 'ارسال رایگان', cut: 'تخفیف', clearance: 'فروش ویژه', instock: 'موجود', 'flash-sale': 'فروش فوری', limited: 'محدود', 'price-drop': 'کاهش قیمت', 'new-arrival': 'تازه وارد' },
+    },
     home: {
       newsTitle: "اخبار جی‌دونگ",
       adsAlt: "تبلیغات ویژه",

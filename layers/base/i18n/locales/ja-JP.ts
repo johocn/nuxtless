@@ -40,7 +40,7 @@ export default defineI18nLocale(() =>
       qualityZone: "品質ステーション",
     },
     detail: {
-      marketingTags: { 'flash-sale': 'タイムセール', limited: '数量限定', 'price-drop': '値下げ', 'new-arrival': '新着' },
+      marketingTags: { new: '新作', hot: '人気', special: '特価', sale: '期間限定', freeShip: '送料無料', cut: '値引き', clearance: '在庫処分', instock: '在庫あり', 'flash-sale': 'タイムセール', limited: '数量限定', 'price-drop': '値下げ', 'new-arrival': '新着' },
       reviews: "商品レビュー",
       reviewsEmpty: "まだレビューがありません。最初のレビュアーになりましょう",
       serviceItems: ["品質保証", "スピード配送", "アフターサービス充実"],

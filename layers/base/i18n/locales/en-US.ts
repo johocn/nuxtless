@@ -78,7 +78,7 @@ export default defineI18nLocale(() =>
       ],
     },
     detail: {
-      marketingTags: { 'flash-sale': 'Flash Sale', limited: 'Limited', 'price-drop': 'Price Drop', 'new-arrival': 'New Arrival' },
+      marketingTags: { new: 'New', hot: 'Hot', special: 'Special', sale: 'Flash Sale', freeShip: 'Free Ship', cut: 'Discount', clearance: 'Clearance', instock: 'In Stock', 'flash-sale': 'Flash Sale', limited: 'Limited', 'price-drop': 'Price Drop', 'new-arrival': 'New Arrival' },
       reviews: 'Reviews',
       reviewsEmpty: 'No reviews yet. Be the first to review this product.',
       serviceItems: ['Genuine Products', 'Fast Dispatch', 'After-sales Support'],

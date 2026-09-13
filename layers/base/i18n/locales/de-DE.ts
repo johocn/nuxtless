@@ -49,7 +49,7 @@ export default defineI18nLocale(() =>
       },
     },
     detail: {
-      marketingTags: { 'flash-sale': 'Blitzangebot', limited: 'Limitierte Auflage', 'price-drop': 'Preisreduzierung', 'new-arrival': 'Neuheit' },
+      marketingTags: { new: 'Neu', hot: 'Beliebt', special: 'Sonderangebot', sale: 'Zeitangebot', freeShip: 'Kostenloser Versand', cut: 'Rabatt', clearance: 'Räumungsverkauf', instock: 'Auf Lager', 'flash-sale': 'Blitzangebot', limited: 'Limitierte Auflage', 'price-drop': 'Preisreduzierung', 'new-arrival': 'Neuheit' },
       nearbyTitle: "Lagerbestand in der Nähe",
     },
     home: {
