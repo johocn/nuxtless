@@ -37,10 +37,11 @@ async function loadStock() {
     result.value = { state: "no-stock", items: [], message: null };
     return;
   }
-  if (!locationStore.coords) {
+  if (!locationStore.coords && !locationStore.city) {
     result.value = { state: "no-coords", items: [], message: null };
     return;
   }
+  // 无定位但有城市时按城市兜底查询（coords 传 null，后端按 city 匹配）
   result.value = await fetchNearbyStock({
     productId: props.productId,
     variantId: props.variantId,
@@ -53,6 +54,7 @@ onMounted(loadStock);
 
 // 定位 / 城市切换后刷新
 watch(() => locationStore.coords, loadStock);
+watch(() => locationStore.city, loadStock);
 // SKU 切换后刷新（如单仓库存明细随 SKU 变化）
 watch(() => props.variantId, loadStock);
 </script>
