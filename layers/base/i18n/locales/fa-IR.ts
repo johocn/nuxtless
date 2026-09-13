@@ -42,6 +42,9 @@ export default defineI18nLocale(() =>
       marketingTags: { new: 'نئ', hot: 'داغ', special: 'ویژه', sale: 'تخفیف ویژه', freeShip: 'ارسال رایگان', cut: 'تخفیف', clearance: 'فروش ویژه', instock: 'موجود', 'flash-sale': 'فروش فوری', limited: 'محدود', 'price-drop': 'کاهش قیمت', 'new-arrival': 'تازه وارد' },
       spec: 'مشخصات: {name}',
       specDefault: 'پیش‌فرض',
+      nearbySummary: 'موجودی نزدیک: {qty} عدد موجود',
+      nearbyStoresCount: 'مجموعاً {n} فروشگاه · نزدیک‌ترین حدود {d}',
+      nearbyUnknownDistance: 'فاصله نامشخص',
     },
     home: {
       newsTitle: "اخبار جی‌دونگ",

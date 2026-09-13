@@ -53,6 +53,9 @@ export default defineI18nLocale(() =>
       spec: 'Spezifikation: {name}',
       specDefault: 'Standard',
       nearbyTitle: "Lagerbestand in der Nähe",
+      nearbySummary: "Lagerbestand in der Nähe: {qty} verfügbar",
+      nearbyStoresCount: "{n} Filialen · nächste ca. {d}",
+      nearbyUnknownDistance: "Entfernung unbekannt",
     },
     home: {
       newsTitle: "JD-News",
