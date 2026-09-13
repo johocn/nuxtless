@@ -12,6 +12,9 @@ export const useProductStore = defineStore("product", () => {
   const product = ref<ProductDetail>(null);
   const selectedOptions = reactive<Record<string, string>>({});
 
+  // 酒店版式：入住/离店日期跨块共享（DateBar 写入，PricePreview 读取）
+  const hotelDates = ref<{ checkIn: string; checkOut: string }>({ checkIn: "", checkOut: "" });
+
   const optionGroups = computed(() => {
     if (!product.value?.variants?.length) return [];
 
@@ -151,6 +154,7 @@ export const useProductStore = defineStore("product", () => {
     stockLevel,
     galleryAssets,
     mediaAssets,
+    hotelDates,
     init,
     setOption,
     refreshStock,

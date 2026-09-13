@@ -2,7 +2,7 @@
 // 兜底链：块级定制字段 → 块内建默认 → 全局默认（true / 'classic' / 占位文案）
 // 文案兜底链：当前 locale → defaultLocale → 无语言对象首个值 → 块内建占位 → i18n 字典静态文案
 
-export type DetailLayout = 'classic' | 'floor' | 'dualBuy';
+export type DetailLayout = 'classic' | 'floor' | 'dualBuy' | 'hotel';
 
 // 可翻译文案：string = 各语言共用；Record<language,string> = 逐语言
 export type LocalizedText = string | Record<string, string>;
@@ -34,12 +34,16 @@ const BLOCK_DEFAULT_VISIBLE: Record<string, boolean> = {
   reviews: true,
   nearby: true,
   related: true,
+  datebar: true,
+  roomList: true,
+  pricePreview: true,
+  policy: true,
 };
 
 // layout 缺省/非法 → 'classic'（与现有 standard 渲染等价，不回归）
 export function detailLayout(cfg: DetailConfig | null): DetailLayout {
   const l = cfg?.layout;
-  return l === 'floor' || l === 'dualBuy' ? l : 'classic';
+  return l === 'floor' || l === 'dualBuy' || l === 'hotel' ? l : 'classic';
 }
 
 // 逐级兜底：层1 块定制 visible → 层2 内建默认 → true

@@ -53,6 +53,7 @@ fragment ProductBaseFragment on Product {
     marketingTags
     promos
     services
+    hotelRoomConfig
   }
 }
 
