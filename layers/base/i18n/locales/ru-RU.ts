@@ -42,6 +42,9 @@ export default defineI18nLocale(() =>
       marketingTags: { new: 'Новинка', hot: 'Хит', special: 'Спеццена', sale: 'Скидка', freeShip: 'Бесплатная доставка', cut: 'Скидка', clearance: 'Распродажа', instock: 'В наличии', 'flash-sale': 'Блиц-распродажа', limited: 'Лимитированное предложение', 'price-drop': 'Снижение цены', 'new-arrival': 'Новинка' },
       spec: 'Спецификация: {name}',
       specDefault: 'По умолчанию',
+      nearbySummary: 'Ближайший склад: {qty} шт. в наличии',
+      nearbyStoresCount: 'Всего {n} магазинов · ближайший примерно в {d}',
+      nearbyUnknownDistance: 'расстояние неизвестно',
     },
     home: {
       newsTitle: "Новости JD",

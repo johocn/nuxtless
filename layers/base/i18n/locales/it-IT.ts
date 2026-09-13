@@ -42,6 +42,9 @@ export default defineI18nLocale(() =>
       marketingTags: { new: 'Nuovo', hot: 'Popolare', special: 'Speciale', sale: 'Offerta lampo', freeShip: 'Spedizione gratuita', cut: 'Sconto', clearance: 'Liquidazione', instock: 'Disponibile', 'flash-sale': 'Vendita flash', limited: 'Edizione limitata', 'price-drop': 'Ribasso prezzo', 'new-arrival': 'Novità' },
       spec: 'Specifica: {name}',
       specDefault: 'Predefinito',
+      nearbySummary: 'Scorte vicine: {qty} disponibili',
+      nearbyStoresCount: '{n} negozi · il più vicino a circa {d}',
+      nearbyUnknownDistance: 'distanza sconosciuta',
     },
     home: {
       newsTitle: "Notizie JD",
