@@ -3,7 +3,8 @@
 import { computed, ref, watch } from "vue";
 const { t } = useI18n();
 const productStore = useProductStore();
-const hotel = computed(() => productStore.product?.customFields?.hotelRoomConfig ?? null);
+const parseHotel = (raw: unknown) => { if (typeof raw !== 'string') return raw ?? null; try { return JSON.parse(raw); } catch { return null; } };
+const hotel = computed(() => parseHotel(productStore.product?.customFields?.hotelRoomConfig));
 
 const today = new Date();
 const toDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
