@@ -11,7 +11,7 @@
 
 | 环节 | 说明 |
 |---|---|
-| 发起 | nshop 侧触发（`login.vue` / `WechatInviteLoginBar.vue` 微信一键登录引导条）→ 跳 `h.joho.cn/#/pages/sso/login` 统一登录页，URL 携带 `app_code`、`return_url`（**含 `#/`**）、`channel_code`、`invite_code` |
+| 发起 | nshop 侧触发（`app.vue` 微信环境**全站**自动登录 / `login.vue` / `WechatInviteLoginBar.vue` 引导条）→ 跳 `h.joho.cn/#/pages/sso/login` 统一登录页，URL 携带 `app_code`、`return_url`（**含 `#/`**）、`channel_code`、`invite_code` |
 | 授权/登录 | 统一页内完成微信授权或密码登录；微信授权集中到 SSO，C 端不直接碰 code |
 | 回跳 | SSO 多跳中转后回跳 C 端 sso-callback 页，只带 token（不暴露 code） |
 | 换会话 | C 端 **token 直验**换取 Vendure 会话：`authenticate(sso: {providerKey, accessToken})` |
@@ -47,8 +47,9 @@ e.joho.cn 与 www.youshop.cn **共用同一 Vendure 实例、同一 `customer` �
 | 文件 | 职责 | 关键符号 |
 |---|---|---|
 | `composables/useSso.ts` | **SSO 登录核心**：inviteCode 透传、回跳落点、换会话 | `loginWithSso()`（统一页跳转，账号/密码/非微信场景保留）；`loginWithWechat({inviteCode, returnUrl})`（直连微信授权）；`exchangeSsoAccessToken(providerKey, token)`；sessionStorage 记录 providerKey（`youshop_sso_provider`）；SSO_API_BASE 由 provider.baseUrl 动态推导不硬编码 |
+| `utils/sso-return-url.ts` | 回跳目标归一化与自动登录跳过页判定（纯函数） | `toRouterSafePath` / `resolveSsoReturnUrl` / `shouldSkipAutoLogin` |
 | `pages/sso/sso-callback.vue` | 回跳参数分支处理 | 读 `?token` / `?code` / `?return_url`；无有效参数 → `router.replace(return_url \|\| '/account')`；兑换失败兜底跳登录页展示错误，**不静默卡死** |
-| `composables/useAutoWechatSsoLogin.ts` | 微信环境自动登录 | `/MicroMessenger/i` UA 判断 |
+| `composables/useAutoWechatSsoLogin.ts` | 微信环境**全站**自动登录（app.vue 挂载，回跳进入时原页） | `/MicroMessenger/i` UA 判断、`shouldSkipAutoLogin` 跳过登录/注册/回调页 |
 | `pages/login.vue` | 登录页入口 | onMounted 检测回跳 token → 换会话 |
 | `components/WechatInviteLoginBar.vue` | 微信一键登录引导条（发起点） | 带邀请码且未登录时弹起 |
 | `components/share/WechatShare.vue` | 分享组件（分享/邀请入口） | 生成 `origin + useTenantLocalePath(当前页完整含 query) + &invite=<referralCode>` |
@@ -72,6 +73,7 @@ e.joho.cn 与 www.youshop.cn **共用同一 Vendure 实例、同一 `customer` �
 | 跨渠道登录查映射复用原 Customer | 防 `customer.userId` 唯一约束冲突（e.joho.cn / www.youshop.cn 同顾客体系） |
 | 邀请码/分销一律用 `Customer.id` 而非 `User.id` | 数值错位 bug 的教训（见 §5 第 2 条） |
 | `return_url` 统一含 `#/` | 与统一登录页 hash 路由解析对齐，缺 `#/` 会导致回跳落点错误 |
+| 回跳目标读时归一化为路由安全路径（pathname+search+hash） | Vue Router 对非 `/` 开头 location 按相对路径解析，完整 URL 会拼出 `/account/https://...` 错误地址（2026-09-13 线上 bug） |
 
 ## 4. 常见坑
 
@@ -91,6 +93,7 @@ e.joho.cn 与 www.youshop.cn **共用同一 Vendure 实例、同一 `customer` �
 | referralCode 对不上 | `/v1/user/me` 未返回 `ownInviteCode` | SSO 接口 | 接口返回校验（对比 SSO 自有码） |
 | e.joho.cn 登录失败 | C 端 H5 未部署新版本（旧授权码流） | 部署 | 线上登录验证 |
 | 老用户 up_users 数据过时 | 登录链路未同步字段 | SSO 登录链路 | 数据对比（sso_id / invite_code / nickname） |
+| 微信登录成功后地址变 `/account/https://www.youshop.cn/`（404） | 回跳目标为完整 URL，`router.replace` 被 Vue Router `resolveRelativePath` 按相对路径基于 `/account/sso-callback` 目录拼接 | `useSso.ts readSsoReturnUrl` → `utils/sso-return-url.ts`（读时归一化） | 手机微信进任意页 → 登录 → 断言落点为原页相对路径（`tmp/verify-sso-returnurl.py`） |
 
 ## 6. 验证脚本/流程清单
 

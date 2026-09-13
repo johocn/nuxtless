@@ -66,5 +66,27 @@
     <li><b>回跳后未登录</b>：检查 <code>?token=</code> 回跳参数与 <code>sessionStorage.youshop_sso_provider</code> 是否一致；token 失效时前端静默清除状态，用户可手动走登录页。</li>
     <li><b>同一微信二次建档</b>：确认 zhao-sso 后端按 openid/unionid 命中已绑定 ssoId，未命中才新建（见 SSO 微信登录逻辑）。</li>
   </ul>
+
+  <h2>七、全站静默登录与回跳修复（2026-09-13 更新）</h2>
+  <ul>
+    <li><b>触发范围升级</b>：微信环境进入 www.youshop.cn <b>任意页面</b>（原仅首页）即自动跳统一登录页静默登录，成功后<b>回跳进入时的原页面</b>（含 ?invite 参数）——商品详情页转发好友后，好友登录成功即直达该详情页。</li>
+    <li><b>回跳拼接 bug 修复</b>：登录成功后地址曾变为 <code>/account/https://www.youshop.cn/</code>（404）。根因：回跳目标为完整 URL，Vue Router 对非 <code>/</code> 开头的 location 按相对路径解析导致目录拼接错误；现回跳目标统一归一化为路由安全路径（<code>utils/sso-return-url.ts</code>，登录页/首页/自动登录全链路一次修好）。</li>
+    <li><b>跳过页</b>：<code>/account/login</code>（含 <code>/login</code> 别名）、<code>/account/register</code>、<code>/account/sso-callback</code> 不触发自动登录（登录页自带微信流程、注册页有明确意图、回调页是流程中段）。</li>
+    <li><b>防循环不变</b>：一次会话只自动跳一次（<code>youshop_sso_auto_jumped</code>）；退出登录后本会话不再强制自动登录。</li>
+    <li><b>参数零删减</b>：app_code / return_url / channel_code / invite_code 全量透传，对齐统一页 token 直验方案。</li>
+  </ul>
+  <h3>回归验证（手机微信 UA 视口 390×844 dpr2，现网 www.youshop.cn）</h3>
+  <ul>
+    <li>场景 A：微信 UA 进首页 → 跳统一页（app_code/return_url 齐全）→ 模拟回跳 → 落点 <code>/</code>，无拼接错误。</li>
+    <li>场景 B：微信 UA 进商品详情页（?invite=TESTINV01）→ 统一页含 invite_code → 模拟回跳 → 落点原详情页（invite 保留）。</li>
+    <li>场景 C：普通 UA 进首页 → 不发生 SSO 跳转。</li>
+    <li>注：截图中「登录失败」toast 为测试用无效 token 模拟回跳的预期表现，非缺陷。</li>
+  </ul>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <figure style="margin:0;width:48%;"><img class="shot" style="width:100%;display:block;" src="shots/sso-fix-A-unified.png" alt="场景A 统一登录页" /><figcaption style="font-size:12px;color:#666;">场景 A：自动跳统一登录页（参数齐全）</figcaption></figure>
+    <figure style="margin:0;width:48%;"><img class="shot" style="width:100%;display:block;" src="shots/sso-fix-A-home-final.png" alt="场景A 回跳首页" /><figcaption style="font-size:12px;color:#666;">场景 A：回跳落点首页（无拼接错误）</figcaption></figure>
+    <figure style="margin:0;width:48%;"><img class="shot" style="width:100%;display:block;" src="shots/sso-fix-B-unified.png" alt="场景B 统一登录页" /><figcaption style="font-size:12px;color:#666;">场景 B：详情页带 invite 自动跳统一页</figcaption></figure>
+    <figure style="margin:0;width:48%;"><img class="shot" style="width:100%;display:block;" src="shots/sso-fix-B-detail-final.png" alt="场景B 回跳详情页" /><figcaption style="font-size:12px;color:#666;">场景 B：登录后直达原详情页（invite 保留）</figcaption></figure>
+  </div>
 </body>
 </html>
