@@ -1,3 +1,4 @@
+import { resolveSsoReturnUrl } from "../utils/sso-return-url";
 import { readVendureSessionToken } from "../utils/vendure-session";
 
 export interface SsoProviderInfo {
@@ -104,20 +105,15 @@ export function useSso() {
     window.location.href = url;
   }
 
-  /** 读取回跳目标页（优先 sessionStorage，兼容旧 return_url query），并做同源校验 */
+  /** 读取回跳目标页（优先 sessionStorage，兼容旧 return_url query）；
+   *  同源校验并归一化为 / 开头的路由安全路径——完整 URL 直接交给 router.replace
+   *  会被 Vue Router 按相对路径解析，拼出 /account/https://... 错误地址（见 utils/sso-return-url.ts） */
   function readSsoReturnUrl(): string {
-    try {
-      const session = sessionStorage.getItem(SSO_RETURN_URL_KEY) ?? "";
-      if (session && new URL(session, window.location.origin).origin === window.location.origin) {
-        return session;
-      }
-    } catch { /* 走 query 兜底 */ }
-    const raw = new URLSearchParams(window.location.search).get("return_url") ?? "";
-    try {
-      return raw && new URL(raw, window.location.origin).origin === window.location.origin ? raw : "";
-    } catch {
-      return "";
-    }
+    return resolveSsoReturnUrl(
+      sessionStorage.getItem(SSO_RETURN_URL_KEY),
+      new URLSearchParams(window.location.search).get("return_url"),
+      window.location.origin,
+    );
   }
 
   function clearSsoReturnUrl() {
