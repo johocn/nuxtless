@@ -21,6 +21,8 @@ query GetChannelTheme {
       orderDetailConfig
       orderListConfig
       taxMode
+      promoSchemes
+      serviceSchemes
     }
     pricesIncludeTax
   }
