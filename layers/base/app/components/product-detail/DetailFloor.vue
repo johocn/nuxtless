@@ -3,7 +3,7 @@ import { useDetailConfig } from "../../composables/useDetailConfig";
 import { useProductDetailView } from "../../composables/useProductDetailView";
 
 const { visible } = useDetailConfig();
-const { product, selectedVariant, productName, productServiceable } = useProductDetailView();
+const { product, selectedVariant, productName, skuLabel, productServiceable } = useProductDetailView();
 const { t } = useI18n();
 const { canBuy, loading, addToCartHandler, buyNowHandler } = useBuyActions();
 const { stockLevel } = storeToRefs(useProductStore());
@@ -79,7 +79,14 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
           <span class="text-xs font-semibold text-primary">
             {{ t(`messages.detail.${inStock ? "inStock" : "outOfStock"}`) }}
           </span>
-          <span v-if="selectedVariant.sku" class="text-[11px] text-gray-400">{{ t('messages.detail.sku', { code: selectedVariant.sku }) }}</span>
+          <span v-if="skuLabel" class="text-[11px] text-gray-400">
+            <template v-if="skuLabel.type === 'sku'">
+              {{ t('messages.detail.sku', { code: skuLabel.text }) }}
+            </template>
+            <template v-else>
+              {{ t('messages.detail.spec', { name: skuLabel.text || t('messages.detail.specDefault') }) }}
+            </template>
+          </span>
         </div>
       </div>
     </header>

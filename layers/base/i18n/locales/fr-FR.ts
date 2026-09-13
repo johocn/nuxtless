@@ -40,6 +40,8 @@ export default defineI18nLocale(() =>
     },
     detail: {
       marketingTags: { new: 'Nouveau', hot: 'Populaire', special: 'Spécial', sale: 'Vente flash', freeShip: 'Livraison gratuite', cut: 'Réduction', clearance: 'Déstockage', instock: 'En stock', 'flash-sale': 'Vente éclair', limited: 'Édition limitée', 'price-drop': 'Baisse de prix', 'new-arrival': 'Nouveauté' },
+      spec: 'Spécification : {name}',
+      specDefault: 'Par défaut',
     },
     home: {
       newsTitle: "Actualités JD",

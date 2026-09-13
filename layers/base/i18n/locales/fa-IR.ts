@@ -40,6 +40,8 @@ export default defineI18nLocale(() =>
     },
     detail: {
       marketingTags: { new: 'نئ', hot: 'داغ', special: 'ویژه', sale: 'تخفیف ویژه', freeShip: 'ارسال رایگان', cut: 'تخفیف', clearance: 'فروش ویژه', instock: 'موجود', 'flash-sale': 'فروش فوری', limited: 'محدود', 'price-drop': 'کاهش قیمت', 'new-arrival': 'تازه وارد' },
+      spec: 'مشخصات: {name}',
+      specDefault: 'پیش‌فرض',
     },
     home: {
       newsTitle: "اخبار جی‌دونگ",

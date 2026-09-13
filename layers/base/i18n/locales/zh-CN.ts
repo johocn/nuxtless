@@ -85,6 +85,8 @@ export const zhMessages = {
       buyNowFailed: '购买失败，请重试',
       stockShortage: '库存不足，已加入 {n} 件',
       sku: 'SKU: {code}',
+      spec: '规格: {name}',
+      specDefault: '默认',
     },
     home: {
       newsTitle: '京东快讯',

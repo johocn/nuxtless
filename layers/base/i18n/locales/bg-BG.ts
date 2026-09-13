@@ -40,6 +40,8 @@ export default defineI18nLocale(() =>
     },
     detail: {
       marketingTags: { new: 'Нов', hot: 'Топ', special: 'Специално', sale: 'Ограничено време', freeShip: 'Безплатна доставка', cut: 'Отстъпка', clearance: 'Разпродажба', instock: 'Наличност', 'flash-sale': 'Бърза разпродажба', limited: 'Ограничено количество', 'price-drop': 'Намаление', 'new-arrival': 'Ново пристигане' },
+      spec: 'Спецификация: {name}',
+      specDefault: 'По подразбиране',
     },
     home: {
       newsTitle: "Новини на JD",
