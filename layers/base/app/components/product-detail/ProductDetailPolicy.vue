@@ -3,7 +3,8 @@
 import { computed } from "vue";
 const { t } = useI18n();
 const productStore = useProductStore();
-const hotel = computed(() => productStore.product?.customFields?.hotelRoomConfig ?? null);
+const parseHotel = (raw: unknown) => { if (typeof raw !== 'string') return raw ?? null; try { return JSON.parse(raw); } catch { return null; } };
+const hotel = computed(() => parseHotel(productStore.product?.customFields?.hotelRoomConfig));
 const cancelText = computed(() => {
   const c = hotel.value?.cancelPolicy;
   if (!c) return "";
