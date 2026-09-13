@@ -5,6 +5,9 @@ describe("formatNearbyDistance", () => {
   it("null 显示距离未知", () => {
     expect(formatNearbyDistance(null)).toBe("距离未知");
   });
+  it("负数（后端无定位返回 -1）显示距离未知", () => {
+    expect(formatNearbyDistance(-1)).toBe("距离未知");
+  });
   it("超大值（后端无坐标返回 MAX_SAFE_INTEGER）显示距离未知", () => {
     expect(formatNearbyDistance(Number.MAX_SAFE_INTEGER)).toBe("距离未知");
     expect(formatNearbyDistance(1e10)).toBe("距离未知");
