@@ -50,6 +50,9 @@ fragment ProductBaseFragment on Product {
     serviceCities
     displayTemplate
     videoUrl
+    marketingTags
+    promos
+    services
   }
 }
 
