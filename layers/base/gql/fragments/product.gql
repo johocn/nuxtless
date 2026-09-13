@@ -26,6 +26,7 @@ fragment ProductVariantFragment on ProductVariant {
   customFields {
     videoUrl
     listPrice
+    hotelRoomConfig
   }
 }
 
@@ -53,7 +54,6 @@ fragment ProductBaseFragment on Product {
     marketingTags
     promos
     services
-    hotelRoomConfig
   }
 }
 
