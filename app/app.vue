@@ -27,6 +27,9 @@ const { error } = storeToRefs(orderStore);
 const { data: menuCollections } = await useAsyncGql("GetMenuCollections");
 useState("menuCollections", () => menuCollections.value);
 
+// 微信内置浏览器全站自动 SSO 登录：任意页面进入即静默跳统一登录页，成功后回跳原页（含 ?invite）
+useAutoWechatSsoLogin();
+
 // Set GQL session and fetch current order
 onBeforeMount(async () => {
   await useGqlSession(locale.value, useGqlHostUrl(), channelToken.value, "default");

@@ -25,9 +25,6 @@ import HomeBlockRenderer from "../../layers/base/app/components/home/HomeBlockRe
 const { t, tm } = useI18n();
 const localePath = useTenantLocalePath();
 
-// 微信内置浏览器访问首页且未登录时，自动走 SSO 微信静默授权登录（回跳首页换会话）
-useAutoWechatSsoLogin();
-
 // 1) 顶部分类：菜单集合（含 featuredAsset / children）
 const menuCollections = useState<MenuCollections>("menuCollections");
 const topCategories = computed<TopLevelCollection[]>(
