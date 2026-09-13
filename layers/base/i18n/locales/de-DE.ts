@@ -50,6 +50,8 @@ export default defineI18nLocale(() =>
     },
     detail: {
       marketingTags: { new: 'Neu', hot: 'Beliebt', special: 'Sonderangebot', sale: 'Zeitangebot', freeShip: 'Kostenloser Versand', cut: 'Rabatt', clearance: 'Räumungsverkauf', instock: 'Auf Lager', 'flash-sale': 'Blitzangebot', limited: 'Limitierte Auflage', 'price-drop': 'Preisreduzierung', 'new-arrival': 'Neuheit' },
+      spec: 'Spezifikation: {name}',
+      specDefault: 'Standard',
       nearbyTitle: "Lagerbestand in der Nähe",
     },
     home: {

@@ -106,6 +106,8 @@ export default defineI18nLocale(() =>
       buyNowFailed: 'Purchase failed, please retry',
       stockShortage: 'Insufficient stock, added {n} item(s)',
       sku: 'SKU: {code}',
+      spec: 'Spec: {name}',
+      specDefault: 'Default',
     },
     pages: {
       index: {

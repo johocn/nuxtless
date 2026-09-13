@@ -67,6 +67,8 @@ export default defineI18nLocale(() =>
       buyNowFailed: "구매에 실패했습니다. 다시 시도해주세요",
       stockShortage: "재고가 부족하여 {n}개를 담았습니다",
       sku: "SKU: {code}",
+      spec: "사양: {name}",
+      specDefault: "기본",
     },
     home: {
       newsTitle: "JD 뉴스",

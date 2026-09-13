@@ -68,6 +68,8 @@ export default defineI18nLocale(() =>
       buyNowFailed: "購入に失敗しました。もう一度お試しください",
       stockShortage: "在庫不足のため {n} 点を追加しました",
       sku: "SKU: {code}",
+      spec: "仕様: {name}",
+      specDefault: "デフォルト",
     },
     home: {
       newsTitle: "JD ニュース",
