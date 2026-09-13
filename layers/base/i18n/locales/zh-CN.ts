@@ -29,6 +29,7 @@ export const zhMessages = {
         "Nuxtless is a flexible and modular starter project for headless e-commerce, designed for high performance, excellent SEO, and clean architecture. It offers ready integrations with Vendure, Nuxt UI, and Payload, type-safe code, and professional security practices — a solid foundation for any professional online store.",
     },
     nav: {
+      back: '返回',
       home: '首页',
       categories: '分类',
       allCategories: '全部分类',
@@ -56,6 +57,7 @@ export const zhMessages = {
       qualityZone: '品质专区',
     },
     detail: {
+      marketingTags: { 'flash-sale': '秒杀', limited: '限量', 'price-drop': '降价', 'new-arrival': '新品' },
       reviews: '商品评价',
       reviewsEmpty: '暂无评价，成为第一个评价的人',
       serviceItems: ['正品保障', '极速发货', '售后无忧'],

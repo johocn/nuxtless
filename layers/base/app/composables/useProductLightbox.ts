@@ -1,4 +1,5 @@
 import "photoswipe/style.css";
+import { resolveMarketingTagTexts } from "../utils/marketing-tags";
 
 export function useProductLightbox({
   select,
@@ -7,10 +8,15 @@ export function useProductLightbox({
 }) {
   const { product, selectedVariant, galleryAssets } =
     storeToRefs(useProductStore());
+  const { tm } = useI18n();
 
   async function createDataSource() {
     const altBase =
       selectedVariant.value?.name || product.value?.name || "Product image";
+    const tags = resolveMarketingTagTexts(
+      product.value?.customFields?.marketingTags ?? [],
+      (tm("messages.detail.marketingTags") ?? {}) as Record<string, string>,
+    ).join(" ");
 
     const assets = galleryAssets.value;
 
@@ -27,7 +33,7 @@ export function useProductLightbox({
         src: item.preview,
         width: img.naturalWidth,
         height: img.naturalHeight,
-        alt: `${altBase} – Slide ${idx + 1}`,
+        alt: `${tags ? `${tags} ` : ""}${altBase} – Slide ${idx + 1}`,
       };
     });
 

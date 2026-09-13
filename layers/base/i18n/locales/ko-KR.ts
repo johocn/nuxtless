@@ -11,6 +11,7 @@ export default defineI18nLocale(() =>
         "Nuxtless는 고성능, 뛰어난 SEO, 깔끔한 아키텍처를 위해 설계된 유연하고 모듈형 헤드리스 전자상거래 스타터 프로젝트입니다. Vendure, Nuxt UI, Payload와의 즉시 통합, 타입 안전 코드, 전문적인 보안 가이드라인을 제공하여 모든 전문 온라인 스토어를 위한 견고한 토대가 됩니다.",
     },
     nav: {
+      back: "뒤로",
       home: "홈",
       categories: "카테고리",
       allCategories: "전체 카테고리",
@@ -38,6 +39,7 @@ export default defineI18nLocale(() =>
       qualityZone: "품질 특가 존",
     },
     detail: {
+      marketingTags: { 'flash-sale': '특가', limited: '한정판매', 'price-drop': '가격인하', 'new-arrival': '신상품' },
       reviews: "상품 평가",
       reviewsEmpty: "아직 평가가 없습니다. 첫 번째 평가자가 되어주세요",
       serviceItems: ["정품 보장", "초고속 배송", "A/S 걱정 없음"],
