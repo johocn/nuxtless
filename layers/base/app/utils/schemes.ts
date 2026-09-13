@@ -1,3 +1,5 @@
+import { normalizeCodes } from "./marketing-tags";
+
 // 促销方案/服务保障解析：code 列表 ↔ 频道方案库（[{code,text:{zh_Hans,en}}]）纯函数（SSR 友好）
 export interface Scheme {
   code: string;
@@ -45,11 +47,12 @@ export function resolveSchemeText(
 // 商品覆盖：codes 非空时按 codes 过滤显示；codes 为空 → 频道默认（方案库全部启用项）
 export function resolveSchemeTexts(
   schemes: Scheme[] | null,
-  codes: string[],
+  codes: string | string[] | null | undefined,
   locale: string,
 ): string[] {
-  if (!codes.length) {
+  const list = normalizeCodes(codes);
+  if (!list.length) {
     return (schemes ?? []).map((s) => localizeSchemeText(s.text, locale)).filter(Boolean);
   }
-  return codes.map((c) => resolveSchemeText(schemes, c, locale)).filter(Boolean);
+  return list.map((c) => resolveSchemeText(schemes, c, locale)).filter(Boolean);
 }
