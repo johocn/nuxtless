@@ -20,6 +20,7 @@
   1. **store 访问路径修正**：计划 Task7/8 用 `authStore.user?.inviteCode`，但 `useAuthStore` 只暴露 `session.user`（`user` 无顶层 getter）。实际实现统一改为 `authStore.session?.user?.inviteCode`，否则类型检查报 `Property 'user' does not exist`。
   2. **首页自动登录保留邀请码（增强）**：分享链接落到首页且未登录时，`useAutoWechatSsoLogin` 自动微信授权会把 `?invite` 丢失。已修复为自动登录也携带 `invite_code`，并把 `?invite` 保留在回跳首页 URL 上，确保分享链路不丢码。
 - ✅ 顺手修复既有类型错误：`layers/base/app/utils/display-price.ts:74` `listCentsMap` 传参 `ListableVariant[]` 与参数类型不兼容（非本功能文件，但影响 `nuxt typecheck` 全绿）。
+- ✅ **线上微信缓存修复（2026-09-12，解决「首页不自动登录/登录后不回跳/无分享按钮」）**：根因非前端代码陈旧——经线上入口 chunk(MD5)与 sso/分享/自动登录 chunk 逐项比对，线上跑的就是 8:55 最新构建。真正的坑是 `www.youshop.cn` Nginx 对 SSR HTML 无 `Cache-Control`/`Last-Modified`，微信 webview 启发式缓存旧 `index.html`（引用旧 hash 包），导致旧版（无 sharing/旧自动登录/旧回跳）一直生效。已改 `conf.d/www.youshop.cn.conf`：`location /` 加 `Cache-Control: no-cache, no-store, must-revalidate`（SSR HTML 禁缓存），新增 `location /_nuxt/` 加 `public, max-age=31536000, immutable`（hash 产物长缓存）。备份 `*.conf.bak_nocache_<ts>`；在 `1Panel-openresty-3I6S` 容器 `nginx -t && nginx -s reload` 通过。已验证：首页返回 `no-cache, no-store, must-revalidate`，`/_nuxt/BsoHCWnR.js` 返回 `immutable`。
 - ⏳ 待人工完成（外部配置/真机，本仓库外）：Task9 Step1 SSO `sso_apps.redirect_uris` 白名单 + 微信公众号 JS 安全域名（详见 Task9 Step1）；Task9 Step2 真机端到端；交付截图补充操作手册。
 
 ---
