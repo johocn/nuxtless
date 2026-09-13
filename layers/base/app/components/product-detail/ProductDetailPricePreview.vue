@@ -5,7 +5,7 @@ import { calcNightPrices } from "../../utils/hotel-pricing";
 const { t } = useI18n();
 const productStore = useProductStore();
 const parseHotel = (raw: unknown) => { if (typeof raw !== 'string') return raw ?? null; try { return JSON.parse(raw); } catch { return null; } };
-const hotel = computed(() => parseHotel(productStore.product?.customFields?.hotelRoomConfig));
+const hotel = computed(() => parseHotel(productStore.selectedVariant?.customFields?.hotelRoomConfig));
 // 与 DateBar 共享日期：DateBar watch 写入 ProductStore.hotelDates（见 useProductStore），兜底取空（无日期不渲染）
 const dates = computed(() => (productStore as any).hotelDates ?? { checkIn: "", checkOut: "" });
 

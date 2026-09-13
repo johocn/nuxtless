@@ -7,7 +7,7 @@ import { blockVisible } from "../../utils/detail-config";
 const { config } = useDetailConfig();
 const productStore = useProductStore();
 const parseHotel = (raw: unknown) => { if (typeof raw !== 'string') return raw ?? null; try { return JSON.parse(raw); } catch { return null; } };
-const hotelRaw = computed(() => parseHotel(productStore.product?.customFields?.hotelRoomConfig));
+const hotelRaw = computed(() => parseHotel(productStore.selectedVariant?.customFields?.hotelRoomConfig));
 const isHotel = computed(() => !!hotelRaw.value);
 const v = (k: string) => blockVisible(config.value, k);
 </script>

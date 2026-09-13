@@ -5,7 +5,7 @@ const { t, locale } = useI18n();
 const productStore = useProductStore();
 const { productName } = useProductDetailView();
 const parseHotel = (raw: unknown) => { if (typeof raw !== 'string') return raw ?? null; try { return JSON.parse(raw); } catch { return null; } };
-const hotel = computed(() => parseHotel(productStore.product?.customFields?.hotelRoomConfig));
+const hotel = computed(() => parseHotel(productStore.selectedVariant?.customFields?.hotelRoomConfig));
 const selectedRoomNo = ref<string | null>(null);
 const openRoom = ref(false);
 const localize = (v: unknown) => (typeof v === "string" ? v : (v as any)?.[locale.value] ?? (v as any)?.["zh-CN"] ?? "");
