@@ -45,6 +45,12 @@ const inStock = computed(
         </div>
       </section>
 
+      <!-- 库存区：默认虚拟可售数；开启物理租户 + 物理驱动变体显示附近库存折叠 -->
+      <ProductStockInfoBlock
+        v-if="visible('nearby')"
+        :variant-id="selectedVariant?.id"
+      />
+
       <!-- 促销视觉化 -->
       <section v-if="visible('promo')" class="rounded-lg border border-primary/15 bg-primary/5 p-3">
         <div class="mb-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
@@ -102,12 +108,6 @@ const inStock = computed(
   </div>
 
   <hr class="my-8" />
-
-  <ProductNearbyStores
-    v-if="visible('nearby')"
-    :product-id="product?.id"
-    :variant-id="selectedVariant?.id"
-  />
 
   <ProductDescription
     v-if="visible('description') && product?.description"

@@ -82,6 +82,7 @@ export const zhMessages = {
       nearbyError: '就近门店库存暂不可查',
       nearbyNoStock: '暂无可查看的门店库存',
       nearbySummary: '就近库存 {qty} 件可售',
+      stockCount: '库存 {n} 件',
       nearbyStoresCount: '共 {n} 个门店 · 距您最近约 {d}',
       nearbyUnknownDistance: '距离未知',
       addedToCart: '已加入购物车',

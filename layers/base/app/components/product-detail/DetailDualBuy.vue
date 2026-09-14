@@ -19,6 +19,11 @@ const { t } = useI18n();
         <BreadcrumbTrail :product="product" trail="product" class="mt-2" />
       </header>
       <ProductDetailPriceBlock v-if="visible('price')" />
+      <!-- 库存区：默认虚拟可售数；开启物理租户 + 物理驱动变体显示附近库存折叠 -->
+      <ProductStockInfoBlock
+        v-if="visible('nearby')"
+        :variant-id="selectedVariant?.id"
+      />
       <details v-if="visible('promo')" class="group">
         <summary class="cursor-pointer text-sm text-gray-600">促销 ▾</summary>
         <div><ProductDetailPromoBlock /></div>
@@ -61,9 +66,4 @@ const { t } = useI18n();
     :description="product?.description"
   />
   <ProductDetailReviewsSection v-if="visible('reviews')" class="mb-8" />
-  <ProductNearbyStores
-    v-if="visible('nearby')"
-    :product-id="product?.id"
-    :variant-id="selectedVariant?.id"
-  />
 </template>

@@ -84,6 +84,7 @@ export default defineI18nLocale(() =>
       bedType: 'Bed',
       nearbyTitle: "Lagerbestand in der Nähe",
       nearbySummary: "Lagerbestand in der Nähe: {qty} verfügbar",
+      stockCount: "Bestand: {n}",
       nearbyStoresCount: "{n} Filialen · nächste ca. {d}",
       nearbyUnknownDistance: "Entfernung unbekannt",
     },
