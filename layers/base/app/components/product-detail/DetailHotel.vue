@@ -18,6 +18,7 @@ const v = (k: string) => blockVisible(config.value, k);
     <ProductGallery v-if="v('gallery')" />
     <ProductDetailRoomList v-if="v('roomList')" />
     <ProductDetailPricePreview v-if="v('pricePreview')" />
+    <ProductStockInfoBlock v-if="v('nearby')" :variant-id="productStore.selectedVariant?.id" />
     <ProductDetailPolicy v-if="v('policy')" />
     <ProductDetailServiceBlock v-if="v('service')" />
     <ProductDetailReviewsSection v-if="v('reviews')" />
