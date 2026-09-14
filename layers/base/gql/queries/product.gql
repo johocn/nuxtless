@@ -92,3 +92,19 @@ query VariantNearbyStock(
     }
   }
 }
+
+query VariantStockInfo($variantId: ID!, $lat: Float, $lng: Float) {
+  variantStockInfo(variantId: $variantId, lat: $lat, lng: $lng) {
+    variantId
+    saleableStock
+    physicalStockEnabled
+    stockDetail {
+      locationId
+      name
+      lat
+      lng
+      onHand
+      distanceKm
+    }
+  }
+}
