@@ -89,6 +89,8 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
           </span>
         </div>
       </div>
+      <!-- 库存区：默认虚拟可售数；开启物理租户 + 物理驱动变体显示附近库存折叠 -->
+      <ProductStockInfoBlock :variant-id="selectedVariant?.id" class="mt-3" />
     </header>
 
     <!-- 吸顶楼层 tab（美化：下划线指示器跟随滚动） -->

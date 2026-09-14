@@ -103,6 +103,7 @@ export default defineI18nLocale(() =>
       nearbyError: 'Nearby stock temporarily unavailable',
       nearbyNoStock: 'No nearby store stock available',
       nearbySummary: 'Nearby stock: {qty} available',
+      stockCount: 'Stock: {n}',
       nearbyStoresCount: '{n} stores · nearest ~{d}',
       nearbyUnknownDistance: 'distance unknown',
       addedToCart: 'Added to cart',

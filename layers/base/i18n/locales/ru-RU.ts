@@ -73,6 +73,7 @@ export default defineI18nLocale(() =>
       tCustom: 'Special',
       bedType: 'Bed',
       nearbySummary: 'Ближайший склад: {qty} шт. в наличии',
+      stockCount: 'В наличии: {n} шт.',
       nearbyStoresCount: 'Всего {n} магазинов · ближайший примерно в {d}',
       nearbyUnknownDistance: 'расстояние неизвестно',
     },

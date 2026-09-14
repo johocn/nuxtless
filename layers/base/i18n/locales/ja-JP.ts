@@ -65,6 +65,7 @@ export default defineI18nLocale(() =>
       nearbyError: "最寄り店舗の在庫を確認できません",
       nearbyNoStock: "確認できる店舗在庫がありません",
       nearbySummary: "近くの在庫 {qty} 点販売中",
+      stockCount: "在庫 {n} 点",
       nearbyStoresCount: "全{n}店舗 · 最寄り約{d}",
       nearbyUnknownDistance: "距離未知",
       addedToCart: "カートに追加しました",

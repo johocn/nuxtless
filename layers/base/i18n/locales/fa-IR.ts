@@ -73,6 +73,7 @@ export default defineI18nLocale(() =>
       tCustom: 'Special',
       bedType: 'Bed',
       nearbySummary: 'موجودی نزدیک: {qty} عدد موجود',
+      stockCount: 'موجودی: {n} عدد',
       nearbyStoresCount: 'مجموعاً {n} فروشگاه · نزدیک‌ترین حدود {d}',
       nearbyUnknownDistance: 'فاصله نامشخص',
     },

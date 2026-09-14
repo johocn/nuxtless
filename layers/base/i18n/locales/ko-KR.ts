@@ -64,6 +64,7 @@ export default defineI18nLocale(() =>
       nearbyError: "인근 매장 재고를 조회할 수 없습니다",
       nearbyNoStock: "조회 가능한 매장 재고가 없습니다",
       nearbySummary: "인근 재고 {qty}개 판매 가능",
+      stockCount: "재고 {n}개",
       nearbyStoresCount: "총 {n}개 매장 · 가장 가까운 곳 약 {d}",
       nearbyUnknownDistance: "거리 정보 없음",
       addedToCart: "장바구니에 담았습니다",
