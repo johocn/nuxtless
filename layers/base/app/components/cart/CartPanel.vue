@@ -6,6 +6,12 @@ const { order, loading } = storeToRefs(orderStore);
 const isCartOpen = useState<boolean>("isCartOpen");
 const total = computed(() => order?.value?.totalWithTax ?? 0);
 
+// 购物车页装修（L1 全局 → L2 模板 → L3 店铺 pageCartConfig 合并）
+const { pageConfig } = useThemeConfig();
+const cartCfg = computed(() => pageConfig("cart") ?? null);
+const panelTitle = computed(() => cartCfg.value?.title || t("messages.shop.yourCart"));
+const checkoutFull = computed(() => cartCfg.value?.checkoutStyle === "full");
+
 async function clearOrder() {
   const ids = order.value?.lines?.map((l) => l.id) ?? [];
   if (!ids.length) return;
@@ -17,7 +23,7 @@ async function clearOrder() {
 <template>
   <USlideover
     v-model:open="isCartOpen"
-    :title="t('messages.shop.yourCart')"
+    :title="panelTitle"
     :description="t('messages.shop.cartDescription')"
   >
     <template #body>
@@ -33,7 +39,7 @@ async function clearOrder() {
           color="primary"
           :loading="loading"
           :disabled="(order?.lines.length ?? 0) < 1"
-          class="w-full justify-center"
+          :class="checkoutFull ? 'w-full justify-center' : 'flex-1 justify-center'"
           @click="isCartOpen = !isCartOpen"
         >
           <span>{{ t("messages.shop.checkout") }}</span>
@@ -42,6 +48,7 @@ async function clearOrder() {
           </span>
         </UButton>
         <UButton
+          v-if="!checkoutFull"
           icon="i-lucide-trash"
           color="error"
           size="xl"

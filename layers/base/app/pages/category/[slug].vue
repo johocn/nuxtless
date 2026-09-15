@@ -16,6 +16,13 @@ const ogColorMode = computed<"dark" | "light">(() =>
 const menuCollections = useState<MenuCollections>("menuCollections");
 const menuItems = menuCollections.value?.collections.items ?? [];
 
+// 分类页装修（L1 全局 → L2 模板 → L3 店铺 pageCategoryConfig 合并）
+const { pageConfig } = useThemeConfig();
+const catCfg = computed(() => pageConfig("category") ?? null);
+const listStyle = computed<"grid" | "list">(() =>
+  catCfg.value?.listStyle === "list" ? "list" : "grid",
+);
+
 const slug = useRouteParam("slug");
 
 const currentCollection =
@@ -222,9 +229,14 @@ useSchemaOrg([
 </script>
 
 <template>
-  <main class="container">
+  <main
+    class="container"
+    :style="catCfg?.bgColor ? { backgroundColor: catCfg.bgColor } : undefined"
+  >
     <header class="mt-14">
-      <h1 class="text-2xl font-semibold">{{ currentCollection?.name }}</h1>
+      <p v-if="catCfg?.floorTitle" class="text-lg font-bold">{{ catCfg.floorTitle }}</p>
+      <p v-if="catCfg?.floorSubtitle" class="text-sm text-neutral-500">{{ catCfg.floorSubtitle }}</p>
+      <h1 class="text-2xl font-semibold">{{ catCfg?.title || currentCollection?.name }}</h1>
       <BreadcrumbTrail trail="category" class="mt-2 mb-14" />
     </header>
 
@@ -273,7 +285,8 @@ useSchemaOrg([
       </div>
       <div
         v-if="products.length"
-        class="grid grid-cols-1 gap-0 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4"
+        class="grid gap-0 sm:gap-4"
+        :class="listStyle === 'list' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'"
       >
         <ProductCard
           v-for="(product, index) in products"

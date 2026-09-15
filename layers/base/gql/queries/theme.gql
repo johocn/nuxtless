@@ -1,0 +1,21 @@
+query GetShopTemplate($app: String!) {
+  shopTemplate(app: $app) {
+    id
+    name
+    app
+    theme
+    pages
+    version
+    enabled
+    updatedAt
+  }
+}
+
+query GetShopGlobalConfig($app: String!) {
+  shopGlobalConfig(app: $app) {
+    id
+    app
+    themeTokens
+    defaults
+  }
+}
