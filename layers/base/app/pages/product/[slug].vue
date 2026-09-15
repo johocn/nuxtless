@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { stripHtmlToText } from '../../utils/html-share';
 
 const { i18NBaseUrl } = useRuntimeConfig().public;
 const colorMode = useColorMode();
@@ -147,8 +148,8 @@ if (product.value && selectedVariant.value) {
     <WechatInviteLoginBar />
     <WechatShare
       :title="product?.name"
-      :description="product?.description"
-      :image-url="product?.featuredAsset?.preview"
+      :description="stripHtmlToText(product?.description ?? '')"
+      :image-url="product?.featuredAsset?.preview || product?.assets?.[0]?.preview || ''"
     />
   </main>
 </template>
