@@ -1,18 +1,15 @@
-// 读 shopContent 并解析 sections。themeId 与 shopContent 来自同一 GetChannelTheme 查询（SSR 去重，不新增请求）
-import { useAsyncData } from "#imports";
-import { parseShopContent, getSections } from "../utils/shop-content";
+// home 页配置走五级合并（L1 全局 defaults.home → L2 模板 pages.home → L3 店铺 shopContent）。
+// sections 数组整段覆盖（模板配了整页积木则整体生效，店铺 shopContent 为空时回退模板/全局）。
+import { getSections, type ShopSection } from "../utils/shop-content";
 
 export function useShopContent() {
-  const { data } = useAsyncData(
-    "shop-content",
-    async () => {
-      const res = await useAsyncGql("GetChannelTheme", {}, { server: true });
-      return res.data.value?.activeChannel?.customFields?.shopContent ?? null;
-    },
-    { server: true },
-  );
+  const { pageConfig } = useThemeConfig();
 
-  const sections = computed(() => getSections(parseShopContent(data.value)));
+  const cfg = computed(() => pageConfig("home"));
+  const sections = computed<ShopSection[]>(() => {
+    const s = cfg.value?.sections;
+    return Array.isArray(s) ? (s as ShopSection[]) : [];
+  });
 
   return { sections };
 }

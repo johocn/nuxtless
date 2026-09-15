@@ -14,6 +14,19 @@ const activeCustomer = computed<ActiveCustomerDetail | null>(() =>
   isActiveCustomerDetail(customer.value) ? customer.value : null,
 );
 
+// 我的页装修（L1 全局 → L2 模板 → L3 店铺 pageProfileConfig 合并）
+const { pageConfig } = useThemeConfig();
+const profileCfg = computed(() => pageConfig("profile") ?? null);
+const avatarCls = computed(() =>
+  profileCfg.value?.avatarStyle === "square" ? "rounded-lg" : "rounded-full",
+);
+const profileMenus = computed<Array<{ icon: string; title: string; url: string }>>(
+  () => {
+    const menus = profileCfg.value?.menus;
+    return Array.isArray(menus) ? (menus as any[]) : [];
+  },
+);
+
 onMounted(async () => {
   if (!isActiveCustomerDetail(customer.value)) {
     await fetchCustomer("detail");
@@ -38,6 +51,7 @@ onMounted(async () => {
         <UAvatar
           :alt="`${activeCustomer?.firstName} ${activeCustomer?.lastName}`"
           size="3xl"
+          :class="avatarCls"
         />
         <span class="text-xl">
           {{ activeCustomer?.firstName }} {{ activeCustomer?.lastName }}
@@ -66,30 +80,43 @@ onMounted(async () => {
       <h2 id="account-actions" class="sr-only">
         {{ t("messages.account.accountActions") }}
       </h2>
-      <UButton :to="localePath('/account/orders')" class="px-7">
-        {{ t("messages.account.orders") }}
-      </UButton>
-      <UButton
-        :to="localePath('/account/addresses')"
-        variant="soft"
-        class="px-7"
-      >
-        {{ t("messages.account.addresses") }}
-      </UButton>
-      <UButton
-        :to="localePath('/account/after-sales')"
-        variant="soft"
-        class="px-7"
-      >
-        {{ t("messages.account.afterSales") }}
-      </UButton>
-      <UButton
-        :to="localePath('/coupon')"
-        variant="soft"
-        class="px-7"
-      >
-        {{ t("messages.account.coupons") }}
-      </UButton>
+      <template v-if="profileMenus.length">
+        <UButton
+          v-for="m in profileMenus"
+          :key="m.url || m.title"
+          :to="localePath(m.url)"
+          variant="soft"
+          class="px-7"
+        >
+          {{ m.title }}
+        </UButton>
+      </template>
+      <template v-else>
+        <UButton :to="localePath('/account/orders')" class="px-7">
+          {{ t("messages.account.orders") }}
+        </UButton>
+        <UButton
+          :to="localePath('/account/addresses')"
+          variant="soft"
+          class="px-7"
+        >
+          {{ t("messages.account.addresses") }}
+        </UButton>
+        <UButton
+          :to="localePath('/account/after-sales')"
+          variant="soft"
+          class="px-7"
+        >
+          {{ t("messages.account.afterSales") }}
+        </UButton>
+        <UButton
+          :to="localePath('/coupon')"
+          variant="soft"
+          class="px-7"
+        >
+          {{ t("messages.account.coupons") }}
+        </UButton>
+      </template>
     </section>
   </main>
 </template>

@@ -16,6 +16,19 @@ const { config: themeConfig, loadTheme } = useChannelTheme();
 useHead(() => ({ htmlAttrs: { "data-theme": themeConfig.value } }));
 await loadTheme();
 
+// 模板级主题令牌（L1 全局配置 → L2 风格模板合并）：内联 CSS 变量叠加在
+// data-theme 之上（模板库为上层覆盖），--ui-primary/--ui-radius 驱动 Nuxt UI 语义色。
+const { themeTokens } = useThemeConfig();
+const themeCssVars = computed(() => {
+  const t = themeTokens.value;
+  const vars: string[] = [];
+  if (t.primaryColor) vars.push(`--ui-primary:${t.primaryColor};--theme-primary:${t.primaryColor};`);
+  if (t.accentColor) vars.push(`--theme-accent:${t.accentColor};`);
+  if (t.radius !== undefined && t.radius !== "") vars.push(`--ui-radius:${t.radius}px;`);
+  return vars.length ? `:root{${vars.join("")}}` : "";
+});
+useHead(() => ({ style: themeCssVars.value ? [{ innerHTML: themeCssVars.value }] : [] }));
+
 const ogColorMode = computed<"dark" | "light">(() =>
   colorMode.value === "dark" ? "dark" : "light",
 );
