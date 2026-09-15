@@ -12,6 +12,8 @@ withDefaults(
     description?: string;
     image?: string;
     brand?: string;
+    // 分享卡版本号：仅用于改变 og:image URL 以绕开微信缓存，不参与渲染
+    version?: string;
   }>(),
   {
     colorMode: "light",
@@ -33,6 +35,7 @@ function normSrc(src?: string) {
 <template>
   <div
     class="flex h-full w-full items-center justify-center bg-neutral-100 p-10 dark:bg-neutral-800"
+    style="font-family: 'SimHei', 'Inter', sans-serif"
   >
     <div
       class="flex h-full w-full overflow-hidden bg-white dark:bg-neutral-900"

@@ -3,16 +3,22 @@ import { stripHtmlToText } from '../../utils/html-share';
 
 const { i18NBaseUrl } = useRuntimeConfig().public;
 const colorMode = useColorMode();
-const { t, locale } = useI18n();
+const { locale } = useI18n();
 const siteName = useSiteName();
+
+const productStore = useProductStore();
+const { selectedVariant } = storeToRefs(productStore);
+const { taxMode, pricesIncludeTax } = useTaxMode();
 
 const ogColorMode = computed<"dark" | "light">(() =>
   colorMode.value === "dark" ? "dark" : "light",
 );
 
-const productStore = useProductStore();
-const { hasOptions, selectedVariant } = storeToRefs(productStore);
-const { taxMode, pricesIncludeTax } = useTaxMode();
+const formatPrice = (amount: number) =>
+  new Intl.NumberFormat(locale.value, {
+    style: "currency",
+    currency: selectedVariant.value?.currencyCode || "EUR",
+  }).format(amount / 100);
 
 const slug = useRouteParam("slug");
 
@@ -51,23 +57,37 @@ watch(
   { immediate: true },
 );
 
-const formatPrice = (amount: number) =>
-  new Intl.NumberFormat(locale.value, {
-    style: "currency",
-    currency: selectedVariant.value?.currencyCode || "EUR",
-  }).format(amount / 100);
+// 分享/SEO 描述：剥离 HTML 标签，保证微信 og:description 纯净（实测曾带 <p> 标签）
+const shareDesc = computed(() => stripHtmlToText(product.value?.description ?? ""));
 
-// SEO Meta
-useSeoMeta({
-  title: product.value?.name,
-  description: product.value?.description,
-  ogTitle: product.value?.name,
-  ogDescription: product.value?.description,
-  twitterTitle: product.value?.name,
-  twitterDescription: product.value?.description,
+// og 分享主图：转 JPEG 并缩放到 ≤800px 宽，大幅压缩体积（原图 ~1.26MB → ~130KB），
+// 避免微信分享缩略图(~300KB 软上限)抓取被拒
+const ogImageSrc = computed(() => {
+  const raw =
+    product.value?.featuredAsset?.preview ??
+    product.value?.assets?.[0]?.preview ??
+    "";
+  if (!raw) return "";
+  try {
+    const u = new URL(raw, i18NBaseUrl);
+    u.searchParams.set("format", "jpg");
+    u.searchParams.set("w", "800");
+    u.searchParams.set("q", "70");
+    return u.toString();
+  } catch {
+    return raw;
+  }
 });
 
-// OgImage —— 分享卡价格须与页面价签同口径（按渠道 taxMode/pricesIncludeTax 换算展示价），
+// 分享卡版本常量：内容改版时递增，强制微信对新的 og:image URL 重新抓取，绕开旧卡缓存
+const OG_SHARE_VERSION = "v3";
+
+// 中文字体：satori 默认只捆绑 Inter（无 CJK 字形），中文会渲染成 NOGLYPH 乱码。
+// 通过 defineOgImage fonts 注入自托管 SimHei（public/fonts/simhei.ttf），
+// 运行时经同源 /fonts/simhei.ttf 拉取（node binding 的 fetch-origin 机制，与 Inter 兜底同路）。
+const OG_CJK_FONT = { name: "SimHei", weight: 400, path: "/fonts/simhei.ttf" };
+
+// 分享卡价格须与页面价签同口径（按渠道 taxMode/pricesIncludeTax 换算展示价），
 // 避免分享卡显示净价(¥88.50)而页面显示含税价(¥100.00)的不一致
 const ogPriceCents = computed(() => {
   const v = selectedVariant.value;
@@ -76,13 +96,37 @@ const ogPriceCents = computed(() => {
   const useWithTax = mode === "exclusive" || !!pricesIncludeTax.value;
   return Math.round(useWithTax ? (v.priceWithTax ?? 0) : (v.price ?? 0));
 });
-defineOgImage("ProductCard.satori", {
-  colorMode: ogColorMode,
-  productName: product.value?.name,
-  price: formatPrice(ogPriceCents.value),
-  // description: product.value?.description,
-  image: product.value?.featuredAsset?.preview,
-  brand: siteName.value,
+
+// og:image —— 用 ProductCard.satori 渲染含商品图的分享卡。
+// 该 _og 路由线上返回 200 且域名正确（www.youshop.cn），微信可直接拉取。
+// 不直接塞 raw 商品图：useSeoMeta ogImage 会被 app.vue 全局 defineOgImage(BlogPost)覆盖，
+// defineOgImage({ url: 外部图 }) 的 _og/d 外部代理线上返回 500。
+// 体积控制：image 传 CDN 缩放 jpg(≤800w)，大幅降低卡片产物体积（PNG 输出，服务器无 sharp 不可用 jpeg）。
+// version 常量拼入 URL，内容改版时强制微信重新抓取，绕开旧卡缓存。
+// fonts 必须放顶层 options（第 3 参）：satori renderer 读 options.fonts 作 fontDefs，
+// 放在 props 里只会进 options.props.fonts，自定义字体永远不加载（中文 NOGLYPH）。
+defineOgImage(
+  "ProductCard.satori",
+  {
+    colorMode: ogColorMode,
+    productName: product.value?.name,
+    price: formatPrice(ogPriceCents.value),
+    image: ogImageSrc.value,
+    brand: siteName.value,
+    version: OG_SHARE_VERSION,
+  },
+  {
+    fonts: [OG_CJK_FONT],
+  }
+);
+
+useSeoMeta({
+  title: product.value?.name,
+  description: shareDesc.value,
+  ogTitle: product.value?.name,
+  ogDescription: shareDesc.value,
+  twitterTitle: product.value?.name,
+  twitterDescription: shareDesc.value,
 });
 
 // SchemaOrg
@@ -149,7 +193,7 @@ if (product.value && selectedVariant.value) {
     <WechatShare
       :title="product?.name"
       :description="stripHtmlToText(product?.description ?? '')"
-      :image-url="product?.featuredAsset?.preview || product?.assets?.[0]?.preview || ''"
+      :image-url="ogImageSrc.value"
     />
   </main>
 </template>
