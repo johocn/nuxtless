@@ -35,11 +35,24 @@ const shareUrl = computed(() => {
   return `${window.location.origin}${path}${qs ? `?${qs}` : ""}`;
 });
 
+// 渠道级分享主图兜底：Channel.customFields.shareImageUrl（复用 GetChannelTheme，SSR 去重不新增请求）
+const { data: channelShareData } = useAsyncData(
+  "channel-share-image",
+  async () => {
+    const res = await useAsyncGql("GetChannelTheme", {}, { server: true });
+    return (res.data.value as any)?.activeChannel?.customFields?.shareImageUrl ?? "";
+  },
+  { server: true },
+);
+const channelShareImage = computed(() => channelShareData.value ?? "");
+// 最后兜底：内置默认分享图
+const defaultShareImage = computed(() => `${window.location.origin}/share-default.jpg`);
+
 const shareData = computed(() => ({
   title: props.title || document.title,
   desc: props.description || t("messages.share.inviteTip"),
   link: shareUrl.value,
-  imgUrl: props.imageUrl || "",
+  imgUrl: props.imageUrl || channelShareImage.value || defaultShareImage.value,
 }));
 
 async function copyLink() {

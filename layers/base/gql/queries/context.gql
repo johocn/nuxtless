@@ -23,6 +23,7 @@ query GetChannelTheme {
       taxMode
       promoSchemes
       serviceSchemes
+      shareImageUrl
     }
     pricesIncludeTax
   }
