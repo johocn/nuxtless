@@ -60,19 +60,32 @@ watch(
 // 分享/SEO 描述：剥离 HTML 标签，保证微信 og:description 纯净（实测曾带 <p> 标签）
 const shareDesc = computed(() => stripHtmlToText(product.value?.description ?? ""));
 
-// og 分享主图：转 JPEG 并缩放到 ≤800px 宽，大幅压缩体积（原图 ~1.26MB → ~130KB），
-// 避免微信分享缩略图(~300KB 软上限)抓取被拒
+// 渠道级分享主图兜底：Channel.customFields.shareImageUrl（复用 GetChannelTheme，
+// 与 WechatShare 组件同 useAsyncData key → SSR 去重不新增请求）
+const { data: channelShareImage } = useAsyncData(
+  "channel-share-image",
+  async () => {
+    const res = await useAsyncGql("GetChannelTheme", {}, { server: true });
+    return (res.data.value as any)?.activeChannel?.customFields?.shareImageUrl ?? "";
+  },
+  { server: true },
+);
+
+// og 分享主图兜底链：商品图 → 渠道 shareImageUrl → 内建默认图（与 WechatShare 的
+// JS-SDK imgUrl 兜底链一致，保证无图商品分享卡左侧也有图）。
+// 转 JPEG 并缩放到 ≤400px 宽，压体积（微信分享缩略图 ~300KB 软上限）。
 const ogImageSrc = computed(() => {
   const raw =
     product.value?.featuredAsset?.preview ??
     product.value?.assets?.[0]?.preview ??
+    channelShareImage.value ??
     "";
-  if (!raw) return "";
+  if (!raw) return `${i18NBaseUrl}/share-default.jpg`;
   try {
     const u = new URL(raw, i18NBaseUrl);
     u.searchParams.set("format", "jpg");
-    u.searchParams.set("w", "800");
-    u.searchParams.set("q", "70");
+    u.searchParams.set("w", "400");
+    u.searchParams.set("q", "60");
     return u.toString();
   } catch {
     return raw;
@@ -80,7 +93,7 @@ const ogImageSrc = computed(() => {
 });
 
 // 分享卡版本常量：内容改版时递增，强制微信对新的 og:image URL 重新抓取，绕开旧卡缓存
-const OG_SHARE_VERSION = "v3";
+const OG_SHARE_VERSION = "v4";
 
 // 中文字体：satori 默认只捆绑 Inter（无 CJK 字形），中文会渲染成 NOGLYPH 乱码。
 // 通过 defineOgImage fonts 注入自托管 SimHei（public/fonts/simhei.ttf），
@@ -111,11 +124,13 @@ defineOgImage(
     colorMode: ogColorMode,
     productName: product.value?.name,
     price: formatPrice(ogPriceCents.value),
-    image: ogImageSrc.value,
+    image: ogImageSrc, // 传 computed：SSR 渲染时读到异步兜底后的最终值
     brand: siteName.value,
     version: OG_SHARE_VERSION,
   },
   {
+    width: 800,
+    height: 400,
     fonts: [OG_CJK_FONT],
   }
 );
