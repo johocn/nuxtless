@@ -84,7 +84,7 @@ const ogImageSrc = computed(() => {
   try {
     const u = new URL(raw, i18NBaseUrl);
     u.searchParams.set("format", "jpg");
-    u.searchParams.set("w", "600");
+    u.searchParams.set("w", "500");
     u.searchParams.set("q", "70");
     return u.toString();
   } catch {
