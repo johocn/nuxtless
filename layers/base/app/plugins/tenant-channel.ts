@@ -12,7 +12,7 @@ export default defineNuxtPlugin(() => {
   // 注意：本 Vendure 部署的 apiOptions.channelTokenKey 被覆盖为 "vendure-token"
   // （非默认 "vendure-channel-token"），header 键须一致后端才能切换渠道。
   const { token } = useTenantChannel();
-  if (token.value) {
+  if (hit && token.value) {
     useGqlHeaders({ "vendure-token": token.value });
   }
 });
