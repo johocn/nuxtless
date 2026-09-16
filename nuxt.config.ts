@@ -12,6 +12,10 @@ export default defineNuxtConfig({
 
   nitro: {
     preset: "node-server",
+    // 注意：不要给 /_og/** 加 nitro routeRules 缓存（swr/cache 均会破坏 og-image 渲染：
+    // 实测 swr 导致 satori "No fonts are loaded" 全量 500）。
+    // og:image 同 URL 重复请求由 nuxt-og-image 内置内存缓存兜底（实测同 URL 二次 ~0.26s），
+    // 同一商品（价格/内容不变时 og URL 固定）重复分享秒回，无需额外缓存层。
     // nitro 默认 node-externals 有缓存 bug（nitrojs/nitro#2369），会导致模块反复重新解析、
     // 内存指数增长，Windows 上 "Building Nuxt Nitro server" 卡 30-60 分钟甚至死锁。
     // 开启 legacyExternals 可将构建从 1 小时降到约 2 分钟。
