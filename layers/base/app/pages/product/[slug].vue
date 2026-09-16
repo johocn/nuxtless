@@ -86,19 +86,26 @@ const ogImageSrc = computed(() => {
     u.searchParams.set("format", "jpg");
     u.searchParams.set("w", "500");
     u.searchParams.set("q", "70");
+    // 必须返回绝对 URL：satori 需 fetch 探测图片尺寸，相对路径会报
+    // "Image size cannot be determined"（fetch-origin 不解析相对图地址）。
+    // 渲染耗时由 SWR 缓存（/_og/** swr:3600）兜底：首次渲染后重复分享全部秒回。
     return u.toString();
   } catch {
     return raw;
   }
 });
 
-// 分享卡版本常量：内容改版时递增，强制微信对新的 og:image URL 重新抓取，绕开旧卡缓存
-const OG_SHARE_VERSION = "v4";
+// 分享卡版本常量：内容改版时递增，强制微信对新的 og:image URL 重新抓取，绕开旧卡缓存。
+// v5：改用 GB2312 子集字体（simhei-gb2312.ttf），根治微信抓取 og:image 超时导致的「默认无商品图」。
+const OG_SHARE_VERSION = "v5";
 
 // 中文字体：satori 默认只捆绑 Inter（无 CJK 字形），中文会渲染成 NOGLYPH 乱码。
-// 通过 defineOgImage fonts 注入自托管 SimHei（public/fonts/simhei.ttf），
-// 运行时经同源 /fonts/simhei.ttf 拉取（node binding 的 fetch-origin 机制，与 Inter 兜底同路）。
-const OG_CJK_FONT = { name: "SimHei", weight: 400, path: "/fonts/simhei.ttf" };
+// 通过 defineOgImage fonts 注入自托管 SimHei（public/fonts/simhei-gb2312.ttf），
+// 运行时经同源 /fonts/simhei-gb2312.ttf 拉取（node binding 的 fetch-origin 机制，与 Inter 兜底同路）。
+// 注意：必须用 GB2312 子集字体（1.95MB）而非全量 simhei.ttf（9.3MB）——微信抓取 og:image 有
+// 超时阈值（实测 ~3-5s），全量字体每次新 URL 渲染解析耗时 4-9s 直接超时，分享卡抓不到图就落回
+// 默认无图。子集字体将新 URL 渲染耗时压回秒内，分享卡才稳定出图。
+const OG_CJK_FONT = { name: "SimHei", weight: 400, path: "/fonts/simhei-gb2312.ttf" };
 
 // 分享卡价格须与页面价签同口径（按渠道 taxMode/pricesIncludeTax 换算展示价），
 // 避免分享卡显示净价(¥88.50)而页面显示含税价(¥100.00)的不一致

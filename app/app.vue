@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// R4 配置版本化响应头：模板/全局配置 version 变化即派生 Unique 响应头
+import { setResponseHeader } from "h3";
 // 按 URL 首段租户动态取 channel token；未命中回退默认渠道
 const { token: channelToken } = useTenantChannel();
 const colorMode = useColorMode();
