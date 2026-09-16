@@ -62,11 +62,10 @@
     tokens: PaletteToken;    // 展开为 CSS 变量的 token 集
   }
   ```
-- 内置 4 套命名调色板，随模板库内置（作为 **L0 全局默认兜底**）：
-  - 晨曦金 `dawn-gold`（默认）：暖调 · 轻奢
-  - 科技蓝 `tech-blue`：冷调 · 专业
-  - 清雅绿 `fresh-green`：自然 · 治愈
-  - 极夜黑 `midnight`：深邃 · 高端
+- 内置两组共 8 套命名调色板，随模板库内置（作为 **L0 全局默认兜底**），店铺按需选用：
+  - **平台对标风**：京东红 `jd-red` · 淘宝橙 `taobao-orange` · 拼多多红 `pdd-red` · 唯品会蓝紫 `vip-blue`
+  - **气质品牌风**：晨曦金 `dawn-gold`（默认）· 科技蓝 `tech-blue` · 清雅绿 `fresh-green` · 极夜黑 `midnight`
+- 默认启用 `dawn-gold`（晨曦金）。
 - 后台在模板库选中 `theme.palette.scheme` → C 端 `mergeThemeTokens` 时将 palette 展开为其 `tokens`，再与全局 token 合并 → 作为 CSS 变量源整站换肤。
 - **回退语义保持不变**：palette 展开的 token 走既有 `deepMerge`（当前 locale/defaultLocale→首个值→占位），未选中 scheme 时回退 L0 内建默认；坏 JSON/缺字段返回 null 回退。
 
