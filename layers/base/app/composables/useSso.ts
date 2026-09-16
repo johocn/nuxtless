@@ -225,12 +225,19 @@ export function useSso() {
     return result;
   }
 
-  /** 向 SSO 申请微信 JS-SDK 签名（用于自定义分享卡片），失败返回 null 由调用方静默降级 */
+  /** 向 SSO 申请微信 JS-SDK 签名（用于自定义分享卡片），失败返回 null 由调用方静默降级。
+   *  baseUrl 优先 sessionStorage（登录流程写入）；缺失时从渠道 ssoProviders 动态取
+   *  zhao-sso provider——未登录用户也能签名，微信内转发卡片即时注入标题/描述/图，
+   *  不依赖微信服务器 og 快照。 */
   async function fetchJssdkSignature(url: string): Promise<{
     appId?: string; timestamp?: number; nonceStr?: string; signature?: string;
   } | null> {
     try {
-      const host = sessionStorage.getItem("youshop_sso_base_url") ?? "";
+      let host = sessionStorage.getItem("youshop_sso_base_url") ?? "";
+      if (!host) {
+        const providers = await fetchProviders();
+        host = providers[0]?.baseUrl ?? "";
+      }
       if (!host) return null;
       const res = await fetch(`${host}/v1/auth/jssdk-signature`, {
         method: "POST",
