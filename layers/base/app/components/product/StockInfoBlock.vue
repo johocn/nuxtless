@@ -7,6 +7,7 @@ const props = defineProps<{
 
 const { t } = useI18n();
 const { loading, info, refresh } = useProductStockInfo();
+const { cityName } = storeToRefs(useLocationStore());
 
 const saleable = computed(() => info.value?.saleableStock ?? 0);
 const inStock = computed(() => saleable.value > 0);
@@ -14,16 +15,25 @@ const showNearby = computed(() =>
   Boolean(info.value?.physicalStockEnabled && info.value?.stockDetail?.length),
 );
 
+function currentCity(): string | null {
+  return (cityName.value as string | undefined)?.trim() || null;
+}
+
 async function load() {
   if (!props.variantId) {
     return;
   }
-  await refresh(props.variantId);
+  await refresh(props.variantId, null, null, currentCity());
 }
 
 onMounted(load);
 // 变体切换（swatch）后重新刷新
-watch(() => props.variantId, load);
+watch(
+  () => [props.variantId, cityName.value],
+  () => {
+    load();
+  },
+);
 </script>
 
 <template>
