@@ -19,13 +19,19 @@ export function useProductStockInfo() {
   const loading = ref(false);
   const info = ref<StockInfo | null>(null);
 
-  async function refresh(variantId: string, lat?: number | null, lng?: number | null): Promise<void> {
+  async function refresh(
+    variantId: string,
+    lat?: number | null,
+    lng?: number | null,
+    city?: string | null,
+  ): Promise<void> {
     loading.value = true;
     try {
       const data = await GqlVariantStockInfo({
         variantId,
         lat: lat ?? null,
         lng: lng ?? null,
+        city: city ?? null,
       });
       info.value = (data.variantStockInfo ?? null) as StockInfo | null;
     } finally {
