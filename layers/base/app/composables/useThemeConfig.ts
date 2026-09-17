@@ -14,7 +14,7 @@ export function useThemeConfig() {
       const res = await useAsyncGql("GetShopTemplate", { app: APP }, { server: true });
       return res.data.value?.shopTemplate ?? null;
     },
-    { server: true, getCachedData: () => null },
+    { server: true },
   );
 
   const { data: globalData, refresh: refreshGlobal } = useAsyncData(
@@ -23,7 +23,7 @@ export function useThemeConfig() {
       const res = await useAsyncGql("GetShopGlobalConfig", { app: APP }, { server: true });
       return res.data.value?.shopGlobalConfig ?? null;
     },
-    { server: true, getCachedData: () => null },
+    { server: true },
   );
 
   const { data: channelData, refresh: refreshChannel } = useAsyncData(
@@ -32,7 +32,7 @@ export function useThemeConfig() {
       const res = await useAsyncGql("GetChannelTheme", {}, { server: true });
       return res.data.value?.activeChannel?.customFields ?? null;
     },
-    { server: true, getCachedData: () => null },
+    { server: true },
   );
 
   const template = computed<ShopTemplateData | null>(() => templateData.value ?? null);
