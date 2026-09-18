@@ -49,6 +49,7 @@ fragment ProductBaseFragment on Product {
   customFields {
     belongCity
     serviceCities
+    deliveryMethods
     displayTemplate
     videoUrl
     marketingTags
