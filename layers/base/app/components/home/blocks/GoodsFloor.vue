@@ -8,7 +8,7 @@ import { goodsLayout } from "../../../utils/shop-content";
 import type { GoodsSection, GoodsLayout } from "../../../utils/shop-content";
 import { localizeText } from "../../../utils/detail-config";
 import { pickListCents } from "../../../utils/display-price";
-import { isProductVisible, type ProductLike } from "../../../utils/productVisibility";
+import type { ProductLike } from "../../../utils/productVisibility";
 
 const props = defineProps<{ section: GoodsSection }>();
 const { t, locale } = useI18n();
@@ -73,21 +73,11 @@ const products = computed(() => {
     customFields: d.cfMap.get(i.slug) ?? null,
   })) as SearchResult;
 });
-
-// 城市·配送过滤：城市来自 locationStore（SSR 期 cookie 已同步）；配送为模块级独立状态
-// （切换条/空态由各布局子组件承载，此处仅保留模块状态用于 SSR 后置过滤）
-const cityName = useLocationStore().cityName;
-const { current: delivery } = useModuleDelivery("goods-floor");
-const visibleItems = computed(() =>
-  products.value.filter((p) =>
-    isProductVisible(p, { city: cityName.value || null, delivery: delivery.value }),
-  ),
-);
 </script>
 
 <template>
-  <!-- 渲染统一用可见项（SSR 后置过滤结果）；切换条/空态由各布局子组件（JdProductGrid/GoodsMasonryGrid/GoodsSingleList）的模块头部承载 -->
-  <GoodsMasonryGrid v-if="layout === 'masonry'" :title="title" :products="visibleItems" />
-  <GoodsSingleList v-else-if="layout === 'single'" :title="title" :products="visibleItems" />
-  <JdProductGrid v-else :title="title" :products="visibleItems" />
+  <!-- 商品「城市·配送」过滤、切换条与空态统一由各布局子组件（JdProductGrid/GoodsMasonryGrid/GoodsSingleList）承接（单一过滤层，避免双层过滤导致切「自提」时自提-only 商品被上层 MAIL 预筛掉） -->
+  <GoodsMasonryGrid v-if="layout === 'masonry'" :title="title" :products="products" />
+  <GoodsSingleList v-else-if="layout === 'single'" :title="title" :products="products" />
+  <JdProductGrid v-else :title="title" :products="products" />
 </template>
