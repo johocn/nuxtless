@@ -12,6 +12,20 @@ const inStock = computed(
   () => stockLevel.value === "IN_STOCK" || stockLevel.value === "LOW_STOCK",
 );
 
+// 详情页配送方式切换（复用首页过滤条组件）：库存口径随切换联动
+const delivery = ref<'MAIL' | 'SELF_PICKUP'>('MAIL');
+const productDeliveryMethods = computed<('MAIL' | 'SELF_PICKUP')[]>(() => {
+  const cf = (product.value as any)?.customFields ?? {};
+  const raw: unknown[] = Array.isArray(cf.deliveryMethods) ? cf.deliveryMethods : [];
+  return raw.filter((m): m is 'MAIL' | 'SELF_PICKUP' => m === 'MAIL' || m === 'SELF_PICKUP');
+});
+// 空数组=两者都支持（旧数据兜底）；单模式商品不显示切换条，并强制到该口径
+const showDeliverySwitch = computed(() => productDeliveryMethods.value.length !== 1);
+watchEffect(() => {
+  const m = productDeliveryMethods.value;
+  if (m.length === 1) delivery.value = m[0]!;
+});
+
 // 吸顶楼层 tab（跟随滚动高亮）
 const FLOOR_TABS = [
   { id: "floor-variants", key: "floorSpecs", block: "variants" },
@@ -89,8 +103,18 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
           </span>
         </div>
       </div>
-      <!-- 库存区：默认虚拟可售数；开启物理租户 + 物理驱动变体显示附近库存折叠 -->
-      <ProductStockInfoBlock :variant-id="selectedVariant?.id" class="mt-3" />
+      <!-- 库存区：配送方式切换（仅双模式/未配置商品显示）+ 默认虚拟可售数；开启物理租户 + 物理驱动变体显示附近库存折叠 -->
+      <HomeBlocksDeliveryFilterBar
+        v-if="showDeliverySwitch"
+        v-model="delivery"
+        variant="segmented"
+        class="mt-3"
+      />
+      <ProductStockInfoBlock
+        :variant-id="selectedVariant?.id"
+        :delivery-method="delivery"
+        class="mt-3"
+      />
     </header>
 
     <!-- 吸顶楼层 tab（美化：下划线指示器跟随滚动） -->
