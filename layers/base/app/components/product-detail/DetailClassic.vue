@@ -60,6 +60,11 @@ const inStock = computed(
         <ProductDetailPromoBlock />
       </section>
 
+      <!-- 商品专属券 -->
+      <section v-if="visible('coupon')">
+        <ProductDetailProductCouponBlock />
+      </section>
+
       <!-- 服务保障视觉化 -->
       <section v-if="visible('service')" class="rounded-lg border border-gray-100 bg-gray-50/60 p-3">
         <div class="mb-2 flex items-center gap-1.5 text-xs font-semibold text-gray-500">
