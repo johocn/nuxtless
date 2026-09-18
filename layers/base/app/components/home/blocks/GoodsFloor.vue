@@ -8,6 +8,7 @@ import { goodsLayout } from "../../../utils/shop-content";
 import type { GoodsSection, GoodsLayout } from "../../../utils/shop-content";
 import { localizeText } from "../../../utils/detail-config";
 import { pickListCents } from "../../../utils/display-price";
+import { isProductVisible, type ProductLike } from "../../../utils/productVisibility";
 
 const props = defineProps<{ section: GoodsSection }>();
 const { t, locale } = useI18n();
@@ -39,33 +40,54 @@ const { data } = await useAsyncData(
     // 非商品集（无 productId）或查询失败时静默降级为「无划线价」。
     const ids = items.map((i) => i.productId).filter(Boolean);
     if (!ids.length) {
-      return { items, listCents: new Map() as Map<string, number | null> };
+      return { items, listCents: new Map() as Map<string, number | null>, cfMap: new Map() as Map<string, ProductLike["customFields"]> };
     }
     let byIds;
     try {
       byIds = await rawGql("GetProductsByIds", { ids });
     } catch {
-      return { items, listCents: new Map() as Map<string, number | null> };
+      return { items, listCents: new Map() as Map<string, number | null>, cfMap: new Map() as Map<string, ProductLike["customFields"]> };
     }
     const products = byIds?.products?.items ?? [];
     const mode = (taxMode.value ?? "inclusive") as "inclusive" | "zero" | "exclusive";
     const listCents = new Map<string, number | null>();
+    // 同步合并商品主数据 customFields（belongCity/serviceCities/deliveryMethods），
+    // 供 isProductVisible 做「城市·配送」SSR 后置过滤（SearchItem 本身不带 customFields）。
+    const cfMap = new Map<string, ProductLike["customFields"]>();
     for (const p of products) {
-      if (p?.slug) listCents.set(p.slug, pickListCents(p.variants ?? null, mode));
+      if (p?.slug) {
+        listCents.set(p.slug, pickListCents(p.variants ?? null, mode));
+        cfMap.set(p.slug, (p as { customFields?: ProductLike["customFields"] }).customFields ?? null);
+      }
     }
-    return { items, listCents };
+    return { items, listCents, cfMap };
   },
   { server: true },
 );
 const products = computed(() => {
   const d = data.value;
   if (!d) return [] as SearchResult;
-  return d.items.map((i) => ({ ...i, listPriceCents: d.listCents.get(i.slug) ?? null })) as SearchResult;
+  return d.items.map((i) => ({
+    ...i,
+    listPriceCents: d.listCents.get(i.slug) ?? null,
+    customFields: d.cfMap.get(i.slug) ?? null,
+  })) as SearchResult;
 });
+
+// 城市·配送过滤：城市来自 locationStore（SSR 期 cookie 已同步）；配送为模块级独立状态
+// （切换条/空态由各布局子组件承载，此处仅保留模块状态用于 SSR 后置过滤）
+const cityName = useLocationStore().cityName;
+const { current: delivery } = useModuleDelivery("goods-floor");
+const visibleItems = computed(() =>
+  products.value.filter((p) =>
+    isProductVisible(p, { city: cityName.value || null, delivery: delivery.value }),
+  ),
+);
 </script>
 
 <template>
-  <GoodsMasonryGrid v-if="layout === 'masonry'" :title="title" :products="products" />
-  <GoodsSingleList v-else-if="layout === 'single'" :title="title" :products="products" />
-  <JdProductGrid v-else :title="title" :products="products" />
+  <!-- 渲染统一用可见项（SSR 后置过滤结果）；切换条/空态由各布局子组件（JdProductGrid/GoodsMasonryGrid/GoodsSingleList）的模块头部承载 -->
+  <GoodsMasonryGrid v-if="layout === 'masonry'" :title="title" :products="visibleItems" />
+  <GoodsSingleList v-else-if="layout === 'single'" :title="title" :products="visibleItems" />
+  <JdProductGrid v-else :title="title" :products="visibleItems" />
 </template>
