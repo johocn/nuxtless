@@ -93,8 +93,8 @@ query VariantNearbyStock(
   }
 }
 
-query VariantStockInfo($variantId: ID!, $lat: Float, $lng: Float, $city: String) {
-  variantStockInfo(variantId: $variantId, lat: $lat, lng: $lng, city: $city) {
+query VariantStockInfo($variantId: ID!, $lat: Float, $lng: Float, $city: String, $deliveryMethod: String) {
+  variantStockInfo(variantId: $variantId, lat: $lat, lng: $lng, city: $city, deliveryMethod: $deliveryMethod) {
     variantId
     saleableStock
     physicalStockEnabled
