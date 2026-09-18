@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import type {
   CouponStatus,
   CouponTemplate,
@@ -9,6 +9,7 @@ import {
   getCouponCentre,
   getMyCoupons,
   claimCoupon,
+  redeemCouponByCode,
   couponErrorMessage,
 } from "~~/layers/base/app/composables/useCoupon";
 
@@ -33,6 +34,8 @@ const myCoupons = ref<CustomerCoupon[]>([]);
 const loadingCenter = ref(false);
 const loadingWallet = ref(false);
 const claimingId = ref<string | null>(null);
+const redeemCode = ref("");
+const redeeming = ref(false);
 
 const STATUS_MAP: Record<WalletKey, CouponStatus> = {
   unused: "UNUSED",
@@ -129,6 +132,31 @@ async function claim(c: CouponTemplate) {
   }
 }
 
+// ── 凭兑换码领券 ──
+async function redeem() {
+  const code = redeemCode.value.trim();
+  if (!code) return;
+  if (!isAuthenticated.value) {
+    await navigateTo(localePath("/account/login"));
+    return;
+  }
+  if (redeeming.value) return;
+  redeeming.value = true;
+  try {
+    await redeemCouponByCode(code);
+    toast.add({ title: t("messages.coupon.redeemSuccess"), color: "success" });
+    redeemCode.value = "";
+    // 刷新券包并切到「我的券包 - 未使用」，方便立即看到新领的券
+    await loadMy();
+    walletTab.value = "unused";
+    tab.value = "wallet";
+  } catch (e) {
+    toast.add({ title: t("messages.coupon.redeemFailed"), description: couponErrorMessage(e), color: "error" });
+  } finally {
+    redeeming.value = false;
+  }
+}
+
 // ── 展示格式化（移植自 vshop coupons.vue）──
 function typeTip(type?: CouponType): string {
   if (type === "FREE_SHIPPING") return t("messages.coupon.typeFreeShipping");
@@ -185,6 +213,26 @@ onMounted(loadCentre);
     <header class="mb-8">
       <h1 class="text-3xl font-semibold">{{ t("messages.coupon.title") }}</h1>
     </header>
+
+    <!-- 凭兑换码领券 -->
+    <div class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-(--ui-border) p-4">
+      <p class="font-semibold">{{ t("messages.coupon.redeemTitle") }}</p>
+      <UInput
+        v-model="redeemCode"
+        class="w-52"
+        :placeholder="t('messages.coupon.redeemPlaceholder')"
+        :disabled="redeeming"
+        @keyup.enter="redeem()"
+      />
+      <UButton
+        color="primary"
+        :loading="redeeming"
+        :disabled="!redeemCode.trim() || redeeming"
+        @click="redeem()"
+      >
+        {{ t("messages.coupon.redeemBtn") }}
+      </UButton>
+    </div>
 
     <div class="mb-6 flex gap-3">
       <UButton

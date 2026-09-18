@@ -218,6 +218,11 @@ export const zhMessages = {
       couponUsed: '已使用优惠券',
       couponCleared: '已移除优惠券',
       noCoupon: '不使用优惠券',
+      redeemTitle: '凭兑换码领券',
+      redeemPlaceholder: '请输入兑换码',
+      redeemBtn: '兑换',
+      redeemSuccess: '兑换成功',
+      redeemFailed: '兑换失败',
     },
     general: {
       cancel: '取消',
