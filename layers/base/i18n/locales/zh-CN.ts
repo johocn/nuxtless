@@ -22,6 +22,8 @@ export const zhMessages = {
   site: {
       // 品牌名与国际化 tagline 保留英文（非 UI 操作文案）
       title: "优商铺",
+      // 微信转发兜底默认描述（租户未配置 shopIntro 时使用）
+      shareDesc: "youshop.cn一站式专家购物，跨境优选，私人订制。",
       tagline: "Nuxt Level Headless E-commerce",
       shortDescription:
         "A modern, fast, and secure foundation for building headless online stores with Nuxt and Vendure.",

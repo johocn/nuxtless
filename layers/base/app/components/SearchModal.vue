@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { assetSrc } from "../utils/image";
 
 const { t } = useI18n();
@@ -66,6 +66,7 @@ watch(error, (err) => {
                 size: '3xl',
               }"
               :to="localePath(`/product/${item.slug}`)"
+              external
               class="w-full"
               @click="open = !open"
             >

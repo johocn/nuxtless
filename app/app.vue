@@ -13,7 +13,7 @@ const siteName = useSiteName();
 // which is NOT proxied in production and returns 404, so the theme stays "default")
 useGqlHost(`${useGqlHostUrl()}?languageCode=${locale.value}`);
 
-const { config: themeConfig, loadTheme } = useChannelTheme();
+const { config: themeConfig, loadTheme, customFields } = useChannelTheme();
 // 渠道级固定主题：SSR 首帧即写入 <html data-theme>，避免 FOUC
 useHead(() => ({ htmlAttrs: { "data-theme": themeConfig.value } }));
 await loadTheme();
@@ -118,16 +118,22 @@ watch(error, (val) => {
 // 商品详情页不用此全局 og：Product/[slug] 直接输出静态 CDN 商品图为 og:image
 // （绕开 nuxt-og-image 的 _og/d 动态代理，确保微信稳定抓取商品图），故此处跳过 /product/ 路由。
 const ogRoute = useRoute();
-// 首页/其它页 og:image 指向纯静态新文件 share-product.jpg（内容=商品图）。
-// 关键：URL 必须是新的——share-default.jpg 地址早已被微信缓存旧图（按 URL 缓存，
-// 内容变了也仍显旧图）；换新文件名强制微信重新抓取。
 const ogStaticBase = useRuntimeConfig().public.i18NBaseUrl as string;
 if (!ogRoute.path.startsWith("/product/")) {
+  // 首页/其它页 og 标题/描述按租户 Channel.customFields 配置：shopName 标题、shopIntro 描述，
+  // 未配置回退 i18n site 文案；og 默认图优先租户 shareImageUrl，未配置回退静态 share-logo.jpg（域名 logo 卡）。
+  const ogImage = computed(() => {
+    const custom = customFields.value?.shareImageUrl;
+    if (custom) return /^https?:\/\//i.test(custom) ? custom : `${ogStaticBase}${custom.startsWith("/") ? custom : `/${custom}`}`;
+    return `${ogStaticBase}/share-logo.jpg`;
+  });
   useSeoMeta({
-    title: t("messages.site.tagline"),
-    description: t("messages.site.shortDescription"),
-    ogImage: `${ogStaticBase}/share-product.jpg`,
-    twitterImage: `${ogStaticBase}/share-product.jpg`,
+    title: computed(() => customFields.value?.shopName || t("messages.site.tagline")),
+    description: computed(() => customFields.value?.shopIntro || t("messages.site.shareDesc")),
+    ogTitle: computed(() => customFields.value?.shopName || t("messages.site.tagline")),
+    ogDescription: computed(() => customFields.value?.shopIntro || t("messages.site.shareDesc")),
+    ogImage,
+    twitterImage: ogImage,
   });
 }
 

@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 // 淘宝风商品瀑布流：双列大图卡（大图 + 价格 + 标题 + 底行）
 import type { SearchResult } from "~~/types/product";
 import { assetSrc } from "../../../utils/image";
@@ -50,6 +50,7 @@ function listText(p?: SearchItem, cur?: string | null) {
         :key="p.slug"
         :to="localePath(`/product/${p.slug}`)"
         class="overflow-hidden rounded-lg border border-gray-100 bg-white transition active:scale-[0.98]"
+        external
       >
         <NuxtImg
           :src="assetSrc(p.productAsset?.preview || '/images/placeholder.webp', 600)"

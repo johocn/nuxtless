@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 // JD 风格 PC 顶栏：品牌 + 实时搜索 + 热词
 // 搜索复用 nshop 的 useSimpleSearch（与 SearchModal 同数据源，商品点按进详情页），
 // 无需独立的搜索结果页路由。
@@ -18,7 +18,7 @@ function onBlur() {
 function submit() {
   if (results.value.length === 1) {
     const first = results.value[0];
-    if (first?.slug) navigateTo(localePath(`/product/${first.slug}`));
+    if (first?.slug) window.location.href = localePath(`/product/${first.slug}`);
   }
 }
 </script>
@@ -64,6 +64,7 @@ function submit() {
               :key="item.slug"
               :to="localePath(`/product/${item.slug}`)"
               class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              external
             >
               <NuxtImg
                 v-if="item.productAsset?.preview"

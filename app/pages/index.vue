@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 // 首页：京东风格商城首页（PC 全屏 + 窄屏自动降级为移动单列布局）
 // 底层逻辑不变，复用 nshop/Vendure 既有功能与数据：
 //   - 顶部分类(collection)（GetMenuCollections，已在 app.vue 加载）→ 分类导航/品质专区/PC 侧栏
@@ -233,7 +233,9 @@ const entries = computed(() =>
 
   <!-- 微信分享 + 邀请登录引导（固定定位，PC/移动统一生效） -->
   <WechatInviteLoginBar />
-  <WechatShare :title="t('messages.site.title')" />
+  <!-- 分享标题/描述/默认图按租户配置：组件内部优先 Channel.customFields 的 shopName/shopIntro/shareImageUrl，
+       未设置才回退 i18n 站点名与内置域名 logo（share-logo.jpg） -->
+  <WechatShare />
 </template>
 
 <style lang="css" scoped></style>
