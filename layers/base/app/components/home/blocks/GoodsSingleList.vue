@@ -17,7 +17,8 @@ const { taxMode, pricesIncludeTax } = useTaxMode();
 
 // 城市·配送过滤：城市来自 locationStore（SSR 期 cookie 已同步）；配送为模块级独立状态
 // 受五级风格配置（useHomeFilterConfig）控制：开关/默认配送/过滤条样式
-const cityName = useLocationStore().cityName;
+// 必须用 storeToRefs 保持响应式：直接 store.cityName 会被 pinia 解包成字符串快照，.value 恒为 undefined → 城市过滤失效
+const { cityName } = storeToRefs(useLocationStore());
 const { config } = useHomeFilterConfig();
 const filterEnabled = computed(() => config.value.enabled && config.value.modules.goods.enabled);
 const defaultDelivery = computed(() => config.value.modules.goods.defaultDelivery ?? config.value.defaultDelivery);

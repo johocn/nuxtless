@@ -14,7 +14,8 @@ export function useHomeContent() {
 
   // 促销绑定商品（Recommendation/Floor 等携带商品条目列表的运营块）按「城市·配送」SSR 后置过滤；
   // 纯 banner / notice 等无商品维度块全显（不误伤）。模块级配送状态 id 用 "home-promo"。
-  const cityName = useLocationStore().cityName;
+  // 必须用 storeToRefs 保持响应式：直接 store.cityName 会被 pinia 解包成字符串快照，.value 恒为 undefined → 城市过滤失效
+  const { cityName } = storeToRefs(useLocationStore());
   const { current: delivery } = useModuleDelivery("home-promo");
   const visibleContent = computed(() =>
     (content.value ?? []).map((block) => {
