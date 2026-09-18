@@ -4,16 +4,26 @@
 import type { SearchResult } from "~~/types/product";
 import { assetSrc } from "../../../utils/image";
 import { pickDisplayPrice, pickCurrentCents } from "../../../utils/display-price";
+import { isProductVisible } from "../../../utils/productVisibility";
 
 type SearchItem = SearchResult[number];
 
 const { t } = useI18n();
-defineProps<{
+const props = defineProps<{
   title: string;
   products: SearchItem[];
 }>();
 const localePath = useTenantLocalePath();
 const { taxMode, pricesIncludeTax } = useTaxMode();
+
+// 城市·配送过滤：城市来自 locationStore（SSR 期 cookie 已同步）；配送为模块级独立状态
+const cityName = useLocationStore().cityName;
+const { current: delivery, setDelivery } = useModuleDelivery("jd-grid");
+const visibleItems = computed(() =>
+  props.products.filter((p) =>
+    isProductVisible(p, { city: cityName.value || null, delivery: delivery.value }),
+  ),
+);
 
 function format(item?: SearchItem, currencyCode?: string | null) {
   const sel = pickDisplayPrice(item, taxMode.value, pricesIncludeTax.value);
@@ -44,11 +54,21 @@ function listText(item?: SearchItem, currencyCode?: string | null) {
         <span class="inline-block h-3.5 w-1 rounded bg-primary" />
         {{ title }}
       </h2>
-      <NuxtLink :to="localePath('/')" class="text-xs text-gray-400">{{ t('messages.nav.more') }}</NuxtLink>
+      <div class="flex items-center gap-2">
+        <HomeBlocksDeliveryFilterBar
+          variant="segmented"
+          :model-value="delivery"
+          @update:model-value="setDelivery"
+        />
+        <NuxtLink :to="localePath('/')" class="text-xs text-gray-400">{{ t('messages.nav.more') }}</NuxtLink>
+      </div>
     </div>
-    <div class="grid grid-cols-2 gap-2 px-3 pb-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 xl:gap-3">
+    <p v-if="!visibleItems.length" class="px-3 pb-3 text-xs text-gray-400">
+      {{ t("messages.home.emptyAfterFilter") }}
+    </p>
+    <div v-else class="grid grid-cols-2 gap-2 px-3 pb-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 xl:gap-3">
       <NuxtLink
-        v-for="p in products"
+        v-for="p in visibleItems"
         :key="p.slug"
         :to="localePath(`/product/${p.slug}`)"
         class="group overflow-hidden rounded-lg border border-gray-100 transition active:scale-[0.98]"

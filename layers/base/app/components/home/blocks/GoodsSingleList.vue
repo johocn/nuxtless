@@ -3,6 +3,7 @@
 import type { SearchResult } from "~~/types/product";
 import { assetSrc } from "../../../utils/image";
 import { pickDisplayPrice, pickCurrentCents } from "../../../utils/display-price";
+import { isProductVisible } from "../../../utils/productVisibility";
 
 type SearchItem = SearchResult[number];
 
@@ -10,8 +11,18 @@ const props = defineProps<{
   title: string;
   products: SearchItem[];
 }>();
+const { t } = useI18n();
 const localePath = useTenantLocalePath();
 const { taxMode, pricesIncludeTax } = useTaxMode();
+
+// 城市·配送过滤：城市来自 locationStore（SSR 期 cookie 已同步）；配送为模块级独立状态
+const cityName = useLocationStore().cityName;
+const { current: delivery, setDelivery } = useModuleDelivery("single-list");
+const visibleItems = computed(() =>
+  props.products.filter((p) =>
+    isProductVisible(p, { city: cityName.value || null, delivery: delivery.value }),
+  ),
+);
 
 function price(p?: SearchItem, cur?: string | null) {
   const sel = pickDisplayPrice(p, taxMode.value, pricesIncludeTax.value);
@@ -42,10 +53,18 @@ function listText(p?: SearchItem, cur?: string | null) {
         <span class="inline-block h-3.5 w-1 rounded bg-primary" />
         {{ title }}
       </h2>
+      <HomeBlocksDeliveryFilterBar
+        variant="segmented"
+        :model-value="delivery"
+        @update:model-value="setDelivery"
+      />
     </div>
-    <div class="space-y-2 px-3 pb-3">
+    <p v-if="!visibleItems.length" class="px-3 pb-3 text-xs text-gray-400">
+      {{ t("messages.home.emptyAfterFilter") }}
+    </p>
+    <div v-else class="space-y-2 px-3 pb-3">
       <NuxtLink
-        v-for="p in products"
+        v-for="p in visibleItems"
         :key="p.slug"
         :to="localePath(`/product/${p.slug}`)"
         class="flex items-center gap-3 rounded-lg border border-gray-100 p-2 transition active:scale-[0.99]"
