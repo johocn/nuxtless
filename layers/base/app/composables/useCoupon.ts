@@ -48,6 +48,16 @@ export interface CouponTemplate {
   variantId?: string | null;
   enabled: boolean;
   shopId?: string | null;
+  /** 是否可被 C 端直接领取（商品专属券/兑换码券模板由后端扩展字段驱动） */
+  claimable: boolean;
+  /** 兑换码（凭码领券，非空时走 redeemCouponByCode） */
+  claimCode?: string | null;
+  /** 领取后有效天数 */
+  validDays?: number | null;
+  /** 是否仅限新客领取 */
+  newCustomerOnly: boolean;
+  /** 会员等级限制（如 GOLD），null 表示不限 */
+  memberLevel?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -67,6 +77,19 @@ export interface CustomerCoupon {
   template?: CouponTemplate | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** 商品专属券绑定（商品详情页可展示并一键领取；shop 侧无 remark 字段） */
+export interface ProductCouponBinding {
+  id: string;
+  productId: string;
+  variantIds?: string[] | null;
+  couponTemplateId: string;
+  enabled: boolean;
+  displayOrder: number;
+  badgeText?: string | null;
+  promoTitle?: string | null;
+  template?: CouponTemplate | null;
 }
 
 /** applyCouponToOrder / clearCouponFromOrder 返回的订单轻量信息（仅用于判别已绑定券与触发刷新） */
@@ -164,6 +187,7 @@ const COUPON_TEMPLATE_FIELDS = `
   id name description type discountValue minSpend
   startsAt endsAt totalCount claimedCount pointsPrice perUserLimit
   scope categoryId variantId enabled shopId createdAt updatedAt
+  claimable claimCode validDays newCustomerOnly memberLevel
 `;
 
 const CUSTOMER_COUPON_FIELDS = `
@@ -171,6 +195,12 @@ const CUSTOMER_COUPON_FIELDS = `
   reservedOrderId usedOrderId issuedAt usedAt expiredAt
   template { ${COUPON_TEMPLATE_FIELDS} }
   createdAt updatedAt
+`;
+
+const PRODUCT_COUPON_BINDING_FIELDS = `
+  id productId variantIds couponTemplateId enabled displayOrder
+  badgeText promoTitle
+  template { ${COUPON_TEMPLATE_FIELDS} }
 `;
 
 const ORDER_RESULT_FIELDS = `id totalWithTax`;
@@ -189,6 +219,15 @@ interface ApplyMutation {
 }
 interface ClearMutation {
   clearCouponFromOrder: AppliedOrderResult;
+}
+interface ProductCouponsQuery {
+  productCoupons: ProductCouponBinding[];
+}
+interface ClaimProductCouponMutation {
+  claimProductCoupon: CustomerCoupon;
+}
+interface RedeemCouponByCodeMutation {
+  redeemCouponByCode: CustomerCoupon;
 }
 
 /** 领券中心：当前可领取的优惠券模板列表 */
@@ -245,6 +284,42 @@ export async function clearCouponFromOrder(): Promise<AppliedOrderResult> {
   return data.clearCouponFromOrder;
 }
 
+/** 商品专属券：查询指定商品可领取的专属优惠券绑定列表（含模板详情） */
+export async function getProductCoupons(productId: string): Promise<ProductCouponBinding[]> {
+  const client = resolveClient();
+  const data = await client.request<ProductCouponsQuery>(
+    `query ProductCoupons($productId: ID!) {
+      productCoupons(productId: $productId) { ${PRODUCT_COUPON_BINDING_FIELDS} }
+    }`,
+    { productId },
+  );
+  return data.productCoupons;
+}
+
+/** 领取商品专属券（按 binding id），成功返回 CustomerCoupon */
+export async function claimProductCoupon(bindingId: string): Promise<CustomerCoupon> {
+  const client = resolveClient();
+  const data = await client.request<ClaimProductCouponMutation>(
+    `mutation ClaimProductCoupon($bindingId: ID!) {
+      claimProductCoupon(bindingId: $bindingId) { ${CUSTOMER_COUPON_FIELDS} }
+    }`,
+    { bindingId },
+  );
+  return data.claimProductCoupon;
+}
+
+/** 凭兑换码领券，成功返回 CustomerCoupon */
+export async function redeemCouponByCode(claimCode: string): Promise<CustomerCoupon> {
+  const client = resolveClient();
+  const data = await client.request<RedeemCouponByCodeMutation>(
+    `mutation RedeemCouponByCode($claimCode: String!) {
+      redeemCouponByCode(claimCode: $claimCode) { ${CUSTOMER_COUPON_FIELDS} }
+    }`,
+    { claimCode },
+  );
+  return data.redeemCouponByCode;
+}
+
 // ─────────────────────────────────────────────────────────────
 // 错误映射
 // ─────────────────────────────────────────────────────────────
@@ -268,6 +343,11 @@ const COUPON_ERROR_MESSAGES: Array<[string, string]> = [
   ["Order has no customer", "订单信息不完整，请稍后重试"],
   ["No customer for the current user", "登录状态异常，请重新登录"],
   ["You can only apply coupons to your own order", "只能对本人订单使用优惠券"],
+  ["Binding not found", "商品专属券不存在或已下架"],
+  ["Coupon is not claimable", "该券暂不可领取"],
+  ["Invalid claim code", "兑换码无效"],
+  ["Claim code not available in this shop", "该兑换码在当前店铺不可用"],
+  ["Coupon is for new customers only", "该券仅限新客领取"],
 ];
 
 /** 将 coupon 接口抛出的 GraphQL 错误规范化为友好中文提示 */
@@ -299,6 +379,9 @@ export function useCoupon() {
     getCouponCentre,
     getMyCoupons,
     claimCoupon,
+    getProductCoupons,
+    claimProductCoupon,
+    redeemCouponByCode,
     applyCouponToOrder,
     clearCouponFromOrder,
     couponErrorMessage,
