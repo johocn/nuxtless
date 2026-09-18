@@ -7,7 +7,6 @@
 // 顶部 AppHeader（城市选择 + 多语言 + 搜索 + 购物车）保持不变。
 import { isHero } from "../../layers/base/app/utils/home-content";
 import { enrichWithListPrice, listCentsMap } from "../../layers/base/app/utils/display-price";
-import { isProductVisible } from "../../layers/base/app/utils/productVisibility";
 import type { SearchResult } from "~~/types/product";
 import type { TaxMode } from "../../layers/base/app/utils/tax-price";
 import type { MenuCollections, TopLevelCollection } from "~~/types/collection";
@@ -95,22 +94,6 @@ const { data: fallbackSearch } = await useAsyncData(
 
 const hotProducts = computed(() => fallbackSearch.value?.hot ?? []);
 const moreProducts = computed(() => fallbackSearch.value?.more ?? []);
-
-// 城市·配送过滤（兜底楼层）：城市来自 locationStore（SSR 期 cookie 已同步）；配送为楼层级独立状态
-// （切换条/空态由 JdProductGrid 模块头部承载，此处仅保留楼层状态用于 SSR 后置过滤）
-const cityName = useLocationStore().cityName;
-const { current: hotDelivery } = useModuleDelivery("home-hot");
-const { current: moreDelivery } = useModuleDelivery("home-more");
-const visibleHotProducts = computed(() =>
-  hotProducts.value.filter((p) =>
-    isProductVisible(p, { city: cityName.value || null, delivery: hotDelivery.value }),
-  ),
-);
-const visibleMoreProducts = computed(() =>
-  moreProducts.value.filter((p) =>
-    isProductVisible(p, { city: cityName.value || null, delivery: moreDelivery.value }),
-  ),
-);
 
 // 4) PC 右栏静态数据：快讯 + 小广告（文案走 i18n，缺失回退中文）
 const news = computed<string[]>(() => tm("messages.home.news") as string[]);
@@ -217,14 +200,14 @@ const entries = computed(() =>
         <JdPlazaGrid v-if="topCategories.length" :categories="topCategories" />
       </div>
 
-      <!-- 商品楼层（渲染统一用可见项；切换条/空态由 JdProductGrid 模块头部承载） -->
+      <!-- 商品楼层（「城市·配送」过滤/切换条/空态由 JdProductGrid 模块头部承载） -->
       <div class="mt-3 space-y-3 pb-8">
         <JdProductGrid
           v-if="hotProducts.length"
           :title="t('messages.shop.popularProducts')"
-          :products="visibleHotProducts"
+          :products="hotProducts"
         />
-        <JdProductGrid v-if="moreProducts.length" :title="t('messages.general.recommendations')" :products="visibleMoreProducts" />
+        <JdProductGrid v-if="moreProducts.length" :title="t('messages.general.recommendations')" :products="moreProducts" />
       </div>
     </div>
   </main>
@@ -245,14 +228,14 @@ const entries = computed(() =>
       <div class="mt-2">
         <JdPlazaGrid v-if="topCategories.length" :categories="topCategories" />
       </div>
-      <!-- 商品楼层（渲染统一用可见项；切换条/空态由 JdProductGrid 模块头部承载） -->
+      <!-- 商品楼层（「城市·配送」过滤/切换条/空态由 JdProductGrid 模块头部承载） -->
       <div class="mt-2">
         <JdProductGrid
           v-if="hotProducts.length"
           :title="t('messages.shop.popularProducts')"
-          :products="visibleHotProducts"
+          :products="hotProducts"
         />
-        <JdProductGrid v-if="moreProducts.length" :title="t('messages.general.recommendations')" :products="visibleMoreProducts" />
+        <JdProductGrid v-if="moreProducts.length" :title="t('messages.general.recommendations')" :products="moreProducts" />
       </div>
     </template>
   </main>
