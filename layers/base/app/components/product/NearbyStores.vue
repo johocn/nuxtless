@@ -3,11 +3,17 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { formatNearbyDistance } from "~~/layers/base/app/utils/nearby-stock";
 import type { StockInfoDetail } from "~~/layers/base/app/composables/useProductStockInfo";
+import type { StockDeliveryMethod } from "~~/layers/base/app/composables/useProductStockInfo";
 
-const props = defineProps<{
-  /** 附近库存明细（来自 variantStockInfo.stockDetail，已按距离就近排序） */
-  stockDetail?: StockInfoDetail[] | null;
-}>();
+const props = withDefaults(
+  defineProps<{
+    /** 附近库存明细（来自 variantStockInfo.stockDetail，已按距离就近排序） */
+    stockDetail?: readonly StockInfoDetail[] | null;
+    /** 配送方式口径：SELF_PICKUP 时折叠块标题按自提语义显示 */
+    mode?: StockDeliveryMethod;
+  }>(),
+  { mode: "MAIL" },
+);
 
 const { t } = useI18n();
 const expanded = ref(false);
@@ -30,7 +36,11 @@ const nearestLabel = computed<string | null>(() => {
     <div class="summary" role="button" :aria-expanded="expanded" @click="expanded = !expanded">
       <div>
         <p class="summary-kpi">
-          {{ t("messages.detail.nearbySummary", { qty: totalAvailable }) }}
+          {{
+            props.mode === "SELF_PICKUP"
+              ? t("messages.detail.pickupSummary", { qty: totalAvailable })
+              : t("messages.detail.nearbySummary", { qty: totalAvailable })
+          }}
         </p>
         <p class="summary-meta">
           {{

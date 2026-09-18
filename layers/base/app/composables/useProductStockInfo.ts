@@ -14,6 +14,8 @@ export interface StockInfo {
   stockDetail: StockInfoDetail[];
 }
 
+export type StockDeliveryMethod = 'MAIL' | 'SELF_PICKUP';
+
 /** 虚拟×物理库存：saleableStock（虚拟可售）+ physicalStockEnabled（租户开关）+ 物理仓明细 */
 export function useProductStockInfo() {
   const loading = ref(false);
@@ -24,6 +26,7 @@ export function useProductStockInfo() {
     lat?: number | null,
     lng?: number | null,
     city?: string | null,
+    deliveryMethod?: StockDeliveryMethod | null,
   ): Promise<void> {
     loading.value = true;
     try {
@@ -32,6 +35,7 @@ export function useProductStockInfo() {
         lat: lat ?? null,
         lng: lng ?? null,
         city: city ?? null,
+        deliveryMethod: deliveryMethod ?? null,
       });
       info.value = (data.variantStockInfo ?? null) as StockInfo | null;
     } finally {
