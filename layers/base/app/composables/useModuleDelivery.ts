@@ -15,9 +15,9 @@ function readStore(): ModuleDeliveryState {
   }
 }
 
-export function useModuleDelivery(moduleId: string) {
+export function useModuleDelivery(moduleId: string, initial?: DeliveryMethod) {
   const methods = useState<ModuleDeliveryState>(STORAGE_KEY, readStore);
-  const current = computed<DeliveryMethod>(() => methods.value[moduleId] ?? 'MAIL');
+  const current = computed<DeliveryMethod>(() => methods.value[moduleId] ?? initial ?? 'MAIL');
   function set(d: DeliveryMethod) {
     methods.value = { ...methods.value, [moduleId]: d };
     if (import.meta.client) localStorage.setItem(STORAGE_KEY, JSON.stringify(methods.value));
