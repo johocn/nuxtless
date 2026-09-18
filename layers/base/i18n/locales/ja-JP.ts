@@ -108,6 +108,9 @@ export default defineI18nLocale(() =>
     home: {
       newsTitle: "JD ニュース",
       adsAlt: "キャンペーン広告",
+      mail: "配送",
+      selfPickup: "店頭受取",
+      emptyAfterFilter: "現在の都市・配送方法では利用可能な商品がありません",
       news: [
         "自社運営商品は99元以上で送料無料",
         "新規ユーザー初回注文で20元割引",

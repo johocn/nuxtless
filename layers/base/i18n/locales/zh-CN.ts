@@ -127,6 +127,9 @@ export const zhMessages = {
     home: {
       newsTitle: '京东快讯',
       adsAlt: '活动广告',
+      mail: '邮寄',
+      selfPickup: '自提',
+      emptyAfterFilter: '当前城市/配送方式下暂无可用商品',
       news: [
         '全场自营商品满 99 元包邮',
         '新用户首单立减 20 元',

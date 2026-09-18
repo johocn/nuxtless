@@ -107,6 +107,9 @@ export default defineI18nLocale(() =>
     home: {
       newsTitle: "JD 뉴스",
       adsAlt: "이벤트 광고",
+      mail: "택배",
+      selfPickup: "픽업",
+      emptyAfterFilter: "현재 도시·배송 방식에서는 이용 가능한 상품이 없습니다",
       news: [
         "전체 자체브랜드 상품 99,000원 이상 무료 배송",
         "신규 회원 첫 주문 시 20,000원 할인",
