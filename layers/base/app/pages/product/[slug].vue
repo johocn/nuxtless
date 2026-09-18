@@ -2,23 +2,11 @@
 import { stripHtmlToText } from '../../utils/html-share';
 
 const { i18NBaseUrl } = useRuntimeConfig().public;
-const colorMode = useColorMode();
 const { locale } = useI18n();
 const siteName = useSiteName();
 
 const productStore = useProductStore();
 const { selectedVariant } = storeToRefs(productStore);
-const { taxMode, pricesIncludeTax } = useTaxMode();
-
-const ogColorMode = computed<"dark" | "light">(() =>
-  colorMode.value === "dark" ? "dark" : "light",
-);
-
-const formatPrice = (amount: number) =>
-  new Intl.NumberFormat(locale.value, {
-    style: "currency",
-    currency: selectedVariant.value?.currencyCode || "EUR",
-  }).format(amount / 100);
 
 const slug = useRouteParam("slug");
 
@@ -73,82 +61,31 @@ const { data: channelShareImage } = useAsyncData(
 
 // og 分享主图兜底链：商品图 → 渠道 shareImageUrl → 内建默认图（与 WechatShare 的
 // JS-SDK imgUrl 兜底链一致，保证无图商品分享卡左侧也有图）。
-// 转 JPEG 并缩放到 ≤400px 宽，压体积（微信分享缩略图 ~300KB 软上限）。
+// 返回「无查询参数」的绝对 URL：微信对带 query 的 og:image（?format=jpg&w=500&q=70）
+// 解析不稳定；纯净 preview URL 每商品唯一（media-xxx__preview.jpeg）、CDN 直发秒回，
+// 微信按 URL 缓存图片——新商品 URL 天然破缓存，微信必抓新图。
 const ogImageSrc = computed(() => {
   const raw =
     product.value?.featuredAsset?.preview ??
     product.value?.assets?.[0]?.preview ??
     channelShareImage.value ??
     "";
-  if (!raw) return `${i18NBaseUrl}/share-default.jpg`;
-  try {
-    const u = new URL(raw, i18NBaseUrl);
-    u.searchParams.set("format", "jpg");
-    u.searchParams.set("w", "500");
-    u.searchParams.set("q", "70");
-    // 必须返回绝对 URL：satori 需 fetch 探测图片尺寸，相对路径会报
-    // "Image size cannot be determined"（fetch-origin 不解析相对图地址）。
-    // 渲染耗时由 SWR 缓存（/_og/** swr:3600）兜底：首次渲染后重复分享全部秒回。
-    return u.toString();
-  } catch {
-    return raw;
-  }
+  if (!raw) return `${i18NBaseUrl}/share-product.jpg`;
+  return new URL(raw, i18NBaseUrl).toString();
 });
 
-// 分享卡版本常量：内容改版时递增，强制微信对新的 og:image URL 重新抓取，绕开旧卡缓存。
-// v5：改用 GB2312 子集字体（simhei-gb2312.ttf），根治微信抓取 og:image 超时导致的「默认无商品图」。
-const OG_SHARE_VERSION = "v5";
-
-// 中文字体：satori 默认只捆绑 Inter（无 CJK 字形），中文会渲染成 NOGLYPH 乱码。
-// 通过 defineOgImage fonts 注入自托管 SimHei（public/fonts/simhei-gb2312.ttf），
-// 运行时经同源 /fonts/simhei-gb2312.ttf 拉取（node binding 的 fetch-origin 机制，与 Inter 兜底同路）。
-// 注意：必须用 GB2312 子集字体（1.95MB）而非全量 simhei.ttf（9.3MB）——微信抓取 og:image 有
-// 超时阈值（实测 ~3-5s），全量字体每次新 URL 渲染解析耗时 4-9s 直接超时，分享卡抓不到图就落回
-// 默认无图。子集字体将新 URL 渲染耗时压回秒内，分享卡才稳定出图。
-const OG_CJK_FONT = { name: "SimHei", weight: 400, path: "/fonts/simhei-gb2312.ttf" };
-
-// 分享卡价格须与页面价签同口径（按渠道 taxMode/pricesIncludeTax 换算展示价），
-// 避免分享卡显示净价(¥88.50)而页面显示含税价(¥100.00)的不一致
-const ogPriceCents = computed(() => {
-  const v = selectedVariant.value;
-  if (!v) return 0;
-  const mode = (taxMode.value ?? "inclusive") as "inclusive" | "zero" | "exclusive";
-  const useWithTax = mode === "exclusive" || !!pricesIncludeTax.value;
-  return Math.round(useWithTax ? (v.priceWithTax ?? 0) : (v.price ?? 0));
-});
-
-// og:image —— 用 ProductCard.satori 渲染含商品图的分享卡。
-// 该 _og 路由线上返回 200 且域名正确（www.youshop.cn），微信可直接拉取。
-// 不直接塞 raw 商品图：useSeoMeta ogImage 会被 app.vue 全局 defineOgImage(BlogPost)覆盖，
-// defineOgImage({ url: 外部图 }) 的 _og/d 外部代理线上返回 500。
-// 体积控制：image 传 CDN 缩放 jpg(≤800w)，大幅降低卡片产物体积（PNG 输出，服务器无 sharp 不可用 jpeg）。
-// version 常量拼入 URL，内容改版时强制微信重新抓取，绕开旧卡缓存。
-// fonts 必须放顶层 options（第 3 参）：satori renderer 读 options.fonts 作 fontDefs，
-// 放在 props 里只会进 options.props.fonts，自定义字体永远不加载（中文 NOGLYPH）。
-defineOgImage(
-  "ProductCard.satori",
-  {
-    colorMode: ogColorMode,
-    productName: product.value?.name,
-    price: formatPrice(ogPriceCents.value),
-    image: ogImageSrc, // 传 computed：SSR 渲染时读到异步兜底后的最终值
-    brand: siteName.value,
-    version: OG_SHARE_VERSION,
-  },
-  {
-    width: 800,
-    height: 400,
-    fonts: [OG_CJK_FONT],
-  }
-);
-
+// og:image —— 商品自己的图（featuredAsset → assets[0] → 渠道 shareImageUrl → 默认分享图）。
+// 微信按 URL 缓存图片：每商品 CDN 图 URL 唯一（media-xxx__preview.jpeg），天然破缓存；
+// 无图商品回退 share-product.jpg（新文件名，内容可替换，改内容须换名破微信缓存）。
 useSeoMeta({
   title: product.value?.name,
   description: shareDesc.value,
   ogTitle: product.value?.name,
   ogDescription: shareDesc.value,
+  ogImage: ogImageSrc.value,
   twitterTitle: product.value?.name,
   twitterDescription: shareDesc.value,
+  twitterImage: ogImageSrc.value,
 });
 
 // SchemaOrg
