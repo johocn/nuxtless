@@ -64,8 +64,24 @@ const orderStore = useOrderStore();
 const { error } = storeToRefs(orderStore);
 
 // Create shared menu collections. Could be rewritten as composable.
-const { data: menuCollections } = await useAsyncGql("GetMenuCollections");
-useState("menuCollections", () => menuCollections.value);
+// ⚠️ TTFB 关键修复：GetMenuCollections 在 Vendure 后端本身慢（实测 3.5-4.5s，非前端）。
+// 若在 SSR 顶层 await，会阻塞所有页面 TTFB（首页/商品页 ~4.5-6s），微信链接预览抓取
+// 有超时（~2-3s），在拿到 og 头之前就放弃 → 分享只出纯网址、无标题无图。
+// 改为仅客户端加载（server:false）：SSR 首帧立即吐出带 og 的 HTML（~300ms，顶多等
+// 快速的 GetProductDetail），顶部/首页分类导航在 hydration 后填充，可接受轻微 FOUC。
+const { data: menuAsyncData } = useAsyncData<MenuCollections | null>(
+  "menuCollections",
+  async () => {
+    const res = await useAsyncGql("GetMenuCollections");
+    return res.data.value ?? null;
+  },
+  { server: false, lazy: true },
+);
+// 写回共享 state，供 Header/Footer/首页分类导航等消费（SSR 时为空，hydration 后填充）
+const menuState = useState<MenuCollections | null>("menuCollections", () => null);
+watchEffect(() => {
+  if (menuAsyncData.value) menuState.value = menuAsyncData.value;
+});
 
 // 微信内置浏览器全站自动 SSO 登录：任意页面进入即静默跳统一登录页，成功后回跳原页（含 ?invite）
 useAutoWechatSsoLogin();
@@ -98,16 +114,22 @@ watch(error, (val) => {
   });
 });
 
-// OgImage
-defineOgImage("BlogPost.satori", {
-  colorMode: ogColorMode,
-  title: t("messages.site.tagline"),
-  category: siteName.value,
-  author: t("messages.site.shortDescription"),
-  backgroundImage: "logo-top.svg",
-  // image: "/logo.png",
-  // logo: "/logo-full.svg",
-});
+// OgImage（全局兜底）
+// 商品详情页不用此全局 og：Product/[slug] 直接输出静态 CDN 商品图为 og:image
+// （绕开 nuxt-og-image 的 _og/d 动态代理，确保微信稳定抓取商品图），故此处跳过 /product/ 路由。
+const ogRoute = useRoute();
+// 首页/其它页 og:image 指向纯静态新文件 share-product.jpg（内容=商品图）。
+// 关键：URL 必须是新的——share-default.jpg 地址早已被微信缓存旧图（按 URL 缓存，
+// 内容变了也仍显旧图）；换新文件名强制微信重新抓取。
+const ogStaticBase = useRuntimeConfig().public.i18NBaseUrl as string;
+if (!ogRoute.path.startsWith("/product/")) {
+  useSeoMeta({
+    title: t("messages.site.tagline"),
+    description: t("messages.site.shortDescription"),
+    ogImage: `${ogStaticBase}/share-product.jpg`,
+    twitterImage: `${ogStaticBase}/share-product.jpg`,
+  });
+}
 
 // SchemaOrg
 useSchemaOrg([

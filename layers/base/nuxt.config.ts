@@ -96,6 +96,17 @@ export default defineNuxtConfig({
     priority: ["bunny", "fontsource"],
   },
 
+  // OG Image 渲染缓存持久化：og:image 走 satori 动态渲染（冷渲染 3-4s 超微信抓取阈值 → 微信回默认图）。
+  // 默认缓存用 Nitro 内存 storage，PM2 restart 即清空，微信首抓必然冷渲染超时。
+  // 改用文件系统持久缓存：渲染过的 og 卡写盘，进程重启不丢，微信每次抓都命中缓存秒回。
+  ogImage: {
+    runtimeCacheStorage: {
+      driver: "fs",
+      base: "/tmp/nshop-og-image",
+    },
+    cacheVersion: "v5",
+  },
+
   // ColorMode Settings (currently defaults)
   colorMode: {
     preference: "system",

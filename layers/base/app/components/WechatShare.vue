@@ -45,8 +45,10 @@ const { data: channelShareData } = useAsyncData(
   { server: true },
 );
 const channelShareImage = computed(() => channelShareData.value ?? "");
-// 最后兜底：内置默认分享图
-const defaultShareImage = computed(() => `${window.location.origin}/share-default.jpg`);
+// 最后兜底：内置默认分享图（内容=商品图）。
+// 必须用新文件名 share-product.jpg：share-default.jpg 早已被微信按 URL 缓存旧图，
+// 换新 URL 强制微信重新抓取，JS-SDK 分享卡（微信内转发）才会显示商品图。
+const defaultShareImage = computed(() => `${window.location.origin}/share-product.jpg`);
 
 const shareData = computed(() => ({
   title: props.title || document.title,
