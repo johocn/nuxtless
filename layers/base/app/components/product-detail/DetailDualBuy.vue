@@ -28,6 +28,10 @@ const { t } = useI18n();
         <summary class="cursor-pointer text-sm text-gray-600">促销 ▾</summary>
         <div><ProductDetailPromoBlock /></div>
       </details>
+      <!-- 商品专属券 -->
+      <section v-if="visible('coupon')">
+        <ProductDetailProductCouponBlock />
+      </section>
       <details v-if="visible('service')" class="group">
         <summary class="cursor-pointer text-sm text-gray-600">服务保障 ▾</summary>
         <div><ProductDetailServiceBlock /></div>

@@ -27,6 +27,7 @@ const BLOCK_DEFAULT_VISIBLE: Record<string, boolean> = {
   info: true,
   price: true,
   promo: true,
+  coupon: true,
   service: true,
   variants: true,
   purchase: true,

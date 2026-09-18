@@ -117,6 +117,11 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
       />
     </header>
 
+    <!-- 商品专属券 -->
+    <section v-if="visible('coupon')" class="mt-4">
+      <ProductDetailProductCouponBlock />
+    </section>
+
     <!-- 吸顶楼层 tab（美化：下划线指示器跟随滚动） -->
     <nav class="sticky top-0 z-20 -mx-4 mb-4 mt-4 flex gap-6 overflow-x-auto border-b border-gray-100 bg-white/95 px-4 py-2 text-sm backdrop-blur">
       <a
