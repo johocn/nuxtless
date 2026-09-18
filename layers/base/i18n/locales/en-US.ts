@@ -59,6 +59,9 @@ export default defineI18nLocale(() =>
     home: {
       newsTitle: "JD News",
       adsAlt: "Promo ad",
+      mail: "Mail",
+      selfPickup: "Self Pickup",
+      emptyAfterFilter: "No products available for your city / delivery method",
       news: [
         "Free shipping on all self-operated items over ¥99",
         "¥20 off your first order for new customers",
