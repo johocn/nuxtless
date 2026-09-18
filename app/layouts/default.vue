@@ -6,13 +6,17 @@ const route = useRoute();
 const { t, locale } = useI18n();
 const siteName = useSiteName();
 const head = useLocaleHead();
+// 租户渠道配置（shopIntro 分享描述等），由 app.vue 的 loadTheme 填充共享 state
+const { customFields } = useChannelTheme();
 const metaTitle = route.meta.title as string | undefined;
 const metaDescription = route.meta.description as string | undefined;
 const title = computed(() =>
   metaTitle ? t(metaTitle) : siteName.value,
 );
 const description = computed(() =>
-  t(metaDescription || "messages.site.description"),
+  metaDescription
+    ? t(metaDescription)
+    : customFields.value?.shopIntro || t("messages.site.shareDesc"),
 );
 
 // 功能路径前缀：多租户(:tenantCode)与多语言(/en)前缀会改变 route.path，

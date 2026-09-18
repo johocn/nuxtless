@@ -1,12 +1,16 @@
 export function useChannelTheme() {
   const config = useState<string>("channel-theme", () => "default");
+  const customFields = useState<Record<string, any> | null>(
+    "channel-theme-customfields",
+    () => null,
+  );
 
   async function loadTheme() {
     try {
       const res = await useAsyncGql("GetChannelTheme", {}, { server: true });
-      const id =
-        res.data.value?.activeChannel?.customFields?.themeId ?? "default";
-      config.value = id;
+      const cf = res.data.value?.activeChannel?.customFields ?? null;
+      customFields.value = cf;
+      config.value = cf?.themeId ?? "default";
     } catch {
       config.value = "default";
     }
@@ -18,5 +22,5 @@ export function useChannelTheme() {
     document.documentElement.setAttribute("data-theme", config.value);
   }
 
-  return { config, loadTheme, applyTheme };
+  return { config, customFields, loadTheme, applyTheme };
 }

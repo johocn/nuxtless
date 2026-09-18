@@ -21,6 +21,7 @@ export default defineI18nLocale(() =>
     },
     site: {
       title: "youshop.cn",
+      shareDesc: "youshop.cn一站式专家购物，跨境优选，私人订制。",
       tagline: "Nuxt Level Headless E-commerce",
       shortDescription:
         "A modern, fast, and secure foundation for building headless online stores with Nuxt and Vendure.",

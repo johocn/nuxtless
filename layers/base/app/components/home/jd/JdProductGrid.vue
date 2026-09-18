@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 // JD 风格商品楼层：标题 + 2 列紧凑商品卡（图 / 标题 / 京东价 / 销量标签）
 // 数据来源：复用 SearchProducts 商品搜索结果（与 ProductCard 同源 Vendure 数据）
 import type { SearchResult } from "~~/types/product";
@@ -52,6 +52,7 @@ function listText(item?: SearchItem, currencyCode?: string | null) {
         :key="p.slug"
         :to="localePath(`/product/${p.slug}`)"
         class="group overflow-hidden rounded-lg border border-gray-100 transition active:scale-[0.98]"
+        external
       >
         <div class="relative">
           <NuxtImg

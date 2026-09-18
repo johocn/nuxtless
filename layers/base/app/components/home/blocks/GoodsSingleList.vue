@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 // 极简风商品单列：大图横卡（图左 + 价格/标题/按钮右）
 import type { SearchResult } from "~~/types/product";
 import { assetSrc } from "../../../utils/image";
@@ -49,6 +49,7 @@ function listText(p?: SearchItem, cur?: string | null) {
         :key="p.slug"
         :to="localePath(`/product/${p.slug}`)"
         class="flex items-center gap-3 rounded-lg border border-gray-100 p-2 transition active:scale-[0.99]"
+        external
       >
         <NuxtImg
           :src="assetSrc(p.productAsset?.preview || '/images/placeholder.webp', 300)"

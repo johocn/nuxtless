@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import type { SearchResult } from "~~/types/product";
 import { assetSrc } from "../../utils/image";
 import { pickDisplayPrice } from "../../utils/display-price";
@@ -84,7 +84,7 @@ const serviceable = computed(() =>
 
       <template #footer>
         <h3>
-          <ULink :to="localePath(`/product/${product.slug}`)">
+          <ULink :to="localePath(`/product/${product.slug}`)" external>
             <span class="absolute inset-0 z-10"></span>
             {{ product.productName }}
           </ULink>
