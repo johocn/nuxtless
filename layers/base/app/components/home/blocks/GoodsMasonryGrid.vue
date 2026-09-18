@@ -16,12 +16,18 @@ const localePath = useTenantLocalePath();
 const { taxMode, pricesIncludeTax } = useTaxMode();
 
 // 城市·配送过滤：城市来自 locationStore（SSR 期 cookie 已同步）；配送为模块级独立状态
+// 受五级风格配置（useHomeFilterConfig）控制：开关/默认配送/过滤条样式
 const cityName = useLocationStore().cityName;
-const { current: delivery, setDelivery } = useModuleDelivery("masonry");
+const { config } = useHomeFilterConfig();
+const filterEnabled = computed(() => config.value.enabled && config.value.modules.goods.enabled);
+const defaultDelivery = computed(() => config.value.modules.goods.defaultDelivery ?? config.value.defaultDelivery);
+const { current: delivery, setDelivery } = useModuleDelivery("masonry", defaultDelivery.value);
 const visibleItems = computed(() =>
-  props.products.filter((p) =>
-    isProductVisible(p, { city: cityName.value || null, delivery: delivery.value }),
-  ),
+  filterEnabled.value
+    ? props.products.filter((p) =>
+        isProductVisible(p, { city: cityName.value || null, delivery: delivery.value }),
+      )
+    : props.products,
 );
 
 function price(p?: SearchItem, cur?: string | null) {
@@ -55,7 +61,8 @@ function listText(p?: SearchItem, cur?: string | null) {
       </h2>
       <div class="flex items-center gap-2">
         <HomeBlocksDeliveryFilterBar
-          variant="segmented"
+          v-if="filterEnabled && config.bar.visible"
+          :variant="config.bar.variant"
           :model-value="delivery"
           @update:model-value="setDelivery"
         />
