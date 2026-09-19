@@ -41,8 +41,8 @@ function loadEnv() {
 }
 
 const env = loadEnv();
-// SERVER_HOST 直接用 ssh 别名（推荐，如 qing）或原始主机；BatchMode 避免密码/确认卡住。
-const HOST = env.SERVER_HOST || "qing";
+// SERVER_HOST 直接用 ssh 别名（推荐，如 joho）或原始主机；BatchMode 避免密码/确认卡住。
+const HOST = env.SERVER_HOST || "joho";
 const SSH_ARGS = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=15", "-o", "StrictHostKeyChecking=accept-new"];
 const PORT = env.SERVER_PORT || "";
 if (PORT) SSH_ARGS.push("-p", PORT);

@@ -1401,7 +1401,7 @@ Expected: vendure 重启后，`Product.customFields.promos/services` 与 `Channe
 
 Run: `pnpm deploy`（cwd `d:\zhao\nshop`，脚本读取 `.env` 的 SERVER_HOST/REMOTE_DIR）
 Expected: 本地构建 → scp `.output/` → 服务器解压 → `pm2 restart`。
-✅ 结果：node scripts/deploy.mjs 完成，pm2 restart nshop online，站点 http://qing:3000/ 验证通过。
+✅ 结果：node scripts/deploy.mjs 完成，pm2 restart nshop online，站点 http://joho:3000/ 验证通过。
 
 - [x] **Step 6: 部署 web-admin**
 
