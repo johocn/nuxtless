@@ -109,6 +109,22 @@
 - 不可用券（不满足门槛/scope 不命中/状态无效）不可选择或会被正确拦截。
 - 截图：[券选择面板（含使用）](shots/checkout-coupon-applied.png)、[结算页空态](shots/checkout-scroll.png)
 
+### 3.5 券包页增强（C1/C2）
+
+> 手机视口 390×844（dpr=2）。代码：`layers/base/app/pages/coupon/index.vue`。
+
+- **C1·已退回 tab**：券包页「我的券包」新增「已退回」tab，点击可见 `RETURNED` 状态券，券面盖章「已退回」（印章为 `RETURNED` 的三元链：当前 locale → `returnedZh` → `returned`）；无券时显示空态文案。
+- **C2·临期置顶高亮**：「未使用」tab 下券按**剩余有效天数值顶排序**（余数越少越靠前）；剩余有效天数 ≤ 7 天时整券**橙色高亮**并显示「**剩 N 天**」badge，便于优先使用。
+- 截图：[C1·已退回 tab + 印章](shots/cclass-c1-returned.png)、[C2·临期券置顶/badge/高亮](shots/cclass-c2-expiring.png)
+
+### 3.6 结算不可用券提示（C3）
+
+> 手机视口 390×844（dpr=2）。代码：`layers/base/app/components/checkout/BoxCouponSelect.vue`。
+
+- 结算页某箱**券包有券但本箱不可用**（门店隔离 / 门槛不足）时，在该箱「优惠券」区域直接给出提示：**「你有 N 张券，在本店不可用」**，并附归因拆分：**「未达门槛 m 张 · 不适用本店 k 张」**。
+- 券包无券时仍显示原空态，不受影响。
+- 截图：[C3·本店不可用提示（未达门槛 1 张）](shots/cclass-c3-drawer-unavailable.png)
+
 ---
 
 ## 4. 核销联动使用说明（到店/自提）
