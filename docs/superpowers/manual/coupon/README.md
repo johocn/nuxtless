@@ -128,7 +128,7 @@
 | 凭码券/非自助券混入领券中心 | `couponCentre` 未过滤 `claimable=false`（P3） | 已修复：own/extra 两分支加 `claimable=true` |
 | 后台券创建缺多语言输入 | admin input 仅 `name:String!`（P5） | 已修复：支持 nameZh/nameEn/descZh/descEn |
 | 折扣金额口径与含税合计差 13% | `discounts[].amount` 为净价口径（P4） | 非 bug：抵扣实数正确，前端已用 `amountWithTax` 与含税合计同域展示 |
-| 结算/核销真实下单在测试渠道不可走通 | ①channel92 结算配送不可达；②默认商城(youshop)「券←→商品同店」匹配失败：所有在库可加购变体均属其它店铺，与可领券(sant券 shopId=2 / 空 shop 的 SKU 券)不匹配 → applyCouponToOrder 抛 `COUPON_SCOPE_MISMATCH`（P6，非券 bug） | 免邮/scope/真实下单核销标注「需完整结算+同店商品环境复测」 |
+| 结算/核销真实下单在测试渠道不可走通 | ①channel92 结算配送不可达（数据未铺好）；②默认商城「店券挂他店商品」匹配失败：所有在库可加购变体均属其它店铺，与可领券(sant券 shopId=2 / 空 shop 的 SKU 券)不匹配 → applyCouponToOrder 抛 `COUPON_SCOPE_MISMATCH`（业务语义非 bug） | 免邮/scope 标注「需平台券(shopId=null) 或同店商品环境复测」；USED→RETURNED 已用平台券实测闭环 |
 
 ### 状态流转
 
@@ -142,7 +142,7 @@ USED ──退单──> RETURNED
 
 ## 6. 问题清单（现象/根因/代码点/回归脚本）
 
-> 本次全环节受控测试发现，`P1` 已修复并随本次发布上线；`P2-P5` 为后端待办（标注**未修复(后端)**）；`P6` 为测试渠道结算环境限制（非券 bug）。
+> 本次全环节受控测试发现，`P1` 已修复上线；`P2`（memberLevel 拦截）、`P3`（领券中心过滤 claimable）、`P5`（多语言输入）已修复上线；`P4` 为口径理解非 bug；`P6` 已用「平台券 shopId=null」在默认商城实测走通 USED→RETURNED 闭环（USED/RETURNED 事件监听可用，channel92 结算配送不可达仅属数据未铺好）。
 
 | ID | 现象 | 根因 | 代码点 | 回归脚本 |
 |---|---|---|---|---|
@@ -159,4 +159,4 @@ USED ──退单──> RETURNED
 
 - **核心抵扣逻辑验证通过**（shop-api 确凿）：FIXED 满 1 减 1（40000→39900）、PERCENT 8.5 折（→34000 减 15%）、FULL 直减、凭码/兑换/新客/会员券全部抵扣正确。
 - **P6 线上复测（2026-09-19，默认商城 youshop 部署后）**：shop-api 健康、新码（memberLevel/nameZh）已上线；`couponCentre` 仅返回 claimable 券（P3 生效）、memberLevel=null 券可正常领（UNUSED）、配送下单链路（加购→地址→配送方式 sm=9→支付方式 fixed-aggregate-collection/balance-wallet）在默认商城**可正常走通**。
-- **USED→RETURNED 全流程未能在线闭环**（诚实标注）：默认商城「券←→商品同店」硬规则下（`isDefaultMallChannel` 只算本店行），全部在库可加购变体都与可领券不同店，`applyCouponToOrder` 抛 `COUPON_SCOPE_MISMATCH`，无法在真实订单上挂券推进 `OrderPlaced`→`bindAsUsed`→`Cancelled`→`returnCoupon`。属**环境/数据限制（非代码 bug）**，scope 校验本身在线上正确工作。复测 harness 保留在 `scripts/_p6_flow.mjs`，待布置「同店商品+可结算」环境后一键重跑。
+- **USED→RETURNED 全流程已闭环**（2026-09-19 更新，推翻此前「未能封闭」结论）：默认商城可通过**平台券（`shopId=null`）**绕过「券←→商品同店」硬规则（`lineHasShopId` 对 `shopId==null` 恒返回 true）——创建平台券 → 变体55 加购 → `applyCouponToOrder` 成功 → `checkoutSplitted` 下单 → **券 `USED`**；再 `cancelOrder` 取消订单 → **券 `RETURNED`**（实测券62 C-8Z5A-7FL9：USED(`usedOrderId=86`)→RETURNED(`usedOrderId=null`)）。结论：`OrderPlaced→bindAsUsed→Cancelled→returnCoupon` 事件监听全链路在线可用，「店券挂他店商品」受限属业务语义而非 bug。复测 harness：`scripts/_p6_flow.mjs`（USED 段）+ `scripts/_p6_cancel.mjs`（RETURNED 段，admin `cancelOrder` 而非 `transitionOrderToState`，PaymentAuthorized→Cancelled 有 `checkAllItemsBeforeCancel` 守卫须先全 items 取消）。channel92 结算配送不可达仍为数据未铺好。
