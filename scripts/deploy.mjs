@@ -64,7 +64,7 @@ const APP_NAME = env.APP_NAME || "nshop";
 const PORT = env.SITE_PORT || env.PORT || "8080";
 const SKIP_BUILD = env.SKIP_BUILD === "1";
 
-// 优先把 SERVER_HOST 当 ssh 别名（如 .ssh/config 的 qing 已含 User/Port/IdentityFile）；
+// 优先把 SERVER_HOST 当 ssh 别名（如 .ssh/config 的 joho 已含 User/Port/IdentityFile）；
 // 显式给了 SERVER_USER/SERVER_PORT 时才覆盖。BatchMode=yes 避免密码/确认卡住。
 const SSH_ARGS = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=15", "-o", "StrictHostKeyChecking=accept-new"];
 if (SERVER_PORT) SSH_ARGS.push("-p", SERVER_PORT);
