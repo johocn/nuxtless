@@ -220,7 +220,7 @@ L0 代码内建默认  → L1 全局配置(shop_global_config) → L2 风格模�
 - [x] L3：detailConfig 覆盖模板；撤销回退 L2；仅影响声明字段（A4 + B3 ✅）
 - [x] L4：单块 visible:false → 仅该块隐藏，其余回退内建默认（A5 + B3 ✅）
 - [x] P1 验证：生产 `shop_global_config.defaults` 已写入 nshop product/home 示例值（侦察确认在库）
-- [ ] P2 验证：店铺信息模板列表按目标端过滤（web-admin 端 UI 复核）
+- [x] P2 验证：店铺信息「风格模板」区目标端分段器（nshop/vshop）双向过滤生效，互不可见对方模板（web-admin ✅ 2026-09-19，截图 `screenshot-1789799966268.jpg` nshop / `screenshot-1789800030567.jpg` vshop）
 
 ### 回滚要点
 1. 改任一配置前先记录原值（尤其主题色/模板 id/detailConfig/defulats）。
