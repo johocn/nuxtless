@@ -46,6 +46,16 @@ const shopCoupons = computed(() =>
   walletCoupons.value.filter((c) => c.code && c.code in (availableByCode.value as any)),
 );
 
+// C3 轻量：券包里有券但本箱默认不展示时，给出本地可判原因统计
+// （scope/shop 隔离使券不在本箱 availableCoupons，故抽屉直接过滤；此处仅按 minSpend 粗略归类）
+const walletTotal = computed(() => walletCoupons.value.length);
+const minSpendShort = computed(() =>
+  walletCoupons.value.filter((c) => {
+    const ms = c.template?.minSpend;
+    return typeof ms === "number" && ms > 0 && (props.box.subtotal ?? 0) < ms;
+  }).length,
+);
+
 // 已用券名：优先券包 template.name，回退箱级 availableCoupon.name
 const activeName = computed(() => {
   if (!activeAppliedCode.value) return null;
@@ -157,29 +167,41 @@ onMounted(async () => {
     <!-- 加载中 -->
     <p v-else-if="loadingCoupons" class="text-sm text-neutral-500">{{ t("messages.general.loading") }}</p>
 
-    <!-- 本店可选券列表 -->
-    <div v-else-if="shopCoupons.length" class="space-y-2">
-      <div
-        v-for="c in shopCoupons"
-        :key="c.id"
-        class="flex items-center gap-3 rounded-lg border border-neutral-200 px-3 py-2 dark:border-neutral-800"
-      >
-        <span class="w-24 shrink-0 font-bold text-primary-600 dark:text-primary-300">{{ walletFormatAmount(t, c) }}</span>
-        <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-semibold">{{ c.template?.name || c.code }}</p>
-          <p class="truncate text-xs text-neutral-500">{{ walletCondition(t, c) }}</p>
-        </div>
-        <UButton
-          size="xs"
-          variant="solid"
-          :loading="applyingCode === c.code"
-          :disabled="!!applyingCode || c.code === activeAppliedCode"
-          @click="apply(c)"
+    <template v-else>
+      <!-- 本店可选券列表 -->
+      <div v-if="shopCoupons.length" class="space-y-2">
+        <div
+          v-for="c in shopCoupons"
+          :key="c.id"
+          class="flex items-center gap-3 rounded-lg border border-neutral-200 px-3 py-2 dark:border-neutral-800"
         >
-          {{ c.code === activeAppliedCode ? t("messages.coupon.used") : t("messages.coupon.apply") }}
-        </UButton>
+          <span class="w-24 shrink-0 font-bold text-primary-600 dark:text-primary-300">{{ walletFormatAmount(t, c) }}</span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-semibold">{{ c.template?.name || c.code }}</p>
+            <p class="truncate text-xs text-neutral-500">{{ walletCondition(t, c) }}</p>
+          </div>
+          <UButton
+            size="xs"
+            variant="solid"
+            :loading="applyingCode === c.code"
+            :disabled="!!applyingCode || c.code === activeAppliedCode"
+            @click="apply(c)"
+          >
+            {{ c.code === activeAppliedCode ? t("messages.coupon.used") : t("messages.coupon.apply") }}
+          </UButton>
+        </div>
       </div>
-    </div>
-    <p v-else class="text-sm text-neutral-500">{{ t("messages.coupon.noUsableCoupon") }}</p>
+
+      <!-- C3：券包有券但本箱不可用（按模板 minSpend 粗略归因） -->
+      <div v-else-if="walletTotal > 0" class="space-y-1 text-sm text-neutral-500">
+        <p>{{ t("messages.coupon.drawerUnavailableAll", { n: walletTotal }) }}</p>
+        <p class="text-xs text-neutral-400">
+          {{ t("messages.coupon.drawerUnavailableReasons", { m: minSpendShort, k: walletTotal - minSpendShort }) }}
+        </p>
+      </div>
+
+      <!-- 券包无券 -->
+      <p v-else class="text-sm text-neutral-500">{{ t("messages.coupon.noUsableCoupon") }}</p>
+    </template>
   </USlideover>
 </template>
