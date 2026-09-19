@@ -16,6 +16,7 @@
 - **变体唯一性按 `(productId, optionIds)` 全局判定**：同一 Product 下相同规格组合的变体在整个实例内只能存在一个，与渠道无关。多渠道共享商品时，跨渠道只能「共享同一变体记录」，不能「各渠道各建一个同规格变体」。
 - **每个变体有自己的 Channel 归属**（`channels` 关联）：同一变体可挂多个渠道（如商品61 = 默认渠道 + t2 共享同一变体）。渠道隔离不靠复制变体，而靠各渠道上下文分别维护/解释 price、库存（stockLocations）。
 - **变体分配 mutation**：`assignProductVariantsToChannel(input:{productVariantIds, channelId})` —— mutation 用 **input 对象**传参（非 `variantIds`/`channelId` 顶层参数），核心实现在 `product-variant.service.ts`。
+- **渠道维度查询（统一口径）**：实体的渠道归属有「外键列」与「ManyToMany 关联」两种形态，查询/过滤代码必须按实体实际结构选择，谓之要先确认实体——**`Order`/`Product`/`ProductVariant` 都无 `channelId` 外键列，渠道归属是 `@ManyToMany(Channel) channels`（junction 表 `order_channels_channel`/`product_channels_channel`/`product_variant_channels_channel`）**。按渠道过滤订单/商品须 `innerJoin('o.channels','ch')` + `ch.id = :chan`，不可写 `o.channelId = :chan`（否则误当作列名，报 `column o.channelid does not exist`）。
 - **租户商品双轨隔离**：`TenantCatalogService.moveProductsToTenantChannel` 把租户自建商品**主动从默认渠道摘除**（经 `channelService.removeFromChannels` 直摘，绕开「默认渠道不可摘除」守卫），实现「租户商品只挂租户渠道、默认商城互见」双轨隔离。因此各租户**自由创建变体/无变体商品都能成功**，只有商品被显式挂到多渠道时才可能撞唯一性。
 - **上架迁移（租户 → 默认商城）**：商户 `submitForMarketplaceAdmin`（置 `marketplaceStatus=PENDING`、`listedInMarketplace=false`，校验 barcode 全局唯一）→ 平台 `approveMarketplaceProduct`（置 `merchantRef`=非默认渠道 id、`marketplaceStatus=APPROVED`、`listedInMarketplace=true`）→ 其内部 `placeIntoTenantCategory` 调 `productService.assignProductsToChannel` 把商品**及其所有变体、资产、规格组整体迁移**补挂默认渠道（非逐个新建，故不冲突），并按 `tenantCategoryRef` → 渠道 `categoryMapping` 映射平台分类；未命中置 `needsCategorization=true` 待手动归类。
 
@@ -72,6 +73,7 @@
 | 上架后租户渠道新建同规格变体冲突 | 商品已被 `assignProductsToChannel` 补挂默认渠道，全局唯一性被占 | `MarketplaceService.placeIntoTenantCategory` 内 `productService.assignProductsToChannel` | 编辑页统一维护变体后回归 |
 | 跨渠道 price 语义差异：同一变体不同渠道读到不同 price | 各渠道 `pricesIncludeTax` 不同，`price` 字段解释口径相反（默认渠道存净价、t2 存含税价） | 变体 `price` 字段 + 渠道 `pricesIncludeTax`；`vshop/web-admin/scripts/calibrate-prices.mjs` 固定 ×1.13 只对 t2 类正确 | 分渠道查询 price/priceWithTax 对比（默认渠道校准须直接写 `price=目标净价`） |
 | 共享变体写一侧 price，两侧同时被改 | 共享变体为单源存储，无「独立记录」 | `updateProductVariants`（任渠道上下文） | 任一侧写价后两侧查询对比 |
+| **Order 无 `channelId` 列，按渠道过滤订单报 `column o.channelid does not exist`** | Vendure `Order` 实体无 `channelId` 外键列，渠道归属为 ManyToMany `o.channels`（`order_channels_channel` 关联表）；误用 `o.channelId = :chan` 查询（如优惠券 `isNewCustomerWithinChannel` 判断「本租户是否有历史订单」）会跑错 | `packages/core/src/entity/order/order.entity.ts` `@ManyToMany(Channel) channels`；coupon-plugin `coupon-settlement.ts` `isNewCustomerWithinChannel` | 线上 shop-api 走新客券兑换/结算，滚动日志报渠道列不存在；用 `innerJoin('o.channels','ch') + ch.id = :chan` 后回归通过 |
 
 ## 6. 验证清单
 
