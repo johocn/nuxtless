@@ -51,15 +51,15 @@
 - **券 = 模板 + 顾客实例 双层**：模板定义发行规则，实例记录每人持有与状态，支撑限量/限领/流转。
 - **折扣走 Vendure native 促销机制**（`coupon_applied` condition），而非结算层手写扣减：复用促销售后架构、税收/分账对账一致；代价是**必须为渠道配促销才生效**（易被忽略）。
 - **店铺隔离**：模板 `shopId` + channels 双重隔离，后台只看到当前店铺券，C 端仅展示当前渠道可领券。
-- **name/description 多语言**：实体 LocalizedText 但 admin input 降级 String，权衡是「先交付单语言，多语言输入留待后端增强」。
+- **name/description 多语言**：实体 LocalizedText；admin input 已支持 nameZh/nameEn/descZh/descEn（P5），create/update 由 `applyMultilingualInput` 合并为对象，前端可投 zh/en。
 
 ## 4. 常见坑
 
 1. **套券不产生折扣行**：渠道未配置 `coupon_applied` 促销。→ 到目标渠道建对应促销。
 2. **后台建券/编辑保存必败**（P1）：此前 `apis/coupon.ts` 用 `$input: JSON!` 且 name 传对象。→ 已改为类型化 input 全纯字符串。
-3. **凭码券混入领券中心**（P3）：`couponCentre` 未过滤 `claimable=false`。→ 未修（后端待办）。
-4. **会员限制未拦截**（P2）：claim/grant/apply 均无 `memberLevel` 校验。→ 未修（后端待办）。
-5. **折扣净价/含税口径差 13%**（P4）：`discounts[].amount` 净价口径 vs `totalWithTax`。→ 抵扣正确，展示按 taxMode 换算。
+3. **凭码券/不可自助领券混入领券中心**（P3）：`couponCentre` 未过滤 `claimable=false`。→ 已修（own/extra 两分支加 `claimable=true`）。
+4. **会员限制未拦截**（P2）：claim/grant/apply 均无 `memberLevel` 校验。→ 已修（`assertCouponMemberLevel`/`couponMeetsMemberLevel` 三处接入；grant 单结果 reason=MEMBER_LEVEL_BLOCKED）。
+5. **折扣净价/含税口径差 13%**（P4）：非 bug。抵扣实数正确；前端用 `amountWithTax` 与含税合计同域；净价差是正确税额重算。
 6. **本渠道结算配送不可达**（P6）：无可用配送方法 → `setOrderShippingMethod` 不生成配送线 → 订单停留 AddingItems，无法推进 ArrangingPayment。→ 环境/渠道配置问题，API 层无法修。
 
 ## 5. 问题速查（Bug 知识库）
@@ -68,13 +68,14 @@
 | 现象 | 根因 | 代码点 | 回归脚本 |
 |---|---|---|---|
 | 后台新建/编辑券保存永远失败 | `$input: JSON!` + name 传对象，后端 `String!` 拒对象 | `vshop/web-admin/src/apis/coupon.ts`（create/updateCouponTemplate）、`pages/coupon/edit/index.vue` `buildInput()` | 后台建券→保存→回显 |
+| 会员券未按 memberLevel 拦截（P2） | claim/grant/apply 均无校验 | `coupon.service.ts`：`couponMeetsMemberLevel`/`assertCouponMemberLevel`/`resolveRequiredMemberLevel`；claimCoupon、grantCouponIssue(reason=MEMBER_LEVEL_BLOCKED)、applyCouponToOrder 三处调用 | 设 memberLevel=GOLD/金卡，普通用户领应被 UserInputError 拦截 |
+| 凭码券/非自助券混入领券中心（P3） | `couponCentre` 未过滤 claimable=false | `coupon.service.ts` `couponCentre`（own 与默认商城 extra 两分支均加 `tpl.claimable = true`） | 设 claimable=false 券不再出现在领券中心 |
+| 后台券缺多语言输入（P5） | admin input 仅 `name:String!` | `plugin.ts` Create/UpdateCouponTemplateInput 加 nameZh/nameEn/descZh/descEn；`coupon.service.ts` `applyMultilingualInput`/`mergeLocalized` 合并为 LocalizedText；前端 `apis/coupon.ts` input 类型 + `edit/index.vue` buildInput 投递 | 后台传 nameZh/nameEn 保存→回显 nameZh/nameEn 一致 |
 
 ### 待办（记录，未修复）
 | 现象 | 根因 | 代码点 | 回归建议 |
 |---|---|---|---|
-| 会员券未按 memberLevel 拦截 | claim/grant/apply 均无校验 | `coupon-plugin/coupon.service.ts` `claimCoupon`/`grantCouponIssue`；`coupon-settlement.ts` apply | 设 memberLevel=GOLD，普通用户领应被拦截 |
-| 凭码券混入领券中心 | `couponCentre` 未过滤 claimable=false | `coupon.service.ts` `couponCentre` | 设 claimable=false 券仍出现在领券中心 |
-| discounts[].amount 净价口径差 13% | 促销折扣按净价计算 | `coupon-promotion-condition.ts` | 抵扣实数与含税合计核对展示换算 |
+| discounts[].amount 净价口径差 13% | 促销折扣按净价计算 | `coupon-promotion-condition.ts` | **已确认非 bug**：抵扣实数正确（全环节实测）；前端 `OrderTotals.vue` 已用 `discounts[].amountWithTax`（含税域）与 `totalWithTax` 同域展示；净价 amount 仅在与含税合计手工比对时才显 13% 差，属正确税额重算，不改任何代码 |
 
 ### 环境限制（非券 bug）
 | 现象 | 根因 | 代码点 |
@@ -96,4 +97,4 @@
 
 ## 速查卡（memory 指针）
 
-> 优惠券先决：渠道建 `coupon_applied` 促销（coupon_discount action）才实际打折；模板 name/description admin 仅纯字符串；P1 后端使用/保存已修复，P2 memberLevel 拦截、P3 领券中心过滤 claimable、P4 净价口径为后端待办；P6 本渠道结算配送不可达为环境限制。
+> 优惠券先决：渠道建 `coupon_applied` 促销（coupon_discount action）才实际打折；P1 后台保存已修，P2 memberLevel 拦截（claim/grant/apply）已修，P3 领券中心过滤 claimable 已修，P5 多语言输入 nameZh/nameEn 已修，P4 净价口径为非 bug（前端用 amountWithTax 同域）；P6 本渠道结算配送不可达为环境限制。
