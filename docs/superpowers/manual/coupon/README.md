@@ -128,7 +128,7 @@
 | 凭码券/非自助券混入领券中心 | `couponCentre` 未过滤 `claimable=false`（P3） | 已修复：own/extra 两分支加 `claimable=true` |
 | 后台券创建缺多语言输入 | admin input 仅 `name:String!`（P5） | 已修复：支持 nameZh/nameEn/descZh/descEn |
 | 折扣金额口径与含税合计差 13% | `discounts[].amount` 为净价口径（P4） | 非 bug：抵扣实数正确，前端已用 `amountWithTax` 与含税合计同域展示 |
-| 结算/核销真实下单在测试渠道不可走通 | channel92 结算配送不可达：无可用配送方法 → 订单无法推进（P6，非券 bug） | 免邮/scope/真实下单核销标注「需完整结算环境复测」 |
+| 结算/核销真实下单在测试渠道不可走通 | ①channel92 结算配送不可达；②默认商城(youshop)「券←→商品同店」匹配失败：所有在库可加购变体均属其它店铺，与可领券(sant券 shopId=2 / 空 shop 的 SKU 券)不匹配 → applyCouponToOrder 抛 `COUPON_SCOPE_MISMATCH`（P6，非券 bug） | 免邮/scope/真实下单核销标注「需完整结算+同店商品环境复测」 |
 
 ### 状态流转
 
@@ -151,11 +151,12 @@ USED ──退单──> RETURNED
 | **P3** | 凭码券/不可自助领的券混入领券中心 | `couponCentre` 未过滤 `claimable=false` | `coupon.service.ts` `couponCentre()`（own/extra 两分支） | **已修复**。回归=设 claimable=false 券不再出现在领券中心 |
 | **P4** | discounts[].amount 为净价口径，与含税 totalWithTax 差 13% | 促销折扣按净价计算 | `coupon-promotion-condition.ts` | **已确认非 bug**。抵扣实数正确（实测）；前端 `OrderTotals.vue` 已用 `amountWithTax` 与含税合计同域展示；仅净价 amount 与含税合计手工比对才显 13% 差，属正确税额重算，不改代码 |
 | **P5** | 后台券创建缺多语言输入，en 无法投递 | admin schema 仅 `name:String!` | `plugin.ts` input + `coupon.service.ts` `applyMultilingualInput`；前端 `apis/coupon.ts` + `edit/index.vue` | **已修复**。支持 nameZh/nameEn/descZh/descEn。回归=传中英名称保存→回显一致 |
-| **P6** | channel92 结算配送不可达，订单无法生成配送线推进 | 无可用配送方法 → `setOrderShippingMethod` 不生成配送线 → 订单停留 AddingItems（非券 bug，疑渠道配置/marketplace 机制） | （结算链路） | 免邮券 / scope=SKU·CATEGORY / 真实下单核销 USED / 退单 RETURNED 均标注「需完整结算环境复测」 |
+| **P6** | channel92 结算配送不可达＋默认商城(youshop)「券←→商品同店」匹配失败（current在库可加购变体均属其它店铺，与可领券不匹配→`COUPON_SCOPE_MISMATCH`） | 无可用配送方法 / `isDefaultMallChannel` 下 `lineHasShopId` 只算本店商品行，无本店行即抛 scope 不符（非券 bug，环境+数据限制） | `coupon.service.ts` `applyCouponToOrder` L750-759（scope 校验）；`coupon-promotion-condition.ts` L40 | 免邮券 / scope=SKU·CATEGORY / 真实下单核销 USED / 退单 RETURNED 均标注「需完整结算+同店商品环境复测」。已在 `scripts/_p6_flow.mjs` 留可复用复测 harness |
 
 ---
 
 ## 7. 实测结论摘要
 
 - **核心抵扣逻辑验证通过**（shop-api 确凿）：FIXED 满 1 减 1（40000→39900）、PERCENT 8.5 折（→34000 减 15%）、FULL 直减、凭码/兑换/新客/会员券全部抵扣正确。
-- **channel92「使用（结算实付）→ 核销（真实下单 USED）」UI 全流程不可达**：根因 P6（结算配送不可达），API 层无法修复，已在文档如实标注。
+- **P6 线上复测（2026-09-19，默认商城 youshop 部署后）**：shop-api 健康、新码（memberLevel/nameZh）已上线；`couponCentre` 仅返回 claimable 券（P3 生效）、memberLevel=null 券可正常领（UNUSED）、配送下单链路（加购→地址→配送方式 sm=9→支付方式 fixed-aggregate-collection/balance-wallet）在默认商城**可正常走通**。
+- **USED→RETURNED 全流程未能在线闭环**（诚实标注）：默认商城「券←→商品同店」硬规则下（`isDefaultMallChannel` 只算本店行），全部在库可加购变体都与可领券不同店，`applyCouponToOrder` 抛 `COUPON_SCOPE_MISMATCH`，无法在真实订单上挂券推进 `OrderPlaced`→`bindAsUsed`→`Cancelled`→`returnCoupon`。属**环境/数据限制（非代码 bug）**，scope 校验本身在线上正确工作。复测 harness 保留在 `scripts/_p6_flow.mjs`，待布置「同店商品+可结算」环境后一键重跑。

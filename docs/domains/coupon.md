@@ -60,7 +60,7 @@
 3. **凭码券/不可自助领券混入领券中心**（P3）：`couponCentre` 未过滤 `claimable=false`。→ 已修（own/extra 两分支加 `claimable=true`）。
 4. **会员限制未拦截**（P2）：claim/grant/apply 均无 `memberLevel` 校验。→ 已修（`assertCouponMemberLevel`/`couponMeetsMemberLevel` 三处接入；grant 单结果 reason=MEMBER_LEVEL_BLOCKED）。
 5. **折扣净价/含税口径差 13%**（P4）：非 bug。抵扣实数正确；前端用 `amountWithTax` 与含税合计同域；净价差是正确税额重算。
-6. **本渠道结算配送不可达**（P6）：无可用配送方法 → `setOrderShippingMethod` 不生成配送线 → 订单停留 AddingItems，无法推进 ArrangingPayment。→ 环境/渠道配置问题，API 层无法修。
+6. **本渠道结算配送不可达**（P6）：channel92 无可用配送方法 → 订单无法推进；且默认商城(youshop)存在「券←→商品同店」硬规则（`isDefaultMallChannel` 只算 `lineHasShopId` 本店行），在库可加购变体均属其它店、与可领券不匹配 → `applyCouponToOrder` 抛 `COUPON_SCOPE_MISMATCH` 无法真实挂券。→ 两条均为环境/数据限制（非券 bug），API 层无法修；复测 harness 在 `scripts/_p6_flow.mjs`。
 
 ## 5. 问题速查（Bug 知识库）
 
@@ -81,6 +81,7 @@
 | 现象 | 根因 | 代码点 |
 |---|---|---|
 | channel92 结算配送不可达，订单无法推进 | 无可用配送方法 → 不生成配送线 | （结算链路，非券逻辑） |
+| 默认商城真实挂券下单推不进（P6，2026-09-19 线上复测）：全部在库可加购变体与可领券不同店 | 默认商城 `isDefaultMallChannel` 下 `applyCouponToOrder` 只算 `lineHasShopId` 本店商品行，无本店行即抛 `COUPON_SCOPE_MISMATCH` | `coupon.service.ts` `applyCouponToOrder` L750-759；`coupon-prescription-condition.ts` L40 | 布置「同店可加购商品+可结算」环境后跑 `scripts/_p6_flow.mjs` 一键复测 USED→RETURNED |
 
 ## 6. 验证脚本清单
 
