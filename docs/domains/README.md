@@ -18,6 +18,7 @@
 | `cross-channel-variants.md` | 跨渠道商品变体/迁移 | 变体全局唯一性、双轨隔离、上架整体迁移 |
 | `payment-split-redemption.md` | 支付/分箱/核销 | 分箱与支付合并规则、COD 核销收款、台账归账 |
 | `shop-style-theme.md` | 店铺风格/主题/模板回退 | 五级回退链、themeTokens<模板palette、shopTemplate三态、C端判定法 |
+| `coupon.md` | 优惠券全链路（coupon-plugin） | 模板/顾客实例双层、coupon_applied 促销前置、P1已修复/P2-P4待办、P6渠道限制 |
 
 > 服务端（Strapi）另有独立 domains 目录：`d:\zhao\strapi\docs\domains\sso-login.md`（SSO 服务端视角，zhao-sso 插件/统一登录页/白名单配置）。
 
