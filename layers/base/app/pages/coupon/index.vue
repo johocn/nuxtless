@@ -24,7 +24,7 @@ const toast = useToast();
 const { isAuthenticated } = storeToRefs(useAuthStore());
 
 type TabKey = "center" | "wallet";
-type WalletKey = "unused" | "used" | "expired";
+type WalletKey = "unused" | "used" | "expired" | "returned";
 
 const tab = ref<TabKey>("center");
 const walletTab = ref<WalletKey>("unused");
@@ -41,6 +41,7 @@ const STATUS_MAP: Record<WalletKey, CouponStatus> = {
   unused: "UNUSED",
   used: "USED",
   expired: "EXPIRED",
+  returned: "RETURNED",
 };
 
 const filteredMyCoupons = computed(() =>
@@ -48,6 +49,41 @@ const filteredMyCoupons = computed(() =>
     (c) => c.status.toUpperCase() === STATUS_MAP[walletTab.value],
   ),
 );
+
+// ── 临期排序/高亮（仅「未使用」tab）──
+// 计算有效截止前剩余天数：优先 customerCoupon.expiredAt，回退 template.endsAt；无有效截止返回 null
+function couponExpiry(c: CustomerCoupon): string | null {
+  return c.expiredAt || c.template?.endsAt || null;
+}
+
+function remainingDays(c: CustomerCoupon): number | null {
+  const end = couponExpiry(c);
+  if (!end) return null;
+  const diff = new Date(end).getTime() - Date.now();
+  if (Number.isNaN(diff)) return null;
+  return Math.max(0, Math.ceil(diff / 86_400_000));
+}
+
+const EXPIRING_DAYS = 7;
+
+// 展示列表：仅 UNUSED tab 按剩余天数升序（有截止在前、无截止在后、同值稳定）
+const visibleCoupons = computed<CustomerCoupon[]>(() => {
+  const list = filteredMyCoupons.value;
+  if (walletTab.value !== "unused") return list;
+  return [...list].sort((a, b) => {
+    const da = remainingDays(a);
+    const db = remainingDays(b);
+    if (da === null && db === null) return 0;
+    if (da === null) return 1;
+    if (db === null) return -1;
+    return da - db;
+  });
+});
+
+function isExpiring(c: CustomerCoupon): boolean {
+  const days = remainingDays(c);
+  return days !== null && days <= EXPIRING_DAYS;
+}
 
 // ── 领券中心加载 ──
 async function loadCentre() {
@@ -201,6 +237,7 @@ function walletEmptyText(): string {
     unused: t("messages.coupon.emptyUnused"),
     used: t("messages.coupon.emptyUsed"),
     expired: t("messages.coupon.emptyExpired"),
+    returned: t("messages.coupon.emptyReturned"),
   };
   return map[walletTab.value];
 }
@@ -327,15 +364,22 @@ onMounted(loadCentre);
           >
             {{ t("messages.coupon.expired") }}
           </UButton>
+          <UButton
+            size="sm"
+            :variant="walletTab === 'returned' ? 'solid' : 'soft'"
+            @click="switchWallet('returned')"
+          >
+            {{ t("messages.coupon.returned") }}
+          </UButton>
         </div>
 
         <BaseLoader v-if="loadingWallet" width="sm:w-xs md:w-sm" />
         <div v-else-if="filteredMyCoupons.length" class="grid gap-4 md:grid-cols-2">
           <div
-            v-for="mc in filteredMyCoupons"
+            v-for="mc in visibleCoupons"
             :key="mc.id"
             class="relative rounded-xl border border-(--ui-border) p-4"
-            :class="{ 'opacity-60': mc.status !== 'UNUSED' }"
+            :class="[mc.status !== 'UNUSED' && 'opacity-60', isExpiring(mc) && 'border-primary-400 ring-2 ring-primary-200 dark:ring-primary-900/50']"
           >
             <div class="flex items-stretch gap-4">
               <div
@@ -363,6 +407,13 @@ onMounted(loadCentre);
                 </p>
               </div>
             </div>
+            <!-- 临期 badge（仅未使用 tab） -->
+            <div
+              v-if="walletTab === 'unused' && isExpiring(mc)"
+              class="absolute top-2 left-2 rounded bg-primary-600 px-1.5 py-0.5 text-xs font-semibold text-white"
+            >
+              {{ t("messages.coupon.expiringDays", { n: remainingDays(mc) }) }}
+            </div>
             <div
               v-if="mc.status !== 'UNUSED'"
               class="absolute top-1/2 right-8 -rotate-12 rounded border border-(--ui-error) px-2 py-1 text-sm font-bold text-(--ui-error)"
@@ -372,7 +423,9 @@ onMounted(loadCentre);
                   ? t("messages.coupon.usedStamp")
                   : mc.status === "EXPIRED"
                     ? t("messages.coupon.expiredStamp")
-                    : mc.status
+                    : mc.status === "RETURNED"
+                      ? t("messages.coupon.returnedStamp")
+                      : mc.status
               }}
             </div>
           </div>
