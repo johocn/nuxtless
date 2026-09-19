@@ -122,6 +122,8 @@ L0 代码内建默认  → L1 全局配置(shop_global_config) → L2 风格模�
 
 **结论**：L3 店铺覆盖字段 `detailConfig` 被 C 端消费并覆盖 L2/classic → floor 确认通过。t2(37) 已预置 `{"blocks":{"price":{"style":"jdA"}}}` 印证同机制。
 
+⚠️ **修正（浏览器复核，替代 curl 判定）**：`detailConfig` 覆盖 `promo.visible:false` 后，**促销横幅消失、独立的「服务保障」块保留**——证明块级覆盖只影响声明块。此复核推翻先前 curl 对 `/product/57` 的空商品误判。判据以**浏览器手机视口截图**为准。
+
 **⚠️ 观测注意**：执行 L3 覆盖时常见「浏览器点击商品重定向回首页」（该商品 slug 空/城市 cookie 限制），SSR HTML 抓取（带随机 `?_cb=`）是更可靠的权威判定。
 
 **回滚**：`customFieldsDetailconfig` 置回原始值（默认渠道为空）。
@@ -139,7 +141,15 @@ L0 代码内建默认  → L1 全局配置(shop_global_config) → L2 风格模�
 
 **通过标准**：单块缺省时，该块回退内建默认，不受同层其他块影响。
 
-**回滚**：blocks 恢复 `{}`。
+**✅ 线上实测（2026-09-19，默认渠道，浏览器手机视口截图判定）**：
+1. L3 覆盖 `detailConfig` = `{"version":2,"layout":"classic","blocks":{"promo":{"visible":false}}}`，只声明 promo。
+2. 覆盖态：促销横幅「满99元包邮」**消失**（`shots/screenshot-1789797427681.png`）；**独立的「服务保障」块仍显示**、底部购买/购物车按钮正常 → 证明同层未声明块不受影响。
+3. 恢复：`detailConfig` 置空 → 刷新「满99元包邮」**重现**（`shots/screenshot-1789797486836.png`）→ 删除覆盖后回退内建默认 `visible:true`。
+4. 与 A4 修正合并看：**块级覆盖(visible) 作用于单块，缺省块回退内建默认** 得到端到端实证。
+
+**结论**：L4 内建默认回退链路通过（覆盖→隐藏单块；清空→回退显示）；块之间相互隔离。判据用浏览器截图（curl 不可靠）。
+
+**回滚**：blocks 恢复 `{}`/detailConfig 置空。
 
 ---
 
