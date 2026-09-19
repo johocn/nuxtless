@@ -57,7 +57,14 @@ L0 代码内建默认  → L1 全局配置(shop_global_config) → L2 风格模�
 
 **通过标准**：无任何配置时 C 端按内建默认渲染，不报错、不空白。
 
-**回滚**：恢复全局 defaults 为修复后值（见附录）。
+**✅ 线上实测（2026-09-19，默认渠道，浏览器手机视口截图判定）**：
+1. 清空 L1 `shop_global_config.defaults='{}'` + 清空默认渠道 `templateId`（后端 `shopTemplate` 按渠道引用，未引用返回 null → 回退 L1/空 → 纯 L0）。截图 `shots/screenshot-1789797924617.jpg`。
+2. 无任何配置下商品详情页正常渲染：**classic 版式**（无 floor 楼层分段/吸顶 tab）、**全块可见**（gallery/info/price/promo/service/purchase 全显示）、**主题橙 `#FF6B00`**（`mergeThemeTokens` L0 为空时落到代码兜底主色）。
+3. 恢复：`defaults` 还原 + `templateId=1` 还原 → 回到 L2 橙色经典基线。
+
+**结论**：L0 代码内建默认链路有效——极端清空（L1/L2/L3 全无）时仍稳定渲染、不报错、不空白，是五级体系的最底层兜底。
+
+**回滚**：恢复全局 defaults 为修复后值 + 默认渠道 templateId=1（见附录）。
 
 ### A2 L1 全局配置（主题色 + 页面级 defaults）
 
@@ -181,7 +188,7 @@ L0 代码内建默认  → L1 全局配置(shop_global_config) → L2 风格模�
 ## Part C · 线上验收与回滚
 
 ### 验收清单（每层关键断言 + 截图）
-- [ ] L0：空配置 → 主题 `#ff6600` + 全块可见 + classic
+- [x] L0：空配置 → 主题橙 `#FF6B00` + 全块可见 + classic（A1 ✅ 2026-09-19）
 - [ ] L1：改主题色 + defaults.product → 色变 + 版式变 floor
 - [ ] L2：引用模板 → 覆盖 L1；停用/跨端 → 回退 L1
 - [ ] L3：detailConfig → 覆盖模板；撤销 → 回退 L2
