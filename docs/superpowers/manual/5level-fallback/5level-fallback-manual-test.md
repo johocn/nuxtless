@@ -114,7 +114,17 @@ L0 代码内建默认  → L1 全局配置(shop_global_config) → L2 风格模�
 
 **通过标准**：L3 只覆盖其明确声明的字段；未覆盖字段保持 L2 值；撤销后回退 L2。
 
-**回滚**：详情页版式选回 classic。
+**✅ 线上实测（2026-09-19，默认渠道）**：
+1. 写入 L3 覆盖 `customFieldsDetailconfig` = `{"version":2,"layout":"floor","blocks":{}}`。
+2. 判定关键：shop-api 确认后端 return 该字段；SSR `/product/57` 抓取出现 **floor 版式独有的吸顶 tab**（`href="#floor-variants"` / `id="floor-variants"`），从默认 classic 变为 floor → **L3 覆盖模板版式生效**。
+3. 恢复：`customFieldsDetailconfig` 置空 → DB 确认空；回退 L2/classic。
+4. 注意：恢复观察受 SSR/nginx 缓存滞后影响，判定以 shop-api + SSR 源为准。
+
+**结论**：L3 店铺覆盖字段 `detailConfig` 被 C 端消费并覆盖 L2/classic → floor 确认通过。t2(37) 已预置 `{"blocks":{"price":{"style":"jdA"}}}` 印证同机制。
+
+**⚠️ 观测注意**：执行 L3 覆盖时常见「浏览器点击商品重定向回首页」（该商品 slug 空/城市 cookie 限制），SSR HTML 抓取（带随机 `?_cb=`）是更可靠的权威判定。
+
+**回滚**：`customFieldsDetailconfig` 置回原始值（默认渠道为空）。
 
 ### A5 L4 块内建默认（单块缺省）
 
