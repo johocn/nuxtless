@@ -5,17 +5,20 @@ import { assetSrc } from "../../../utils/image";
 import { pickDisplayPrice, pickCurrentCents } from "../../../utils/display-price";
 import { isProductVisible } from "../../../utils/productVisibility";
 import type { ProductLike } from "../../../utils/productVisibility";
-import { deliveryFacetFilter } from "../../../utils/delivery-modes";
 
 // GoodsFloor 在搜索项之上补了划线价与商品主数据 customFields（城市维度过滤用）
+// deliveryModes 为「服务端未过滤」时的本地判据（父层按 facet 派生注入）
 type SearchItem = SearchResult[number] & {
   listPriceCents?: number | null;
   customFields?: ProductLike["customFields"];
+  deliveryModes?: ProductLike["deliveryModes"];
 };
 
 const props = defineProps<{
   title: string;
   products: SearchItem[];
+  /** 父层是否真的按配送做了服务端 facet 过滤；false（含 facet 命中 0 条的降级重查）时本地按能力精确过滤 */
+  deliveryFilteredServer?: boolean;
 }>();
 const { t } = useI18n();
 const localePath = useTenantLocalePath();
@@ -30,12 +33,10 @@ const filterEnabled = computed(() => config.value.enabled && config.value.module
 const defaultDelivery = computed(() => config.value.modules.goods.defaultDelivery ?? config.value.defaultDelivery);
 const { current: delivery, setDelivery } = useModuleDelivery("single-list", defaultDelivery.value);
 // 渠道单能力时不渲染选择框，直接锁定该唯一方式（避免无意义选择）
-const { showDeliveryPicker, lockedMode, facetValueIds } = useChannelDeliveryCapability();
+const { showDeliveryPicker, lockedMode } = useChannelDeliveryCapability();
 watch(lockedMode, (m) => { if (m) setDelivery(m); }, { immediate: true });
 // 父层（GoodsFloor）已按配送维度做服务端 facet 过滤时，本地只保留城市维度判定
-const serverFiltered = computed(
-  () => showDeliveryPicker.value && !!deliveryFacetFilter(facetValueIds.value, delivery.value),
-);
+const serverFiltered = computed(() => props.deliveryFilteredServer === true);
 const visibleItems = computed(() =>
   filterEnabled.value
     ? props.products.filter((p) =>
