@@ -40,7 +40,8 @@ function bool(v: unknown, dflt: boolean): boolean {
   return typeof v === 'boolean' ? v : dflt;
 }
 
-function delivery(v: unknown, dflt: DeliveryMethod | null): DeliveryMethod | null {
+/** 合法值直接采用，否则回退 dflt；dflt 非 null 时返回类型随之收窄（外层无需再处理 null） */
+function delivery<T extends DeliveryMethod | null>(v: unknown, dflt: T): DeliveryMethod | T {
   return v === 'MAIL' || v === 'SELF_PICKUP' ? v : dflt;
 }
 

@@ -7,6 +7,7 @@
 // 顶部 AppHeader（城市选择 + 多语言 + 搜索 + 购物车）保持不变。
 import { isHero } from "../../layers/base/app/utils/home-content";
 import { enrichWithListPrice, listCentsMap } from "../../layers/base/app/utils/display-price";
+import { deliveryFacetFilter } from "../../layers/base/app/utils/delivery-modes";
 import type { SearchResult } from "~~/types/product";
 import type { TaxMode } from "../../layers/base/app/utils/tax-price";
 import type { MenuCollections, TopLevelCollection } from "~~/types/collection";
@@ -58,12 +59,56 @@ const hasBlocks = computed(() => shopSections.value.length > 0);
 //    （普通 async 函数）二次取数补齐首页商品卡划线价（listPrice），SSR 安全。
 const rawGql = useGql();
 const { taxMode } = useTaxMode();
+
+// 商品楼层的「城市·配送」过滤：过滤条由 JdProductGrid 渲染，配送维度在此做服务端 facet 筛选。
+// moduleId 必须与子组件一致（'jd-grid'）才能共用同一份模块级配送选择状态。
+const { config: filterConfig } = useHomeFilterConfig();
+const filterEnabled = computed(() => filterConfig.value.enabled && filterConfig.value.modules.goods.enabled);
+const defaultDelivery = computed(
+  () => filterConfig.value.modules.goods.defaultDelivery ?? filterConfig.value.defaultDelivery,
+);
+const { current: delivery } = useModuleDelivery("jd-grid", defaultDelivery.value);
+const { showDeliveryPicker, facetValueIds } = useChannelDeliveryCapability();
+/** 当前生效的服务端筛选入参（不可用时为 null，退回子组件本地城市维度过滤） */
+const facetFilter = computed(() =>
+  filterEnabled.value && showDeliveryPicker.value ? deliveryFacetFilter(facetValueIds.value, delivery.value) : null,
+);
+// 只在「实际生效的筛选」变化时才重查（取字符串避免数组引用变化触发无谓重查）
+const facetKey = computed(() => facetFilter.value?.[0]?.or.join(",") ?? "");
+
+/** SSR 期渠道能力与商品查询并行，须在 handler 内独立取一次，保证 SSR 与客户端首帧同一筛选口径 */
+async function loadChannelFacet(): Promise<{ dual: boolean; ids: Record<string, string> | null }> {
+  try {
+    const res = await rawGql("ChannelDeliveryCapability", {});
+    const cap = (res as any)?.channelDeliveryCapability;
+    return { dual: cap?.bothSupported === true, ids: cap?.facetValueIds ?? null };
+  } catch {
+    return { dual: false, ids: null };
+  }
+}
+
 const { data: fallbackSearch } = await useAsyncData(
   "home-fallback-search",
   async () => {
     if (hasBlocks.value) return { hot: [], more: [] };
-    const r = await useAsyncGql("SearchProducts", { term: "", take: 20, skip: 0 });
-    const items = (r.data.value?.search?.items ?? []) as SearchResult;
+    // 仅双能力渠道走服务端 facet：单能力渠道筛选值恒不变（筛选条也不渲染），
+    // 一旦 facet 索引缺失反而会把商品楼层清空，收益为负。
+    const cap = filterEnabled.value ? await loadChannelFacet() : { dual: false, ids: null };
+    const filters = cap.dual ? deliveryFacetFilter(cap.ids, delivery.value) : null;
+    // 必须用 setup 顶层绑定的原始 gql client：handler 内已 await 过渠道能力查询，
+    // 此处再调 useAsyncGql 会丢 Nuxt 实例上下文抛 "[nuxt] instance unavailable"。
+    let items: SearchResult = [];
+    try {
+      const searchRes = await rawGql("SearchProducts", {
+        term: "",
+        take: 20,
+        skip: 0,
+        ...(filters ? { facetValueFilters: filters } : {}),
+      });
+      items = (searchRes?.search?.items ?? []) as SearchResult;
+    } catch {
+      /* 搜索失败保持空楼层，不阻断首页其它区块 */
+    }
     // 补齐首页商品卡划线价：SearchItem 不带变体 listPrice，按 productId 拉主数据并注入 listPriceCents。
     // 失败/无商品时静默降级为「无划线价」，不影响现价展示。
     const mode = (taxMode.value ?? "inclusive") as TaxMode;
@@ -89,7 +134,8 @@ const { data: fallbackSearch } = await useAsyncData(
     }
     return { hot: enriched.slice(0, 10), more: enriched.slice(10, 20) };
   },
-  { server: true },
+  // 用户切换「邮寄 / 自提」后重查：SSR 首帧的筛选值即默认配送，客户端仅在真正变化时重查
+  { server: true, watch: [facetKey] },
 );
 
 const hotProducts = computed(() => fallbackSearch.value?.hot ?? []);

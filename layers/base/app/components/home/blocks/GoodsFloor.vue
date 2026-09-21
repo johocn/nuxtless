@@ -9,6 +9,7 @@ import type { GoodsSection, GoodsLayout } from "../../../utils/shop-content";
 import { localizeText } from "../../../utils/detail-config";
 import { pickListCents } from "../../../utils/display-price";
 import type { ProductLike } from "../../../utils/productVisibility";
+import { deliveryFacetFilter } from "../../../utils/delivery-modes";
 
 const props = defineProps<{ section: GoodsSection }>();
 const { t, locale } = useI18n();
@@ -24,18 +25,62 @@ const title = computed(() =>
 );
 const take = computed(() => (layout.value === "masonry" ? 8 : 10));
 
+// 与子组件渲染的布局一一对应，从而共用同一份「模块级配送选择」状态（useModuleDelivery 的 useState 按 moduleId 共享）
+const moduleId = computed(() =>
+  layout.value === "masonry" ? "masonry" : layout.value === "single" ? "single-list" : "jd-grid",
+);
+const { config: filterConfig } = useHomeFilterConfig();
+const filterEnabled = computed(() => filterConfig.value.enabled && filterConfig.value.modules.goods.enabled);
+const defaultDelivery = computed(
+  () => filterConfig.value.modules.goods.defaultDelivery ?? filterConfig.value.defaultDelivery,
+);
+const { current: delivery } = useModuleDelivery(moduleId.value, defaultDelivery.value);
+const { showDeliveryPicker, facetValueIds } = useChannelDeliveryCapability();
+
+/** 服务端配送筛选入参；不可用（单能力渠道 / facet 未同步 / 未开启过滤）时为 null，退回子组件本地过滤 */
+const facetFilter = computed(() =>
+  filterEnabled.value && showDeliveryPicker.value
+    ? deliveryFacetFilter(facetValueIds.value, delivery.value)
+    : null,
+);
+// 只在「实际生效的筛选」变化时才重查（取字符串避免数组引用变化触发无谓重查）
+const facetKey = computed(() => facetFilter.value?.[0]?.or.join(",") ?? "");
+
+/** SSR 期渠道能力与商品查询并行，须在 handler 内独立取一次，保证 SSR 与客户端首帧同一筛选口径 */
+async function loadChannelFacet(): Promise<{ dual: boolean; ids: Record<string, string> | null }> {
+  try {
+    const res = await rawGql("ChannelDeliveryCapability", {});
+    const cap = (res as any)?.channelDeliveryCapability;
+    return { dual: cap?.bothSupported === true, ids: cap?.facetValueIds ?? null };
+  } catch {
+    return { dual: false, ids: null };
+  }
+}
+
 // 按 collectionSlug 取 key：同 collection 的多个 goods 区块 SSR 不去重各自查一次（受后台"每风格商品区块 ≤2"约束）
 const key = `goods-block-${props.section.collectionId ?? "auto"}`;
 const { data } = await useAsyncData(
   key,
   async () => {
-    const res = await useAsyncGql("SearchProducts", {
-      term: "",
-      ...(props.section.collectionId ? { collectionSlug: props.section.collectionId } : {}),
-      take: take.value,
-      skip: 0,
-    });
-    const items = (res.data.value?.search?.items ?? []) as SearchResult;
+    // 仅双能力渠道走服务端 facet：单能力渠道筛选值恒不变（筛选条也不渲染），
+    // 一旦 facet 索引缺失反而会把商品块清空，收益为负。
+    const cap = filterEnabled.value ? await loadChannelFacet() : { dual: false, ids: null };
+    const filters = cap.dual ? deliveryFacetFilter(cap.ids, delivery.value) : null;
+    // 必须用 setup 顶层绑定的原始 gql client：handler 内已 await 过渠道能力查询，
+    // 此处再调 useAsyncGql 会丢 Nuxt 实例上下文抛 "[nuxt] instance unavailable"。
+    let items: SearchResult = [];
+    try {
+      const searchRes = await rawGql("SearchProducts", {
+        term: "",
+        ...(props.section.collectionId ? { collectionSlug: props.section.collectionId } : {}),
+        take: take.value,
+        skip: 0,
+        ...(filters ? { facetValueFilters: filters } : {}),
+      });
+      items = (searchRes?.search?.items ?? []) as SearchResult;
+    } catch {
+      /* 搜索失败保持空区块，不阻断首页其它区块 */
+    }
     // SearchItem 不带变体 listPrice，二次拉产品主数据补齐「slug → 划线展示价」。
     // 非商品集（无 productId）或查询失败时静默降级为「无划线价」。
     const ids = items.map((i) => i.productId).filter(Boolean);
@@ -62,7 +107,8 @@ const { data } = await useAsyncData(
     }
     return { items, listCents, cfMap };
   },
-  { server: true },
+  // 用户切换「邮寄 / 自提」后重查：SSR 首帧的筛选值即默认配送，客户端仅在真正变化时重查
+  { server: true, watch: [facetKey] },
 );
 const products = computed(() => {
   const d = data.value;

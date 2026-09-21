@@ -2,7 +2,7 @@
 // → L3 店铺覆盖（channel customFields）→ L4 页面/模块内建默认。
 // 三个 useAsyncData 各自 handler 内单次 useAsyncGql（SSR 安全）；
 // GetChannelTheme 与 useDetailConfig/useShopContent 同操作名共享 payload 去重。
-import { mergePageConfig, mergeThemeTokens } from "../utils/merge-config";
+import { mergePageConfig, mergeThemeTokens, parseThemeTokensOverride } from "../utils/merge-config";
 import type { ShopGlobalConfigData, ShopTemplateData, ThemeTokens } from "../utils/merge-config";
 
 const APP = "nshop";
@@ -38,7 +38,13 @@ export function useThemeConfig() {
   const template = computed<ShopTemplateData | null>(() => templateData.value ?? null);
   const globalConfig = computed<ShopGlobalConfigData | null>(() => globalData.value ?? null);
   const channelCfs = computed<Record<string, any> | null>(() => channelData.value ?? null);
-  const themeTokens = computed<ThemeTokens>(() => mergeThemeTokens(globalConfig.value, template.value));
+  const themeTokens = computed<ThemeTokens>(() =>
+    mergeThemeTokens(
+      globalConfig.value,
+      template.value,
+      parseThemeTokensOverride(channelCfs.value?.themeTokensOverride),
+    ),
+  );
 
   function pageConfig(page: string): Record<string, any> | null {
     return mergePageConfig(globalConfig.value, template.value, channelCfs.value, page);

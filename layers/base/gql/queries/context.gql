@@ -17,6 +17,7 @@ query GetChannelTheme {
     customFields {
       themeId
       templateId
+      themeTokensOverride
       shopContent
       detailConfig
       orderDetailConfig

@@ -78,16 +78,23 @@ export function resolvePaletteTokens(template: ShopTemplateData | null): Palette
   return deepMerge<PaletteToken>({}, presetTokens, palette.tokens ?? null);
 }
 
-/** 主题令牌合并：L1 全局 themeTokens ← 模板 palette 展开 tokens ← 模板 theme 显式 token */
+/** 解析渠道 L3 令牌覆盖（Vendure text customField）；坏 JSON/非对象 → null（视为不覆盖） */
+export function parseThemeTokensOverride(raw: string | null | undefined): Record<string, any> | null {
+  return parseJsonText(raw);
+}
+
+/** 主题令牌合并：L1 全局 themeTokens ← L2 模板（palette 展开 + 显式 theme）← L3 店铺覆盖 */
 export function mergeThemeTokens(
   globalConfig: ShopGlobalConfigData | null,
   template: ShopTemplateData | null,
+  channelThemeOverride?: Record<string, any> | null,
 ): ThemeTokens {
   return deepMerge<ThemeTokens>(
     {},
     globalConfig?.themeTokens ?? null,
     resolvePaletteTokens(template),
     template?.theme ?? null,
+    channelThemeOverride ?? null,
   );
 }
 

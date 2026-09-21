@@ -34,6 +34,7 @@ query SearchProducts(
   $skip: Int
   $take: Int
   $collectionSlug: String
+  $facetValueFilters: [FacetValueFilterInput!]
 ) {
   search(
     input: {
@@ -42,6 +43,7 @@ query SearchProducts(
       skip: $skip
       take: $take
       collectionSlug: $collectionSlug
+      facetValueFilters: $facetValueFilters
     }
   ) {
     totalItems
