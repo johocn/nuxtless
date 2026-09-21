@@ -9,7 +9,7 @@ import type { GoodsSection, GoodsLayout } from "../../../utils/shop-content";
 import { localizeText } from "../../../utils/detail-config";
 import { pickListCents } from "../../../utils/display-price";
 import type { ProductLike } from "../../../utils/productVisibility";
-import { deliveryFacetFilter } from "../../../utils/delivery-modes";
+import { deliveryFacetFilter, modesFromFacetIds } from "../../../utils/delivery-modes";
 
 const props = defineProps<{ section: GoodsSection }>();
 const { t, locale } = useI18n();
@@ -69,15 +69,27 @@ const { data } = await useAsyncData(
     // 必须用 setup 顶层绑定的原始 gql client：handler 内已 await 过渠道能力查询，
     // 此处再调 useAsyncGql 会丢 Nuxt 实例上下文抛 "[nuxt] instance unavailable"。
     let items: SearchResult = [];
+    let serverFiltered = false;
+    const searchArgs = {
+      term: "",
+      ...(props.section.collectionId ? { collectionSlug: props.section.collectionId } : {}),
+      take: take.value,
+      skip: 0,
+    };
     try {
       const searchRes = await rawGql("SearchProducts", {
-        term: "",
-        ...(props.section.collectionId ? { collectionSlug: props.section.collectionId } : {}),
-        take: take.value,
-        skip: 0,
+        ...searchArgs,
         ...(filters ? { facetValueFilters: filters } : {}),
       });
       items = (searchRes?.search?.items ?? []) as SearchResult;
+      serverFiltered = !!filters;
+      // facet 索引未同步时服务端过滤会命中 0 条、把整块清空：去掉 facetValueFilters 重查一次，
+      // 改由子组件按配送能力做本地过滤，杜绝空白区块。
+      if (serverFiltered && !items.length) {
+        const retryRes = await rawGql("SearchProducts", searchArgs);
+        items = (retryRes?.search?.items ?? []) as SearchResult;
+        serverFiltered = false;
+      }
     } catch {
       /* 搜索失败保持空区块，不阻断首页其它区块 */
     }
@@ -85,13 +97,25 @@ const { data } = await useAsyncData(
     // 非商品集（无 productId）或查询失败时静默降级为「无划线价」。
     const ids = items.map((i) => i.productId).filter(Boolean);
     if (!ids.length) {
-      return { items, listCents: new Map() as Map<string, number | null>, cfMap: new Map() as Map<string, ProductLike["customFields"]> };
+      return {
+        items,
+        listCents: new Map<string, number | null>(),
+        cfMap: new Map<string, ProductLike["customFields"]>(),
+        serverFiltered,
+        facetIds: cap.ids,
+      };
     }
     let byIds;
     try {
       byIds = await rawGql("GetProductsByIds", { ids });
     } catch {
-      return { items, listCents: new Map() as Map<string, number | null>, cfMap: new Map() as Map<string, ProductLike["customFields"]> };
+      return {
+        items,
+        listCents: new Map<string, number | null>(),
+        cfMap: new Map<string, ProductLike["customFields"]>(),
+        serverFiltered,
+        facetIds: cap.ids,
+      };
     }
     const products = byIds?.products?.items ?? [];
     const mode = (taxMode.value ?? "inclusive") as "inclusive" | "zero" | "exclusive";
@@ -105,7 +129,7 @@ const { data } = await useAsyncData(
         cfMap.set(p.slug, (p as { customFields?: ProductLike["customFields"] }).customFields ?? null);
       }
     }
-    return { items, listCents, cfMap };
+    return { items, listCents, cfMap, serverFiltered, facetIds: cap.ids };
   },
   // 用户切换「邮寄 / 自提」后重查：SSR 首帧的筛选值即默认配送，客户端仅在真正变化时重查
   { server: true, watch: [facetKey] },
@@ -117,13 +141,21 @@ const products = computed(() => {
     ...i,
     listPriceCents: d.listCents.get(i.slug) ?? null,
     customFields: d.cfMap.get(i.slug) ?? null,
+    // 服务端未按配送过滤（单能力渠道 / facet 未同步 / 命中 0 条降级重查）时，
+    // 由本地按同一套 facet 映射派生配送能力；映射缺失 → modesFromFacetIds 兜底「两者都支持」，
+    // 与旧行为一致但不再依赖子组件各自取渠道能力，杜绝空白区块。
+    deliveryModes: d.serverFiltered ? undefined : modesFromFacetIds(i.facetValueIds, d.facetIds),
   })) as SearchResult;
 });
+/** 是否已按配送维度完成服务端过滤：true 时子组件只做城市维度判定，避免重复过滤 */
+const serverFiltered = computed(() => data.value?.serverFiltered === true);
 </script>
 
 <template>
-  <!-- 商品「城市·配送」过滤、切换条与空态统一由各布局子组件（JdProductGrid/GoodsMasonryGrid/GoodsSingleList）承接（单一过滤层，避免双层过滤导致切「自提」时自提-only 商品被上层 MAIL 预筛掉） -->
-  <GoodsMasonryGrid v-if="layout === 'masonry'" :title="title" :products="products" />
-  <GoodsSingleList v-else-if="layout === 'single'" :title="title" :products="products" />
-  <JdProductGrid v-else :title="title" :products="products" />
+  <!-- 商品「城市·配送」过滤与空态由各布局子组件承接（单一过滤层）：
+       双能力渠道优先走服务端 facet 过滤；命中 0 条或索引缺失时本组件已降级重查并置 serverFiltered=false，
+       子组件据此再按 facet 派生的配送能力做本地过滤，既保证口径同源又杜绝空白区块 -->
+  <GoodsMasonryGrid v-if="layout === 'masonry'" :title="title" :products="products" :delivery-filtered-server="serverFiltered" />
+  <GoodsSingleList v-else-if="layout === 'single'" :title="title" :products="products" :delivery-filtered-server="serverFiltered" />
+  <JdProductGrid v-else :title="title" :products="products" :delivery-filtered-server="serverFiltered" />
 </template>
