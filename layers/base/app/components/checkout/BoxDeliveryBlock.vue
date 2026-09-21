@@ -47,10 +47,16 @@ function methodName(id: string): string {
   return id;
 }
 
+/** 该箱可用配送方式 id 列表（兼容 availableShippingMethodIds 与 availableShippingMethods 两种返回形态） */
+function boxMethodIds(box: OrderBoxInfo): string[] {
+  const byIds = (box.availableShippingMethodIds ?? []).map(String);
+  if (byIds.length) return byIds;
+  return (box.availableShippingMethods ?? []).map((m) => String(m.id));
+}
+
 function defaultMethodId(box: OrderBoxInfo): string {
-  return String(
-    box.defaultShippingMethodId ?? box.availableShippingMethodIds?.[0] ?? "",
-  );
+  const ids = boxMethodIds(box);
+  return String(box.defaultShippingMethodId ?? ids[0] ?? "");
 }
 
 async function applyBox(box: OrderBoxInfo, methodId: string, silent = false) {
@@ -73,9 +79,11 @@ function chooseLogistics(box: OrderBoxInfo, methodId: string) {
 
 onMounted(() => {
   // 兜底应用：让每箱初始即有生效配送方式（按全箱遍历，跨实例幂等）
+  // 单方式箱直接锁定该唯一方式；多方式箱取默认方式。
   for (const box of allDeliveryBoxes.value) {
     if (methodSel[box.boxKey]) continue;
-    const m = defaultMethodId(box);
+    const ids = boxMethodIds(box);
+    const m = ids.length === 1 ? ids[0] : defaultMethodId(box);
     if (m) {
       methodSel[box.boxKey] = m;
       void applyBox(box, m, true);
@@ -86,7 +94,8 @@ onMounted(() => {
 // 提交：确保每个物流箱都有生效配送方式（全箱遍历，与渲染分区无关）
 flow.submitFns.submitDelivery = async () => {
   for (const box of allDeliveryBoxes.value) {
-    const m = methodSel[box.boxKey] ?? defaultMethodId(box);
+    const ids = boxMethodIds(box);
+    const m = methodSel[box.boxKey] ?? (ids.length === 1 ? ids[0] : defaultMethodId(box));
     if (!m) {
       orderStore.error = t("messages.checkout.needBoxDelivery");
       toast.add({
@@ -163,13 +172,21 @@ flow.submitFns.submitDelivery = async () => {
 
         <template v-if="(box.availableShippingMethodIds ?? []).length">
           <p class="mb-1 text-xs text-neutral-500">{{ t("messages.checkout.boxLogisticsOption") }}</p>
+          <!-- 只有一个可用方式：不渲染单选组，直接锁定该方式（避免无意义选择） -->
+          <p
+            v-if="boxMethodIds(box).length === 1"
+            class="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-200"
+          >
+            {{ methodName(boxMethodIds(box)[0] ?? "") }}
+          </p>
           <URadioGroup
+            v-else
             :model-value="methodSel[box.boxKey] ?? ''"
             @update:model-value="(v: string) => chooseLogistics(box, v)"
             indicator="hidden"
             variant="table"
             orientation="horizontal"
-            :items="(box.availableShippingMethodIds ?? []).map((id) => ({ label: methodName(String(id)), value: String(id) }))"
+            :items="boxMethodIds(box).map((id) => ({ label: methodName(String(id)), value: String(id) }))"
             :ui="{ item: 'w-full' }"
             :disabled="orderStore.loading"
           />

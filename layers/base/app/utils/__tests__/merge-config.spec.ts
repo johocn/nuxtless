@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mergePageConfig, mergeThemeTokens } from '../merge-config';
+import { mergePageConfig, mergeThemeTokens, parseThemeTokensOverride } from '../merge-config';
 
 describe('mergePageConfig 合并顺序（模板为主、渠道增量）', () => {
   const tpl = {
@@ -33,5 +33,47 @@ describe('mergeThemeTokens 配色回退', () => {
     const t = { theme: { palette: { scheme: 'nope' } } } as any;
     const r = mergeThemeTokens(g, t);
     expect(r.primaryColor).toBe('#000000');
+  });
+});
+
+describe('mergeThemeTokens L3 店铺令牌覆盖', () => {
+  it('L3 覆盖 L2 palette 展开值', () => {
+    const g = { themeTokens: { primaryColor: '#000000' } } as any;
+    const t = { theme: { palette: { scheme: 'jd-red' } } } as any;
+    const r = mergeThemeTokens(g, t, { primaryColor: '#123456' });
+    expect(r.primaryColor).toBe('#123456');
+  });
+  it('L3 覆盖 L2 显式 theme 令牌', () => {
+    const t = { theme: { primaryColor: '#aaaaaa' } } as any;
+    const r = mergeThemeTokens(null, t, { primaryColor: '#bbbbbb' });
+    expect(r.primaryColor).toBe('#bbbbbb');
+  });
+  it('L3 为 null/undefined 时结果与旧签名一致', () => {
+    const g = { themeTokens: { primaryColor: '#000000' } } as any;
+    expect(mergeThemeTokens(g, null, null).primaryColor).toBe('#000000');
+    expect(mergeThemeTokens(g, null, undefined).primaryColor).toBe('#000000');
+  });
+  it('L3 缺字段不误伤其他层级', () => {
+    const g = { themeTokens: { primaryColor: '#000000', radius: 4 } } as any;
+    const r = mergeThemeTokens(g, null, { accentColor: '#eee' });
+    expect(r.primaryColor).toBe('#000000');
+    expect(r.radius).toBe(4);
+    expect(r.accentColor).toBe('#eee');
+  });
+});
+
+describe('parseThemeTokensOverride 坏数据一律不覆盖', () => {
+  it('空值 → null', () => {
+    expect(parseThemeTokensOverride('')).toBeNull();
+    expect(parseThemeTokensOverride(null)).toBeNull();
+    expect(parseThemeTokensOverride(undefined)).toBeNull();
+  });
+  it('坏 JSON / 非对象 → null', () => {
+    expect(parseThemeTokensOverride('{bad')).toBeNull();
+    expect(parseThemeTokensOverride('"x"')).toBeNull();
+    expect(parseThemeTokensOverride('[1,2]')).toBeNull();
+  });
+  it('合法对象 → 原样返回', () => {
+    expect(parseThemeTokensOverride('{"primaryColor":"#fff"}')).toEqual({ primaryColor: '#fff' });
   });
 });

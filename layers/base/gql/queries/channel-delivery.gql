@@ -1,0 +1,8 @@
+query ChannelDeliveryCapability {
+  channelDeliveryCapability {
+    modes
+    bothSupported
+    source
+    facetValueIds
+  }
+}

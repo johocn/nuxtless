@@ -106,4 +106,5 @@ fragment ProductSearchFragment on SearchResult {
     }
   }
   currencyCode
+  facetValueIds
 }
