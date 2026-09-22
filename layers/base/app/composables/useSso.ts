@@ -23,6 +23,8 @@ const CALLBACK_PATH = "/account/sso-callback";
 const SSO_PROVIDER_KEY = "youshop_sso_provider";
 const SSO_BASE_URL_KEY = "youshop_sso_base_url";
 const SSO_RETURN_URL_KEY = "youshop_sso_return_url";
+const SSO_PROVIDERS_CACHE_KEY = "youshop_sso_providers";
+const SSO_PROVIDERS_CACHE_TTL = 10 * 60 * 1000; // 10 分钟
 
 /** 微信内置浏览器 UA 检测（首个发起点：首页/登录页/引导条共用） */
 export function isWechatBrowser(): boolean {
@@ -54,8 +56,23 @@ export function useSso() {
     return headers;
   }
 
-  /** 取当前渠道启用的 zhao-sso 提供商列表（协议过滤，只保留 zhao-sso） */
+  /** 取当前渠道启用的 zhao-sso 提供商列表（协议过滤，只保留 zhao-sso）。
+   *  结果按渠道 + 10 分钟 TTL 缓存到 localStorage，重复访问直接回缓存，
+   *  避免跳转前每次异步网络拉取（消除微信环境登录白屏/重复拉取）。 */
   async function fetchProviders(): Promise<SsoProviderInfo[]> {
+    const cacheKey = `${SSO_PROVIDERS_CACHE_KEY}_${channelToken.value ?? "default"}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && Array.isArray(parsed.list) && Date.now() - parsed.at <= SSO_PROVIDERS_CACHE_TTL) {
+          return (parsed.list as SsoProviderInfo[]).filter((p) => p.protocol === "zhao-sso");
+        }
+      }
+    } catch {
+      // 缓存缺失/损坏：回退网络拉取
+    }
+
     if (!gqlHost) return [];
     const res = await fetch(gqlHost, {
       method: "POST",
@@ -66,7 +83,13 @@ export function useSso() {
     });
     const json = await res.json();
     const list: SsoProviderInfo[] = json?.data?.ssoProviders ?? [];
-    return list.filter((p) => p.protocol === "zhao-sso");
+    const filtered = list.filter((p) => p.protocol === "zhao-sso");
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify({ at: Date.now(), list: filtered }));
+    } catch {
+      // 存储不可用（如隐私模式）忽略，下次仍走网络
+    }
+    return filtered;
   }
 
   /** 指定页面（默认登录页）的完整回调地址（origin + 租户前缀 + 页面路径）。统一页登录成功后回跳该地址携带 token */
