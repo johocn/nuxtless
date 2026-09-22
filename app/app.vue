@@ -157,6 +157,8 @@ useSchemaOrg([
       <NuxtPage />
     </NuxtLayout>
   </UApp>
+  <!-- 微信端 SSO 自动登录等待期的品牌遮罩（星枢动效兜底） -->
+  <SsoAwaitOverlay />
 </template>
 
 <style lang="css" scoped></style>
