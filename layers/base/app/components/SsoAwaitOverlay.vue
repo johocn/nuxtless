@@ -1,4 +1,5 @@
-<!-- 品牌等待遮罩：微信端未登录等待 SSO 跳转期间的品牌化兜底层（文案与星枢 dict 同源，品牌紫 #667eea；支持 reduced-motion 降级） -->
+<!-- 品牌等待遮罩：微信端未登录等待 SSO 跳转期间的品牌化兜底层。动效=放大星轨卫星环；上移居中排版；
+     标题「星枢关系中心」；状态「星枢正在为您护航…」；广告语 4 条轮播；reduced-motion 降级 -->
 <script setup lang="ts">
 import { isWechatBrowser, useSso } from "../composables/useSso";
 import { shouldShowOverlay } from "../utils/sso-provider";
@@ -11,9 +12,9 @@ const visible = computed(() =>
   shouldShowOverlay({ pending: pending.value, authenticated: authStore.isAuthenticated, isWechat: isWechatBrowser() }),
 );
 
-const TITLE = "星枢统一关系中心";
+const TITLE = "星枢关系中心";
 const SLOGANS = ["一个账号，玩转全部系统", "星枢，让系统彼此相连", "登录一次，处处同步", "安全 · 统一 · 更便捷"];
-const STATUS = "正在校验登录凭证…";
+const STATUS = "星枢正在为您护航…";
 const badgeIdx = ref(0);
 let timer: number | undefined;
 
@@ -29,10 +30,11 @@ onUnmounted(() => timer && window.clearInterval(timer));
   <Teleport to="body">
     <div v-if="visible" class="sso-await-overlay">
       <div class="sso-card">
-        <svg class="sso-spinner" viewBox="0 0 48 48" width="52" height="52" aria-hidden="true">
-          <circle class="sso-spinner-track" cx="24" cy="24" r="20" />
-          <circle class="sso-spinner-bar" cx="24" cy="24" r="20" />
-        </svg>
+        <div class="sso-orb" aria-hidden="true">
+          <div class="sso-orb-core"></div>
+          <div class="sso-orb-ring"></div>
+          <div class="sso-orb-sat"></div>
+        </div>
         <p class="sso-logo">{{ TITLE }}</p>
         <p class="sso-slogan sso-slogan-anim" :key="badgeIdx">{{ SLOGANS[badgeIdx] }}</p>
         <span class="sso-status">{{ STATUS }}</span>
@@ -49,18 +51,32 @@ onUnmounted(() => timer && window.clearInterval(timer));
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f7;
+  background: linear-gradient(170deg, #f9f7ff 0%, #f1ecfb 100%);
+  padding-top: 8vh; /* 视觉重心上移但不顶死 */
 }
-.sso-card { display: flex; flex-direction: column; align-items: center; gap: 18px; }
-.sso-spinner { transform: rotate(-90deg); }
-.sso-spinner-track { fill: none; stroke: #e5e7eb; stroke-width: 5; }
-.sso-spinner-bar {
-  fill: none; stroke: #667eea; stroke-width: 5; stroke-linecap: round;
-  stroke-dasharray: 126; stroke-dashoffset: 100;
-  animation: sso-rotate 1s linear infinite;
+.sso-card { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+/* 星轨卫星环（放大主视觉） */
+.sso-orb { width: 104px; height: 104px; position: relative; flex: none; }
+.sso-orb-core {
+  position: absolute; inset: 8px; border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #a5b4fc, #667eea 70%);
+  box-shadow: 0 0 26px rgba(102, 126, 234, 0.7);
 }
-@keyframes sso-rotate { to { transform: rotate(360deg); } }
-.sso-logo { margin: 0; font-size: 18px; font-weight: 600; color: #333; }
+.sso-orb-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px dashed rgba(102, 126, 234, 0.35);
+}
+.sso-orb-sat {
+  position: absolute; top: -4px; left: 50%;
+  width: 14px; height: 14px; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 12px #667eea;
+  transform-origin: 7px 56px;
+  animation: sso-orbit 1.6s linear infinite;
+}
+@keyframes sso-orbit { to { transform: rotate(360deg); } }
+
+.sso-logo { margin: 0; font-size: 20px; font-weight: 600; color: #333; }
 .sso-slogan { margin: 0; font-size: 14px; color: #667eea; min-height: 1.4em; }
 .sso-slogan-anim { animation: sso-fade 0.9s ease; }
 @keyframes sso-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -69,6 +85,6 @@ onUnmounted(() => timer && window.clearInterval(timer));
   background: rgba(102, 126, 234, 0.12);
 }
 @media (prefers-reduced-motion: reduce) {
-  .sso-spinner-bar, .sso-slogan-anim { animation: none; }
+  .sso-orb-sat, .sso-slogan-anim { animation: none; }
 }
 </style>
