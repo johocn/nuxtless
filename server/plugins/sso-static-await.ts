@@ -6,7 +6,14 @@
 // 星轨遮罩作为静态外壳写入 SSR 首字节 HTML，不依赖 Vue、不依赖 JS 执行，保证从首字节
 // 就存在。Vue app 接管后由 SsoAwaitOverlay.vue 在 onMounted 时移除（见该组件）。
 export default defineNitroPlugin((nitroApp) => {
-  nitroApp.hooks.hook("render:html", (html) => {
+  nitroApp.hooks.hook("render:html", (html, ctx) => {
+    // 仅微信内置浏览器注入静态壳：避免非微信/电脑端用户每次打开任意页首帧都闪现
+    // 一次品牌遮罩（app 接管后虽会移除，但接管前仍会闪一下）。SSR 端按 UA 判定，
+    // 与客户端 isWechatBrowser() 语义一致。静态壳仅服务「微信端 SSO 等待」这一场景。
+    const ua = typeof ctx.event?.node?.req?.headers?.["user-agent"] === "string"
+      ? ctx.event.node.req.headers["user-agent"]
+      : "";
+    if (!/MicroMessenger/i.test(ua)) return;
     // 星轨遮罩结构（纯 CSS 动画，无 JS）——与 SsoAwaitOverlay 视觉一致的静态版
     html.bodyAppend.push(`
 <div id="sso-static-await">
