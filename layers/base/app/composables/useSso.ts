@@ -27,6 +27,7 @@ const SSO_RETURN_URL_KEY = "youshop_sso_return_url";
 const SSO_PROVIDERS_CACHE_KEY = "youshop_sso_providers";
 const SSO_PROVIDERS_CACHE_TTL = 10 * 60 * 1000; // 10 分钟
 const PREFETCH_STATE_KEY = "sso-providers-prefetch";
+const PENDING_STATE_KEY = "sso-redirect-pending";
 
 /** 微信内置浏览器 UA 检测（首个发起点：首页/登录页/引导条共用） */
 export function isWechatBrowser(): boolean {
@@ -104,6 +105,11 @@ export function useSso() {
     if (getPrefetchState().value) return;
     const live = await fetchProviders();
     getPrefetchState().value = live;
+  }
+
+  /** 品牌遮罩显隐控制：跳转发起前置 true，无 provider 时不跳且置 false。 */
+  function getPendingState() {
+    return useState<boolean>(PENDING_STATE_KEY, () => false);
   }
 
   /** 获取待跳转提供商：预取命中最优先，未就绪/为空回退实时拉取。 */
@@ -309,6 +315,7 @@ export function useSso() {
     fetchProviders,
     startProviderPrefetch,
     getRedirectProvider,
+    getPendingState,
     loginWithSso,
     loginWithWechat,
     readSsoReturnUrl,
