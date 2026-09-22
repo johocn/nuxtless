@@ -1,5 +1,6 @@
 import { resolveSsoReturnUrl } from "../utils/sso-return-url";
 import { readVendureSessionToken } from "../utils/vendure-session";
+import { selectPrimaryProvider, type ProviderSource } from "../utils/sso-provider";
 
 export interface SsoProviderInfo {
   name: string;
@@ -25,6 +26,7 @@ const SSO_BASE_URL_KEY = "youshop_sso_base_url";
 const SSO_RETURN_URL_KEY = "youshop_sso_return_url";
 const SSO_PROVIDERS_CACHE_KEY = "youshop_sso_providers";
 const SSO_PROVIDERS_CACHE_TTL = 10 * 60 * 1000; // 10 分钟
+const PREFETCH_STATE_KEY = "sso-providers-prefetch";
 
 /** 微信内置浏览器 UA 检测（首个发起点：首页/登录页/引导条共用） */
 export function isWechatBrowser(): boolean {
@@ -90,6 +92,25 @@ export function useSso() {
       // 存储不可用（如隐私模式）忽略，下次仍走网络
     }
     return filtered;
+  }
+
+  /** 共享预取结果 state：SSR/首次客户端尽早拉取，跳转直接复用（避免跳转前再等网络）。 */
+  function getPrefetchState() {
+    return useState<SsoProviderInfo[] | null>(PREFETCH_STATE_KEY, () => null);
+  }
+
+  /** 尽早预取 provider（幂等）。调用方 async 但不 await，首帧不等网络。 */
+  async function startProviderPrefetch(): Promise<void> {
+    if (getPrefetchState().value) return;
+    const live = await fetchProviders();
+    getPrefetchState().value = live;
+  }
+
+  /** 获取待跳转提供商：预取命中最优先，未就绪/为空回退实时拉取。 */
+  async function getRedirectProvider(): Promise<{ provider: SsoProviderInfo | null; source: ProviderSource }> {
+    const prefetched = getPrefetchState().value;
+    const live = prefetched && prefetched.length ? [] : await fetchProviders();
+    return selectPrimaryProvider(prefetched, live);
   }
 
   /** 指定页面（默认登录页）的完整回调地址（origin + 租户前缀 + 页面路径）。统一页登录成功后回跳该地址携带 token */
@@ -286,6 +307,8 @@ export function useSso() {
 
   return {
     fetchProviders,
+    startProviderPrefetch,
+    getRedirectProvider,
     loginWithSso,
     loginWithWechat,
     readSsoReturnUrl,
