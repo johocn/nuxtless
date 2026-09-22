@@ -5,17 +5,18 @@ export interface SsoProviderCandidate {
 
 export type ProviderSource = "prefetched" | "live" | "none";
 
-export interface ResolvedProvider {
-  provider: SsoProviderCandidate | null;
+export interface ResolvedProvider<T extends SsoProviderCandidate = SsoProviderCandidate> {
+  provider: T | null;
   source: ProviderSource;
 }
 
 /** 跳转提供商选取：预取命中最优先；为空/未就绪回退实时；皆空为 none。
- *  纯函数，便于单测；调用方保证两入参均已按 protocol==="zhao-sso" 过滤。 */
-export function selectPrimaryProvider(
-  prefetched: SsoProviderCandidate[] | null | undefined,
-  live: SsoProviderCandidate[] | null | undefined,
-): ResolvedProvider {
+ *  纯函数，便于单测；调用方保证两入参均已按 protocol==="zhao-sso" 过滤。
+ *  泛型保留入参的具体类型（如传入 SsoProviderInfo[] 则返回 SsoProviderInfo | null）。 */
+export function selectPrimaryProvider<T extends SsoProviderCandidate>(
+  prefetched: T[] | null | undefined,
+  live: T[] | null | undefined,
+): ResolvedProvider<T> {
   if (prefetched && prefetched.length > 0) {
     return { provider: prefetched[0], source: "prefetched" };
   }
