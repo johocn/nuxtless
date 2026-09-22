@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>微信自动 SSO 登录 · 等待区品牌化 + 提速验收手册</title>
+<style>
+  :root { --purple:#667eea; --link:#2b7cff; --line:#eee; --muted:#888; }
+  body { font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; max-width: 940px; margin: 0 auto; padding: 24px 20px 60px; line-height: 1.7; color:#222; }
+  h1 { font-size: 24px; border-bottom: 2px solid var(--purple); padding-bottom: 10px; }
+  h2 { font-size: 18px; margin-top: 32px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #fafafa; }
+  code { background: #f4f4f4; padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+  .note { background: #eef4ff; border: 1px solid #bcd3ff; border-radius: 8px; padding: 12px 14px; margin: 16px 0; }
+  .ok { color: #16a34a; font-weight: 600; }
+  .phones { display:flex; gap:16px; flex-wrap:wrap; margin: 14px 0; }
+  .phone { width: 300px; }
+  .phone img { width:100%; border:1px solid var(--line); border-radius:12px; display:block; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+  .phone figcaption { font-size:13px; color:#444; margin-top:8px; }
+  .phone figcaption .tag { color:var(--purple); font-weight:600; }
+  a { color: var(--link); }
+</style>
+</head>
+<body>
+  <h1>微信自动 SSO 登录 · 等待区品牌化 + 提速 验收手册</h1>
+  <p>提交 <code>88c5da4</code> 起含 Task1-4；本页为 <b>Task5</b> 回归 + 手机视口截图验收。日期 2026-09-22。</p>
+
+  <h2>一、方案概述</h2>
+  <p>微信内置浏览器未登录进入商城时，会自动跳转 h.joho.cn 统一登录页完成 SSO 静默授权。原实现在跳转前需<b>实时网络拉取</b> SSO provider，出现白屏等待。本方案两项改造：</p>
+  <ul>
+    <li><b>提速（预取优先）</b>：<code>useSso.startProviderPrefetch()</code> 在 <code>app.vue</code> setup 即幂等预取 provider（localStorage 10 分钟 TTL 缓存）；跳转时 <code>getRedirectProvider()</code> 预取命中 → 省略二次网络，立即跳转。</li>
+    <li><b>等待区品牌化</b>：跳转发起前置 <code>pending=true</code>，未登录 + 微信环境渲染品牌遮罩 <code>&lt;SsoAwaitOverlay /&gt;</code>（星枢紫 #667eea，标题「星枢统一关系中心」，slogan 轮播 + 旋转动效），替代原白屏。</li>
+  </ul>
+
+  <h2>二、关键路径与降级</h2>
+  <table>
+    <tr><th>场景</th><th>行为</th></tr>
+    <tr><td>预取命中（缓存/lazily 已就绪）</td><td>直接复用预取 provider，遮罩几乎不闪，立即跳 h.joho.cn</td></tr>
+    <tr><td>预取未命中（等待期）</td><td><code>pending=true</code> → 品牌遮罩兜底，同时实时拉取补齐</td></tr>
+    <tr><td>无 provider</td><td><code>pending=false</code>，<b>不跳转、不遮罩</b>，停留当前页</td></tr>
+    <tr><td>非微信 / 已登录 / 跳过页</td><td>不触发自动登录，<code>shouldShowOverlay</code> 恒 false，遮罩不出现</td></tr>
+    <tr><td><code>prefers-reduced-motion</code></td><td>关闭旋转/轮播/淡入动画，仅静态品牌卡（可访问性降级）</td></tr>
+  </table>
+  <p class="note">纯函数可测：<code>selectPrimaryProvider</code>（预取命中 &gt; 实时）、<code>shouldShowOverlay({pending,authenticated,isWechat})</code> 抽出在 <code>layers/base/app/utils/sso-provider.ts</code>，TDD 单测覆盖。</p>
+
+  <h2>三、回归结果</h2>
+  <table>
+    <tr><th>项</th><th>命令</th><th>结果</th></tr>
+    <tr><td>全量单测</td><td><code>npm test</code></td><td><span class="ok">109/109 通过</span>（16 文件，含 sso-provider.spec 6 it）</td></tr>
+    <tr><td>生产构建</td><td><code>pnpm run build</code>（真实部署门卡）</td><td><span class="ok">成功</span>；仅历史无关 warning（dulicated imports / tailwind sourcemap / fonts 预取），无错误</td></tr>
+    <tr><td>手机视口截图</td><td>Playwright 390×844 @ dpr2（最终 780×1688）</td><td><span class="ok">3 张，见下</span></td></tr>
+  </table>
+
+  <h2>四、手机视口截图（Playwright，390×844 dpr2）</h2>
+  <div class="phones">
+    <figure class="phone">
+      <img src="shots/shot-1-pending-branded-overlay.png" alt="等待期品牌遮罩" />
+      <figcaption><span class="tag">① 等待期品牌遮罩</span>：微信 UA + 未登录，拦截 ssoProviders 响应延迟 3s 使 <code>pending=true</code> 保持，捕捉到星枢品牌遮罩（标题/spinner/slogan）。像素核验含品牌紫 #667eea。</figcaption>
+    </figure>
+    <figure class="phone">
+      <img src="shots/shot-2-prefetch-jump-unified.png" alt="预取命中立即跳统一页" />
+      <figcaption><span class="tag">② 预取命中立即跳星枢</span>：微信 UA + 未登录，不阻塞请求，真实跳转到 h.joho.cn 统一登录页（URL 含 app_code/return_url/channel_code）。遮罩几乎不闪即跳，验证预取提速。</figcaption>
+    </figure>
+    <figure class="phone">
+      <img src="shots/shot-3-normal-home-no-overlay.png" alt="普通非微信页正常浏览" />
+      <figcaption><span class="tag">③ 非微信页不误出遮罩</span>：普通移动 UA + 未登录访问首页，断言语义 <code>.sso-await-overlay</code> count=0，正常渲染商城首页。</figcaption>
+    </figure>
+  </div>
+
+  <h2>五、验收指引</h2>
+  <ol>
+    <li>微信内首次访问首页（未登录）→ 应出现<b>星枢品牌等待遮罩</b>或<b>立即跳转</b>统一登录页，避免白屏。</li>
+    <li>二次触发（provider 已缓存/预取）→ 遮罩几乎不闪，直接跳转（提速生效）。</li>
+    <li>桌面 / 普通移动浏览器访问 → 无跳转、无遮罩，正常浏览。</li>
+    <li>系统开启「减少动态效果」→ 遮罩只静态展示，不含旋转/轮播动画。</li>
+  </ol>
+</body>
+</html>
