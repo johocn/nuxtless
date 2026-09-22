@@ -19,6 +19,10 @@ const badgeIdx = ref(0);
 let timer: number | undefined;
 
 onMounted(() => {
+  // Vue app 已接管：移除 SSR 首字节注入的纯 CSS 静态遮罩壳，避免与本组件叠加。
+  // 本组件仅在微信端未登录等待 SSO 跳转时可见（visible 为 true），此时静态壳被真正的
+  // 动效遮罩无缝顶替；非该场景（普通用户）下 app 渲染时静态壳随此回调一并被清掉，无感。
+  document.getElementById("sso-static-await")?.remove();
   timer = window.setInterval(() => {
     badgeIdx.value = (badgeIdx.value + 1) % SLOGANS.length;
   }, 2600);
