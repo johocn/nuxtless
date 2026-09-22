@@ -95,3 +95,5 @@ tmp/dbg-*
 tmp/debug-*
 tmp/probe-tables.mjs
 tmp-shots/
+
+# local brainstorm visual-companion dirs.superpowers/
