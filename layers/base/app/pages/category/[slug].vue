@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MenuCollections, ChildCollection } from "~~/types/collection";
+import type { MenuCollections, ChildCollection, TopLevelCollection } from "~~/types/collection";
 import { isSortKey, toSortParam } from "../../utils/collection-sort";
 import type { SortKey } from "../../utils/collection-sort";
 
@@ -8,6 +8,7 @@ const { i18NBaseUrl } = useRuntimeConfig().public;
 const colorMode = useColorMode();
 const { t, locale } = useI18n();
 const siteName = useSiteName();
+const localePath = useTenantLocalePath();
 
 const ogColorMode = computed<"dark" | "light">(() =>
   colorMode.value === "dark" ? "dark" : "light",
@@ -22,6 +23,21 @@ const catCfg = computed(() => pageConfig("category") ?? null);
 const listStyle = computed<"grid" | "list">(() =>
   catCfg.value?.listStyle === "list" ? "list" : "grid",
 );
+// 分类页 mall 版式：usemall 风格「左分类栏 + 右商品流」双栏；未配置时回退默认版式。
+// 后台数据不变——左栏复用既有 menuItems（顶部分类）+ childCollections，右栏复用产品查询结果。
+const mallLayout = computed<boolean>(() => catCfg.value?.layout === "mall");
+
+// 左分类栏数据：顶部分类 + 当前分类的子分类；命名良构展示用 featuredAsset/name 兜底
+const railItems = computed(() => {
+  const parents = (menuItems as TopLevelCollection[]).filter(
+    (c) => c.slug !== slug.value && !currentCollectionSlugIsChildOf(c),
+  );
+  const children = childCollections.value as unknown as TopLevelCollection[];
+  return [...parents, ...children];
+});
+function currentCollectionSlugIsChildOf(col: TopLevelCollection) {
+  return (col.children ?? []).some((c: { slug?: string }) => c.slug === currentCollection?.slug);
+}
 
 const slug = useRouteParam("slug");
 
@@ -229,7 +245,83 @@ useSchemaOrg([
 </script>
 
 <template>
-  <main
+  <!-- ═══ mall 版式：usemall「左分类栏 + 右商品流」双栏（后台数据不变）═══ -->
+  <div v-if="mallLayout" class="mx-auto flex min-h-screen max-w-md bg-white pb-20 lg:hidden">
+    <!-- 左栏：顶部分类 + 当前子分类 -->
+    <aside class="w-[76px] shrink-0 overflow-y-auto border-r border-gray-100 bg-[#f8f8f8]">
+      <NuxtLink
+        v-for="item in railItems"
+        :key="item.slug"
+        :to="localePath(`/category/${item.slug}`)"
+        class="flex flex-col items-center gap-1.5 px-1 py-3"
+        :class="item.slug === currentCollection?.slug ? 'bg-white font-semibold text-primary' : 'text-gray-600'"
+      >
+        <img
+          v-if="item.featuredAsset?.preview"
+          :src="item.featuredAsset.preview"
+          :alt="item.name"
+          class="h-9 w-9 rounded-full bg-gray-100 object-cover"
+          loading="lazy"
+        />
+        <span
+          v-else
+          class="flex h-9 w-9 items-center justify-center rounded-full"
+          :class="item.slug === currentCollection?.slug ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'"
+        >
+          <UIcon name="i-lucide-grid-2x2" class="h-4 w-4" />
+        </span>
+        <span class="line-clamp-2 text-center text-[11px] leading-tight">{{ item.name }}</span>
+      </NuxtLink>
+    </aside>
+
+    <!-- 右栏：当前分类标题 + 商品流 -->
+    <div class="flex-1 bg-white">
+      <div class="sticky top-0 z-10 border-b border-gray-100 bg-white/95 px-3 pb-3 pt-4 backdrop-blur">
+        <h1 class="text-base font-bold text-gray-900">{{ catCfg?.title || currentCollection.name }}</h1>
+        <p v-if="catCfg?.floorSubtitle" class="mt-0.5 text-xs text-neutral-500">{{ catCfg.floorSubtitle }}</p>
+        <div class="mt-2 flex items-center justify-between gap-2">
+          <SortBar v-model="sort" />
+          <UButton
+            variant="outline"
+            color="neutral"
+            size="sm"
+            icon="i-lucide-filter"
+            @click="filterDrawerOpen = true"
+          >
+            {{ t("messages.shop.filters") }}
+            <span
+              v-if="filterParam.length"
+              class="ml-1 rounded-full bg-brand-600 px-1.5 text-xs text-white"
+            >{{ filterParam.length }}</span
+            >
+          </UButton>
+        </div>
+      </div>
+
+      <div v-if="products.length" class="grid grid-cols-2 gap-3 px-3 py-3">
+        <ProductCard
+          v-for="(product, index) in products"
+          :key="product.slug"
+          :product="product"
+          :service-info="serviceInfoBySlug[product.slug]"
+          :eager="index < 4"
+        />
+      </div>
+      <div v-else class="py-12 text-center text-neutral-500">
+        <p>{{ t("messages.shop.noProductsFound.title") }}</p>
+        <UButton v-if="filterParam.length" variant="link" class="mt-2" @click="clearFilters">
+          {{ t("messages.shop.clearFilters") }}
+        </UButton>
+      </div>
+
+      <nav v-if="total > take" class="flex justify-center py-6" role="navigation" aria-label="Pagination Navigation">
+        <UPagination :page="page" :total="total" :items-per-page="take" :to="to" />
+      </nav>
+    </div>
+  </div>
+
+  <!-- ═══ 默认版式 ═══ -->
+  <main v-else
     class="container"
     :style="catCfg?.bgColor ? { backgroundColor: catCfg.bgColor } : undefined"
   >

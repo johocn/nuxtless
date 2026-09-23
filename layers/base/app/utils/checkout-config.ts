@@ -7,25 +7,26 @@
  *   未来如需渠道级下发，可拆到后端 customFields（SSR 读取）而无需改动组件。
  */
 
-export type CheckoutLayout = "cn" | "jd" | "jd-legacy" | "legacy";
+export type CheckoutLayout = "cn" | "jd" | "jd-legacy" | "legacy" | "mall";
 
 export interface CheckoutPageConfig {
   layout: CheckoutLayout;
 }
 
-/** 前端常量（默认中国本地化版式 `cn`） */
+/** 前端常量（默认 usemall 版式 `mall`；可回退 `cn`/`jd`/`jd-legacy`/`legacy`） */
 export const checkoutConfig: CheckoutPageConfig = {
-  layout: "cn",
+  layout: "mall",
 };
 
 /**
  * 纯函数：解析布局，非法值回退默认 `cn`，保证 SSR/客户端一致。
- * cn（默认）｜jd｜jd-legacy｜legacy 四级可回退。
+ * cn（默认）｜jd｜jd-legacy｜legacy｜mall 五级可回退。
  */
 export function checkLayout(raw: string | null | undefined): CheckoutLayout {
   if (raw === "jd") return "jd";
   if (raw === "jd-legacy") return "jd-legacy";
   if (raw === "legacy") return "legacy";
+  if (raw === "mall") return "mall";
   return "cn";
 }
 
