@@ -73,3 +73,20 @@ mall 版式完全构建在既有五级回退体系（L0 内建 ← L1 全局配�
 
 > 账号说明：既有测试号 `split-e2e-a@joho.cn` / `zhao@163.com` 在线上 mall 渠道为 `INVALID_CREDENTIALS`（账号失效/被重置，非前端 bug）。因红线禁建新号，本次用既有结算 e2e 匿名购物会话复核截图。
 > 已修复：吸底固定栏与正文叠压已通过移动端容器 `pb-36`(144px) 消除，实测「分账汇总」末块与吸底栏留余约 138 逻辑px（dpr2 约 277px）。full_page 截图含「两处提交」为固定栏合成伪影（真实单屏仅一处）。
+
+### 首页 / 详情 / 分类（商城公开站点已全量珊瑚 mall，2026-09-23）
+
+> 关键机制（L2 引用）：`Channel.customFields.templateId` 决定渠道引用的风格模板 → 后端 `shopTemplate(app)` 查 `shop_template` 行。默认渠道（id=1 / `cnx87ez…`）已指向 **mall 模板（id=12）**并提 `version` 至 2 破 SSR 缓存，故公开站点 www.youshop.cn 三页同为珊瑚 mall（而非默认 JD）。注入 `vendure-token: cnx87ez…` 与匿名一致。
+
+| 截图 | URL | 内容 |
+|---|---|---|
+| `home-live.png` | https://www.youshop.cn/ | 珊瑚首页：banner/nav(金刚区)/goods 积木，#e0433f |
+| `detail-live-top.png` | /product/hotel-suite-test | `DetailMall` 首屏大图+信息主卡 |
+| `detail-live-actionbar.png` | 同上 | 详情吸底「加入购物车/立即购买」操作栏 |
+| `category-live.png` | /category/electronics | mall 左分类栏+右商品流双栏珊瑚 |
+
+**本轮顺带修复**：
+- **分类页 SSR 500**（`Collection not found for slug`）：`category/[slug].vue` 的 `currentCollection` 原依赖 `menuCollections`（app.vue 中 `server:false` 仅客户端），SSR 首帧为空→throw。改为 setup 顶层绑定原始 gql client + 独立 `useAsyncData(server:true)` 按需补取（沿用 index.vue SSR-safe 同法，规避单 handler 内多 `useAsyncGql` 丢 Nuxt 实例上下文）；未命中走正常 404 不 throw。`/category/{electronics,home,food}` 均 200。
+- **首页 SSR 空块崩溃**：切 mall 后 `BannerBlock/NavGrid` 对 `{type,data:{}}` 空块 `.map` 崩「reading 'map'」→ 补 `?? []` 回退内建占位/自动项。
+
+提交：前端 `nshop` 分支 commit `2015208`（`category/[slug].vue`、`BannerBlock.vue`、`NavGrid.vue` + 4 张截图）；本页未改表结构。
