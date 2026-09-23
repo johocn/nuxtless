@@ -14,8 +14,45 @@ const ogColorMode = computed<"dark" | "light">(() =>
   colorMode.value === "dark" ? "dark" : "light",
 );
 
-const menuCollections = useState<MenuCollections>("menuCollections");
-const menuItems = menuCollections.value?.collections.items ?? [];
+const menuCollections = useState<MenuCollections | null>("menuCollections", () => null);
+const rawGql = useGql();
+
+// SSR 安全地补齐顶部分类集合：menuCollections 是 app.vue 里仅客户端加载的共享 state
+// （server:false），SSR 首帧为空 → 下方 currentCollection 未命中即 throw，导致 /category/* 500。
+// 这里用 setup 顶层绑定的原始 gql client 在 SSR 期按需补取一次 GetMenuCollections
+// （与首页 index.vue 的 SSR-safe 二次取数同法，避免在单个 useAsyncData 内连 await 多个
+// useAsyncGql 丢失 Nuxt 实例上下文）。命中则写回共享 state，客户端 hydration 后沿用。
+const { data: menuSsrData } = await useAsyncData<MenuCollections | null>(
+  "category-menu-collections",
+  async () => {
+    if (menuCollections.value?.collections?.items?.length) {
+      return menuCollections.value;
+    }
+    try {
+      const res = await rawGql("GetMenuCollections");
+      return res?.collections?.items?.length ? (res as unknown as MenuCollections) : null;
+    } catch {
+      return null;
+    }
+  },
+  { server: true },
+);
+// 补取结果写回共享 state；未命中（无顶部分类）仅影响渲染，不 throw
+if (menuSsrData.value && !menuCollections.value?.collections?.items?.length) {
+  menuCollections.value = menuSsrData.value;
+}
+
+const slug = useRouteParam("slug");
+
+const menuItems = computed<TopLevelCollection[]>(() =>
+  ((menuSsrData.value ?? menuCollections.value)?.collections?.items ?? []) as TopLevelCollection[],
+);
+
+const currentCollection = computed<TopLevelCollection | null>(() =>
+  menuItems.value.find((top) => top.slug === slug) ??
+  menuItems.value.flatMap((top) => top.children ?? []).find((child) => child.slug === slug) ??
+  null,
+);
 
 // 分类页装修（L1 全局 → L2 模板 → L3 店铺 pageCategoryConfig 合并）
 const { pageConfig } = useThemeConfig();
@@ -29,31 +66,21 @@ const mallLayout = computed<boolean>(() => catCfg.value?.layout === "mall");
 
 // 左分类栏数据：顶部分类 + 当前分类的子分类；命名良构展示用 featuredAsset/name 兜底
 const railItems = computed(() => {
-  const parents = (menuItems as TopLevelCollection[]).filter(
-    (c) => c.slug !== slug.value && !currentCollectionSlugIsChildOf(c),
+  const parents = (menuItems.value as TopLevelCollection[]).filter(
+    (c) => c.slug !== slug && !currentCollectionSlugIsChildOf(c),
   );
   const children = childCollections.value as unknown as TopLevelCollection[];
   return [...parents, ...children];
 });
 function currentCollectionSlugIsChildOf(col: TopLevelCollection) {
-  return (col.children ?? []).some((c: { slug?: string }) => c.slug === currentCollection?.slug);
+  return (col.children ?? []).some((c: { slug?: string }) => c.slug === currentCollection.value?.slug);
 }
 
-const slug = useRouteParam("slug");
-
-const currentCollection =
-  menuItems.find((top) => top.slug === slug) ??
-  menuItems
-    .flatMap((top) => top.children ?? [])
-    .find((child) => child.slug === slug);
-
-if (!currentCollection) {
-  throw new Error(`Collection not found for slug: ${slug}`);
-}
-
+// 合法顶部分类 slug 才能命中集合；未命中走正常渲染（搜索/商品查询自然返回空）而非 throw 500。
+// currentCollection 为 computed，SSR 期已被 menuSsrData 补取，始终安全。
 const childCollections = computed(() =>
-  currentCollection && "children" in currentCollection
-    ? (currentCollection.children ?? [])
+  currentCollection.value && "children" in currentCollection.value
+    ? (currentCollection.value.children ?? [])
     : [],
 ) as ComputedRef<ChildCollection[]>;
 
@@ -190,27 +217,24 @@ useHead(() => ({
 
 // SEO Meta
 useSeoMeta({
-  title: currentCollection?.name,
-  // description: currentCollection?.description,
-  ogTitle: currentCollection?.name,
-  // ogDescription: currentCollection?.description,
-  twitterTitle: currentCollection?.name,
-  // twitterDescription: currentCollection?.description,
+  title: () => currentCollection.value?.name,
+  ogTitle: () => currentCollection.value?.name,
+  twitterTitle: () => currentCollection.value?.name,
 });
 
 // OgImage
 defineOgImage("BlogPost.satori", {
   colorMode: ogColorMode,
-  title: currentCollection?.name,
+  title: () => currentCollection.value?.name,
   category: siteName.value,
-  backgroundImage: currentCollection?.featuredAsset?.preview,
+  backgroundImage: () => currentCollection.value?.featuredAsset?.preview,
 });
 
 // SchemaOrg
 useSchemaOrg([
   defineWebPage({
     "@type": "CollectionPage",
-    name: currentCollection.name,
+    name: () => currentCollection.value?.name ?? "",
     // description: currentCollection.description,
     inLanguage: locale.value,
     url: `${i18NBaseUrl}${route.path}`,
@@ -277,7 +301,7 @@ useSchemaOrg([
     <!-- 右栏：当前分类标题 + 商品流 -->
     <div class="flex-1 bg-white">
       <div class="sticky top-0 z-10 border-b border-gray-100 bg-white/95 px-3 pb-3 pt-4 backdrop-blur">
-        <h1 class="text-base font-bold text-gray-900">{{ catCfg?.title || currentCollection.name }}</h1>
+        <h1 class="text-base font-bold text-gray-900">{{ catCfg?.title || currentCollection?.name }}</h1>
         <p v-if="catCfg?.floorSubtitle" class="mt-0.5 text-xs text-neutral-500">{{ catCfg.floorSubtitle }}</p>
         <div class="mt-2 flex items-center justify-between gap-2">
           <SortBar v-model="sort" />
