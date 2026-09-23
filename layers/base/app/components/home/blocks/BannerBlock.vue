@@ -6,7 +6,7 @@ import type { BannerSection } from "../../../utils/shop-content";
 const props = defineProps<{ section: BannerSection }>();
 
 const slides = computed(() =>
-  props.section.images.map((im, i) => ({
+  (props.section.images ?? []).map((im, i) => ({
     imageUrl: im.image,
     link: im.link,
     title: `slide-${i}`,

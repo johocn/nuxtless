@@ -13,7 +13,7 @@ const layout = computed(() => navDefaults(props.section.shape, props.section.lay
 // 装修配置的 items 转成 JdFunctionGrid 的 GridItem 形态（有图用图，无图 emoji 兜底）
 // label 为后台 LocalizedText，逐级本地化
 const items = computed(() =>
-  props.section.items.map((it) => ({
+  (props.section.items ?? []).map((it) => ({
     label: localizeText(it.label, locale.value),
     img: it.image || undefined,
     emoji: it.image ? undefined : "🏷️",
