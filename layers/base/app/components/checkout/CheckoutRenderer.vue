@@ -2,6 +2,7 @@
 import CheckoutLayoutCn from "./CheckoutLayoutCn.vue";
 import CheckoutLayoutJd from "./CheckoutLayoutJd.vue";
 import CheckoutLayoutJdLegacy from "./CheckoutLayoutJdLegacy.vue";
+import CheckoutLayoutMall from "./CheckoutLayoutMall.vue";
 import { checkoutConfig } from "~~/layers/base/app/utils/checkout-config";
 
 const layout = checkoutConfig.layout;
@@ -13,6 +14,7 @@ const emit = defineEmits<{ (e: "submit"): void }>();
   <CheckoutLayoutCn v-if="layout === 'cn'" @submit="emit('submit')" />
   <CheckoutLayoutJd v-else-if="layout === 'jd'" />
   <CheckoutLayoutJdLegacy v-else-if="layout === 'jd-legacy'" />
+  <CheckoutLayoutMall v-else-if="layout === 'mall'" @submit="emit('submit')" />
   <slot v-else />
 </template>
 

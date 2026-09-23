@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import type { ActiveOrderDetail } from "~~/types/order";
 import type { CheckoutState } from "~~/types/general";
 import type { AddressRecord } from "~~/types/address";
@@ -9,7 +9,8 @@ import {
 } from "~~/layers/base/app/utils/checkout-config";
 
 const layout = checkoutConfig.layout;
-const isCn = layout === "cn";
+// cn/mall 同为移动优先单列：移动端隐藏右侧订单摘要 aside（usemall 单列卡片流）
+const isMobileFull = layout === "cn" || layout === "mall";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -183,7 +184,7 @@ async function submitLegacy() {
 }
 
 async function onSubmit() {
-  if (layout === "cn" || layout === "jd" || layout === "jd-legacy") {
+  if (layout === "cn" || layout === "jd" || layout === "jd-legacy" || layout === "mall") {
     await submitJd();
     return;
   }
@@ -253,7 +254,7 @@ watch(isAuthenticated, async (nowAuth) => {
       <div class="w-full md:w-1/2 lg:w-2/3">
         <!-- 积木式版式：cn（中国本地化，默认）｜jd（京东新版）｜jd-legacy（旧京东回退，均可回退） -->
         <CheckoutRenderer
-          v-if="layout === 'cn' || layout === 'jd' || layout === 'jd-legacy'"
+          v-if="layout === 'cn' || layout === 'jd' || layout === 'jd-legacy' || layout === 'mall'"
           @submit="onSubmit"
         />
 
@@ -324,7 +325,7 @@ watch(isAuthenticated, async (nowAuth) => {
         role="complementary"
         aria-labelledby="order-summary-heading"
         class="sticky top-30 h-fit w-full md:w-2/3 lg:w-1/3"
-        :class="isCn ? 'hidden md:block' : ''"
+        :class="isMobileFull ? 'hidden md:block' : ''"
       >
         <h2 id="order-summary-heading" class="mb-4 text-2xl font-semibold">
           {{ t("messages.shop.orderSummary") }}

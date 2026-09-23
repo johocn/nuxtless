@@ -3,6 +3,7 @@ import DetailClassic from "./DetailClassic.vue";
 import DetailFloor from "./DetailFloor.vue";
 import DetailDualBuy from "./DetailDualBuy.vue";
 import DetailHotel from "./DetailHotel.vue";
+import DetailMall from "./DetailMall.vue";
 import { useDetailConfig } from "../../composables/useDetailConfig";
 
 const { layout, config, visible } = useDetailConfig();
@@ -12,6 +13,7 @@ const componentMap: Record<string, any> = {
   floor: DetailFloor,
   dualBuy: DetailDualBuy,
   hotel: DetailHotel,
+  mall: DetailMall,
 };
 </script>
 
