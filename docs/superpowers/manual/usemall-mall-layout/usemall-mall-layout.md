@@ -80,6 +80,7 @@ mall 版式完全构建在既有五级回退体系（L0 内建 ← L1 全局配�
 
 | 截图 | URL | 内容 |
 |---|---|---|
+| `cart-live.png` | 首页 → 商品详情「加入购物车」→ 顶栏购物车图标 | 珊瑚购物车抽屉 `CartPanel`（标题+明细行图/名/规格/单价/数量 stepper/删除 + 全宽「去结算」CTA，`checkoutStyle=full`） |
 | `home-live.png` | https://www.youshop.cn/ | 珊瑚首页：banner/nav(金刚区)/goods 积木，#e0433f |
 | `detail-live-top.png` | /product/hotel-suite-test | `DetailMall` 首屏大图+信息主卡 |
 | `detail-live-actionbar.png` | 同上 | 详情吸底「加入购物车/立即购买」操作栏 |
