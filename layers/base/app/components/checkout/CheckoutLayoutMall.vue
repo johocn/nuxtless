@@ -21,7 +21,7 @@ const emit = defineEmits<{ (e: "submit"): void }>();
 </script>
 
 <template>
-  <div class="pb-28 md:pb-0">
+  <div class="pb-36 md:pb-0">
     <!-- usemall 顶部标题卡 -->
     <div class="sticky top-0 z-10 mb-4 rounded-b-2xl bg-white px-4 pb-3 pt-4 shadow-sm">
       <h1 class="flex items-center gap-2 text-lg font-bold">
