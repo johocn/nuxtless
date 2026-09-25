@@ -21,25 +21,25 @@ const pickupName = computed(() => {
   return o?.customFields?.pickupStoreName ?? o?.delivery?.method?.name ?? o?.shippingMethod?.name ?? null;
 });
 
-// jd：小圆角白卡（无描边）+ 轻投影；标题带 3px 红竖条
-const box = "rounded-md bg-white p-3 shadow-[0_1px_2px_#0000000d]";
-const titleCls = "mb-2.5 flex items-center text-[13.5px] font-bold";
-const bar = "mr-1.5 h-[13px] w-[3px] rounded-sm bg-[#e1251b]";
+// mall：大圆角白卡（无描边）+ 珊瑚投影；标题带 5px 珊瑚竖条
+const box = "rounded-[18px] bg-white p-4 shadow-[0_3px_14px_#1118270f]";
+const titleCls = "mb-3 flex items-center text-[14.5px] font-extrabold";
+const bar = "mr-2 h-[15px] w-[5px] rounded bg-[#e0433f]";
 </script>
 
 <template>
   <section v-if="visible('status') && statusTitle" class="mb-2">
     <h2 :class="titleCls"><span :class="bar" />{{ statusTitle }}</h2>
   </section>
-  <OrderStatusBanner v-if="visible('status')" :order="order" variant="jd" class="mb-4" />
-  <OrderProgress v-if="visible('progress')" :state="order.state" :order="order" variant="jd" class="mb-8" />
+  <OrderStatusBanner v-if="visible('status')" :order="order" variant="mall" class="mb-4" />
+  <OrderProgress v-if="visible('progress')" :state="order.state" :order="order" variant="mall" class="mb-8" />
 
   <OrderRedemptionCard
     v-if="pickup && visible('redemption')"
     :order-code="order.code"
     :pickup-name="pickupName"
     :highlight="orderBlockHighlight(config ?? null, 'redemption')"
-    variant="jd"
+    variant="mall"
     class="mb-4"
   />
 
@@ -68,5 +68,5 @@ const bar = "mr-1.5 h-[13px] w-[3px] rounded-sm bg-[#e1251b]";
     <OrderMetaCard :order="order" />
   </section>
 
-  <OrderActions v-if="visible('actions')" :order="order" variant="jd" class="mb-10" @updated="refresh" />
+  <OrderActions v-if="visible('actions')" :order="order" variant="mall" class="mb-10" @updated="refresh" />
 </template>

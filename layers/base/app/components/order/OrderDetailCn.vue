@@ -21,25 +21,24 @@ const pickupName = computed(() => {
   return o?.customFields?.pickupStoreName ?? o?.delivery?.method?.name ?? o?.shippingMethod?.name ?? null;
 });
 
-// jd：小圆角白卡（无描边）+ 轻投影；标题带 3px 红竖条
-const box = "rounded-md bg-white p-3 shadow-[0_1px_2px_#0000000d]";
-const titleCls = "mb-2.5 flex items-center text-[13.5px] font-bold";
-const bar = "mr-1.5 h-[13px] w-[3px] rounded-sm bg-[#e1251b]";
+// cn：容器＝既有 *Block 样式，观感与现状一致
+const box = "rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900";
+const titleCls = "mb-3 font-semibold";
 </script>
 
 <template>
   <section v-if="visible('status') && statusTitle" class="mb-2">
-    <h2 :class="titleCls"><span :class="bar" />{{ statusTitle }}</h2>
+    <h2 :class="titleCls">{{ statusTitle }}</h2>
   </section>
-  <OrderStatusBanner v-if="visible('status')" :order="order" variant="jd" class="mb-4" />
-  <OrderProgress v-if="visible('progress')" :state="order.state" :order="order" variant="jd" class="mb-8" />
+  <OrderStatusBanner v-if="visible('status')" :order="order" variant="cn" class="mb-4" />
+  <OrderProgress v-if="visible('progress')" :state="order.state" :order="order" variant="cn" class="mb-8" />
 
   <OrderRedemptionCard
     v-if="pickup && visible('redemption')"
     :order-code="order.code"
     :pickup-name="pickupName"
     :highlight="orderBlockHighlight(config ?? null, 'redemption')"
-    variant="jd"
+    variant="cn"
     class="mb-4"
   />
 
@@ -48,7 +47,7 @@ const bar = "mr-1.5 h-[13px] w-[3px] rounded-sm bg-[#e1251b]";
   </section>
 
   <section v-if="visible('items')" :class="['mb-4', box]">
-    <h2 :class="titleCls"><span :class="bar" />{{ title('items', t('messages.shop.orderSummary')) }}</h2>
+    <h2 :class="titleCls">{{ title('items', t('messages.shop.orderSummary')) }}</h2>
     <OrderItems :order="order">
       <template #line-actions="scope">
         <slot name="line-actions" v-bind="scope" />
@@ -59,7 +58,7 @@ const bar = "mr-1.5 h-[13px] w-[3px] rounded-sm bg-[#e1251b]";
   <OrderPickupCard v-if="pickup && visible('pickup')" :order="order" :class="['mb-4', box]" />
 
   <section v-if="visible('totals')" :class="['mb-4 max-w-md', box]">
-    <h2 :class="titleCls"><span :class="bar" />{{ title('totals', t('messages.general.amount')) }}</h2>
+    <h2 :class="titleCls">{{ title('totals', t('messages.general.amount')) }}</h2>
     <OrderTotals :order="order" />
     <OrderShippingBreakdown :order="order" />
   </section>
@@ -68,5 +67,5 @@ const bar = "mr-1.5 h-[13px] w-[3px] rounded-sm bg-[#e1251b]";
     <OrderMetaCard :order="order" />
   </section>
 
-  <OrderActions v-if="visible('actions')" :order="order" variant="jd" class="mb-10" @updated="refresh" />
+  <OrderActions v-if="visible('actions')" :order="order" variant="cn" class="mb-10" @updated="refresh" />
 </template>

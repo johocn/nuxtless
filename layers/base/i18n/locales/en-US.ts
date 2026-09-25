@@ -673,6 +673,7 @@ export default defineI18nLocale(() =>
       netError: 'Network error',
       nonJsonResponse: 'Non-JSON response (HTTP {status})',
       graphqlError: 'GraphQL error',
+      merchantPickup: 'Pickup store',
     },
     billing: {
       recipient: "Recipient",

@@ -670,6 +670,7 @@ export const zhMessages = {
       netError: '网络错误',
       nonJsonResponse: '非 JSON 响应（HTTP {status}）',
       graphqlError: 'GraphQL 错误',
+      merchantPickup: '自提门店',
     },
     billing: {
       recipient: '收货人',
