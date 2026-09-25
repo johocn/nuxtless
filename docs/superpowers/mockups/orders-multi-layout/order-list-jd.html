@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>订单列表 · jd 版式</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#e9ebef}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#1f2937;-webkit-font-smoothing:antialiased}
+  .stage{width:390px;margin:0 auto;background:#f2f2f2;min-height:100vh}
+  .label{width:390px;margin:0 auto;padding:10px 12px;font-size:12px;color:#6b7280;background:#e9ebef}
+  .label b{color:#e1251b}
+
+  .navbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;background:#fff;padding:12px 14px;border-bottom:1px solid #eaeaea}
+  .navbar .back{width:16px;height:16px;border-left:2px solid #333;border-bottom:2px solid #333;transform:rotate(45deg)}
+  .navbar h1{font-size:16px;font-weight:700;margin:0;letter-spacing:.5px}
+  .navbar .spacer{flex:1}
+  .navbar .ico{font-size:15px;color:#888}
+
+  /* 京东：下划线 tab */
+  .tabs{display:flex;gap:2px;overflow-x:auto;background:#fff;padding:0 8px;border-bottom:1px solid #eee;position:sticky;top:45px;z-index:19}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:none;font-size:13.5px;padding:10px 12px;color:#666;white-space:nowrap;border-bottom:2px solid transparent}
+  .tab.on{color:#e1251b;font-weight:700;border-bottom-color:#e1251b}
+
+  /* 商家分区 */
+  .merchant{margin-top:10px;background:#fff;border-top:2px solid #e1251b}
+  .mhead{display:flex;align-items:center;gap:6px;padding:10px 12px;font-size:13.5px;font-weight:700;border-bottom:1px solid #f2f2f2}
+  .mhead .bar{width:3px;height:14px;border-radius:1px;background:#e1251b}
+  .mhead .spacer{flex:1}
+  .mhead .link{font-size:11.5px;font-weight:400;color:#999}
+
+  .order{border-bottom:1px solid #f2f2f2}
+  .ohead{display:flex;align-items:center;justify-content:space-between;padding:9px 12px 4px;font-size:11.5px;color:#9ca3af}
+  .ohead .no{font-family:ui-monospace,Menlo,monospace;color:#6b7280}
+  .ostate{font-size:12px;font-weight:600}
+  .s-warn{color:#d97706}
+  .s-info{color:#e1251b}
+  .s-ok{color:#16a34a}
+  .s-mute{color:#9ca3af}
+
+  .items{padding:2px 12px}
+  .item{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px dashed #f1f1f1}
+  .item:first-child{border-top:0}
+  .thumb{width:46px;height:46px;border-radius:4px;background:#f0f1f3;flex:none;display:flex;align-items:center;justify-content:center;color:#c2c7cf;font-size:16px}
+  .meta{flex:1;min-width:0}
+  .meta .nm{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta .sp{font-size:11px;color:#9ca3af;margin-top:2px}
+  .price{font-size:12.5px;font-weight:600;white-space:nowrap}
+  .price .q{color:#9ca3af;font-weight:400;margin-left:3px}
+
+  .ofoot{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:12px;color:#6b7280}
+  .ofoot .paid b{color:#e1251b;font-size:14px}
+  .oacts{display:flex;justify-content:flex-end;gap:6px;padding:0 12px 11px}
+  .btn{font-size:12px;padding:5px 13px;border-radius:4px;border:1px solid #ddd;background:#fff;color:#444;font-family:inherit}
+  .btn-red{border-color:#e1251b;color:#e1251b}
+  .btn-solid{background:#e1251b;border-color:#e1251b;color:#fff;font-weight:600}
+
+  .more{margin:14px 12px 30px;text-align:center}
+  .more button{font-size:13px;padding:8px 26px;border-radius:4px;border:1px solid #ddd;background:#fff;color:#666;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="label">版式 <b>jd</b>（京东风 · 下划线 tab + 商家分区 + 小圆角）／页面：订单列表</div>
+<div class="stage">
+  <div class="navbar">
+    <span class="back"></span>
+    <h1>我的订单</h1>
+    <span class="spacer"></span>
+    <span class="ico">⋯</span>
+  </div>
+
+  <div class="tabs">
+    <span class="tab on">全部</span>
+    <span class="tab">待支付</span>
+    <span class="tab">待发货</span>
+    <span class="tab">待收货</span>
+    <span class="tab">已完成</span>
+    <span class="tab">已取消</span>
+  </div>
+
+  <!-- 商家 1 -->
+  <div class="merchant">
+    <div class="mhead"><span class="bar"></span>京东自营旗舰店<span class="spacer"></span><span class="link">联系客服 ›</span></div>
+
+    <div class="order">
+      <div class="ohead">
+        <span>2026-09-25 10:24　<span class="no">#SEP20260925A1</span></span>
+        <span class="ostate s-warn">待支付</span>
+      </div>
+      <div class="items">
+        <div class="item">
+          <div class="thumb">▤</div>
+          <div class="meta"><div class="nm">无线蓝牙耳机 Pro</div><div class="sp">黑色 · 128G</div></div>
+          <div class="price">¥796.00<span class="q">×2</span></div>
+        </div>
+        <div class="item">
+          <div class="thumb">▤</div>
+          <div class="meta"><div class="nm">移动电源 10000mAh</div><div class="sp">白色</div></div>
+          <div class="price">¥99.00<span class="q">×1</span></div>
+        </div>
+      </div>
+      <div class="ofoot"><span>共 3 件</span><span class="paid">实付 <b>¥895.00</b></span></div>
+      <div class="oacts">
+        <button class="btn">取消订单</button>
+        <button class="btn btn-solid">去支付</button>
+      </div>
+    </div>
+
+    <div class="order">
+      <div class="ohead">
+        <span>2026-09-22 19:02　<span class="no">#SEP20260922C7</span></span>
+        <span class="ostate s-mute">已完成</span>
+      </div>
+      <div class="items">
+        <div class="item">
+          <div class="thumb">▤</div>
+          <div class="meta"><div class="nm">纯棉基础款 T 恤</div><div class="sp">白色 · L</div></div>
+          <div class="price">¥129.00<span class="q">×1</span></div>
+        </div>
+      </div>
+      <div class="ofoot"><span>共 1 件</span><span class="paid">实付 <b>¥129.00</b></span></div>
+      <div class="oacts">
+        <button class="btn">再次购买</button>
+        <button class="btn btn-red">查看详情</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 商家 2（自提） -->
+  <div class="merchant">
+    <div class="mhead"><span class="bar"></span>集自提门店<span class="spacer"></span><span class="link">联系客服 ›</span></div>
+
+    <div class="order">
+      <div class="ohead">
+        <span>2026-09-24 08:41　<span class="no">#SEP20260924B3</span></span>
+        <span class="ostate s-info">待收货</span>
+      </div>
+      <div class="items">
+        <div class="item">
+          <div class="thumb">▤</div>
+          <div class="meta"><div class="nm">保温杯 500ml</div><div class="sp">蓝色</div></div>
+          <div class="price">¥59.00<span class="q">×1</span></div>
+        </div>
+      </div>
+      <div class="ofoot"><span>共 1 件</span><span class="paid">实付 <b>¥59.00</b></span></div>
+      <div class="oacts">
+        <button class="btn">再次购买</button>
+        <button class="btn btn-red">查看详情</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="more"><button>加载更多</button></div>
+</div>
+</body>
+</html>

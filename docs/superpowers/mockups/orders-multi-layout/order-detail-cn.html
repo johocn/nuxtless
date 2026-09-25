@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>订单详情 · cn 版式</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#e9ebef}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#111827;-webkit-font-smoothing:antialiased}
+  .stage{width:390px;margin:0 auto;background:#f4f5f7;min-height:100vh;padding-bottom:28px}
+  .label{width:390px;margin:0 auto;padding:10px 12px;font-size:12px;color:#6b7280;background:#e9ebef}
+  .label b{color:#e1251b}
+
+  .navbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;background:#fff;padding:12px 14px;border-bottom:1px solid #eee}
+  .navbar .back{width:16px;height:16px;border-left:2px solid #333;border-bottom:2px solid #333;transform:rotate(45deg)}
+  .navbar h1{font-size:16px;font-weight:700;margin:0}
+  .navbar .spacer{flex:1}
+  .navbar .ico{font-size:15px;color:#666}
+
+  .wrap{padding:14px;display:flex;flex-direction:column;gap:12px}
+
+  /* 状态横幅 */
+  .banner{display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:12px;padding:16px;color:#fff;
+    background:linear-gradient(90deg,#0ea5e9,#6366f1);box-shadow:0 3px 12px rgba(99,102,241,.25)}
+  .banner .t{font-size:18px;font-weight:700}
+  .banner .c{font-size:12.5px;color:rgba(255,255,255,.82);margin-top:3px}
+  .banner .chip{flex:none;border-radius:999px;background:rgba(255,255,255,.22);padding:4px 11px;font-size:11.5px;font-weight:600}
+
+  /* 进度 */
+  .progress{display:flex;align-items:center;gap:6px;font-size:11.5px;padding:0 2px}
+  .step{border-radius:999px;padding:3px 10px;background:#eceef1;color:#6b7280}
+  .step.on{background:#e1251b;color:#fff;font-weight:600}
+  .line{height:1px;width:16px;background:#d1d5db}
+
+  /* 通用白卡 */
+  .card{background:#fff;border:1px solid #ececec;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);padding:15px}
+  .card h2{font-size:14px;font-weight:700;margin:0 0 11px}
+
+  /* 核销凭证（高光） */
+  .redeem{border:1px solid #f5e0b5;border-radius:16px;box-shadow:0 2px 10px rgba(217,155,40,.14);overflow:hidden;
+    background:linear-gradient(180deg,#fffaef,#ffffff)}
+  .redeem .rh{display:flex;align-items:center;justify-content:space-between;padding:13px 15px 6px}
+  .redeem .rh h2{margin:0;font-size:14px;font-weight:700}
+  .redeem .st{border-radius:999px;padding:2px 9px;font-size:11px;font-weight:600}
+  .st-pending{background:#fdeee0;color:#b45309}
+  .redeem .rb{padding:2px 15px 15px}
+  .codebox{display:flex;align-items:center;justify-content:space-between;border-radius:12px;padding:14px 16px;color:#fff;
+    background:linear-gradient(90deg,#dc2626,#f97316)}
+  .codebox .lb{font-size:11.5px;opacity:.85}
+  .codebox .code{margin-top:5px;font-family:ui-monospace,Menlo,monospace;font-size:29px;font-weight:800;letter-spacing:.3em}
+  .qr{width:78px;height:78px;flex:none;border-radius:6px;background:
+      repeating-conic-gradient(#111 0 25%,#fff 0 50%) 0 0/9px 9px;border:5px solid #fff}
+  .rrow{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-top:12px}
+  .rrow .k{color:#6b7280}
+  .rrow .v{font-weight:600;color:#1f2937}
+  .rexp{font-size:12px;color:#b45309;margin-top:7px}
+
+  /* 商品明细 */
+  .items{display:flex;flex-direction:column}
+  .item{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #f4f4f5}
+  .item:first-child{border-top:0;padding-top:0}
+  .thumb{width:58px;height:58px;border-radius:8px;background:linear-gradient(135deg,#eef0f3,#e2e5ea);flex:none;display:flex;align-items:center;justify-content:center;color:#b6bcc6;font-size:20px}
+  .meta{flex:1;min-width:0}
+  .meta .nm{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta .sp{font-size:11.5px;color:#9ca3af;margin-top:3px}
+  .rt{text-align:right;font-size:12px;color:#6b7280}
+  .rt b{display:block;font-size:14px;color:#111827;margin-top:3px}
+
+  /* 金额 */
+  .money{font-size:13px}
+  .money .row{display:flex;justify-content:space-between;padding:4px 0;color:#4b5563}
+  .money .row.disc{color:#dc2626}
+  .money .row.sum{border-top:1px solid #eee;margin-top:7px;padding-top:9px;font-size:15px;font-weight:700;color:#111827}
+  .money .row.sum span:last-child{color:#e1251b}
+
+  /* 元信息 */
+  .metaGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12.5px}
+  .metaGrid .k{color:#9ca3af;margin-bottom:3px;font-size:12px}
+  .metaGrid .v{font-weight:600}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+
+  /* 自提信息 */
+  .pk{display:flex;gap:10px}
+  .pk .pin{margin-top:2px;color:#e1251b;font-size:15px}
+  .pk .t{font-size:13.5px;font-weight:700}
+  .pk .l{font-size:12.5px;color:#6b7280;margin-top:5px;line-height:1.6}
+  .pk .sub{border-top:1px solid #f2f2f3;margin-top:9px;padding-top:9px}
+
+  /* 操作 */
+  .acts{display:flex;flex-wrap:wrap;gap:10px;padding-bottom:6px}
+  .btn{font-size:13px;padding:9px 18px;border-radius:999px;border:1px solid transparent;background:none;font-family:inherit}
+  .btn-err{background:#fee2e2;color:#dc2626}
+  .btn-pri{background:#e1251b;color:#fff;font-weight:600}
+  .btn-ghost{color:#6b7280;padding-left:4px}
+</style>
+</head>
+<body>
+<div class="label">版式 <b>cn</b>（中国本地化 · 渐变色状态头 + 高光核销卡）／页面：订单详情（自提 · 含核销码）</div>
+<div class="stage">
+  <div class="navbar">
+    <span class="back"></span>
+    <h1>订单详情</h1>
+    <span class="spacer"></span>
+    <span class="ico">⋯</span>
+  </div>
+
+  <div class="wrap">
+    <!-- 状态横幅 -->
+    <div class="banner">
+      <div>
+        <div class="t">待收货</div>
+        <div class="c">订单号: #SEP20260924B3</div>
+      </div>
+      <span class="chip">待收货</span>
+    </div>
+
+    <!-- 进度 -->
+    <div class="progress">
+      <span class="step on">下单</span><span class="line"></span>
+      <span class="step on">支付</span><span class="line"></span>
+      <span class="step on">发货</span><span class="line"></span>
+      <span class="step">完成</span>
+    </div>
+
+    <!-- 核销凭证（高光） -->
+    <section class="redeem">
+      <div class="rh">
+        <h2>核销凭证</h2>
+        <span class="st st-pending">未核销 · 待取货</span>
+      </div>
+      <div class="rb">
+        <div class="codebox">
+          <div>
+            <div class="lb">核销码</div>
+            <div class="code">7F3K9Q</div>
+          </div>
+          <div class="qr"></div>
+        </div>
+        <div class="rrow"><span class="k">自提点</span><span class="v">天河店</span></div>
+        <div class="rexp">有效期至 10-25　·　核销码即将过期，请尽快到店核销</div>
+      </div>
+    </section>
+
+    <!-- 商品明细 -->
+    <section class="card">
+      <h2>订单摘要</h2>
+      <div class="items">
+        <div class="item">
+          <div class="thumb">▤</div>
+          <div class="meta">
+            <div class="nm">保温杯 500ml</div>
+            <div class="sp">蓝色</div>
+          </div>
+          <div class="rt">×1<b>¥59.00</b></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 自提信息 -->
+    <section class="card">
+      <div class="pk">
+        <span class="pin">📍</span>
+        <div style="flex:1">
+          <div class="t">自提 / 核销信息</div>
+          <div class="l">
+            天河店<br>
+            广州市天河区软件路 18 号 1F<br>
+            营业时间 09:00-21:00<br>
+            联系电话: 020-8888 0000
+          </div>
+          <div class="l sub">
+            联系人: 李四<br>
+            联系电话: 139****0000
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 金额 -->
+    <section class="card">
+      <h2>金额</h2>
+      <div class="money">
+        <div class="row"><span>小计</span><span>¥59.00</span></div>
+        <div class="row"><span>配送</span><span>¥0.00</span></div>
+        <div class="row disc"><span>满 50 减 5</span><span>-¥5.00</span></div>
+        <div class="row sum"><span>合计</span><span>¥54.00</span></div>
+      </div>
+    </section>
+
+    <!-- 元信息 -->
+    <section class="card">
+      <div class="metaGrid">
+        <div><div class="k">订单号</div><div class="v mono">#SEP20260924B3</div></div>
+        <div><div class="k">日期</div><div class="v">2026/9/24</div></div>
+        <div><div class="k">支付方式</div><div class="v">微信支付</div></div>
+        <div><div class="k">配送方式</div><div class="v">到店自提</div></div>
+      </div>
+    </section>
+
+    <!-- 操作 -->
+    <div class="acts">
+      <button class="btn btn-err">取消订单</button>
+      <button class="btn btn-pri">再次购买</button>
+      <button class="btn btn-ghost">获取链接</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

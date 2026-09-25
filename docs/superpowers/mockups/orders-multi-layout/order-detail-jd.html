@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>订单详情 · jd 版式</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#e9ebef}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#1f2937;-webkit-font-smoothing:antialiased}
+  .stage{width:390px;margin:0 auto;background:#f2f2f2;min-height:100vh;padding-bottom:28px}
+  .label{width:390px;margin:0 auto;padding:10px 12px;font-size:12px;color:#6b7280;background:#e9ebef}
+  .label b{color:#e1251b}
+
+  .navbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;background:#fff;padding:12px 14px;border-bottom:1px solid #eaeaea}
+  .navbar .back{width:16px;height:16px;border-left:2px solid #333;border-bottom:2px solid #333;transform:rotate(45deg)}
+  .navbar h1{font-size:16px;font-weight:700;margin:0;letter-spacing:.5px}
+  .navbar .spacer{flex:1}
+  .navbar .ico{font-size:15px;color:#888}
+
+  .wrap{padding:10px;display:flex;flex-direction:column;gap:10px}
+
+  /* 状态横幅（京东红渐变） */
+  .banner{display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:6px;padding:15px 16px;color:#fff;
+    background:linear-gradient(90deg,#c8161d,#e1251b 60%,#f04b2f)}
+  .banner .t{font-size:18px;font-weight:700}
+  .banner .c{font-size:12px;color:rgba(255,255,255,.85);margin-top:4px}
+  .banner .chip{flex:none;border-radius:3px;background:rgba(255,255,255,.22);padding:4px 10px;font-size:11.5px;font-weight:600}
+
+  /* 进度（京东：方块步进） */
+  .progress{display:flex;align-items:center;gap:5px;font-size:11.5px;padding:0 2px}
+  .step{border-radius:3px;padding:3px 9px;background:#e9e9e9;color:#888}
+  .step.on{background:#e1251b;color:#fff;font-weight:600}
+  .line{height:1px;width:14px;background:#d6d6d6}
+
+  /* 卡片（小圆角） */
+  .card{background:#fff;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.05);padding:13px}
+  .card h2{font-size:13.5px;font-weight:700;margin:0 0 10px;display:flex;align-items:center;gap:6px}
+  .card h2 .bar{width:3px;height:13px;border-radius:1px;background:#e1251b}
+
+  /* 核销凭证 */
+  .redeem{background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.05);border-top:2px solid #e1251b}
+  .rh{display:flex;align-items:center;justify-content:space-between;padding:11px 13px 4px}
+  .rh h2{margin:0;font-size:13.5px;font-weight:700}
+  .st{border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;background:#fdeee0;color:#b45309}
+  .rb{padding:4px 13px 13px}
+  .codebox{display:flex;align-items:center;justify-content:space-between;border-radius:4px;padding:13px 15px;color:#fff;
+    background:linear-gradient(90deg,#c8161d,#e1251b 55%,#f04b2f)}
+  .codebox .lb{font-size:11px;opacity:.85}
+  .codebox .code{margin-top:5px;font-family:ui-monospace,Menlo,monospace;font-size:28px;font-weight:800;letter-spacing:.28em}
+  .qr{width:74px;height:74px;flex:none;border-radius:3px;background:
+      repeating-conic-gradient(#111 0 25%,#fff 0 50%) 0 0/8px 8px;border:5px solid #fff}
+  .rrow{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;margin-top:10px}
+  .rrow .k{color:#888}
+  .rrow .v{font-weight:600}
+  .rexp{font-size:11.5px;color:#b45309;margin-top:6px}
+
+  /* 商家分区 */
+  .merchant{background:#fff;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.05);overflow:hidden}
+  .mhead{display:flex;align-items:center;gap:6px;padding:11px 13px;font-size:13px;font-weight:700;border-bottom:1px solid #f2f2f2}
+  .mhead .bar{width:3px;height:13px;border-radius:1px;background:#e1251b}
+  .mhead .spacer{flex:1}
+
+  .items{padding:2px 13px}
+  .item{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px dashed #f1f1f1}
+  .item:first-child{border-top:0}
+  .thumb{width:54px;height:54px;border-radius:4px;background:#f0f1f3;flex:none;display:flex;align-items:center;justify-content:center;color:#c2c7cf;font-size:18px}
+  .meta{flex:1;min-width:0}
+  .meta .nm{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta .sp{font-size:11px;color:#9ca3af;margin-top:3px}
+  .rt{text-align:right;font-size:11.5px;color:#888}
+  .rt b{display:block;font-size:13.5px;color:#e1251b;margin-top:3px}
+
+  /* 金额 */
+  .money{font-size:12.5px}
+  .money .row{display:flex;justify-content:space-between;padding:4px 0;color:#555}
+  .money .row.disc{color:#e1251b}
+  .money .row.sum{border-top:1px solid #eee;margin-top:7px;padding-top:9px;font-size:15px;font-weight:700;color:#111}
+  .money .row.sum span:last-child{color:#e1251b}
+
+  /* 元信息 */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;font-size:12px}
+  .grid .k{color:#999;margin-bottom:3px}
+  .grid .v{font-weight:600}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+
+  /* 自提信息 */
+  .pk{display:flex;gap:9px}
+  .pk .pin{color:#e1251b;font-size:14px;margin-top:2px}
+  .pk .t{font-size:13px;font-weight:700}
+  .pk .l{font-size:12px;color:#666;margin-top:5px;line-height:1.6}
+  .pk .sub{border-top:1px dashed #eee;margin-top:8px;padding-top:8px}
+
+  /* 操作 */
+  .acts{display:flex;flex-wrap:wrap;gap:8px;padding:2px 2px 6px}
+  .btn{font-size:12.5px;padding:8px 16px;border-radius:4px;border:1px solid #ddd;background:#fff;color:#444;font-family:inherit}
+  .btn-red{border-color:#e1251b;color:#e1251b}
+  .btn-solid{background:#e1251b;border-color:#e1251b;color:#fff;font-weight:600}
+</style>
+</head>
+<body>
+<div class="label">版式 <b>jd</b>（京东风 · 红渐变状态头 + 商家分区小圆角卡）／页面：订单详情（自提 · 含核销码）</div>
+<div class="stage">
+  <div class="navbar">
+    <span class="back"></span>
+    <h1>订单详情</h1>
+    <span class="spacer"></span>
+    <span class="ico">⋯</span>
+  </div>
+
+  <div class="wrap">
+    <!-- 状态横幅 -->
+    <div class="banner">
+      <div>
+        <div class="t">待收货</div>
+        <div class="c">订单号: #SEP20260924B3</div>
+      </div>
+      <span class="chip">待收货</span>
+    </div>
+
+    <div class="progress">
+      <span class="step on">下单</span><span class="line"></span>
+      <span class="step on">支付</span><span class="line"></span>
+      <span class="step on">发货</span><span class="line"></span>
+      <span class="step">完成</span>
+    </div>
+
+    <!-- 核销凭证 -->
+    <section class="redeem">
+      <div class="rh">
+        <h2>核销凭证</h2>
+        <span class="st">未核销 · 待取货</span>
+      </div>
+      <div class="rb">
+        <div class="codebox">
+          <div>
+            <div class="lb">核销码</div>
+            <div class="code">7F3K9Q</div>
+          </div>
+          <div class="qr"></div>
+        </div>
+        <div class="rrow"><span class="k">自提点</span><span class="v">天河店</span></div>
+        <div class="rexp">有效期至 10-25　·　核销码即将过期，请尽快到店核销</div>
+      </div>
+    </section>
+
+    <!-- 商家分区：商品明细 -->
+    <section class="merchant">
+      <div class="mhead"><span class="bar"></span>集自提门店<span class="spacer"></span></div>
+      <div class="items">
+        <div class="item">
+          <div class="thumb">▤</div>
+          <div class="meta">
+            <div class="nm">保温杯 500ml</div>
+            <div class="sp">蓝色</div>
+          </div>
+          <div class="rt">×1<b>¥59.00</b></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 自提信息 -->
+    <section class="card">
+      <div class="pk">
+        <span class="pin">📍</span>
+        <div style="flex:1">
+          <div class="t">自提 / 核销信息</div>
+          <div class="l">
+            天河店<br>
+            广州市天河区软件路 18 号 1F<br>
+            营业时间 09:00-21:00<br>
+            联系电话: 020-8888 0000
+          </div>
+          <div class="l sub">
+            联系人: 李四<br>
+            联系电话: 139****0000
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 金额 -->
+    <section class="card">
+      <h2><span class="bar"></span>金额</h2>
+      <div class="money">
+        <div class="row"><span>小计</span><span>¥59.00</span></div>
+        <div class="row"><span>配送</span><span>¥0.00</span></div>
+        <div class="row disc"><span>满 50 减 5</span><span>-¥5.00</span></div>
+        <div class="row sum"><span>合计</span><span>¥54.00</span></div>
+      </div>
+    </section>
+
+    <!-- 元信息 -->
+    <section class="card">
+      <div class="grid">
+        <div><div class="k">订单号</div><div class="v mono">#SEP20260924B3</div></div>
+        <div><div class="k">日期</div><div class="v">2026/9/24</div></div>
+        <div><div class="k">支付方式</div><div class="v">微信支付</div></div>
+        <div><div class="k">配送方式</div><div class="v">到店自提</div></div>
+      </div>
+    </section>
+
+    <!-- 操作 -->
+    <div class="acts">
+      <button class="btn">取消订单</button>
+      <button class="btn btn-solid">再次购买</button>
+      <button class="btn btn-red">获取链接</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
