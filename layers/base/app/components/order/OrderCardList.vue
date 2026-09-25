@@ -5,7 +5,7 @@ const { t } = useI18n();
 const activeTab = defineModel<OrderTabKey>("tab", { default: "ALL" });
 
 const { loading, error, rawItems, orders, filtered, total, loadMore, changed } =
-  await useOrderList(activeTab);
+  useOrderList(activeTab);
 </script>
 
 <template>
