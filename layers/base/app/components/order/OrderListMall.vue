@@ -7,7 +7,7 @@ const activeTab = defineModel<OrderTabKey>({ required: true });
 const { t, locale } = useI18n();
 const localePath = useTenantLocalePath();
 const { loading, error, filtered, rawItems, total, loadMore, changed } =
-  await useOrderList(activeTab);
+  useOrderList(activeTab);
 
 const tabs = computed(() =>
   ORDER_TABS.map((tb) => ({ key: tb.key, label: t(tb.labelKey) })),
