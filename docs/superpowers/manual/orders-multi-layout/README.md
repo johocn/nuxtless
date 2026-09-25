@@ -109,10 +109,13 @@ python scripts\_shot_order_layouts.py
 | 其他路径 | → `http://127.0.0.1:8081`，且 **保留浏览器原始 Host**（`localhost:8080`） | SSR 里 `useRequestURL().origin` 由此得出；若 Host 变成 `127.0.0.1:8081`，同源 `/shop-api` 会打到本地 Nuxt 上变 404 |
 | 转发请求头 | 必须**先剔除原 `host` 头，再写一个新的 `Host`**（只留一个） | HTTP 头名大小写不敏感；原样透传会在 dict 里留下小写 `host`，再塞一个大写 `Host` 就变成**两个 Host 头** → openresty 直接 400（详见 §6） |
 
-探针脚本 `scripts/_shot_order_layouts.py` 为**本地探针**（`.gitignore` 忽略 `/scripts/_shot_*`，不提交），
-其行为：登录取已登录会话 → 用该会话构一笔**自提单**并由 superadmin 结算（生成核销码）→
+探针脚本 `scripts/_shot_order_layouts.py`（三版式 6 张图）与 `scripts/_shot_order_deeplink.py`（详情深链回归，见 §6.1 坑二）均为**本地探针**（`.gitignore` 忽略 `/scripts/_shot_*`，不提交），
+`_shot_order_layouts.py` 的行为：登录取已登录会话 → 用该会话构一笔**自提单**并由 superadmin 结算（生成核销码）→
 逐版式改写线上渠道 `orderListConfig`/`orderDetailConfig` → 截 6 张图 → **`finally` 立即还原渠道原值**。
 截图直接写入本手册 `shots/` 目录（`/scripts/shots/` 已被 gitignore，不作为交付路径）。
+
+> 深链回归（`_shot_order_deeplink.py`）跑法：`python scripts\_shot_order_deeplink.py`，
+> 它用**带 cookie 但不执行 JS** 的请求取纯 SSR HTML 做断言（修复前后差异见 §6.1 坑二）。
 
 ## 5. 与 mockup 的已知偏差（有意为之，勿当 bug）
 
@@ -158,14 +161,30 @@ python scripts\_shot_order_layouts.py
 
 修法：转发前按大小写不敏感地剔除 `host`，再写唯一一个 `Host`（见 §4 表第三行）。
 
-**坑二：订单详情深链 / 硬刷新会 404（既有缺陷，与本轮版式无关）**
+**坑二：订单详情深链 / 硬刷新 404（既有缺陷，2026-09-25 已修）**
 
-`layers/base/app/pages/account/orders/[code].vue` 用
-`await useAsyncGql("GetOrderByCode", { code })`（默认 `server: true`）。
-SSR 侧拿不到会话 token（`readVendureSessionToken()` 无 `document` 恒 `null`）→ SSR 结果
-`orderByCode = null` 被写进 payload → 客户端 hydrate 后不再重取 → 渲染「404 未找到订单」。
-从列表点「查看详情」走客户端导航则正常（此时没有 SSR payload，请求带 Authorization）。
-故**验收/截图必须从列表点入**，不要直接 `goto('/account/orders/<code>')`。
+根因不在详情页，而在 `layers/base/plugins/gql-session.ts`：注入 `Authorization` 的那段被
+`if (import.meta.client)` 挡住了。而登录态 `useAuthStore` 走 persistedstate 的 **cookies** 存储
+（见 `pinia-plugin-persistedstate` 的 nuxt 运行时 `runtime/plugin.js` 默认 `storages.cookies()`），
+SSR 阶段本来就能读到请求头里的 cookie —— 页面 `middleware/account.ts` 也正是靠这一点在服务端判登录。
+于是 SSR 期 `GetOrderByCode` 不带 Authorization → `orderByCode = null` 写进 payload →
+客户端 hydrate 后**不再重取** → 深链/硬刷新渲染「404 未找到订单」（从列表点入走客户端导航才正常，此时没有 SSR payload）。
+
+修法：去掉那个 `import.meta.client` 限制，SSR 同样从 authStore 取 token（try/catch 兜底，取不到即等同游客，行为不变）。
+
+回归（`scripts/_shot_order_deeplink.py`，390×844 / dpr2 手机视口）：
+
+![order-detail-deeplink](./shots/order-detail-deeplink.png)
+
+| 断言 | 修复前 | 修复后 |
+|---|---|---|
+| 纯 SSR HTML（不跑 JS）含订单号 /「订单详情」/「核销凭证」 | 否 | 是 |
+| SSR `__NUXT_DATA__` 里有真实自提字段（`"pickup"`） | 否（null） | 是 |
+| 页面渲染「未找到订单」 | 是 | 否 |
+
+> 判据说明：`核销码` 这个 label 只在客户端 `OrderRedemptionCode` 取码返回后才渲染，
+> SSR 里能看到的是核销卡标题「核销凭证」。故深链的 SSR 判据用「订单详情 + 核销凭证 + payload 含 pickup」，
+> **不要用「核销码」**；而截图（走完整客户端流程）里应当能看到真实码值。
 
 ## 7. 文件索引
 
@@ -178,4 +197,5 @@ SSR 侧拿不到会话 token（`readVendureSessionToken()` 无 `document` 恒 `n
 | `layers/base/app/components/order/OrderDetail{Cn,Jd,Mall}.vue` | 三个详情版式容器（`Cn`/`Mall` 新增，`Jd` 重写对齐 mockup） |
 | `layers/base/app/composables/useOrderList.ts` | 列表取数与过滤（4 版式共用，新增） |
 | `layers/base/app/composables/useOrder{List,Detail}Config.ts` | 读渠道配置并解析出版式 |
+| `layers/base/plugins/gql-session.ts` | GraphQL 会话注入；**SSR 也注入 Authorization**（修详情深链 404，见 §6.1 坑二） |
 | `layers/base/i18n/locales/{zh-CN,en-US}.ts` | 新增词条 `messages.order.merchantPickup`（双语言同步） |

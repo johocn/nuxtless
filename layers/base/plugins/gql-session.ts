@@ -38,13 +38,17 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     // 登录态 authStore 优先（权威来源），游客/异常上下文回退 cookie。
+    // 这里**不能**用 `import.meta.client` 限定：该 store 用 persistedstate 的 cookies
+    // 存储持久化（见 nuxt 模块 runtime/plugin.js 默认 storages.cookies），SSR 阶段照样
+    // 能读到请求头里的 cookie（页面 middleware/account 也依赖这一点）。
+    // 若在 SSR 禁掉，SSR 期的鉴权查询（如订单详情 GetOrderByCode）就不带 Authorization
+    // → 结果 null 被写进 payload，客户端 hydrate 后不再重取 → 直链/硬刷新订单详情
+    // 会误报「未找到订单」（既有缺陷，2026-09-25 修复）。
     let value: string | null = null;
-    if (import.meta.client) {
-      try {
-        value = useAuthStore().session?.token ?? null;
-      } catch {
-        value = null;
-      }
+    try {
+      value = useAuthStore().session?.token ?? null;
+    } catch {
+      value = null;
     }
     value = value ?? readVendureSessionToken();
     if (value) {
