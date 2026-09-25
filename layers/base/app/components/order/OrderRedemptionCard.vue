@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { OrderVisualVariant } from "../../utils/order-config";
+
 const { t } = useI18n();
 const gql = useGql();
 
@@ -9,7 +11,9 @@ const props = withDefaults(defineProps<{
   highlight?: boolean;
   /** 门店名（nullable：订单无自提信息则隐藏门店行） */
   pickupName?: string | null;
-}>(), { highlight: true, pickupName: null });
+  /** 版式变体（缺省 cn = 现状观感，classic / confirmation 调用方零回归） */
+  variant?: OrderVisualVariant;
+}>(), { highlight: true, pickupName: null, variant: "cn" });
 
 interface RedemptionResult {
   redemptionCode?: string | null;
@@ -68,28 +72,71 @@ const expiresText = computed(() => {
 });
 
 const fontScale = computed(() => props.highlight ? undefined : undefined); // 样式缩放由外层 config 传入
+
+/** 卡容器：cn=琥珀高光 / jd=白卡+2px 红顶边 / mall=珊瑚边+珊瑚投影 */
+const sectionClass = computed(() => {
+  if (props.variant === "jd") {
+    return [
+      "overflow-hidden rounded-md bg-white shadow-[0_1px_2px_#0000000d]",
+      props.highlight && "border-t-2 border-t-[#e1251b]",
+    ];
+  }
+  if (props.variant === "mall") {
+    return [
+      "overflow-hidden rounded-2xl border bg-white",
+      props.highlight
+        ? "border-[#ffe0dd] shadow-[0_4px_18px_#e0433f29]"
+        : "border-neutral-200",
+    ];
+  }
+  return [
+    "overflow-hidden rounded-2xl border shadow-sm",
+    props.highlight
+      ? "border-amber-150 from-amber-50 to-white bg-gradient-to-b dark:from-neutral-800 dark:to-neutral-900"
+      : "border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900",
+  ];
+});
+
+/** 码区：cn=brand 渐变 / jd=京东红渐变 / mall=珊瑚渐变；highlight=false 回退描边白底 */
+const codeBoxClass = computed(() => {
+  const radius = props.variant === "jd"
+    ? "rounded"
+    : props.variant === "mall" ? "rounded-2xl" : "rounded-xl";
+  if (!props.highlight) return [radius, "border border-neutral-200"];
+  const gradient = props.variant === "jd"
+    ? "from-[#c8161d] via-[#e1251b] to-[#f04b2f]"
+    : props.variant === "mall"
+      ? "from-[#e0433f] to-[#ff6a6c]"
+      : "from-brand-600 to-brand-500";
+  return [radius, "bg-gradient-to-r text-white", gradient];
+});
+
+/** 状态徽标圆角：jd 方块感，cn/mall 药丸 */
+const badgeRadius = computed(() => (props.variant === "jd" ? "rounded-sm" : "rounded-full"));
+/** 标题竖条：仅 mall 展示（珊瑚） */
+const showTitleBar = computed(() => props.variant === "mall");
 </script>
 
 <template>
-  <section
-    :class="['overflow-hidden rounded-2xl border shadow-sm',
-      props.highlight ? 'border-amber-150 from-amber-50 to-white bg-gradient-to-b dark:from-neutral-800 dark:to-neutral-900' : 'border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900']"
-  >
+  <section :class="sectionClass">
     <header class="flex items-center justify-between px-4 pb-2 pt-3">
-      <h2 class="font-semibold">{{ t("messages.order.redemptionTitle") }}</h2>
-      <span v-if="isExpired" class="rounded-full bg-neutral-200 px-2 py-0.5 text-xs font-medium text-neutral-600">
+      <h2 class="flex items-center font-semibold" :class="variant === 'mall' && 'font-extrabold'">
+        <span v-if="showTitleBar" class="mr-2 h-[15px] w-[5px] rounded bg-[#e0433f]" />
+        {{ t("messages.order.redemptionTitle") }}
+      </h2>
+      <span v-if="isExpired" class="bg-neutral-200 px-2 py-0.5 text-xs font-medium text-neutral-600" :class="badgeRadius">
         {{ t("messages.order.redeemStatusExpired") }}
       </span>
-      <span v-else-if="isExpiring" class="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-600">
+      <span v-else-if="isExpiring" class="bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-600" :class="badgeRadius">
         {{ t("messages.order.redeemStatusExpiring") }}
       </span>
-      <span v-else-if="isReissued" class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+      <span v-else-if="isReissued" class="bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700" :class="badgeRadius">
         {{ t("messages.order.redeemStatusReissued") }}
       </span>
-      <span v-else-if="isClaimed" class="rounded-full bg-neutral-200 px-2 py-0.5 text-xs font-medium text-neutral-500">
+      <span v-else-if="isClaimed" class="bg-neutral-200 px-2 py-0.5 text-xs font-medium text-neutral-500" :class="badgeRadius">
         {{ t("messages.order.redeemed") }}
       </span>
-      <span v-else class="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+      <span v-else class="bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700" :class="badgeRadius">
         {{ t("messages.order.redeemStatusPending") }}
       </span>
     </header>
@@ -101,9 +148,7 @@ const fontScale = computed(() => props.highlight ? undefined : undefined); // �
 
     <div v-else-if="result" class="px-4 pb-4">
       <!-- 码区：已过期置灰遮罩 -->
-      <div :class="['flex items-center justify-between rounded-xl px-4 py-3',
-        props.highlight ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white' : 'border border-neutral-200',
-        isExpired && 'opacity-60 grayscale']">
+      <div :class="['flex items-center justify-between px-4 py-3', codeBoxClass, isExpired && 'opacity-60 grayscale']">
         <div class="min-w-0">
           <p class="text-xs opacity-80">{{ t("messages.order.redemptionCodeLabel") }}</p>
           <p class="mt-1 break-all font-mono text-3xl font-bold tracking-[0.3em]">
