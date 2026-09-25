@@ -172,9 +172,7 @@ SSR 阶段本来就能读到请求头里的 cookie —— 页面 `middleware/acc
 
 修法：去掉那个 `import.meta.client` 限制，SSR 同样从 authStore 取 token（try/catch 兜底，取不到即等同游客，行为不变）。
 
-回归（`scripts/_shot_order_deeplink.py`，390×844 / dpr2 手机视口）：
-
-![order-detail-deeplink](./shots/order-detail-deeplink.png)
+回归（`scripts/_shot_order_deeplink.py`，390×844 / dpr2 手机视口；线上部署后的实拍见 §6.2.2）：
 
 | 断言 | 修复前 | 修复后 |
 |---|---|---|
@@ -185,6 +183,45 @@ SSR 阶段本来就能读到请求头里的 cookie —— 页面 `middleware/acc
 > 判据说明：`核销码` 这个 label 只在客户端 `OrderRedemptionCode` 取码返回后才渲染，
 > SSR 里能看到的是核销卡标题「核销凭证」。故深链的 SSR 判据用「订单详情 + 核销凭证 + payload 含 pickup」，
 > **不要用「核销码」**；而截图（走完整客户端流程）里应当能看到真实码值。
+
+## 6.2 线上部署与回归（2026-09-25）
+
+部署走 [scripts/deploy.mjs](../../../../scripts/deploy.mjs)（**本地构建 → scp `.output/` → 服务器解压/拷入 → `pm2 restart`**，服务器不构建、不装依赖）：
+
+```powershell
+cd d:\zhao\nshop
+node scripts/deploy.mjs
+# 读 .env 部署段：SERVER_HOST=joho、REMOTE_DIR=<openresty 站点目录>、SITE_PORT=3000、APP_NAME=nshop
+```
+
+部署对象 = 本地 HEAD（工作区干净，产物与提交一致），`nshop` 进程 `pm2 restart` 后 online；站点 `https://www.youshop.cn`。
+
+### 6.2.1 线上订单列表（默认 `card` 版式）
+
+![order-list-prod](./shots/order-list-prod.png)
+
+断言（登录态，390×844 / dpr2）：出现 tab 栏（全部/待支付/待发货/待收货/已完成/已取消）与订单行（「自提 / 核销信息 · 洗车 ×1 ¥20.00 · 待发货」），**不再停在「请稍候…」**（修复前恒卡加载态，见 §6 落地坑）。
+
+### 6.2.2 线上订单详情深链 / 硬刷新（自提单，含核销码）
+
+![order-detail-deeplink](./shots/order-detail-deeplink.png)
+
+| 断言 | 线上结果 |
+|---|---|
+| 纯 SSR HTML（不跑 JS、带 cookie）`status` | 200 |
+| SSR HTML 含订单号 /「订单详情」/「核销凭证」 | 是（单号出现 34 次） |
+| SSR `__NUXT_DATA__` 含真实自提字段（`"pickup"`） | 是 |
+| SSR HTML 含「未找到订单」 | 否 |
+| 真机路径（硬打开 / 硬刷新）含核销码且无「未找到订单」 | 是 / 无 |
+
+线上回归探针用法（`scripts/_shot_order_deeplink.py` 支持用环境变量把探针指向线上，**不必起本地反代**；默认仍指向本地 `localhost:8080`）：
+
+```powershell
+$env:SHOT_BASE="https://www.youshop.cn"; $env:SHOT_OUT="d:\zhao\nshop\scripts\shots"
+python scripts\_shot_order_deeplink.py
+```
+
+> 线上首屏较慢，探针必须先等 Nuxt hydration 完成再点登录，否则表单会走**原生 GET 提交**（凭据落到 query string、登录不生效）；脚本已内置该等待与重试。
 
 ## 7. 文件索引
 
