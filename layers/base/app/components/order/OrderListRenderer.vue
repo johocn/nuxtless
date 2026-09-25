@@ -7,7 +7,18 @@ const { layout } = useOrderListConfig();
 </script>
 
 <template>
-  <!-- 本期仅卡片版式；未来按 layout 扩展 classic/table -->
-  <OrderTabBar v-model="activeTab" />
-  <OrderCardList v-model:tab="activeTab" />
+  <!-- card（默认，沿用现状）｜cn｜jd｜mall：非法值已被 orderListLayout 收敛为 card -->
+  <template v-if="layout === 'cn'">
+    <OrderListCn v-model="activeTab" />
+  </template>
+  <template v-else-if="layout === 'jd'">
+    <OrderListJd v-model="activeTab" />
+  </template>
+  <template v-else-if="layout === 'mall'">
+    <OrderListMall v-model="activeTab" />
+  </template>
+  <template v-else>
+    <OrderTabBar v-model="activeTab" />
+    <OrderCardList v-model:tab="activeTab" />
+  </template>
 </template>
