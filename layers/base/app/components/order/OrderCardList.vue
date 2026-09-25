@@ -1,56 +1,11 @@
 <script setup lang="ts">
-import { SortOrder } from "~~/types/default";
 import type { OrderTabKey } from "../../utils/order-state";
-import { tabOfState } from "../../utils/order-state";
 
 const { t } = useI18n();
 const activeTab = defineModel<OrderTabKey>("tab", { default: "ALL" });
 
-const take = ref(10);
-const loading = ref(true);
-
-const { data, refresh, error } = await useAsyncGql(
-  "GetOrderHistory",
-  computed(() => ({
-    options: { sort: { createdAt: SortOrder.DESC }, take: take.value },
-  })),
-  { immediate: false, server: false },
-);
-
-const rawItems = computed(() => data.value?.activeCustomer?.orders?.items ?? []);
-const orders = computed(
-  () =>
-    rawItems.value.filter(
-      // 幽灵单（0 件 0 元）过滤：加购物车自动新建的空单 / 取消失败遗留空单不上榜
-      // 商户子单过滤：cross-channel 下单产生的 type=Seller 子订单仅面向商户结算/履约，
-      // 客户视角只展示自己的聚合单（type=Aggregate/Regular），否则会"一单变两单"（待支付配送单+待发货自提单）
-      (o) =>
-        Number((o as any).totalQuantity ?? 0) > 0 &&
-        (o as any).type !== "Seller",
-    ),
-);
-const total = computed(
-  () => data.value?.activeCustomer?.orders?.totalItems ?? 0,
-);
-const filtered = computed(() =>
-  activeTab.value === "ALL"
-    ? orders.value
-    : orders.value.filter((o) => tabOfState(o.state) === activeTab.value),
-);
-
-async function loadMore() {
-  take.value += 10;
-  await refresh();
-}
-
-onMounted(async () => {
-  await refresh();
-  loading.value = false;
-});
-
-async function changed() {
-  await refresh();
-}
+const { loading, error, rawItems, orders, filtered, total, loadMore, changed } =
+  await useOrderList(activeTab);
 </script>
 
 <template>

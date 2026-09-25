@@ -2,9 +2,16 @@
 // 兜底链：块级定制字段 → 块内建默认 → 全局默认(true / 'jd' / 占位)
 // 文案兜底链：当前 locale → defaultLocale → 首值 → ''（块内建占位 / i18n 兜底）
 
-export type OrderDetailLayout = "jd" | "classic" | "confirmation";
-export type OrderListLayout = "card";
+/** 订单版式视觉变体（共享积木据此选择圆角/配色） */
+export type OrderVisualVariant = "cn" | "jd" | "mall";
+export type OrderDetailLayout = "jd" | "classic" | "confirmation" | "cn" | "mall";
+export type OrderListLayout = "card" | "cn" | "jd" | "mall";
 export type LocalizedText = string | Record<string, string>;
+
+const ORDER_DETAIL_LAYOUTS: readonly OrderDetailLayout[] = [
+  "jd", "classic", "confirmation", "cn", "mall",
+];
+const ORDER_LIST_LAYOUTS: readonly OrderListLayout[] = ["card", "cn", "jd", "mall"];
 
 export interface OrderBlockCfg {
   visible?: boolean;
@@ -38,16 +45,19 @@ const ORDER_DETAIL_DEFAULT_VISIBLE: Record<string, boolean> = {
 };
 
 export function orderDetailLayout(cfg: OrderDetailConfig | null): OrderDetailLayout {
-  // 缺省/非法 → jd（默认京东版式）；confirmation 为结算确认场景专用版式
-  return cfg?.layout === "classic" ? "classic" : cfg?.layout === "confirmation" ? "confirmation" : "jd";
+  // 白名单校验：非法/缺省 → jd（沿用现状默认）；confirmation 为结算确认场景专用版式
+  const v = cfg?.layout as OrderDetailLayout | undefined;
+  return v && ORDER_DETAIL_LAYOUTS.includes(v) ? v : "jd";
 }
 
 /** 订单是否门店自提（核销码/自提信息块仅在自提单展示） */
 export function isPickupOrder(order: any): boolean {
   return (order?.customFields?.deliveryType ?? "") === "pickup";
 }
-export function orderListLayout(_cfg: OrderListConfig | null): OrderListLayout {
-  return "card"; // 本期仅卡片
+export function orderListLayout(cfg: OrderListConfig | null): OrderListLayout {
+  // 白名单校验：非法/缺省 → card（沿用现状默认，视觉零回归）
+  const v = cfg?.layout as OrderListLayout | undefined;
+  return v && ORDER_LIST_LAYOUTS.includes(v) ? v : "card";
 }
 export function orderDetailBlockVisible(cfg: OrderDetailConfig | null, key: string): boolean {
   return cfg?.blocks?.[key]?.visible ?? ORDER_DETAIL_DEFAULT_VISIBLE[key] ?? true;
