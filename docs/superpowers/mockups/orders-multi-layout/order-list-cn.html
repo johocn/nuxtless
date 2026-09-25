@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>订单列表 · cn 版式</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#e9ebef}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#111827;-webkit-font-smoothing:antialiased}
+  .stage{width:390px;margin:0 auto;background:#f4f5f7;min-height:100vh}
+  .label{width:390px;margin:0 auto;padding:10px 12px;font-size:12px;color:#6b7280;background:#e9ebef}
+  .label b{color:#e1251b}
+
+  /* 顶部标题栏 */
+  .navbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;background:#fff;padding:12px 14px;border-bottom:1px solid #eee}
+  .navbar .back{width:18px;height:18px;border-left:2px solid #333;border-bottom:2px solid #333;transform:rotate(45deg);opacity:.8}
+  .navbar h1{font-size:16px;font-weight:700;margin:0}
+  .navbar .spacer{flex:1}
+  .navbar .ico{font-size:15px;color:#666}
+
+  /* tab 药丸 */
+  .tabs{display:flex;gap:8px;overflow-x:auto;padding:12px 14px;background:#fff;border-bottom:1px solid #f0f0f0;position:sticky;top:45px;z-index:19}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:none;font-size:13px;padding:5px 13px;border-radius:999px;background:#f4f5f7;color:#4b5563;white-space:nowrap}
+  .tab.on{background:#e1251b;color:#fff;font-weight:600}
+
+  /* 卡片 */
+  .list{padding:12px 12px 24px;display:flex;flex-direction:column;gap:12px}
+  .card{background:#fff;border:1px solid #ececec;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);overflow:hidden}
+  .chead{display:flex;align-items:center;justify-content:space-between;padding:11px 13px 8px}
+  .chead .shop{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+  .chead .dot{width:15px;height:15px;color:#e1251b}
+  .badge{font-size:11px;padding:2px 9px;border-radius:999px;border:1px solid;line-height:1.5}
+  .b-warn{color:#b45309;border-color:#fcd9a4;background:#fff8ec}
+  .b-info{color:#0369a1;border-color:#bae0f5;background:#f0f9ff}
+  .b-ok{color:#047857;border-color:#b6e6ce;background:#f0fdf6}
+  .b-mute{color:#6b7280;border-color:#e5e7eb;background:#fafafa}
+
+  .items{padding:0 13px}
+  .item{display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid #f4f4f5}
+  .item:first-child{border-top:0}
+  .thumb{width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#eef0f3,#e2e5ea);flex:none;display:flex;align-items:center;justify-content:center;color:#b6bcc6;font-size:17px}
+  .meta{flex:1;min-width:0}
+  .meta .nm{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta .sp{font-size:11px;color:#9ca3af;margin-top:2px}
+  .price{font-size:13px;font-weight:600;white-space:nowrap}
+  .qty{color:#9ca3af;font-size:12px;margin-left:4px;font-weight:400}
+
+  .cfoot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #f1f1f2;margin:0 13px;padding:9px 0;font-size:12.5px;color:#6b7280}
+  .cfoot .paid b{color:#111827;font-size:14px}
+
+  .acts{display:flex;justify-content:flex-end;gap:8px;padding:0 13px 12px}
+  .btn{font-size:12.5px;padding:6px 15px;border-radius:999px;border:1px solid transparent;background:none;font-family:inherit}
+  .btn-soft{background:#f4f5f7;color:#374151}
+  .btn-softp{background:#fff1f0;color:#e1251b}
+  .btn-pri{background:#e1251b;color:#fff;font-weight:600}
+
+  .more{margin:6px 12px 30px;text-align:center}
+  .more button{font-size:13px;padding:8px 26px;border-radius:999px;border:0;background:#fff;color:#6b7280;box-shadow:0 1px 3px rgba(0,0,0,.06);font-family:inherit}
+</style>
+</head>
+<body>
+<div class="label">版式 <b>cn</b>（中国本地化 · 单卡片纵向流）／页面：订单列表</div>
+<div class="stage">
+  <div class="navbar">
+    <span class="back"></span>
+    <h1>我的订单</h1>
+    <span class="spacer"></span>
+    <span class="ico">⋯</span>
+  </div>
+
+  <div class="tabs">
+    <span class="tab on">全部</span>
+    <span class="tab">待支付</span>
+    <span class="tab">待发货</span>
+    <span class="tab">待收货</span>
+    <span class="tab">已完成</span>
+    <span class="tab">已取消</span>
+  </div>
+
+  <div class="list">
+    <!-- 待支付 -->
+    <div class="card">
+      <div class="chead">
+        <div class="shop"><span class="dot">🏬</span>自营</div>
+        <span class="badge b-warn">待支付</span>
+      </div>
+      <div class="items">
+        <div class="item">
+          <div class="thumb">▤</div>
+          <div class="meta">
+            <div class="nm">无线蓝牙耳机 Pro</div>
+            <div class="sp">黑色 · 128G</div>
+          </div>
+          <div class="price">¥796.00<i class="qty">×2</i></div>
+        </div>
+        <div class="item">
+          <div class="thumb">▤</div>
+          <div class="meta">
+            <div class="nm">移动电源 10000mAh</div>
+            <div class="sp">白色</div>
+          </div>
+          <div class="price">¥99.00<i class="qty">×1</i></div>
+        </div>
+      </div>
+      <div class="cfoot">
+        <span>共 3 件</span>
+        <span class="paid">实付 <b>¥895.00</b></span>
+      </div>
+      <div class="acts">
+        <button class="btn btn-soft">取消订单</button>
+        <button class="btn btn-pri">去支付</button>
+      </div>
+    </div>
+
+    <!-- 待收货（自提） -->
+    <div class="card">
+      <div class="chead">
+        <div class="shop"><span class="dot">🏬</span>自提 / 核销信息</div>
+        <span class="badge b-info">待收货</span>
+      </div>
+      <div class="items">
+        <div class="item">
+          <div class="thumb">▤</div>
+          <div class="meta">
+            <div class="nm">保温杯 500ml</div>
+            <div class="sp">蓝色</div>
+          </div>
+          <div class="price">¥59.00<i class="qty">×1</i></div>
+        </div>
+      </div>
+      <div class="cfoot">
+        <span>共 1 件</span>
+        <span class="paid">实付 <b>¥59.00</b></span>
+      </div>
+      <div class="acts">
+        <button class="btn btn-softp">再次购买</button>
+        <button class="btn btn-pri">查看详情</button>
+      </div>
+    </div>
+
+    <!-- 已完成 -->
+    <div class="card">
+      <div class="chead">
+        <div class="shop"><span class="dot">🏬</span>自营</div>
+        <span class="badge b-ok">已完成</span>
+      </div>
+      <div class="items">
+        <div class="item">
+          <div class="thumb">▤</div>
+          <div class="meta">
+            <div class="nm">纯棉基础款 T 恤</div>
+            <div class="sp">白色 · L</div>
+          </div>
+          <div class="price">¥129.00<i class="qty">×1</i></div>
+        </div>
+      </div>
+      <div class="cfoot">
+        <span>共 1 件</span>
+        <span class="paid">实付 <b>¥129.00</b></span>
+      </div>
+      <div class="acts">
+        <button class="btn btn-softp">再次购买</button>
+        <button class="btn btn-pri">查看详情</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="more"><button>加载更多</button></div>
+</div>
+</body>
+</html>
