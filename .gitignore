@@ -93,7 +93,10 @@ _shot_c_price.py
 tmp/_*
 tmp/dbg-*
 tmp/debug-*
-tmp/probe-tables.mjs
+tmp/probe-*
+tmp/repro-*
+tmp/recheck-*
 tmp-shots/
 
-# local brainstorm visual-companion dirs.superpowers/
+# local brainstorm visual-companion dirs（原行末缺换行，.superpowers/ 曾被注释吞掉而失效）
+.superpowers/
