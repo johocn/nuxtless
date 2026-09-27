@@ -23,7 +23,12 @@ const title = computed(() =>
   // 后台标题优先（LocalizedText 逐级回退），缺省回退 i18n 静态词条
   localizeText(props.section.title, locale.value) ?? t("messages.general.recommendations"),
 );
-const take = computed(() => (layout.value === "masonry" ? 8 : 10));
+// 显式 limit（1-30）优先；缺省按版式默认（compact/single 10、masonry 8）
+const take = computed(() => {
+  const l = props.section.limit;
+  if (typeof l === "number" && Number.isInteger(l) && l > 0) return Math.min(l, 30);
+  return layout.value === "masonry" ? 8 : 10;
+});
 
 // 与子组件渲染的布局一一对应，从而共用同一份「模块级配送选择」状态（useModuleDelivery 的 useState 按 moduleId 共享）
 const moduleId = computed(() =>
@@ -58,7 +63,7 @@ async function loadChannelFacet(): Promise<{ dual: boolean; ids: Record<string, 
 }
 
 // 按 collectionSlug 取 key：同 collection 的多个 goods 区块 SSR 不去重各自查一次（受后台"每风格商品区块 ≤2"约束）
-const key = `goods-block-${props.section.collectionId ?? "auto"}`;
+const key = `goods-block-${props.section.collectionId ?? "auto"}${props.section.limit ? `-${take.value}` : ""}`;
 const { data } = await useAsyncData(
   key,
   async () => {
