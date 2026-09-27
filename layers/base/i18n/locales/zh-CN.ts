@@ -44,6 +44,7 @@ export const zhMessages = {
       selectCity: '选择城市',
       locating: '定位中…',
       hotCities: '热门城市',
+      availableCities: '可用城市',
       noCityData: '该省暂无城市数据',
       more: '更多 ›',
       brandFlash: '品牌闪购',

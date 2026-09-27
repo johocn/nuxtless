@@ -42,6 +42,7 @@ export default defineI18nLocale(() =>
       selectCity: "Select City",
       locating: "Locating…",
       hotCities: "Hot Cities",
+      availableCities: "Available Cities",
       noCityData: "No city data for this region",
       more: "More ›",
       brandFlash: "Brand Flash Sale",

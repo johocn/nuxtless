@@ -24,6 +24,7 @@ export default defineI18nLocale(() =>
       selectCity: "Stadt wählen",
       locating: "Wird geortet…",
       hotCities: "Beliebte Städte",
+      availableCities: "Verfügbare Städte",
       noCityData: "Für diese Provinz liegen keine Städtedaten vor",
       more: "Mehr ›",
       brandFlash: "Marken-Blitzangebot",

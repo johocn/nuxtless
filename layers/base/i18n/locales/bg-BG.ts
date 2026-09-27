@@ -24,6 +24,7 @@ export default defineI18nLocale(() =>
       selectCity: "Изберете град",
       locating: "Определяне на местоположението…",
       hotCities: "Популярни градове",
+      availableCities: "Налични градове",
       noCityData: "За тази провинция няма данни за градове",
       more: "Още ›",
       brandFlash: "Светкавични оферти на марки",

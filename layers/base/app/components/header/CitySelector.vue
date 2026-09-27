@@ -5,6 +5,9 @@ import type { DistrictNode } from "~~/.nuxt/gql/default";
 const locationStore = useLocationStore();
 const { t } = useI18n();
 
+// 可用城市：按渠道配送能力推导（仅自提渠道自动预取；含快递渠道按需加载）
+const { cities: availableCities, ensureLoaded: ensureAvailableCities } = useAvailableCities();
+
 const open = ref(false);
 const locating = ref(false);
 
@@ -35,6 +38,8 @@ onMounted(() => {
 
 async function openPanel() {
   open.value = true;
+  // 打开面板时触发一次「按需加载」（含快递渠道走惰性聚合；已加载则幂等跳过）
+  void ensureAvailableCities();
   if (!provinces.value.length) await loadProvinces();
 }
 
@@ -113,8 +118,24 @@ async function reLocate() {
           {{ locationStore.error }}
         </p>
 
-        <!-- 热门城市 -->
-        <div class="mb-3">
+        <!-- 可用城市（按配送能力推导）；非空时替代热门城市（热门城市可能对本站不可达，属误导） -->
+        <div v-if="availableCities.length" class="mb-3">
+          <p class="mb-1.5 text-xs text-neutral-500">{{ t('messages.nav.availableCities') }}</p>
+          <div class="flex flex-wrap gap-1.5">
+            <UButton
+              v-for="name in availableCities"
+              :key="name"
+              size="xs"
+              variant="soft"
+              color="neutral"
+              :label="name"
+              @click="selectCity({ name })"
+            />
+          </div>
+        </div>
+
+        <!-- 热门城市（可用城市为空时保持现状：无自提配置的渠道零回归） -->
+        <div v-else class="mb-3">
           <p class="mb-1.5 text-xs text-neutral-500">{{ t('messages.nav.hotCities') }}</p>
           <div class="flex flex-wrap gap-1.5">
             <UButton
