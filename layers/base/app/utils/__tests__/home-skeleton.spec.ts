@@ -71,7 +71,7 @@ describe('resolveHomeSections · 运营区块覆盖槽位', () => {
     expect(hot.section).toMatchObject({ limit: 4 });
     const extra = out.filter((r) => r.slotKey === null);
     expect(extra.length).toBe(1);
-    expect(extra[0].section).toMatchObject({ type: 'hot', limit: 6 });
+    expect(extra[0]!.section).toMatchObject({ type: 'hot', limit: 6 });
     expect(out[out.length - 1]).toBe(extra[0]);
   });
   it('未纳入骨架的类型（richText）保持原序追加末尾', () => {
