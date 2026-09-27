@@ -61,6 +61,35 @@ query GetProductsByIds($ids: [String!]) {
   }
 }
 
+# 装修积木「推荐商品」按 slug 直取（source='slugs'）：一次请求返回商品主数据 +
+# 变体含税价 / listPrice，供 useCuratedGoods 组装商品卡（SearchItem 无 customFields）。
+query GetProductsBySlugs($slugs: [String!]) {
+  products(options: { filter: { slug: { in: $slugs } } }) {
+    items {
+      id
+      name
+      slug
+      featuredAsset {
+        id
+        preview
+      }
+      variants {
+        currencyCode
+        price
+        priceWithTax
+        customFields {
+          listPrice
+        }
+      }
+      customFields {
+        belongCity
+        serviceCities
+        deliveryMethods
+      }
+    }
+  }
+}
+
 query VariantNearbyStock(
   $productId: ID!
   $variantId: ID

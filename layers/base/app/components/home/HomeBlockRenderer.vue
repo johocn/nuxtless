@@ -6,6 +6,8 @@ import NoticeBlock from "./blocks/NoticeBlock.vue";
 import NavGrid from "./blocks/NavGrid.vue";
 import GoodsFloor from "./blocks/GoodsFloor.vue";
 import RichTextView from "./blocks/RichTextView.vue";
+import HotGoodsBlock from "./blocks/HotGoodsBlock.vue";
+import RecommendGoodsBlock from "./blocks/RecommendGoodsBlock.vue";
 import type { ShopSection } from "../../utils/shop-content";
 
 const props = defineProps<{ sections: ShopSection[] }>();
@@ -16,6 +18,9 @@ const componentMap: Record<string, any> = {
   nav: NavGrid,
   goods: GoodsFloor,
   richText: RichTextView,
+  // 热门 / 推荐商品区块（组件对象直接绑定，不走字符串名，避免被当作 custom element）
+  hot: HotGoodsBlock,
+  recommend: RecommendGoodsBlock,
 };
 </script>
 

@@ -3,12 +3,11 @@
 // 块显隐走 blockVisible 兜底链（L2 配置 → 内建默认 → true）
 import { computed } from "vue";
 import { useDetailConfig } from "../../composables/useDetailConfig";
-import { blockVisible } from "../../utils/detail-config";
+import { blockVisible, productHasHotelRoom } from "../../utils/detail-config";
 const { config } = useDetailConfig();
 const productStore = useProductStore();
-const parseHotel = (raw: unknown) => { if (typeof raw !== 'string') return raw ?? null; try { return JSON.parse(raw); } catch { return null; } };
-const hotelRaw = computed(() => parseHotel(productStore.selectedVariant?.customFields?.hotelRoomConfig));
-const isHotel = computed(() => !!hotelRaw.value);
+// 与 ProductDetailRenderer 同一判据（任一变体含 hotelRoomConfig），SSR/CSR 一致
+const isHotel = computed(() => productHasHotelRoom(productStore.product?.variants));
 const v = (k: string) => blockVisible(config.value, k);
 </script>
 

@@ -47,6 +47,50 @@ export function detailLayout(cfg: DetailConfig | null): DetailLayout {
   return l === 'floor' || l === 'dualBuy' || l === 'hotel' || l === 'mall' ? l : 'classic';
 }
 
+// ── 酒店版式自动命中（纯函数，SSR 友好）────────────────────────────
+// hotelRoomConfig 落 text 列（Vendure 3.6 无 json 字段类型），存 JSON 字符串；
+// 坏 JSON / 非字符串 → null，视为「无房型配置」。
+export function parseHotelRoomConfig(raw: unknown): Record<string, unknown> | null {
+  if (raw == null) return null;
+  if (typeof raw === 'object') return raw as Record<string, unknown>;
+  if (typeof raw !== 'string') return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+// 该商品的**任一变体**配置了 hotelRoomConfig → 视为酒店房型商品。
+// 用变体集合（而非「当前选中变体」）判定，保证 SSR 与 CSR 判定一致、避免 hydration mismatch。
+export function productHasHotelRoom(variants: readonly unknown[] | null | undefined): boolean {
+  if (!Array.isArray(variants)) return false;
+  return variants.some(
+    (v) =>
+      parseHotelRoomConfig(
+        (v as { customFields?: { hotelRoomConfig?: unknown } } | null)?.customFields?.hotelRoomConfig,
+      ) != null,
+  );
+}
+
+// 「后台显式覆盖为非 hotel 版式」：只有 floor / dualBuy / mall 算显式覆盖。
+// classic 视为「未指定」——t2 的 detailConfig.layout 即为 classic，按设计 classic + 含房型 → 自动命中 hotel。
+export function isExplicitNonHotelLayout(cfg: DetailConfig | null): boolean {
+  const l = cfg?.layout;
+  return l === 'floor' || l === 'dualBuy' || l === 'mall';
+}
+
+// 最终生效版式：后台显式非 hotel 覆盖优先；否则商品含房型 → hotel；再否则按配置（默认 classic）。
+export function resolveDetailLayout(
+  cfg: DetailConfig | null,
+  variants: readonly unknown[] | null | undefined,
+): DetailLayout {
+  if (isExplicitNonHotelLayout(cfg)) return detailLayout(cfg);
+  if (productHasHotelRoom(variants)) return 'hotel';
+  return detailLayout(cfg);
+}
+
 // 逐级兜底：层1 块定制 visible → 层2 内建默认 → true
 export function blockVisible(cfg: DetailConfig | null, key: string): boolean {
   return cfg?.blocks?.[key]?.visible ?? BLOCK_DEFAULT_VISIBLE[key] ?? true;

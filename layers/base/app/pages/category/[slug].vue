@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MenuCollections, ChildCollection, TopLevelCollection } from "~~/types/collection";
+import type { ChildCollection, TopLevelCollection } from "~~/types/collection";
 import { isSortKey, toSortParam } from "../../utils/collection-sort";
 import type { SortKey } from "../../utils/collection-sort";
 
@@ -14,38 +14,14 @@ const ogColorMode = computed<"dark" | "light">(() =>
   colorMode.value === "dark" ? "dark" : "light",
 );
 
-const menuCollections = useState<MenuCollections | null>("menuCollections", () => null);
-const rawGql = useGql();
-
-// SSR 安全地补齐顶部分类集合：menuCollections 是 app.vue 里仅客户端加载的共享 state
-// （server:false），SSR 首帧为空 → 下方 currentCollection 未命中即 throw，导致 /category/* 500。
-// 这里用 setup 顶层绑定的原始 gql client 在 SSR 期按需补取一次 GetMenuCollections
-// （与首页 index.vue 的 SSR-safe 二次取数同法，避免在单个 useAsyncData 内连 await 多个
-// useAsyncGql 丢失 Nuxt 实例上下文）。命中则写回共享 state，客户端 hydration 后沿用。
-const { data: menuSsrData } = await useAsyncData<MenuCollections | null>(
-  "category-menu-collections",
-  async () => {
-    if (menuCollections.value?.collections?.items?.length) {
-      return menuCollections.value;
-    }
-    try {
-      const res = await rawGql("GetMenuCollections");
-      return res?.collections?.items?.length ? (res as unknown as MenuCollections) : null;
-    } catch {
-      return null;
-    }
-  },
-  { server: true },
-);
-// 补取结果写回共享 state；未命中（无顶部分类）仅影响渲染，不 throw
-if (menuSsrData.value && !menuCollections.value?.collections?.items?.length) {
-  menuCollections.value = menuSsrData.value;
-}
+// 顶部分类：SSR 预取菜单集合（useMenuCollections 内置 800ms 护栏）。替换原内联的 SSR 补取，
+// 与首页共用同一 useAsyncData key 与共享 state；超时/失败返回空集合，正常渲染（不 throw）。
+const { collections: menuCollections } = await useMenuCollections();
 
 const slug = useRouteParam("slug");
 
 const menuItems = computed<TopLevelCollection[]>(() =>
-  ((menuSsrData.value ?? menuCollections.value)?.collections?.items ?? []) as TopLevelCollection[],
+  (menuCollections.value?.collections?.items ?? []) as TopLevelCollection[],
 );
 
 const currentCollection = computed<TopLevelCollection | null>(() =>
@@ -77,7 +53,7 @@ function currentCollectionSlugIsChildOf(col: TopLevelCollection) {
 }
 
 // 合法顶部分类 slug 才能命中集合；未命中走正常渲染（搜索/商品查询自然返回空）而非 throw 500。
-// currentCollection 为 computed，SSR 期已被 menuSsrData 补取，始终安全。
+// currentCollection 为 computed；SSR 期由 useMenuCollections 预取（800ms 护栏），超时也不 throw。
 const childCollections = computed(() =>
   currentCollection.value && "children" in currentCollection.value
     ? (currentCollection.value.children ?? [])

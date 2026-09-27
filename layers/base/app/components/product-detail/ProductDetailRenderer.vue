@@ -5,8 +5,10 @@ import DetailDualBuy from "./DetailDualBuy.vue";
 import DetailHotel from "./DetailHotel.vue";
 import DetailMall from "./DetailMall.vue";
 import { useDetailConfig } from "../../composables/useDetailConfig";
+import { resolveDetailLayout } from "../../utils/detail-config";
 
-const { layout, config, visible } = useDetailConfig();
+const { config, visible } = useDetailConfig();
+const productStore = useProductStore();
 
 const componentMap: Record<string, any> = {
   classic: DetailClassic,
@@ -15,11 +17,16 @@ const componentMap: Record<string, any> = {
   hotel: DetailHotel,
   mall: DetailMall,
 };
+
+// 版式自动命中：后台显式覆盖为非 hotel 版式（floor/dualBuy/mall）时以配置为准；
+// 否则该商品任一变体含 hotelRoomConfig → hotel 版式；再否则按配置（默认 classic）。
+// 判定基于变体集合而非「当前选中变体」，SSR 与 CSR 一致，避免 hydration mismatch。
+const layout = computed(() => resolveDetailLayout(config.value, productStore.product?.variants));
 </script>
 
 <template>
   <div>
-    <!-- hotel 版式：商品变体已配置 hotelRoomConfig 时渲染酒店块；否则回退经典版式（DetailHotel v-else 槽位） -->
+    <!-- hotel 版式：商品任一变体配置了 hotelRoomConfig 时渲染酒店块；无房型时回退经典版式（DetailHotel v-else 槽位） -->
     <DetailHotel v-if="layout === 'hotel'" :config="config">
       <DetailClassic :config="config" />
     </DetailHotel>

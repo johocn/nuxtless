@@ -10,7 +10,7 @@ import { enrichWithListPrice, listCentsMap } from "../../layers/base/app/utils/d
 import { deliveryFacetFilter } from "../../layers/base/app/utils/delivery-modes";
 import type { SearchResult } from "~~/types/product";
 import type { TaxMode } from "../../layers/base/app/utils/tax-price";
-import type { MenuCollections, TopLevelCollection } from "~~/types/collection";
+import type { TopLevelCollection } from "~~/types/collection";
 // 显式 import Jd 组件并以其注册名使用，避免字符串组件名被当作 custom element 渲染成空标签
 // （SSR 输出 <!---->、客户端输出 <jdcategorynav></jdcategorynav>）——与既有 home 区块修复模式一致。
 import JdCategoryNav from "../../layers/base/app/components/home/jd/JdCategoryNav.vue";
@@ -26,8 +26,9 @@ import HomeBlockRenderer from "../../layers/base/app/components/home/HomeBlockRe
 const { t, tm } = useI18n();
 const localePath = useTenantLocalePath();
 
-// 1) 顶部分类：菜单集合（含 featuredAsset / children）
-const menuCollections = useState<MenuCollections>("menuCollections");
+// 1) 顶部分类：SSR 预取菜单集合（useMenuCollections 内置 800ms 护栏，超时/失败由 app.vue
+//    的客户端兜底加载填充）——不再依赖 app.vue 的仅客户端加载，首帧即可渲染分类导航
+const { collections: menuCollections } = await useMenuCollections();
 const topCategories = computed<TopLevelCollection[]>(
   () => (menuCollections.value?.collections?.items ?? []) as TopLevelCollection[],
 );

@@ -38,16 +38,29 @@ const { showDeliveryPicker, lockedMode } = useChannelDeliveryCapability();
 watch(lockedMode, (m) => { if (m) setDelivery(m); }, { immediate: true });
 // 父层（GoodsFloor）已按配送维度做服务端 facet 过滤时，本地只保留城市维度判定
 const serverFiltered = computed(() => props.deliveryFilteredServer === true);
+// 无 slug 的商品不可路由（路由为 /product/[slug]）：归一化阶段过滤，避免渲染出 href="/product" 的
+// 死链卡片；仅告警一次，便于运营发现数据问题（不静默、也不阻塞其余商品展示）。
+let warnedMissingSlug = false;
+const validProducts = computed(() =>
+  props.products.filter((p) => {
+    if (p.slug) return true;
+    if (!warnedMissingSlug) {
+      warnedMissingSlug = true;
+      console.warn("[JdProductGrid] 存在无 slug 的商品，已跳过其可点卡片", p);
+    }
+    return false;
+  }),
+);
 const visibleItems = computed(() =>
   filterEnabled.value
-    ? props.products.filter((p) =>
+    ? validProducts.value.filter((p) =>
         isProductVisible(p, {
           city: cityName.value || null,
           delivery: delivery.value,
           deliveryFilteredServer: serverFiltered.value,
         }),
       )
-    : props.products,
+    : validProducts.value,
 );
 
 function format(item?: SearchItem, currencyCode?: string | null) {
