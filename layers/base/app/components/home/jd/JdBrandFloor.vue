@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 // JD 风格「品牌闪购」横向楼层（品牌 logo 横向滚动墙）
 // nshop 无独立品牌(channel)列表数据，不强造品牌，改为复用顶部分类(collection)的
 // 封面图( featuredAsset )作为品牌 logo，点击进入对应分类页，符合"系统中没有的功能用已有方案替换"。
@@ -10,6 +10,10 @@ const { t } = useI18n();
 const menuCollections = useState<MenuCollections>("menuCollections");
 const cats = computed(() => menuCollections.value?.collections?.items ?? []);
 
+const props = withDefaults(defineProps<{ title?: string }>(), { title: undefined });
+/** 标题：装修配置优先，缺省回退既有 i18n 文案（视觉零改动） */
+const heading = computed(() => props.title?.trim() || t('messages.nav.brandFlash'));
+
 function linkFor(slug: string) {
   return slug ? localePath(`/category/${slug}`) : localePath("/");
 }
@@ -18,7 +22,7 @@ function linkFor(slug: string) {
 <template>
   <section class="mx-2 mt-2 rounded-lg bg-white p-3">
     <div class="mb-3 flex items-center justify-between">
-      <h2 class="text-base font-bold text-gray-800">{{ t('messages.nav.brandFlash') }}</h2>
+      <h2 class="text-base font-bold text-gray-800">{{ heading }}</h2>
       <NuxtLink :to="cats[0] ? linkFor(cats[0].slug) : localePath('/')" class="text-xs text-primary">
         {{ t('messages.nav.viewMore') }} ›
       </NuxtLink>
