@@ -25,6 +25,7 @@ export default defineI18nLocale(() =>
       selectCity: "都市を選択",
       locating: "位置情報を取得中…",
       hotCities: "人気の都市",
+      availableCities: "ご利用可能な都市",
       noCityData: "この省には都市データがありません",
       more: "もっと見る ›",
       brandFlash: "ブランドセール",

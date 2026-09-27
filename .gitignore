@@ -95,7 +95,10 @@ tmp/dbg-*
 tmp/debug-*
 tmp/probe-*
 tmp/repro-*
+tmp/repro/
 tmp/recheck-*
+tmp/*.html
+tmp/*.png
 tmp-shots/
 
 # local brainstorm visual-companion dirs（原行末缺换行，.superpowers/ 曾被注释吞掉而失效）

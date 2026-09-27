@@ -6,6 +6,8 @@
  *
  * getServiceInfo 返回结构化结果（含可购买城市列表），供「可购买城市」面板复用。
  */
+import { matchCity } from "../utils/city-match";
+
 export type ServiceReason = "ok" | "no-city" | "not-served";
 export interface ServiceInfo {
   serviceable: boolean;
@@ -27,9 +29,7 @@ export function useCityService() {
     } | null;
   }
 
-  const matchCity = (name: string, city: string) =>
-    name === city || city.startsWith(name) || name.startsWith(city);
-
+  // 统一口径：复用 utils/city-match 的 matchCity（归一化 + 相等/前缀），与可见性过滤同源
   function getServiceInfo(product: ServiceableProduct | null | undefined): ServiceInfo {
     const city = locationStore.cityName;
     if (!city) {

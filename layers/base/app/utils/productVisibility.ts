@@ -1,3 +1,5 @@
+import { matchAnyCity, matchCity } from './city-match';
+
 export type DeliveryMethod = 'MAIL' | 'SELF_PICKUP';
 
 export interface VisibilityCtx {
@@ -30,6 +32,9 @@ export interface ProductLike {
  * 服务端不可用时退回「配送 + 城市」本地判定，保持历史行为。
  */
 export function isProductVisible(p: ProductLike | null | undefined, ctx: VisibilityCtx): boolean {
+  // 只排除「已知不可达」：未选城市时不掌握任何城市维度信息，直接放行。
+  // （否则单能力自提渠道未选城市时 belongCity 判据恒 false，会把全部商品误杀）
+  if (!ctx.city) return true;
   const cf = p?.customFields ?? {};
   const serviceCities: string[] = (cf.serviceCities ?? []).map((s) => s?.trim() ?? '').filter(Boolean);
   const belongCity: string = cf.belongCity?.trim() ?? '';
@@ -40,11 +45,9 @@ export function isProductVisible(p: ProductLike | null | undefined, ctx: Visibil
       : ['MAIL', 'SELF_PICKUP'];
   const isMail = methods.includes('MAIL');
   const isPickup = methods.includes('SELF_PICKUP');
-  const map = (s: string[]) => s.some((x) => x === ctx.city); // 精确匹配（与 useCityService 的前缀匹配不同：本过滤用精确城市名）
-  // 可寄到 X：MAIL 方式 && (城市未知 或 serviceCities 空=全城 或 含 X)
-  const canMail =
-    (ctx.deliveryFilteredServer || isMail) && (!ctx.city || !serviceCities.length || map(serviceCities));
-  // 可自提于 X：SELF_PICKUP 方式 && belongCity===X
-  const canPickup = (ctx.deliveryFilteredServer || isPickup) && !!belongCity && ctx.city === belongCity;
+  // 可寄到 X：MAIL 方式 && (serviceCities 空=全城 或 归一化后匹配 X)
+  const canMail = (ctx.deliveryFilteredServer || isMail) && matchAnyCity(serviceCities, ctx.city);
+  // 可自提于 X：SELF_PICKUP 方式 && (belongCity 未配置=不限制 或 归一化后匹配 X)
+  const canPickup = (ctx.deliveryFilteredServer || isPickup) && (!belongCity || matchCity(belongCity, ctx.city));
   return ctx.delivery === 'SELF_PICKUP' ? canPickup : canMail;
 }

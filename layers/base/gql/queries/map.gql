@@ -5,6 +5,9 @@ query GetPickupLocations($type: String, $lat: Float, $lng: Float) {
     name
     type
     address
+    province
+    city
+    district
     phoneNumber
     businessHours
     coordinates

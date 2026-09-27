@@ -24,6 +24,7 @@ export default defineI18nLocale(() =>
       selectCity: "도시 선택",
       locating: "위치 확인 중…",
       hotCities: "인기 도시",
+      availableCities: "이용 가능한 도시",
       noCityData: "해당 지역에 도시 정보가 없습니다",
       more: "더보기 ›",
       brandFlash: "브랜드 초특가",
