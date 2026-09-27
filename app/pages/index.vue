@@ -19,8 +19,6 @@ import JdPlazaGrid from "../../layers/base/app/components/home/jd/JdPlazaGrid.vu
 import JdProductGrid from "../../layers/base/app/components/home/jd/JdProductGrid.vue";
 import JdPcHeader from "../../layers/base/app/components/home/jd/JdPcHeader.vue";
 import JdPcCategorySidebar from "../../layers/base/app/components/home/jd/JdPcCategorySidebar.vue";
-import JdFunctionGrid from "../../layers/base/app/components/home/jd/JdFunctionGrid.vue";
-import JdBrandFloor from "../../layers/base/app/components/home/jd/JdBrandFloor.vue";
 import HomeBlockRenderer from "../../layers/base/app/components/home/HomeBlockRenderer.vue";
 
 const { t, tm } = useI18n();
@@ -46,9 +44,13 @@ const bannerSlides = computed(() =>
     })),
 );
 
-// 3) 装修配置：GetChannelTheme → sections（useShopContent 内部单个 useAsyncData + 单次 useAsyncGql）
-const { sections: shopSections } = useShopContent();
-const hasBlocks = computed(() => shopSections.value.length > 0);
+// 3) 装修配置：GetChannelTheme → 骨架合并后的区块编排（useShopContent 内部单个 useAsyncData + 单次 useAsyncGql）
+//    resolvedSections 已把「未配置的京东兜底楼层」自动补齐为对应槽位（见 utils/home-skeleton.ts）
+const { resolvedSections } = useShopContent();
+// 仅当热门/推荐槽位是自动补位时才发兜底商品搜索；运营覆盖后走各自 useCuratedGoods（请求数与改动前一致）
+const needFallbackGoods = computed(() =>
+  resolvedSections.value.some((r) => r.auto && (r.slotKey === "hot" || r.slotKey === "recommend")),
+);
 
 // 4) 商品楼层：仅未配置装修（兜底京东布局）才发一次 SearchProducts(take=20) 并切片；
 //    积木配置下由 goods 区块各自取数，这里不发兜底搜索（守请求数红线）。
@@ -91,7 +93,8 @@ async function loadChannelFacet(): Promise<{ dual: boolean; ids: Record<string, 
 const { data: fallbackSearch } = await useAsyncData(
   "home-fallback-search",
   async () => {
-    if (hasBlocks.value) return { hot: [], more: [] };
+    // 运营已覆盖 hot/recommend 时不发兜底搜索（沿用各自 useCuratedGoods）；骨架自动补位时复用这一次结果
+    if (!needFallbackGoods.value) return { hot: [], more: [] };
     // 仅双能力渠道走服务端 facet：单能力渠道筛选值恒不变（筛选条也不渲染），
     // 一旦 facet 索引缺失反而会把商品楼层清空，收益为负。
     const cap = filterEnabled.value ? await loadChannelFacet() : { dual: false, ids: null };
@@ -141,6 +144,8 @@ const { data: fallbackSearch } = await useAsyncData(
 
 const hotProducts = computed(() => fallbackSearch.value?.hot ?? []);
 const moreProducts = computed(() => fallbackSearch.value?.more ?? []);
+/** 注入给渲染器的自动补位商品数据（与兜底楼层同源、单次请求） */
+const autoGoods = computed(() => ({ hot: hotProducts.value, more: moreProducts.value }));
 
 // 4) PC 右栏静态数据：快讯 + 小广告（文案走 i18n，缺失回退中文）
 const news = computed<string[]>(() => tm("messages.home.news") as string[]);
@@ -259,32 +264,11 @@ const entries = computed(() =>
     </div>
   </main>
 
-  <!-- ═══ 移动端降级版（<1024px 显示）：有积木配置则动态渲染，否则兜底京东布局 ═══ -->
+  <!-- ═══ 移动端降级版（<1024px 显示）：分类导航常驻 + 骨架自动补位渲染 ═══ -->
   <main class="mx-auto max-w-md bg-[#f5f5f5] pb-20 lg:hidden" data-layout="mobile">
-    <HomeBlockRenderer v-if="hasBlocks" :sections="shopSections" />
-    <template v-else>
-      <!-- 分类导航（横向可滚动条） -->
-      <JdCategoryNav :categories="topCategories" />
-      <!-- 轮播 Banner -->
-      <JdBannerCarousel :slides="bannerSlides" />
-      <!-- 功能宫格（十宫格，用已有功能） -->
-      <JdFunctionGrid />
-      <!-- 品牌闪购（横向品牌墙，复用分类封面图） -->
-      <JdBrandFloor />
-      <!-- 品质专区 -->
-      <div class="mt-2">
-        <JdPlazaGrid v-if="topCategories.length" :categories="topCategories" />
-      </div>
-      <!-- 商品楼层（「城市·配送」过滤/切换条/空态由 JdProductGrid 模块头部承载） -->
-      <div class="mt-2">
-        <JdProductGrid
-          v-if="hotProducts.length"
-          :title="t('messages.shop.popularProducts')"
-          :products="hotProducts"
-        />
-        <JdProductGrid v-if="moreProducts.length" :title="t('messages.general.recommendations')" :products="moreProducts" />
-      </div>
-    </template>
+    <!-- 分类导航（常驻顶栏，不进骨架、不参与覆盖/补位；有分类数据即渲染） -->
+    <JdCategoryNav v-if="topCategories.length" :categories="topCategories" />
+    <HomeBlockRenderer :sections="resolvedSections" :auto-goods="autoGoods" />
   </main>
 
   <!-- 微信分享 + 邀请登录引导（固定定位，PC/移动统一生效） -->
