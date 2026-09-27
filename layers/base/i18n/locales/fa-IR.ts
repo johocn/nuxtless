@@ -95,6 +95,8 @@ export default defineI18nLocale(() =>
       adsAlt: "تبلیغات ویژه",
       hotGoods: "محصولات محبوب",
       recommendGoods: "پیشنهاد ویژه برای شما",
+      couponFloor: "کوپنها",
+      latestGoods: "تازهها",
       news: [
         "ارسال رایگان برای تمام کالاهای اختصاصی بالای ۹۹ یوان",
         "۲۰ یوان تخفیف برای اولین سفارش کاربران جدید",

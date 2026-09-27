@@ -95,6 +95,8 @@ export default defineI18nLocale(() =>
       adsAlt: "Publicidade de promoção",
       hotGoods: "Produtos populares",
       recommendGoods: "Recomendado para você",
+      couponFloor: "Cupons",
+      latestGoods: "Novidades",
       news: [
         "Frete grátis para pedidos acima de R$ 99",
         "R$ 20 de desconto no primeiro pedido",

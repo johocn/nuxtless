@@ -95,6 +95,8 @@ export default defineI18nLocale(() =>
       adsAlt: "Publicidad promocional",
       hotGoods: "Productos populares",
       recommendGoods: "Recomendado para ti",
+      couponFloor: "Cupones",
+      latestGoods: "Novedades",
       news: [
         "Envío gratuito en todos los artículos propios a partir de 99 ¥",
         "20 ¥ de descuento en su primer pedido para nuevos clientes",
