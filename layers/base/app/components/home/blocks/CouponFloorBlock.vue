@@ -107,7 +107,8 @@ await load();
       >
         <div class="flex w-16 shrink-0 flex-col items-center justify-center rounded bg-primary text-white">
           <span class="text-lg font-bold">
-            <span v-if="c.type === 'FIXED' || c.type === 'FULL'">¥</span>{{ amount(c.type, c.discountValue) }}
+            <span v-if="c.type === 'FIXED' || c.type === 'FULL'">¥</span>{{ amount(c.type, c.discountValue)
+            }}<span v-if="c.type === 'PERCENT'" class="text-[10px]">{{ unit(c.type) }}</span>
           </span>
           <span class="text-[10px] opacity-90">{{ typeTip(c.type) }}</span>
         </div>
