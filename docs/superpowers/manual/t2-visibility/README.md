@@ -208,7 +208,7 @@ python tmp/verify-t2-p1.py off                  # → 08-t2-home-fallback-hot-re
 ```
 
 - 脚本幂等、可重复执行；**每次写入前自动备份原值**到 `d:\zhao\_backup\t2-shopcontent-<时间戳>\backup.json`（只合并 `shopContent` 一个字段，读回完整 customFields 后提交）。
-- **t2 当前线上状态 = `shopContent = null`（京东兜底楼层）**：首页已有「热门商品」楼层 + 分类横条 + 品牌闪购 + 品质专区，问题 1/2 均已满足；装修积木（`hot` / `recommend`）作为**运营可配的增强能力**，是否启用由运营在后台决定（启用后兜底楼层不再渲染）。
+- **t2 当前线上状态 = `shopContent = null`（六兜底槽位自动补位）**：首页已有「热门商品」楼层 + 分类横条 + 品牌闪购 + 品质专区，问题 1/2 均已满足；装修积木（`hot` / `recommend` / `brandFloor` / `plaza` / `coupon` / `latest` 等）作为**运营可配的覆盖能力**，未配置的楼层由骨架**自动补位**（见下方第七节）。
 
 ## 四、装修积木「热门 / 推荐商品」后台用法
 
@@ -223,9 +223,9 @@ python tmp/verify-t2-p1.py off                  # → 08-t2-home-fallback-hot-re
    - **商品数量**：默认 10，上限 30。
    - **商品版式**：`紧凑列表`（默认，复用京东楼层视觉）/ `横向滑动`（卡片 62% 宽横滑）/ `一大二小`（首图大卡 + 两小卡）。
    - **去重**（**仅推荐商品**）：默认「开」，排除同页「热门商品」区块已展示的商品。
-3. 点「**保存装修**」后 t2 首页即按新区块渲染；**清空全部区块**则回到京东兜底楼层。
+3. 点「**保存装修**」后 t2 首页即按新区块渲染；**清空全部区块**则回到「六兜底槽位全部自动补位」的默认首页。
 
-> 注意：装修配置存在时**不再渲染**京东兜底楼层（品牌闪购 / 十宫格 / 品质专区）。只想要「热门 + 推荐」而保留兜底楼层时，不要添加任何装修区块——兜底楼层本身已含「热门商品」楼层。
+> **注意（2026-09-28 起语义已变更）**：装修配置存在时**不再整体关闭**京东兜底楼层，改为「按槽位自动补位」——详见第七节。运营只加「热门 + 推荐」时，品牌闪购 / 十宫格 / 品质专区等未覆盖的兜底楼层**仍然渲染**。
 
 ## 五、回归步骤（可复现）
 
@@ -250,6 +250,121 @@ python tmp/verify-t2-p1.py a|b|off              # 产出交付截图（见 3.3�
 
 | 项 | 状态 |
 |---|---|
-| 装修积木是否在 t2 长期启用（会关闭京东兜底楼层） | 待运营决定，当前线上为 `shopContent = null` |
-| `/t1/`、`/t2/` 控制台 hydration mismatch 警告 | 存量，未定位（默认租户 `/` 无此警告），与本轮无关 |
+| 装修积木是否在 t2 长期启用 | 待运营决定，当前线上为 `shopContent = null`（六兜底槽位自动补位） |
+| `/t1/`、`/t2/` 控制台 hydration mismatch 警告 | 存量，未定位（默认租户 `/` 无此警告；`/t2/category/all` 分类页同样出现，不在本次改动面），与本轮无关 |
 | `palette-presets.spec.ts` 期望 8 实得 9 | 存量单测失败，未修 |
+| 裸路径 `/t2/product/`（无 slug）返回 404 | 既有路由定义要求 slug（`pages/product/[slug].vue`），`/`、`/t1/`、`/t2/` 三租户一致 404，非缺陷；回归统一用带 slug 的真实商品 URL |
+
+---
+
+# 七、首页骨架自动补位（2026-09-28）
+
+> 设计文档：`docs/superpowers/specs/2026-09-28-home-skeleton-fallback-design.md`
+> 实施计划：`d:\zhao\vshop\web-admin\docs\superpowers\plans\2026-09-28-home-skeleton-fallback-plan.md`
+> 线上验收：`https://www.youshop.cn/t2/`（手机视口 390×844，dpr=2）
+
+## 7.1 骨架槽位表与自动补位顺序
+
+「京东兜底楼层」被抽象为 **10 个骨架槽位**，槽位顺序**即最终渲染顺序**（分类导航不占槽位、由页面常驻渲染在最上方）：
+
+| # | 槽位 key | 对应区块类型 | 类型 | 未配置时 |
+|---|---|---|---|---|
+| 1 | `banner` | `banner` 轮播 Banner | 兜底 | 自动补位（无图时占位） |
+| 2 | `notice` | `notice` 公告 | 可选 | 不渲染 |
+| 3 | `functionGrid` | `nav` 功能十宫格 | 兜底 | 自动补位 |
+| 4 | `coupon` | `coupon` 领券楼层 | 可选 | 不渲染 |
+| 5 | `brandFloor` | `brandFloor` 品牌闪购 | 兜底 | 自动补位 |
+| 6 | `plaza` | `plaza` 品质专区 | 兜底 | 自动补位 |
+| 7 | `goods` | `goods` 分类商品楼层 | 可选 | 不渲染 |
+| 8 | `hot` | `hot` 热门商品 | 兜底 | 自动补位（与兜底搜索同源） |
+| 9 | `recommend` | `recommend` 推荐商品 | 兜底 | 自动补位（与兜底搜索同源） |
+| 10 | `latest` | `latest` 最新商品 | 可选 | 不渲染 |
+
+**合并规则**（纯函数 `resolveHomeSections`，见 [home-skeleton.ts](file:///d:/zhao/nshop/layers/base/app/utils/home-skeleton.ts)）：
+
+1. `shopContent = null` / `sections` 非数组 → **6 个兜底槽位全部自动补位**，4 个可选槽位不产出；
+2. 运营区块按「同类型取第一个未被消费的」覆盖对应槽位，并**保留其全部配置**；
+3. 槽位 key ∈ `hiddenSlots` → 该槽位**无论覆盖还是补位都不产出**；
+4. 未被任何槽位消费的区块（含 `richText`）按原序**追加到骨架末尾**；
+5. 未知 `type` 一律丢弃，不阻断其它槽位。
+
+**请求数红线**：兜底态下热门/推荐槽位复用页面单次 `home-fallback-search`（`SearchProducts` take=20 后切 10+10），**不新增商品搜索请求**；运营用 `hot`/`recommend` 覆盖后才走各自的取数逻辑。
+
+## 7.2 公告锚定在十宫格上方
+
+`notice` 槽位排在 `functionGrid` **之前**（上表 #2 < #3），因此运营添加公告区块后，公告条渲染在功能十宫格**上方**、Banner 下方。
+
+![公告锚定在十宫格上方](shots/14-t2-skeleton-03-notice-anchor.png)
+
+> 截图对应**断言 3**：`sections=[notice]` 时公告出现在十宫格上方，且品牌闪购 / 品质专区 / 热门 / 推荐兜底槽位仍在。
+
+## 7.3 领券 / 分类商品楼层 / 最新商品怎么配
+
+后台位置：**装修 → 首页装修**，底部按钮区新增四个按钮 ——「+ 品牌闪购」「+ 品质专区」「+ 领券楼层」「+ 最新商品」。
+
+![装修页骨架楼层只读区与新增按钮](shots/10-wa-decorate-skeleton-slots.png)
+
+| 楼层 | 配置项 | 说明 |
+|---|---|---|
+| 领券楼层 `coupon` | 区块标题 / 最多显示张数（1-30，默认 6） | 数据来自 shop 侧券中心；**无可用券时整层自动隐藏**（不会出现空壳） |
+| 最新商品 `latest` | 区块标题 / 新品集合 slug / 商品数量（1-30）/ 卡片版式 | 用「集合」表达「最新」（Vendure 搜索排序只有 name/price，无 createdAt）；**集合 slug 留空则整层隐藏** |
+| 品牌闪购 `brandFloor` | 区块标题（留空走 i18n `品牌闪购`） | 数据自顶部分类，无需其它配置 |
+| 品质专区 `plaza` | 区块标题（留空走 i18n `品质专区`） | 数据自顶部分类，无分类时整层隐藏 |
+| 分类商品楼层 `goods` | 集合 ID / 数量 / 版式 | 已有能力；未填集合则按自动推荐出楼 |
+
+![领券楼层与最新商品配置面板](shots/11-wa-decorate-coupon-latest.png)
+
+> 截图对应**断言 4**：`sections=[coupon, latest]` 时，领券楼层出现在十宫格下方、最新商品出现在推荐之后，且未覆盖的兜底槽位（品牌闪购 / 品质专区 / 热门 / 推荐）仍在。见下图：
+
+![领券在十宫格下方、最新商品在推荐之后](shots/15-t2-skeleton-04-coupon-latest.png)
+
+## 7.4 如何移除某个兜底楼层（hiddenSlots）
+
+后台**装修 → 首页装修 → 顶部「骨架楼层（最终渲染顺序）」只读区**：每个**兜底**槽位右侧有「移除 / 恢复」开关（**可选**槽位无兜底、不提供移除）。点「移除」即把该 key 写入 `shopContent.hiddenSlots`，**保存装修**后前台即不再渲染该楼层。
+
+- 状态语义：`已移除` > `已被覆盖` > `自动兜底` > `未配置`（优先级从高到低）。
+- 支持「只移除、不加区块」的表达：`sections: []` + `hiddenSlots: ['brandFloor']` 是合法配置。
+
+![移除品牌闪购后的首页](shots/16-t2-skeleton-05-hidden-brand-floor.png)
+
+> 截图对应**断言 5**：`hiddenSlots: ['brandFloor']` 后品牌闪购消失，品质专区 / 热门 / 推荐兜底槽位仍在。
+
+另一个对照：**断言 2** —— 运营只写 `sections=[hot, recommend]` 时，品牌闪购 / 十宫格 / 品质专区**都还在**（改动前会整体消失）：
+
+![仅配热门+推荐时兜底楼层仍在](shots/13-t2-skeleton-02-hot-recommend.png)
+
+兜底默认态（`shopContent = null`，**断言 1**）：分类导航 + Banner + 十宫格 + 品牌闪购 + 品质专区 + 热门商品；t2 全站仅 8 个商品，故「热门」出 8 张卡、「推荐」切片 `10..20` 为空（与改动前一致）。
+
+![兜底默认态首页](shots/12-t2-skeleton-01-fallback-only.png)
+
+## 7.5 线上回归结果（2026-09-28）
+
+| # | 断言 | 结果 | 证据 |
+|---|---|---|---|
+| 1 | `shopContent = null` → 六兜底槽位自动补位（无公告/领券/最新商品） | 通过 | 标记 品牌闪购/品质专区/热门商品/为你推荐 全在；SSR payload `home-fallback-search` 1 条、`goods-block-` 0 条 | [12](shots/12-t2-skeleton-01-fallback-only.png) |
+| 2 | `sections=[hot, recommend]` → 品牌闪购 / 十宫格 / 品质专区**仍在** | 通过 | 品牌闪购@5261、品质专区@7093、📦@3570 均在 mobile 段 | [13](shots/13-t2-skeleton-02-hot-recommend.png) |
+| 3 | `sections=[notice]` → 公告在**十宫格上方** | 通过 | index(公告 2672) < index(📦 3856) | [14](shots/14-t2-skeleton-03-notice-anchor.png) |
+| 4 | `sections=[coupon, latest]` → 领券在十宫格下、最新商品在推荐后，兜底仍在 | 通过 | 📦(3570) < 领券中心(5256)；为你推荐(20013) < 最新上架(20491)；品牌闪购/品质专区仍在 | [15](shots/15-t2-skeleton-04-coupon-latest.png) |
+| 5 | `hiddenSlots=['brandFloor']` → 品牌闪购消失、其余兜底仍在 | 通过 | 品牌闪购不在 mobile 段；品质专区@5290、📦@3570、热门商品@6994、为你推荐@15565 | [16](shots/16-t2-skeleton-05-hidden-brand-floor.png) |
+| 6 | `shopContent = null` 时兜底商品搜索仍为 **1 次** | 通过 | 浏览器客户端 `SearchProducts` 0 次（全部由 SSR 完成）；SSR payload `home-fallback-search` 1 条、无 `goods-block-*` 取数 | — |
+| 7 | 五路径全 200，控制台无 `[nuxt] instance unavailable` | 通过 | `/`、`/t1/`、`/t2/`、`/t2/category/all`、`/t2/product/温泉门票` 全 200；6 次页面加载 `instance unavailable` **0 条** | — |
+| — | 单测 | 通过 | 新增 19 passed（`home-skeleton` 16 + `shop-content` 3）；`typecheck` 15 条存量错误、零新增 | — |
+
+### 7.5.1 截图取值方式（临时配置 → 截图 → 还原）
+
+```bash
+# 截图脚本（本仓库 _e2e/ 默认被 gitignore，脚本以 -f 强制入库）
+#   逐变体切换 shopContent 后拍摄；产物 _e2e/shots/01..05-*.png（宽 780px = 390×2）
+python _e2e/shot_home_skeleton.py 01-fallback-only
+# 变体写入 / 断言 / 还原由一次性回归脚本完成（不提交，位于 d:\zhao\_backup\t2-skeleton-regression.mjs）
+node d:/zhao/_backup/t2-skeleton-regression.mjs variant fallback-only   # 断言 1、6
+node d:/zhao/_backup/t2-skeleton-regression.mjs variant hot-recommend   # 断言 2
+node d:/zhao/_backup/t2-skeleton-regression.mjs variant notice          # 断言 3
+node d:/zhao/_backup/t2-skeleton-regression.mjs variant coupon-latest   # 断言 4
+node d:/zhao/_backup/t2-skeleton-regression.mjs variant hidden-brand    # 断言 5
+node d:/zhao/_backup/t2-skeleton-regression.mjs restore                 # 还原为原值（t2 = null）
+```
+
+- 回归脚本**首次写入前**把原值备份到 `d:\zhao\_backup\t2-skeleton-original.json`，`restore` 按备份还原并读回复核（本次复核结果：`还原完成，校验=OK → null`）。
+- 后台截图（10 / 11）由 `d:\zhao\_backup\shot_wa_decorate.py` 生成：登录 `https://e.joho.cn/guanli/` 后写入 `wa_channel_token=66ruvnhh34svhckaa2i`（t2 渠道）、`wa_channel_code=t2`，仅切换展示、**不保存**任何数据。
+
