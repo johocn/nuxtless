@@ -22,6 +22,7 @@ export interface GoodsSection {
   collectionId?: string;   // 为空则自动推荐（fallback 现有 SearchProducts）
   layout?: GoodsLayout;
   title?: LocalizedText;
+  limit?: number;          // 显式条数（1-30）；缺省按版式默认（compact/single 10、masonry 8）
 }
 export interface RichTextSection { type: 'richText'; html: string; }
 
@@ -51,6 +52,21 @@ export interface RecommendGoodsSection {
   dedupe?: boolean;               // 默认 true：排除同页 hot 区块已展示的 productId
 }
 
+/** 品牌闪购楼层：数据自 menuCollections（与京东兜底楼层同源），无重数据配置 */
+export interface BrandFloorSection { type: 'brandFloor'; title?: LocalizedText; }
+/** 品质专区楼层：数据自 menuCollections，无重数据配置 */
+export interface PlazaSection { type: 'plaza'; title?: LocalizedText; }
+/** 领券楼层：数据自 shop 侧券接口（useCoupon.ts），无兜底 */
+export interface CouponSection { type: 'coupon'; title?: LocalizedText; limit?: number; }
+/** 最新商品楼层：用「新品集合」（collectionSlug）出楼，非 createdAt 排序 */
+export interface LatestSection {
+  type: 'latest';
+  title?: LocalizedText;
+  collectionId?: string;
+  limit?: number;
+  layout?: GoodsLayout;
+}
+
 export type CuratedGoodsSection = HotGoodsSection | RecommendGoodsSection;
 
 export type ShopSection =
@@ -60,8 +76,18 @@ export type ShopSection =
   | GoodsSection
   | RichTextSection
   | HotGoodsSection
-  | RecommendGoodsSection;
-export interface ShopContent { version: 1; sections: ShopSection[]; }
+  | RecommendGoodsSection
+  | BrandFloorSection
+  | PlazaSection
+  | CouponSection
+  | LatestSection;
+
+export interface ShopContent {
+  version: 1;
+  sections: ShopSection[];
+  /** 显式移除的骨架槽位 key（见 home-skeleton.ts 的 SkeletonSlotKey） */
+  hiddenSlots?: string[];
+}
 
 // 京东默认样式（前端常量，不落库）：新建区块预填 + 渲染字段缺省兜底
 export const JD_STYLE_DEFAULTS = {
@@ -79,6 +105,21 @@ export function parseShopContent(raw: string | null | undefined): ShopContent | 
   } catch {
     return null;
   }
+}
+
+/**
+ * hiddenSlots 容错：仅保留非空字符串（trim + 去重，保持原序）。
+ * 非数组 / 混入数字或 null / 空白项一律丢弃，不影响 sections 解析。
+ */
+export function sanitizeHiddenSlots(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const v of raw) {
+    if (typeof v !== 'string') continue;
+    const s = v.trim();
+    if (s && !out.includes(s)) out.push(s);
+  }
+  return out;
 }
 
 export function getSections(content: ShopContent | null): ShopSection[] {
