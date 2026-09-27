@@ -130,6 +130,8 @@ export default defineI18nLocale(() =>
       emptyAfterFilter: "現在の都市・配送方法では利用可能な商品がありません",
       hotGoods: "人気商品",
       recommendGoods: "おすすめ商品",
+      couponFloor: "クーポン",
+      latestGoods: "新着商品",
       news: [
         "自社運営商品は99元以上で送料無料",
         "新規ユーザー初回注文で20元割引",

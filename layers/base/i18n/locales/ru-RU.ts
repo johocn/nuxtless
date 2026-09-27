@@ -95,6 +95,8 @@ export default defineI18nLocale(() =>
       adsAlt: "Реклама акций",
       hotGoods: "Популярные товары",
       recommendGoods: "Рекомендуем для вас",
+      couponFloor: "Купоны",
+      latestGoods: "Новинки",
       news: [
         "Бесплатная доставка при заказе от 99 юаней",
         "Скидка 20 юаней на первый заказ для новичков",

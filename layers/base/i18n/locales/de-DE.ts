@@ -113,6 +113,8 @@ export default defineI18nLocale(() =>
       adsAlt: "Aktionswerbung",
       hotGoods: "Beliebte Produkte",
       recommendGoods: "Für dich empfohlen",
+      couponFloor: "Gutscheine",
+      latestGoods: "Neuheiten",
       news: [
         "Kostenloser Versand ab 99 ¥ für alle Eigenmarken-Artikel",
         "20 ¥ Rabatt auf die erste Bestellung für Neukunden",

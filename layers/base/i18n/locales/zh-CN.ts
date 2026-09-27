@@ -149,6 +149,8 @@ export const zhMessages = {
       emptyAfterFilter: '当前城市/配送方式下暂无可用商品',
       hotGoods: '热门商品',
       recommendGoods: '为你推荐',
+      couponFloor: '领券中心',
+      latestGoods: '新品首发',
       news: [
         '全场自营商品满 99 元包邮',
         '新用户首单立减 20 元',
