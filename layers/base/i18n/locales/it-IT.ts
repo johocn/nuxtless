@@ -93,6 +93,8 @@ export default defineI18nLocale(() =>
     home: {
       newsTitle: "Notizie JD",
       adsAlt: "Pubblicità promozionale",
+      hotGoods: "Prodotti popolari",
+      recommendGoods: "Consigliati per te",
       news: [
         "Spedizione gratuita su tutti gli articoli in proprio oltre 99 ¥",
         "Sconto di 20 ¥ sul primo ordine dei nuovi utenti",

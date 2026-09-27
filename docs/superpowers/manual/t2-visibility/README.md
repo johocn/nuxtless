@@ -1,12 +1,16 @@
 # t2（二月兰会员）前台可见性修复 · 操作手册与验收记录
 
-> 范围：nshop C 端前台（首页可见性 / 城市口径）+ Vendure 后端 `pickupLocations` 字段
+> 范围：nshop C 端前台（首页可见性 / 城市口径 / 分类 / 断链 / 酒店版式 / 热门·推荐积木）+ Vendure 后端 `pickupLocations` 字段 + web-admin 装修后台
 > 日期：2026-09-27
 > 设计文档：`docs/superpowers/specs/2026-09-27-t2-storefront-visibility-and-blocks-design.md`
 > 验收环境：线上 `https://www.youshop.cn/t2/`（手机视口 390×844，dpr=2）
-> 本轮代号：**P0**（用户补充指令：「二月兰配送全部是长春地址统一，优先执行这个方案」）
+> 本轮代号：**P0**（用户补充指令：「二月兰配送全部是长春地址统一」）+ **P1**（设计稿五项）
 
-## 一、本次改动四件事
+---
+
+# P0：配送统一长春 + 首页可见性
+
+## 一、P0 改动四件事
 
 ### ① 后端：`pickupLocations` 暴露省市字段（P0-A）
 
@@ -55,49 +59,192 @@
 - `layers/base/gql/queries/map.gql`：`GetPickupLocations` 增取 `province / city / district`。
 - 词条：`nav.availableCities`，**12 个语言包全部补齐**（zh-CN / en-US / pt-BR / it-IT / fr-FR / fa-IR / es-ES / de-DE / ru-RU / bg-BG / ko-KR / ja-JP）。
 
-## 二、验收结果（线上，2026-09-27）
+---
 
-### 2.1 接口断言
+# P1：设计稿五项（分类 / 断链 / 酒店 / 热门·推荐积木）
+
+## 二、P1 改动五件事
+
+### ⑥ 分类取数可靠化（用户问题 2「看不见分类」）
+
+**根因（本地已复现）**：`useAsyncData` 的 handler 内调用 Nuxt composable（`useAsyncGql` / `useGql` 等）会丢 Nuxt 实例上下文，抛 `[nuxt] instance unavailable` 被 `catch` 吞掉 → 分类请求数 0、分类区渲染空壳。
+
+- `app/app.vue`：setup 顶层捕获 `const rawGql = useGql()`，`loadMenuCollections()` 改为经 `rawGql({ operation: "GetMenuCollections" })` 调用（**无变量查询必须用对象形式**），失败重试一次 + `console.warn`。
+- 新增 `layers/base/app/composables/useMenuCollections.ts`：单个 `useAsyncData`（key `menu-collections-prefetch`，`{ server: true, lazy: true, default }`）+ **800ms 超时护栏**（`fetchWithTimeout(() => rawGql(...), 800)`）；超时/失败时由 `app.vue` 的客户端兜底加载填充。
+- 消费方：`app/pages/index.vue`（顶部分类，SSR 首帧即渲染）、`layers/base/app/pages/category/[slug].vue`。
+- 请求耗时实测：root/default 1573–2480ms（护栏会超时 → 走客户端兜底），**t2 仅 116–327ms（护栏内命中，SSR 直出）**。
+
+### ⑦ 商品断链修复（用户问题 3「点击商品没有进入详情页」）
+
+- `layers/base/app/components/home/blocks/RecommendationRow.vue`：链接 `/products/` → `/product/`（路由实为 `pages/product/[slug].vue`，复数前缀 404）。
+- `layers/base/app/components/home/jd/JdProductGrid.vue`：新增 `validProducts` 过滤**无 slug 商品**——否则会渲染出 `href="/product"` 的死链卡片（商品数据缺 slug 时静默不可点）。只 `console.warn` 一次，不阻塞其余商品。
+- `layers/base/app/components/home/blocks/GoodsCardBlock.vue`：B/C 版式同口径过滤。
+
+### ⑧ 酒店房型与酒店版式（用户问题 4「酒店变体商品无法显示」）
+
+**数据**：`scripts/fix-t2-hotel-roomcfg.mjs`（幂等，执行前备份到 `d:\zhao\_backup\`）
+
+| 变体 | 所属商品 | 改前 | 改后 |
+|---|---|---|---|
+| v58 | 60（房间） | `hotelRoomConfig = null` | 写入房型 JSON（604 字符） |
+| v64 | 61（房间） | `hotelRoomConfig = null` | 写入房型 JSON（604 字符） |
+| v57 | 59（门票） | 误挂房型 | 置 `null` |
+
+- 两次执行「更新 3 → 更新 0/跳过 3」，幂等成立；`shippingProfileId / paymentProfileId / costPrice / barcode / internalCode` 全部保持原值（无字段丢失）。
+
+**前端**：`layers/base/app/utils/detail-config.ts` 新增纯函数
+
+- `parseHotelRoomConfig(variant)`：解析变体 `customFields.hotelRoomConfig`，坏 JSON / 缺字段返回 `null`。
+- `productHasHotelRoom(variants)`：**任一变体**带合法房型即视为酒店商品。
+- `isExplicitNonHotelLayout(config)`：仅 `floor` / `dualBuy` / `mall` 算「显式覆盖」，`classic` 不算。
+- `resolveDetailLayout(config, variants)`：显式覆盖优先 → 否则按房型判定 → 否则 `classic`（默认）。
+
+消费方：`ProductDetailRenderer.vue`（`layout = computed(() => resolveDetailLayout(config.value, productStore.product?.variants))`）、`DetailHotel.vue`（`isHotel = computed(() => productHasHotelRoom(productStore.product?.variants))`）。
+
+> 库存与「能否看见」无关（线上取证：t2 八个商品变体 `stockLevel` 全为 `IN_STOCK`），本项不动库存 / 上架逻辑。
+
+### ⑨ 装修积木新增「热门商品 / 推荐商品」（用户问题 1）
+
+**Schema**（`layers/base/app/utils/shop-content.ts` + web-admin `src/templates/shared/schema.ts`）：
+
+```ts
+type GoodsCardLayout = 'compact' | 'sliding' | 'hero';   // A 紧凑 / B 横滑 / C 一大二小
+
+interface HotGoodsSection {
+  type: 'hot';
+  title?: LocalizedText;
+  source?: 'auto' | 'collection';   // 默认 auto（与京东兜底楼层同源 SearchProducts）
+  collectionId?: string;
+  limit?: number;                   // 默认 10，上限 30
+  layout?: GoodsCardLayout;         // 默认 compact
+}
+
+interface RecommendGoodsSection {
+  type: 'recommend';
+  title?: LocalizedText;
+  source?: 'auto' | 'collection' | 'slugs';
+  collectionId?: string;
+  slugs?: string[];
+  limit?: number;
+  layout?: GoodsCardLayout;
+  dedupe?: boolean;                 // 默认 true：排除同页 hot 区块已展示的 productId
+}
+```
+
+**前端**
+
+- `HomeBlockRenderer.vue`：`componentMap` 增 `hot` / `recommend`（**绑组件对象**，不走字符串名，避免被当作 custom element 渲染成空标签）。
+- `HotGoodsBlock.vue` / `RecommendGoodsBlock.vue`：解析本节配置 → `useCuratedGoods()` 取数 → `GoodsCardBlock.vue` 渲染。标题走 `LocalizedText` 回退链（当前 locale → defaultLocale → 首个值 → i18n 字典 `messages.home.hotGoods` / `messages.home.recommendGoods`）。
+- `GoodsCardBlock.vue`：按 `layout` 三分支——`compact`（**直接复用 `JdProductGrid`**，视觉零回归）/ `sliding`（卡片 62% 宽 + `snap-x`，右侧露出下一张）/ `hero`（一大二小，大卡 `aspect-[16/9]` + 两张小卡 `grid-cols-2`）。
+- `useCuratedGoods.ts`：与京东兜底楼层**完全一致的双层取数口径**
+  1. 服务端：仅双能力渠道按渠道能力做 facet 过滤（`deliveryFacetFilter`）；命中 0 条时去掉 `facetValueFilters` 重查一次并置 `serverFiltered=false`，杜绝空白区块。
+  2. 客户端：`isProductVisible` 做城市维度后置过滤。
+  - 语言：商品名沿用 `?languageCode` 机制；标题走 `LocalizedText`。
+  - 配送：与 `JdProductGrid` 共用同一份模块级状态（`useModuleDelivery('jd-grid')`），单能力渠道由 `lockedMode` 锁定（t2 → 自提）。
+  - 划线价：`SearchProducts` → `GetProductsByIds` 补 `listPriceCents` + `customFields`。
+
+**同页去重（`recommend` 的 `dedupe`）**：`useState('home-shown-product-ids')` 存**分桶登记表** `Record<区块key, productId[]>`，`recommend` 只排除**同页 `hot` 区块**的展示项，再按 `limit` 截断。去重开启时取数 `take=30` 先多取，避免排除后不足 `limit`。
+
+> **两个 SSR 硬约束（本轮踩坑记录）**
+> 1. `useState` 等 Nuxt composable **必须在首个 `await` 之前调用**——写在 `await useAsyncData(...)` 之后会丢 Nuxt 实例上下文，SSR 抛 `[nuxt] instance unavailable` 使**整页 500**（曾导致线上 t2 首页 500）。
+> 2. 去重是**单向依赖**（只读 `hot` 的登记项）——若区块互相排除会造成反复重算 / 震荡。
+
+**后台（web-admin）**
+
+- `src/templates/shared/schema.ts`：新增两个接口 + `VALID_TYPES` 增 `hot` / `recommend` + `isValidShopContent` 校验（`limit` 正整数 ≤30；`layout` 在枚举内；`source='slugs'` 时 `slugs` 须为字符串数组）。
+- `src/pages/decorate/home/index.vue`：`addHot()` / `addRecommend()` 两个按钮 + 配置面板（标题 / 来源 / 集合 ID / 商品 slug 列表 / 数量 / 版式三选一 / 推荐去重开关）+ `typeLabel()` 两分支。
+- `src/locale/zh-Hans.json` / `en.json`：各补 18 个 `decorateHome.*` 词条。
+
+### ⑩ 修复线上 t2 首页 500（本轮回归）
+
+- 现象：`https://www.youshop.cn/t2/` 返回 `500 {"message":"[nuxt] instance unavailable"}`；`/`（默认租户）与 `/t1/` 正常。
+- 定位：本地 dev 复现拿到完整堆栈 → `useCuratedGoods` 的 `useState` 位于 `await useAsyncData` 之后。
+- 修复：`useState` 上提到首个 `await` 之前；同时修正去重口径（见 ⑨）。
+
+---
+
+## 三、验收结果（线上，2026-09-27）
+
+### 3.1 接口与数据断言
 
 | 断言 | 结果 |
 |---|---|
 | t2 `pickupLocations` 返回 5 条且 `city` 全为「长春市」（province 吉林省） | 通过（id 13/1/14/15/16） |
+| 房间 v58 / v64 带房型 JSON，门票 v57 为 `null`，其余字段未丢失 | 通过 |
+| `fix-t2-changchun-city.mjs` / `fix-t2-hotel-roomcfg.mjs` 二次执行幂等 | 通过（更新 0） |
+| `pnpm typecheck` | 15 条存量错误，**零新增** |
+| `pnpm vitest run` | 135 passed / 1 failed（`palette-presets` 期望 8 实得 9，**基线即失败**，与本次无关） |
 
-### 2.2 手机视口验收（390×844 / dpr=2）
+### 3.2 手机视口验收（390×844 / dpr=2）
 
 | # | 验收项 | 结果 | 截图 |
 |---|---|---|---|
-| 1 | t2 首页出现商品楼层（不再是空白） | 通过：楼层标题 `["品牌闪购","热门商品"]`，去重后 **8 个商品卡**，无空态文案 | [01](shots/01-t2-home-nocity.png) |
-| 2 | **未选城市 = 不过滤**（本次修复核心） | 通过：干净 context（无 localStorage、未选城市）首屏即渲染 8 张卡 | [01](shots/01-t2-home-nocity.png) |
-| 3 | 城市面板出现「可用城市」区且含「长春市」 | 通过：唯一条目「长春市」；无「热门城市」区；下方保留「全部省份」 | [02](shots/02-t2-city-panel.png) |
-| 4 | 选中「长春市」后首页仍有商品 | 通过：顶栏显示「长春市」，热门商品楼层保留 8 张卡 | [03](shots/03-t2-home-changchun.png) |
+| 1 | t2 首页出现商品楼层（不再是空白） | 通过：去重后 8 个商品卡，无空态文案 | [01](shots/01-t2-home-nocity.png) |
+| 2 | **未选城市 = 不过滤**（P0 核心） | 通过：干净 context 首屏即渲染 8 张卡 | [01](shots/01-t2-home-nocity.png) |
+| 3 | 城市面板出现「可用城市」区且含「长春市」 | 通过：唯一条目「长春市」 | [02](shots/02-t2-city-panel.png) |
+| 4 | 选中「长春市」后首页仍有商品 | 通过：顶栏「长春市」，楼层保留 8 张卡 | [03](shots/03-t2-home-changchun.png) |
+| 5 | **分类可见**（问题 2） | 通过：首页 `/category/` 链接 28 个（含「全部商品」横条 + 品牌闪购 + 品质专区） | [08](shots/08-t2-home-fallback-hot-recommend.png) |
+| 6 | 分类页可打开且有商品（问题 2/3） | 通过：`/t2/category/休闲娱乐` 4 个商品卡，无 404 | [04](shots/04-t2-category-page.png) |
+| 7 | 点击商品进详情页，无死链（问题 3） | 通过：首页 `href` 无 `/product`（无 slug）死链；详情页 200 | [06](shots/06-t2-home-hotA-recommendC.png) |
+| 8 | 酒店房间商品走酒店版式（问题 4） | 通过：`/t2/product/国信南山温泉节假日房间` body 含 `㎡` 与 `豪华大床` | [05](shots/05-t2-room-detail-hotel.png) |
+| 9 | 反证：门票商品不走酒店版式 | 通过：`/t2/product/温泉门票` body **不含** `㎡` | — |
+| 10 | 积木「热门商品」A 紧凑版式 | 通过：2 列紧凑卡 + 「热门商品」角标 + 划线价 | [06](shots/06-t2-home-hotA-recommendC.png) |
+| 11 | 积木「推荐商品」C 一大二小 + 去重 | 通过：大卡「洗车」+ 两小卡「老凤祥黄金珠宝 / 倒胎」；与热门区块**无重复商品** | [06](shots/06-t2-home-hotA-recommendC.png) |
+| 12 | 积木「热门商品」B 横滑版式 | 通过：卡片 62% 宽、右侧露出下一张（`snap-x`） | [07](shots/07-t2-home-hotB.png) |
+| 13 | 线上 t2 首页恢复 200 | 通过：`/t2/`、`/t2/category/休闲娱乐`、`/t2/product/*`、`/t1/` 全 200 | — |
 
-补充观测（客户端网络，SSR 直出后共 8 次 shop-api 请求，全部 200，无 4xx/5xx）：`GetPickupLocations×1`、`GetMapDistricts×1`、`ActiveOrder/GetActiveOrder×1`、`GetActiveCustomer×1`、`GetMapSdkConfig×1`；console error/warning **0 条**。
+> 已知存量问题（**非本轮引入**）：`/t1/` 与 `/t2/` 控制台有 `Hydration completed but contains mismatches.` 警告（默认租户 `/` 无此警告），与本轮改动无关。
 
-> 注：首页首屏数据（`GetMenuCollections` / `SearchProducts` / `GetProductsByIds` / `GetChannelTheme`）由 **HTML SSR 内联**，客户端 0 次请求属正常表现，非静默失败。
+### 3.3 积木版式截图取值方式（临时配置 → 截图 → 还原）
 
-## 三、回归步骤（可复现）
+```bash
+node scripts/verify-t2-blocks-config.mjs on-a   # nav row + hot compact(4) + recommend hero(3, dedupe)
+python tmp/verify-t2-p1.py a                    # → 06-t2-home-hotA-recommendC.png
+node scripts/verify-t2-blocks-config.mjs on-b   # nav row + hot sliding(6)
+python tmp/verify-t2-p1.py b                    # → 07-t2-home-hotB.png
+node scripts/verify-t2-blocks-config.mjs off    # 还原（shopContent = null，回到京东兜底楼层）
+python tmp/verify-t2-p1.py off                  # → 08-t2-home-fallback-hot-recommend.png
+```
+
+- 脚本幂等、可重复执行；**每次写入前自动备份原值**到 `d:\zhao\_backup\t2-shopcontent-<时间戳>\backup.json`（只合并 `shopContent` 一个字段，读回完整 customFields 后提交）。
+- **t2 当前线上状态 = `shopContent = null`（京东兜底楼层）**：首页已有「热门商品」楼层 + 分类横条 + 品牌闪购 + 品质专区，问题 1/2 均已满足；装修积木（`hot` / `recommend`）作为**运营可配的增强能力**，是否启用由运营在后台决定（启用后兜底楼层不再渲染）。
+
+## 四、装修积木「热门 / 推荐商品」后台用法
+
+1. 进入 web-admin → **装修 → 首页**。
+2. 点「**热门商品**」/「**推荐商品**」按钮新增区块，配置面板：
+   - **标题**：留空走 i18n 默认（热门商品 / 为你推荐）；填了则按语言回退链（当前语言 → 默认语言 → 首个值）。
+   - **来源**：`auto`（自动，与京东兜底楼层同源）/ `collection`（指定集合 ID）/ `slugs`（推荐商品额外支持，按商品 slug 指定）。
+   - **数量**：默认 10，上限 30。
+   - **版式**：`compact` 紧凑（默认）/ `sliding` 横滑 / `hero` 一大二小。
+   - **推荐去重**：默认开，排除同页热门区块已展示的商品。
+3. 保存后 t2 首页即按新区块渲染；**清空全部区块**则回到京东兜底楼层。
+
+> 注意：装修配置存在时**不再渲染**京东兜底楼层（品牌闪购 / 十宫格 / 品质专区）。只想要「热门 + 推荐」而保留兜底楼层时，不要添加任何装修区块。
+
+## 五、回归步骤（可复现）
 
 ```bash
 # 1) 数据口径复核（幂等，安全）
 node scripts/fix-t2-changchun-city.mjs        # 期望「更新 0 / 跳过 9」
+node scripts/fix-t2-hotel-roomcfg.mjs         # 期望「更新 0 / 跳过 3」
 
 # 2) 单测
 pnpm vitest run layers/base/app/utils/city-match.test.ts \
-               layers/base/app/utils/productVisibility.test.ts
+               layers/base/app/utils/productVisibility.test.ts \
+               layers/base/app/utils/shop-content.test.ts
 
-# 3) 接口断言
-node -e "fetch('https://www.youshop.cn/shop-api',{method:'POST',headers:{'Content-Type':'application/json','vendure-token':'66ruvnhh34svhckaa2i'},body:JSON.stringify({query:'query{ pickupLocations{ id name city province } }'})}).then(r=>r.json()).then(j=>console.log(JSON.stringify(j.data.pickupLocations.map(p=>p.name+':'+p.city))))"
+# 3) 装修配置写入 / 还原
+node scripts/verify-t2-blocks-config.mjs show   # 只读打印当前 shopContent
 
-# 4) 手机视口截图（390×844 dpr=2）
-python tmp/verify-t2-p0.py                    # 产出 tmp/repro/p0-*.png
+# 4) 手机视口验收截图（390×844 dpr=2）
+python tmp/verify-t2-p1.py a|b|off              # 产出交付截图（见 3.3）
 ```
 
-## 四、本轮遗留 / 下一轮（P1）线索
+## 六、本轮遗留
 
-| 现象 | 状态 |
+| 项 | 状态 |
 |---|---|
-| 首页顶部横向分类条**可见但为空**（仅「全部商品」占位，`main` 内 `/category/` 链接数 = 0） | 待修（P1：分类取数可靠化） |
-| t2 首页走**京东兜底楼层**（`hasBlocks=false`，无装修积木） | 待做（P1：新增「热门 / 推荐商品」积木） |
-| `RecommendationRow` 链接用复数 `/products/`（断链） | 待修（P1） |
-| 酒店房型 `hotelRoomConfig` 误挂在门票商品 59 的变体 57；房间商品 60/61 的变体为 NULL | 待修（P1） |
+| 装修积木是否在 t2 长期启用（会关闭京东兜底楼层） | 待运营决定，当前线上为 `shopContent = null` |
+| `/t1/`、`/t2/` 控制台 hydration mismatch 警告 | 存量，未定位（默认租户 `/` 无此警告），与本轮无关 |
+| `palette-presets.spec.ts` 期望 8 实得 9 | 存量单测失败，未修 |

@@ -63,6 +63,8 @@ export default defineI18nLocale(() =>
       mail: "Mail",
       selfPickup: "Self Pickup",
       emptyAfterFilter: "No products available for your city / delivery method",
+      hotGoods: "Hot Products",
+      recommendGoods: "Recommended for You",
       news: [
         "Free shipping on all self-operated items over ¥99",
         "¥20 off your first order for new customers",

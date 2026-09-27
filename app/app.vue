@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // R4 配置版本化响应头：模板/全局配置 version 变化即派生 Unique 响应头
 import { setResponseHeader } from "h3";
+import type { MenuCollections } from "~~/types/collection";
 // 按 URL 首段租户动态取 channel token；未命中回退默认渠道
 const { token: channelToken } = useTenantChannel();
 const colorMode = useColorMode();
@@ -69,16 +70,37 @@ const { error } = storeToRefs(orderStore);
 // 有超时（~2-3s），在拿到 og 头之前就放弃 → 分享只出纯网址、无标题无图。
 // 改为仅客户端加载（server:false）：SSR 首帧立即吐出带 og 的 HTML（~300ms，顶多等
 // 快速的 GetProductDetail），顶部/首页分类导航在 hydration 后填充，可接受轻微 FOUC。
+// ⚠️ 可靠性修复：原实现在异步 handler 内调用 Nuxt composable（useAsyncGql）会丢 Nuxt 实例
+// 上下文 → 线上实测 GetMenuCollections 请求数恒为 0 且无 console 报错（静默失败）。
+// 与 app/pages/index.vue 顶部教训一致：改用 setup 顶层捕获的原始 gql client（普通 async 函数）。
+// handler 失败时 console.warn + 重试一次；仍失败本轮放弃（分类区自然隐藏，不渲染空壳）。
+const rawGql = useGql();
+const menuState = useState<MenuCollections | null>("menuCollections", () => null);
+
+async function loadMenuCollections(): Promise<MenuCollections | null> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      // GetMenuCollections 无变量：用对象形式调用（useGql 的元组签名对「无变量查询」要求 2 个元素）
+      return ((await rawGql({ operation: "GetMenuCollections" })) as MenuCollections) ?? null;
+    } catch (err) {
+      console.warn(`[app] GetMenuCollections 第 ${attempt + 1} 次请求失败`, err);
+    }
+  }
+  console.warn("[app] GetMenuCollections 重试后仍失败，本轮放弃（分类区自然隐藏）");
+  return null;
+}
+
+// useAsyncData key 刻意不同于 useState 的 "menuCollections"（避免同名造成取数短路）
 const { data: menuAsyncData } = useAsyncData<MenuCollections | null>(
-  "menuCollections",
+  "menu-collections-bootstrap",
   async () => {
-    const res = await useAsyncGql("GetMenuCollections");
-    return res.data.value ?? null;
+    // 首页 / 分类页 SSR 已由 useMenuCollections 预取填充 → 客户端跳过，避免重复请求
+    if (menuState.value?.collections?.items?.length) return menuState.value;
+    return await loadMenuCollections();
   },
   { server: false, lazy: true },
 );
 // 写回共享 state，供 Header/Footer/首页分类导航等消费（SSR 时为空，hydration 后填充）
-const menuState = useState<MenuCollections | null>("menuCollections", () => null);
 watchEffect(() => {
   if (menuAsyncData.value) menuState.value = menuAsyncData.value;
 });
