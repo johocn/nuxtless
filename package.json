@@ -29,6 +29,7 @@
     "@vueuse/core": "14.2.1",
     "@vueuse/integrations": "14.2.1",
     "graphql-request": "7.4.0",
+    "isomorphic-dompurify": "^4.4.0",
     "jsbarcode": "^3.12.3",
     "nuxt": "4.4.2",
     "nuxt-graphql-client": "0.2.46",

@@ -280,7 +280,7 @@ useSchemaOrg([
         <h1 class="text-base font-bold text-gray-900">{{ catCfg?.title || currentCollection?.name }}</h1>
         <p v-if="catCfg?.floorSubtitle" class="mt-0.5 text-xs text-neutral-500">{{ catCfg.floorSubtitle }}</p>
         <div class="mt-2 flex items-center justify-between gap-2">
-          <SortBar v-model="sort" />
+          <CategorySortBar v-model="sort" />
           <UButton
             variant="outline"
             color="neutral"
@@ -360,7 +360,7 @@ useSchemaOrg([
         {{ t("messages.shop.browseOurProducts") }}
       </h2>
       <div class="mb-4 flex items-center justify-between gap-2">
-        <SortBar v-model="sort" />
+        <CategorySortBar v-model="sort" />
         <UButton
           variant="outline"
           color="neutral"
@@ -404,7 +404,7 @@ useSchemaOrg([
       </div>
     </section>
 
-    <FilterDrawer
+    <CategoryFilterDrawer
       v-model:open="filterDrawerOpen"
       :facets="facets"
       :initial-selection="initialSelected"
