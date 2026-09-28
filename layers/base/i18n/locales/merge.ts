@@ -37,13 +37,14 @@ function deepMerge<T extends Record<string, unknown>>(
  *
  * 用法：`export default defineI18nLocale(() => zhFallbackLocale({ ...本语言覆盖... }));`
  */
-export function zhFallbackLocale<N extends Record<string, unknown>>(
-  overrides: N,
+export function zhFallbackLocale(
+  ...overrides: Record<string, unknown>[]
 ) {
+  const base = structuredClone(zhMessages) as Record<string, unknown>;
   return {
-    messages: deepMerge(
-      structuredClone(zhMessages) as Record<string, unknown>,
-      overrides as unknown as Record<string, unknown>,
+    messages: overrides.reduce<Record<string, unknown>>(
+      (acc, override) => deepMerge(acc, override),
+      base,
     ),
   };
 }

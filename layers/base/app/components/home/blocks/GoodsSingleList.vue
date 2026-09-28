@@ -111,10 +111,10 @@ function listText(p?: SearchItem, cur?: string | null) {
               v-if="listText(p, p.currencyCode)"
               class="text-xs text-gray-400 line-through"
             >{{ listText(p, p.currencyCode) }}</span>
-            <span class="rounded bg-primary/10 px-1 text-[10px] text-primary">自营</span>
+            <span class="rounded bg-primary/10 px-1 text-[10px] text-primary">{{ t("messages.home.selfOperated") }}</span>
           </div>
         </div>
-        <span class="shrink-0 rounded bg-primary px-3 py-1.5 text-xs text-white">去购买</span>
+        <span class="shrink-0 rounded bg-primary px-3 py-1.5 text-xs text-white">{{ t("messages.home.goBuy") }}</span>
       </NuxtLink>
     </div>
   </section>

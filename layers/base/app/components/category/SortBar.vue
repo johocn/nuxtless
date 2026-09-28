@@ -4,12 +4,14 @@ import type { SortKey } from "../../utils/collection-sort";
 const props = defineProps<{ modelValue: SortKey }>();
 const emit = defineEmits<{ (e: "update:modelValue", v: SortKey): void }>();
 
-const options: { label: string; value: SortKey }[] = [
-  { label: "综合", value: "RELEVANCE" },
-  { label: "新品", value: "NAME_ASC" },
-  { label: "价格↑", value: "PRICE_ASC" },
-  { label: "价格↓", value: "PRICE_DESC" },
-];
+const { t } = useI18n();
+
+const options = computed<{ label: string; value: SortKey }[]>(() => [
+  { label: t("messages.category.sort.relevance"), value: "RELEVANCE" },
+  { label: t("messages.category.sort.newest"), value: "NAME_ASC" },
+  { label: t("messages.category.sort.priceAsc"), value: "PRICE_ASC" },
+  { label: t("messages.category.sort.priceDesc"), value: "PRICE_DESC" },
+]);
 </script>
 
 <template>

@@ -70,6 +70,17 @@ export default defineNuxtConfig({
     storesDirs: ["../stores/**"],
   },
 
+  // Pinia 持久化：默认落 cookie（pinia-plugin-persistedstate Nuxt 模块默认 storage=cookies）。
+  // auth store 含会话 token/user，显式加固 cookie 属性：SameSite=Lax + path=/，
+  // 生产环境追加 Secure（HTTPS 专用），避免无 Secure/SameSite 的明文 cookie 泄露。
+  piniaPluginPersistedstate: {
+    cookieOptions: {
+      sameSite: "lax",
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+    },
+  },
+
   // Global NuxtImage  Configuration
   image: {
     domains: ["localhost"], // passthrough 关闭域名校验，此处保留仅为兼容

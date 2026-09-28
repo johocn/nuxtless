@@ -57,7 +57,7 @@ const nearestLabel = computed<string | null>(() => {
       <li v-for="s in stores" :key="s.locationId" class="loc-row">
         <div class="loc-head">
           <span class="loc-name">{{ s.name }}</span>
-          <span class="loc-qty" :class="{ zero: s.onHand === 0 }">库存 {{ s.onHand }} 件</span>
+          <span class="loc-qty" :class="{ zero: s.onHand === 0 }">{{ t("messages.detail.stockCount", { n: s.onHand }) }}</span>
         </div>
         <p class="loc-meta">
           {{ s.distanceKm == null ? t("messages.detail.nearbyUnknownDistance") : formatNearbyDistance(s.distanceKm) }}

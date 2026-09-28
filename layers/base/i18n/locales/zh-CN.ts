@@ -162,6 +162,23 @@ export const zhMessages = {
         '手机数码', '家用电器', '居家百货', '服饰鞋包',
         '美妆个护', '食品生鲜', '运动户外', '礼品定制', '全部商品',
       ],
+      comingSoon: '敬请期待',
+      flashSale: '限时秒杀',
+      flashSaleSoon: '敬请期待，即将上线',
+      selfOperated: '自营',
+      goBuy: '去购买',
+      notice: '公告',
+    },
+    category: {
+      sort: {
+        relevance: '综合',
+        newest: '新品',
+        priceAsc: '价格↑',
+        priceDesc: '价格↓',
+      },
+    },
+    admin: {
+      apiBaseMissing: '管理端接口地址未配置（请设置环境变量 ADMIN_API_BASE）',
     },
     pages: {
       index: {
@@ -356,6 +373,12 @@ export const zhMessages = {
       subtotal: "商品小计",
       couponDiscount: "券/免邮优惠",
       selectedCount: "已选 {n} 件",
+      confirmOrder: "确认订单",
+      confirmOrderSub: "请核对商品与收货信息后提交",
+      pickupStoreTitle: "自提点 / 门店",
+      pickupLoading: "正在加载自提点…",
+      noNearbyPickup: "当前定位附近暂无可选自提点，可使用配送到家。",
+      itemsCount: "共 {n} 件",
     },
     account: {
       messages: '消息中心',

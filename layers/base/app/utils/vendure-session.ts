@@ -32,7 +32,10 @@ export function readVendureSessionToken(): string | null {
 /** 仅在客户端持久化会话 token 到 cookie；token 为 null 表示清除 */
 export function writeVendureSessionToken(token: string | null): void {
   if (typeof document === "undefined") return;
+  // 生产环境（HTTPS）为会话 cookie 追加 Secure，避免明文链路/中间人窃取；
+  // 本地 dev 走 http，加 Secure 会导致 cookie 无法写入，故按 NODE_ENV 区分。
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
   document.cookie = token
-    ? `${VENDURE_SESSION_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=31536000; SameSite=Lax`
+    ? `${VENDURE_SESSION_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=31536000; SameSite=Lax${secure}`
     : `${VENDURE_SESSION_COOKIE}=; path=/; max-age=0`;
 }

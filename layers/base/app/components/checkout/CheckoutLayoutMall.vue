@@ -6,6 +6,7 @@ import { useCheckoutFlow } from "~~/layers/base/app/composables/useCheckoutFlow"
 
 const flow = useCheckoutFlow();
 const orderStore = useOrderStore();
+const { t } = useI18n();
 
 await orderStore.fetchOrderBoxes();
 
@@ -26,9 +27,9 @@ const emit = defineEmits<{ (e: "submit"): void }>();
     <div class="sticky top-0 z-10 mb-4 rounded-b-2xl bg-white px-4 pb-3 pt-4 shadow-sm">
       <h1 class="flex items-center gap-2 text-lg font-bold">
         <span class="h-5 w-1.5 rounded-full bg-primary" />
-        确认订单
+        {{ t("messages.checkout.confirmOrder") }}
       </h1>
-      <p class="mt-1 pl-3.5 text-xs text-neutral-500">请核对商品与收货信息后提交</p>
+      <p class="mt-1 pl-3.5 text-xs text-neutral-500">{{ t("messages.checkout.confirmOrderSub") }}</p>
     </div>
 
     <div class="space-y-4">

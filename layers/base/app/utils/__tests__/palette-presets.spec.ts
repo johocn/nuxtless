@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { PALETTE_PRESETS } from '../palette-presets';
 
 describe('palette-presets', () => {
-  it('内置 8 套预设', () => {
-    expect(Object.keys(PALETTE_PRESETS).length).toBe(8);
+  it('内置 9 套预设', () => {
+    expect(Object.keys(PALETTE_PRESETS).length).toBe(9);
   });
   it('默认启用 dawn-gold（晨曦金）', () => {
     expect(PALETTE_PRESETS['dawn-gold']).toBeDefined();

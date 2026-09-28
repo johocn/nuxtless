@@ -57,7 +57,7 @@ export default defineNuxtConfig({
       i18NBaseUrl: process.env.I18N_BASE_URL,
       stripeAccountId: process.env.STRIPE_ACCOUNT_ID,
       stripePublicKey: process.env.STRIPE_PUBLIC_KEY,
-      unsplashApiKey: process.env.UNSPLASH_API_KEY,
+      adminApiBase: process.env.ADMIN_API_BASE,
     },
   },
 

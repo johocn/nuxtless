@@ -25,7 +25,7 @@ const { t } = useI18n();
         :variant-id="selectedVariant?.id"
       />
       <details v-if="visible('promo')" class="group">
-        <summary class="cursor-pointer text-sm text-gray-600">促销 ▾</summary>
+        <summary class="cursor-pointer text-sm text-gray-600">{{ t("messages.detail.promoSummary") }} ▾</summary>
         <div><ProductDetailPromoBlock /></div>
       </details>
       <!-- 商品专属券 -->
@@ -33,7 +33,7 @@ const { t } = useI18n();
         <ProductDetailProductCouponBlock />
       </section>
       <details v-if="visible('service')" class="group">
-        <summary class="cursor-pointer text-sm text-gray-600">服务保障 ▾</summary>
+        <summary class="cursor-pointer text-sm text-gray-600">{{ t("messages.detail.serviceSummary") }} ▾</summary>
         <div><ProductDetailServiceBlock /></div>
       </details>
       <ProductVariants v-if="visible('variants')" />

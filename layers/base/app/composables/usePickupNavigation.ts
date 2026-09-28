@@ -7,6 +7,10 @@ import { parseCoordinates } from "~~/layers/base/app/utils/checkout-config";
  * - buildNavigationUri() 拼装高德 URI 唤起 App 导航（Web 端回退网页）。
  * 纯工具 + 单例加载，SSR 安全（isBrowser 守卫由 loadAmapSdk 内部处理）。
  */
+
+// 高德官方导航 URI 端点（固定外部服务端点，非可配置业务域名，故以具名常量标注）。
+const AMAP_NAV_ENDPOINT = "https://uri.amap.com/navigation";
+
 export function usePickupNavigation() {
   const { loadAmapSdk } = useGeoLocation();
 
@@ -26,7 +30,7 @@ export function usePickupNavigation() {
     if (!c) return null;
     const name = encodeURIComponent(loc.name || "自提点");
     return (
-      `https://uri.amap.com/navigation` +
+      `${AMAP_NAV_ENDPOINT}` +
       `?to=${c.lng},${c.lat},${name}` +
       `&mode=car&src=nshop&coordinate=gaode&callnative=1`
     );
