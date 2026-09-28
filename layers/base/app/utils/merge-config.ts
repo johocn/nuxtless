@@ -49,6 +49,28 @@ function isPlainObject(v: unknown): v is Record<string, any> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
+// 主题令牌安全白名单（供 mergeThemeTokens 源头过滤，避免后台配置注入 CSS）。
+const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+const RGB_COLOR_RE =
+  /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*(?:0|1|0?\.\d+)\s*)?\)$/;
+const DIMENSION_RE = /^\d+(?:\.\d+)?(?:px|rem|em|%)$/;
+const PLAIN_NUMBER_RE = /^\d+(?:\.\d+)?$/;
+
+/** 颜色白名单：仅 #hex（3/4/6/8 位）或 rgb()/rgba() 严格格式，非法返回 undefined（丢弃） */
+function sanitizeColor(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const v = value.trim();
+  return HEX_COLOR_RE.test(v) || RGB_COLOR_RE.test(v) ? v : undefined;
+}
+
+/** 尺寸/圆角白名单：纯数字或「数字 + px|rem|em|%」，非法返回 undefined（丢弃） */
+function sanitizeDimension(value: unknown): number | string | undefined {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (typeof value !== 'string') return undefined;
+  const v = value.trim();
+  return PLAIN_NUMBER_RE.test(v) || DIMENSION_RE.test(v) ? v : undefined;
+}
+
 /** 深合并：仅普通对象递归合并；数组/标量直接覆盖；null/undefined 跳过 */
 export function deepMerge<T extends Record<string, any>>(
   ...sources: (T | null | undefined)[]
@@ -89,13 +111,26 @@ export function mergeThemeTokens(
   template: ShopTemplateData | null,
   channelThemeOverride?: Record<string, any> | null,
 ): ThemeTokens {
-  return deepMerge<ThemeTokens>(
+  const merged = deepMerge<ThemeTokens>(
     {},
     globalConfig?.themeTokens ?? null,
     resolvePaletteTokens(template),
     template?.theme ?? null,
     channelThemeOverride ?? null,
   );
+  // 令牌源自后台/CMS 配置，会被 app.vue 直接拼进内联 <style>（innerHTML），
+  // 故在生成源头对颜色/圆角做白名单校验，非法值丢弃，避免 CSS 注入。
+  const result: ThemeTokens = { ...merged };
+  const primaryColor = sanitizeColor(merged.primaryColor);
+  const accentColor = sanitizeColor(merged.accentColor);
+  const radius = sanitizeDimension(merged.radius);
+  if (primaryColor) result.primaryColor = primaryColor;
+  else delete result.primaryColor;
+  if (accentColor) result.accentColor = accentColor;
+  else delete result.accentColor;
+  if (radius !== undefined) result.radius = radius;
+  else delete result.radius;
+  return result;
 }
 
 /** 解析店铺覆盖 JSON 字符串（Vendure text customField）；坏 JSON/非对象 → null */

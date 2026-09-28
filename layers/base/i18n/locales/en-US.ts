@@ -723,5 +723,41 @@ export default defineI18nLocale(() =>
       guestNotFound:
         "No matching order found. It may have expired or the link is incorrect. Please verify via \"Order Lookup\".",
     },
+  }, {
+    home: {
+      comingSoon: "Coming Soon",
+      flashSale: "Flash Sale",
+      flashSaleSoon: "Coming soon — stay tuned",
+      selfOperated: "Self-operated",
+      goBuy: "Buy Now",
+      notice: "Notice",
+    },
+    category: {
+      sort: {
+        relevance: "Relevance",
+        newest: "Newest",
+        priceAsc: "Price ↑",
+        priceDesc: "Price ↓",
+      },
+    },
+    admin: {
+      apiBaseMissing:
+        "Admin API base URL is not configured (please set the ADMIN_API_BASE environment variable)",
+    },
+    general: {
+      na: "—",
+    },
+    checkout: {
+      boxLogistics: "Logistics Delivery",
+      boxPickup: "Pickup Point",
+      confirmOrder: "Confirm Order",
+      confirmOrderSub:
+        "Please review the items and delivery details before submitting",
+      pickupStoreTitle: "Pickup Point / Store",
+      pickupLoading: "Loading pickup points…",
+      noNearbyPickup:
+        "No pickup point available near your current location. Home delivery is available.",
+      itemsCount: "{n} item(s) in total",
+    },
   }),
 );

@@ -17,8 +17,10 @@ const cities = ref<DistrictNode[]>([]);
 const currentProvince = ref<DistrictNode | null>(null);
 const loadingDistricts = ref(false);
 
-// 热门城市（adcode + 中心坐标），支持快速选择
-const hotCities: { info: CityInfo; coords: GeoCoords }[] = [
+// 热门城市兜底（adcode + 中心坐标）：仅用于「渠道无可推导可用城市」时展示，
+// 属静态常量数据（城市行政数据，非 UI 文案），暂无后端下发接口。
+// TODO 待城市服务/配置提供「热门城市」能力后改为服务下发，此处仅作最后兜底。
+const HOT_CITIES_FALLBACK: { info: CityInfo; coords: GeoCoords }[] = [
   { info: { adcode: "110000", name: "北京市" }, coords: { lat: 39.9042, lng: 116.4074 } },
   { info: { adcode: "310000", name: "上海市" }, coords: { lat: 31.2304, lng: 121.4737 } },
   { info: { adcode: "440100", name: "广州市" }, coords: { lat: 23.1291, lng: 113.2644 } },
@@ -139,7 +141,7 @@ async function reLocate() {
           <p class="mb-1.5 text-xs text-neutral-500">{{ t('messages.nav.hotCities') }}</p>
           <div class="flex flex-wrap gap-1.5">
             <UButton
-              v-for="item in hotCities"
+              v-for="item in HOT_CITIES_FALLBACK"
               :key="item.info.adcode"
               size="xs"
               variant="soft"

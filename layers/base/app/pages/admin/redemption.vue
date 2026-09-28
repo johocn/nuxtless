@@ -15,7 +15,8 @@ definePageMeta({ title: "admin-redemption" });
 
 const { public: cfg } = useRuntimeConfig();
 const { t } = useI18n();
-const adminApiBase = computed<string>(() => (cfg as any).adminApiBase || "https://e.joho.cn/admin-api");
+// 管理端接口地址仅由 runtimeConfig/环境变量（ADMIN_API_BASE）注入，缺失时明确报错，不回落固定域名。
+const adminApiBase = computed<string>(() => ((cfg as any).adminApiBase as string) || "");
 
 /* ---------------- 管理 token（内存 + sessionStorage） ---------------- */
 const ADMIN_TOKEN_KEY = "nshop.admin.token";
@@ -34,6 +35,7 @@ loadAdminToken();
 /* ---------------- admin-api fetch 封装 ---------------- */
 type AdminRes<T> = { data?: T; token?: string; error?: string };
 async function adminGql<T = any>(query: string, variables: Record<string, unknown> = {}): Promise<AdminRes<T>> {
+  if (!adminApiBase.value) return { error: t("messages.admin.apiBaseMissing") };
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (adminToken.value) headers.Authorization = `Bearer ${adminToken.value}`;
   let res: Response;

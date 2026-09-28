@@ -82,16 +82,16 @@ watch(() => locationStore.coords, loadPickupLocations);
 <template>
   <div class="mt-6 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
     <div class="mb-2 flex items-center justify-between">
-      <h3 class="font-medium">自提点 / 门店</h3>
+      <h3 class="font-medium">{{ t("messages.checkout.pickupStoreTitle") }}</h3>
       <UBadge v-if="isPickup" color="primary" variant="soft" size="sm">
-        门店自提
+        {{ t("messages.checkout.storePickup") }}
       </UBadge>
     </div>
 
-    <p v-if="loading" class="text-sm text-neutral-500">正在加载自提点…</p>
+    <p v-if="loading" class="text-sm text-neutral-500">{{ t("messages.checkout.pickupLoading") }}</p>
     <p v-else-if="error" class="text-sm text-red-500">{{ error }}</p>
     <p v-else-if="!pickupLocations.length" class="text-sm text-neutral-500">
-      当前定位附近暂无可选自提点，可使用配送到家。
+      {{ t("messages.checkout.noNearbyPickup") }}
     </p>
 
     <div v-else class="space-y-2">

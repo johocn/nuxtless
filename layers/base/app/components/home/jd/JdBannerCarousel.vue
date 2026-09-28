@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 // JD 风格轮播 Banner：自动播放 + 左右箭头 + 圆点指示器 + 悬停暂停
 // 数据来源：首页运营内容里的 Banner 块（useHomeContent），无 Banner 时回退到占位图
 const { slides } = defineProps<{
@@ -8,18 +8,8 @@ const { slides } = defineProps<{
 const { t } = useI18n();
 const localePath = useTenantLocalePath();
 
-// 缺省占位 Banner（无运营 Banner 时兜底展示）
-const DEFAULT_SLIDES = [
-  { imageUrl: "https://picsum.photos/seed/jd-home-1/750/300", title: "京东 618 年中大促" },
-  { imageUrl: "https://picsum.photos/seed/jd-home-2/750/300", title: "家电焕新节" },
-  { imageUrl: "https://picsum.photos/seed/jd-home-3/750/300", title: "新品首发" },
-];
-
-// 合并：优先真实 Banner，缺失用占位；仍全空则全部占位
-const list = computed(() => {
-  const real = slides.filter((s) => s?.imageUrl);
-  return real.length ? real : DEFAULT_SLIDES;
-});
+// 仅渲染真实运营 Banner（slides 为空则整块不渲染；不再使用外域占位图兜底）
+const list = computed(() => slides.filter((s) => s?.imageUrl));
 
 const cur = ref(0);
 let timer: ReturnType<typeof setInterval> | undefined;
@@ -31,6 +21,7 @@ function next() {
   go(cur.value + 1);
 }
 function play() {
+  if (list.value.length < 2) return; // 空/单张无需自动播放，避免空列表取模异常
   if (timer) clearInterval(timer);
   timer = setInterval(next, 3500);
 }
@@ -49,6 +40,7 @@ function to(s: { link?: string; [key: string]: unknown }) {
 
 <template>
   <section
+    v-if="list.length"
     class="relative select-none overflow-hidden"
     @mouseenter="stop"
     @mouseleave="play"

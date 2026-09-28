@@ -43,7 +43,10 @@ const themeCssVars = computed(() => {
     vars.push(`--color-brand-600:${darken(t.primaryColor)};`);
   }
   if (t.accentColor) vars.push(`--theme-accent:${t.accentColor};`);
-  if (t.radius !== undefined && t.radius !== "") vars.push(`--ui-radius:${t.radius}px;`);
+  if (t.radius !== undefined && t.radius !== "") {
+    const rv = String(t.radius).trim();
+    vars.push(`--ui-radius:${/^\d+(?:\.\d+)?$/.test(rv) ? `${rv}px` : rv};`);
+  }
   return vars.length ? `html:root:root{${vars.join("")}}` : "";
 });
 useHead(() => ({ style: themeCssVars.value ? [{ innerHTML: themeCssVars.value }] : [] }));

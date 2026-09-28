@@ -107,7 +107,7 @@ async function copyCode(code: string) {
 
     <!-- 商品明细 -->
     <section class="mt-4 rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-800">
-      <h2 class="mb-2 font-medium">{{ t("messages.order.orderItems") }}（共 {{ overview.totalQuantity }} 件）</h2>
+      <h2 class="mb-2 font-medium">{{ t("messages.order.orderItems") }} {{ t("messages.checkout.itemsCount", { n: overview.totalQuantity }) }}</h2>
       <div
         v-for="(line, idx) in overview.lines"
         :key="idx"

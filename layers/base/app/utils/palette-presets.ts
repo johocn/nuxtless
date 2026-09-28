@@ -12,7 +12,7 @@ export interface ThemePaletteDef {
   tokens: PaletteToken; // 展开为 CSS 变量的 token 集
 }
 
-// 8 套预设（平台对标风 4 + 气质品牌风 4），默认 dawn-gold
+// 9 套预设（平台对标风 4 + 气质品牌风 4 + 珊瑚粉点缀），默认 dawn-gold
 export const PALETTE_PRESETS: Record<string, ThemePaletteDef> = {
   'dawn-gold': { scheme: 'dawn-gold', name: '晨曦金', tokens: { primaryColor: '#d4a574', accentColor: '#fdf6ee', radius: 8 } },
   'jd-red': { scheme: 'jd-red', name: '京东红', tokens: { primaryColor: '#e1251b', accentColor: '#ffeceb', radius: 8 } },

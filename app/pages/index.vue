@@ -149,10 +149,8 @@ const autoGoods = computed(() => ({ hot: hotProducts.value, more: moreProducts.v
 
 // 4) PC 右栏静态数据：快讯 + 小广告（文案走 i18n，缺失回退中文）
 const news = computed<string[]>(() => tm("messages.home.news") as string[]);
-const ads = [
-  { src: "https://picsum.photos/seed/jp-ad-1/240/180", link: "/" },
-  { src: "https://picsum.photos/seed/jp-ad-2/240/180", link: "/" },
-];
+// 小广告原为硬编码外域占位图（picsum），已移除；无后台配置时不渲染该栏。
+const ads: Array<{ src: string; link: string }> = [];
 
 // 5) PC 快捷入口（图标/链接固定，标签走 i18n 数组，逐语言本地化）
 const entryMeta = [
@@ -214,7 +212,7 @@ const entries = computed(() =>
           </div>
 
           <!-- 小广告 -->
-          <div class="grid grid-cols-2 gap-3">
+          <div v-if="ads.length" class="grid grid-cols-2 gap-3">
             <NuxtLink
               v-for="a in ads"
               :key="a.src"

@@ -404,14 +404,6 @@ useSchemaOrg([
       </div>
     </section>
 
-    <CategoryFilterDrawer
-      v-model:open="filterDrawerOpen"
-      :facets="facets"
-      :initial-selection="initialSelected"
-      @apply="applyFilters"
-      @clear="clearFilters"
-    />
-
     <nav
       v-if="total > take"
       class="mb-14 flex justify-center"
@@ -426,6 +418,15 @@ useSchemaOrg([
       />
     </nav>
   </main>
+
+  <!-- 筛选抽屉提到两版式之外：mall 版式的「筛选」按钮同样需要它（原仅默认版式内渲染 → mall 版式点按钮无反应） -->
+  <CategoryFilterDrawer
+    v-model:open="filterDrawerOpen"
+    :facets="facets"
+    :initial-selection="initialSelected"
+    @apply="applyFilters"
+    @clear="clearFilters"
+  />
 </template>
 
 <style lang="css" scoped></style>
