@@ -1,11 +1,11 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 definePageMeta({ middleware: "account" });
 
 import {
-  afterSalesTypeLabelKey,
+  afterSalesPrimaryAction,
+  afterSalesPrimaryActionLabelKey,
   afterSalesStateInfo,
-  afterSalesProgressIndex,
-  AFTER_SALES_PROGRESS,
+  afterSalesTypeLabelKey,
   canCancelAfterSales,
   canFillTracking,
 } from "../../../utils/after-sales-state";
@@ -15,9 +15,9 @@ import { assetSrc } from "../../../utils/image";
 const { t, locale } = useI18n();
 const localePath = useTenantLocalePath();
 const id = useRouteParam("id");
+const route = useRoute();
 
-// 该查询需登录态的 session 认证，SSR 阶段拿不到登录 cookie，改由客户端 onMounted 拉取，
-// 与售后列表页 server:false 保持一致，避免 SSR 阶段 404 / 会话失效。
+// 该查询需登录态 session 认证，SSR 阶段拿不到登录 cookie，改由客户端 onMounted 拉取
 const { data, error, refresh } = await useAsyncGql(
   "AfterSalesRequest",
   { id },
@@ -36,29 +36,41 @@ onMounted(async () => {
   } finally {
     pageLoading.value = false;
   }
+  // 从列表卡片带过来的动作直达参数
+  const action = route.query.action;
+  if (action === "tracking" && request.value && canFillTracking(request.value.state)) trackingOpen.value = true;
+  if (action === "cancel" && request.value && canCancelAfterSales(request.value.state)) cancelConfirmOpen.value = true;
 });
 
 const stateInfo = computed(() => (request.value ? afterSalesStateInfo(request.value.state) : null));
 const typeKey = computed(() => (request.value ? afterSalesTypeLabelKey(request.value.type) : ""));
-const amount = computed(() => (request.value ? formatMoney(request.value.refundAmount, "CNY", locale.value) : ""));
-const progress = computed(() => (request.value ? afterSalesProgressIndex(request.value.state) : -1));
-const preview = computed(
-  () =>
-    assetSrc(
-      request.value?.orderLine?.featuredAsset?.preview ??
-        request.value?.orderLine?.productVariant?.featuredAsset?.preview ??
-        "",
-      128,
-    ),
+const isExchange = computed(() => request.value?.type === "exchange");
+const amount = computed(() =>
+  request.value ? formatMoney(request.value.refundAmount, "CNY", locale.value) : "",
+);
+const actualAmount = computed(() =>
+  request.value?.actualRefundAmount != null
+    ? formatMoney(request.value.actualRefundAmount, "CNY", locale.value)
+    : "",
+);
+const refundedAtText = computed(() =>
+  request.value?.refundedAt ? new Date(request.value.refundedAt).toLocaleString(locale.value) : "",
+);
+const preview = computed(() =>
+  assetSrc(
+    request.value?.orderLine?.featuredAsset?.preview ??
+      request.value?.orderLine?.productVariant?.featuredAsset?.preview ??
+      "",
+    128,
+  ),
 );
 
 const evidenceImages = computed(() => request.value?.evidenceImages ?? []);
-const createdAtText = computed(() =>
-  request.value?.createdAt ? new Date(request.value.createdAt).toLocaleString(locale.value) : "",
+
+const primaryAction = computed(() =>
+  request.value ? afterSalesPrimaryAction(request.value.state) : "none",
 );
-const updatedAtText = computed(() =>
-  request.value?.updatedAt ? new Date(request.value.updatedAt).toLocaleString(locale.value) : "",
-);
+const primaryLabel = computed(() => t(afterSalesPrimaryActionLabelKey(primaryAction.value)));
 
 // 凭证图灯箱
 const lightboxOpen = ref(false);
@@ -67,6 +79,9 @@ function openEvidence(src: string) {
   activeEvidence.value = src;
   lightboxOpen.value = true;
 }
+
+// 填写退货单号弹层
+const trackingOpen = ref(false);
 
 // 取消确认弹窗
 const cancelConfirmOpen = ref(false);
@@ -82,6 +97,11 @@ async function onCancelConfirm() {
     canceling.value = false;
   }
 }
+
+function onPrimary() {
+  if (primaryAction.value === "cancel") cancelConfirmOpen.value = true;
+  else if (primaryAction.value === "tracking") trackingOpen.value = true;
+}
 </script>
 
 <template>
@@ -90,7 +110,7 @@ async function onCancelConfirm() {
     v-else-if="hasError"
     :error="{ statusCode: 404, statusMessage: t('messages.afterSales.notFound'), message: t('messages.afterSales.notFound') }"
   />
-  <main v-else-if="request" class="container mb-14">
+  <main v-else-if="request" class="container mb-32">
     <header class="my-14">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-semibold">{{ t("messages.afterSales.detailTitle") }}</h1>
@@ -106,29 +126,10 @@ async function onCancelConfirm() {
       </ULink>
     </header>
 
-    <!-- 进度时间线 -->
-    <ol v-if="progress >= 0" class="mb-6 flex items-center gap-1 text-xs">
-      <li v-for="(s, i) in AFTER_SALES_PROGRESS" :key="s" class="flex items-center gap-1">
-        <div
-          class="rounded-full px-2 py-0.5"
-          :class="
-            i < progress
-              ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
-              : i === progress
-                ? 'bg-primary text-white'
-                : 'bg-neutral-100 text-neutral-500'
-          "
-        >
-          {{ t(`messages.afterSales.step${s}`) }}
-        </div>
-        <i v-if="i < AFTER_SALES_PROGRESS.length - 1" class="h-px w-5 bg-neutral-300"></i>
-      </li>
-    </ol>
-    <dl class="mb-6 flex flex-wrap gap-x-8 gap-y-1 text-xs text-neutral-500">
-      <div v-if="createdAtText"><dt class="inline">{{ t("messages.afterSales.createdAt") }}</dt> <dd class="inline">{{ createdAtText }}</dd></div>
-      <div v-if="updatedAtText"><dt class="inline">{{ t("messages.afterSales.updatedAt") }}</dt> <dd class="inline">{{ updatedAtText }}</dd></div>
-    </dl>
+    <!-- 你需要做什么 -->
+    <AfterSalesNextStep :state="request.state" />
 
+    <!-- 商品卡 -->
     <section class="mb-6 flex items-center gap-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
       <NuxtImg
         :src="preview"
@@ -139,10 +140,20 @@ async function onCancelConfirm() {
       <div class="min-w-0">
         <p class="font-medium">{{ t(typeKey) }}</p>
         <p class="truncate text-sm text-neutral-500">{{ request.orderLine?.productVariant?.name }}</p>
-        <p class="text-sm">{{ t("messages.afterSales.amount") }}: {{ amount }}</p>
+        <p v-if="!isExchange" class="text-sm">{{ t("messages.afterSales.amount") }}: {{ amount }}</p>
+        <p v-if="actualAmount" class="text-sm">
+          {{ t("messages.afterSales.actualRefundAmount") }}: {{ actualAmount }}
+        </p>
       </div>
     </section>
 
+    <!-- 处理进度 -->
+    <section class="mb-6 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+      <h2 class="mb-3 text-sm font-medium text-neutral-500">{{ t("messages.afterSales.progressTitle") }}</h2>
+      <AfterSalesTimeline :request="request" />
+    </section>
+
+    <!-- 申请信息 -->
     <dl class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div>
         <dt class="text-sm text-neutral-500">{{ t("messages.afterSales.reason") }}</dt>
@@ -156,9 +167,9 @@ async function onCancelConfirm() {
         <dt class="text-sm text-neutral-500">{{ t("messages.afterSales.rejectReason") }}</dt>
         <dd class="mt-1 text-error">{{ request.rejectReason }}</dd>
       </div>
-      <div v-if="request.returnTrackingNo">
-        <dt class="text-sm text-neutral-500">{{ t("messages.afterSales.trackingNo") }}</dt>
-        <dd class="mt-1 font-mono">{{ request.returnCarrier }} {{ request.returnTrackingNo }}</dd>
+      <div v-if="request.refundedAt && refundedAtText">
+        <dt class="text-sm text-neutral-500">{{ t("messages.afterSales.refundedAt") }}</dt>
+        <dd class="mt-1">{{ refundedAtText }}</dd>
       </div>
     </dl>
 
@@ -179,25 +190,36 @@ async function onCancelConfirm() {
     </section>
     <p v-else class="mb-6 text-xs text-neutral-400">{{ t("messages.afterSales.noEvidence") }}</p>
 
-    <!-- 联系客服 -->
     <CustomerServiceCard class="mb-6" />
 
-    <div class="flex flex-wrap gap-3">
-      <UButton
-        v-if="canCancelAfterSales(request.state)"
-        color="error"
-        variant="soft"
-        :label="t('messages.afterSales.cancel')"
-        @click="cancelConfirmOpen = true"
-      />
+    <!-- 吸底动作区 -->
+    <div
+      class="fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/95 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95"
+      style="padding-bottom: env(safe-area-inset-bottom)"
+    >
+      <div class="container flex items-center justify-between gap-3 py-3">
+        <UButton
+          icon="i-lucide-headset"
+          variant="soft"
+          :label="t('messages.afterSales.customerService')"
+          @click="() => $el?.scrollIntoView?.()"
+        />
+        <UButton
+          v-if="primaryAction === 'cancel' || primaryAction === 'tracking'"
+          color="primary"
+          :label="primaryLabel"
+          @click="onPrimary"
+        />
+      </div>
     </div>
 
-    <AfterSalesTrackForm
-      v-if="canFillTracking(request.state)"
-      :id="request.id"
-      class="mt-6"
-      @updated="refresh"
-    />
+    <!-- 填写退货单号 -->
+    <UModal v-model:open="trackingOpen" :ui="{ content: 'sm:max-w-md' }">
+      <template #body>
+        <h3 class="mb-3 text-base font-medium">{{ t("messages.afterSales.trackTitle") }}</h3>
+        <AfterSalesTrackForm :id="request.id" :embedded="true" @updated="refresh" />
+      </template>
+    </UModal>
 
     <!-- 凭证图灯箱 -->
     <UModal v-model:open="lightboxOpen" :ui="{ content: 'sm:max-w-xl' }">
