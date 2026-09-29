@@ -54,7 +54,7 @@ const nodes = computed<Node[]>(() => {
     if (isCurrent && r.updatedAt) time = fmt(r.updatedAt);
     return {
       key: state,
-      label: t(STEP_LABEL_KEY[state]),
+      label: t(STEP_LABEL_KEY[state] ?? ""),
       time,
       timeIsRecent: isCurrent && !!r.updatedAt,
       detail:
@@ -122,7 +122,7 @@ const nodes = computed<Node[]>(() => {
         <span
           v-if="i < nodes.length - 1"
           class="w-px flex-1"
-          :class="n.reached && nodes[i + 1].reached ? 'bg-primary' : 'bg-neutral-200 dark:bg-neutral-800'"
+          :class="n.reached && nodes[i + 1]?.reached ? 'bg-primary' : 'bg-neutral-200 dark:bg-neutral-800'"
         />
       </div>
       <div class="pb-5">

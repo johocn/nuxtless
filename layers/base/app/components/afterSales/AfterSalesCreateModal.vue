@@ -139,7 +139,7 @@ function onAmountInput(e: Event) {
   const raw = (e.target as HTMLInputElement).value;
   // 自动截断到两位小数
   const cleaned = raw.replace(/[^\d.]/g, "");
-  const [int, ...rest] = cleaned.split(".");
+  const [int = "", ...rest] = cleaned.split(".");
   amountText.value = rest.length ? `${int}.${rest.join("").slice(0, 2)}` : int;
 }
 
