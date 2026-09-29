@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useAfterSales } from "../../composables/useAfterSales";
 
-const props = defineProps<{ id: string }>();
+const props = withDefaults(defineProps<{ id: string; embedded?: boolean }>(), { embedded: false });
 const emit = defineEmits<{ (e: "updated"): void }>();
 const { t } = useI18n();
 const { loading, updateTracking } = useAfterSales();
@@ -24,7 +24,7 @@ async function onSubmit() {
 </script>
 
 <template>
-  <div class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+  <div :class="props.embedded ? '' : 'rounded-lg border border-neutral-200 p-4 dark:border-neutral-800'">
     <h3 class="mb-3 font-medium">{{ t("messages.afterSales.trackTitle") }}</h3>
     <div class="grid grid-cols-2 gap-3">
       <UFormGroup :label="t('messages.afterSales.carrier')" required>
