@@ -12,6 +12,9 @@ fragment AfterSalesFragment on AfterSalesRequest {
   returnCarrier
   rejectReason
   receivedQuantity
+  actualRefundAmount
+  refundedAt
+  refundError
   createdAt
   updatedAt
   order {
@@ -68,4 +71,8 @@ mutation UpdateReturnTracking($id: ID!, $trackingNo: String!, $carrier: String!)
   updateReturnTracking(id: $id, trackingNo: $trackingNo, carrier: $carrier) {
     ...AfterSalesFragment
   }
+}
+
+mutation UploadAfterSalesEvidence($images: [String!]!) {
+  uploadAfterSalesEvidence(images: $images)
 }

@@ -6,6 +6,7 @@ export interface CreateAfterSalesInput {
   type?: string;
   reason: string;
   description?: string | null;
+  evidenceImages?: string[] | null;
   refundAmount: number;
 }
 
@@ -32,6 +33,7 @@ export function useAfterSales() {
           type: (input.type ?? "return_refund") as AfterSalesType,
           reason: input.reason,
           description: input.description ?? null,
+          evidenceImages: input.evidenceImages && input.evidenceImages.length ? input.evidenceImages : null,
           refundAmount: input.refundAmount,
         },
       });
@@ -81,5 +83,18 @@ export function useAfterSales() {
     }
   }
 
-  return { loading, error, createRequest, cancelRequest, updateTracking };
+  /** 上传单张凭证图（data URL → 服务端 asset），返回绝对 URL；失败返回 null */
+  async function uploadEvidence(dataUrl: string, signal?: AbortSignal): Promise<string | null> {
+    try {
+      const { uploadAfterSalesEvidence } = await GqlUploadAfterSalesEvidence({ images: [dataUrl] });
+      return uploadAfterSalesEvidence?.[0] ?? null;
+    } catch (e: any) {
+      if (signal?.aborted) return null;
+      const msg = e?.gqlErrors?.[0]?.message ?? e?.message ?? "upload evidence failed";
+      error.value = msg;
+      return null;
+    }
+  }
+
+  return { loading, error, createRequest, cancelRequest, updateTracking, uploadEvidence };
 }
