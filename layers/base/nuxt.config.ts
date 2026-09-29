@@ -1,29 +1,18 @@
 import type { LocaleObject } from "@nuxtjs/i18n";
 import { appLocales } from "./i18n/locales";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
-// 读取租户 code 白名单（与 useTenantChannel 共用同一份 data/tenant-channels.json）
-function tenantCodes(): string[] {
-  try {
-    const json = JSON.parse(
-      readFileSync(resolve(process.cwd(), "layers/base/data/tenant-channels.json"), "utf8"),
-    );
-    return (json.tenants || []).map((t: { code: string }) => t.code);
-  } catch {
-    return [];
-  }
-}
 
 export default defineNuxtConfig({
-  // 多租户路径前缀：在 i18n 之前为每条页面路由注入可选 :tenantCode 段。
+  // 多租户路径前缀：在 i18n 之前为每条页面路由注入「免费」可选 :tenantCode 段。
+  // 段内容不再受构建期白名单约束（真伪判定下移到运行时租户表 server/utils/tenant-registry.ts
+  // + Vue 全局路由中间件 middleware/tenant.global.ts），从而使新增/启用渠道无需重新构建部署。
   // 默认中文 => /t2/product/x；英文 => /en/t2/product/x（i18n 会把整条 path 前缀上 locale）。
+  //
+  // 不遮蔽真实路由的依据：① 默认参数模式 [^/]+? 不含 /（段数 = token 数，无歧义）；
+  // ② 整条路径锚定 ^...$；③ PathScore 静态段(40+40) 远高于动态段(20)，段数不足直接落败。
+  // ⚠️ 缺省时 route.params.tenantCode 为空字符串 ""（非 undefined），判断必须用 falsy。
   hooks: {
     "pages:extend"(pages: { path: string }[]) {
-      const codes = tenantCodes();
-      if (!codes.length) return;
-      const rx = codes.slice(0, 200).join("|");
-      const seg = `:tenantCode(${rx})?`;
+      const seg = ":tenantCode?";
       for (const route of pages) {
         if (typeof route.path !== "string" || !route.path.startsWith("/")) continue;
         route.path = route.path === "/" ? `/${seg}` : `/${seg}${route.path}`;
