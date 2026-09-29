@@ -1,4 +1,10 @@
-// 生成 nshop 前端租户 code→channel token 映射文件 layers/base/data/tenant-channels.json
+// 生成 nshop 前端「构建期种子」租户映射 layers/base/data/tenant-channels.json
+//
+// 【可选工具，不再是上线必经步骤】
+// 多租户清单已改为运行时获取（后端公开查询 shopChannels → Nitro server/utils/tenant-registry.ts
+// 做 SWR 缓存），因此新增/启用渠道**无需**跑本脚本，也无需重新构建部署前端。
+// 本脚本保留用于：把线上渠道快照落盘，作为运行时拉取失败时的 last-known-good 种子。
+//
 // 用法: node scripts/generate-tenant-map.mjs
 // 环境变量: ADMIN_API(默认 https://e.joho.cn/admin-api) ADMIN_EMAIL ADMIN_PASSWORD
 import { writeFileSync, mkdirSync } from "node:fs";
