@@ -38,6 +38,8 @@ export default defineI18nLocale(() =>
       next: "Следваща",
       noMatchProducts: "Няма съответстващи продукти",
       qualityZone: "Зона за качество",
+      selectShop: "Избор на магазин",
+      officialShop: "Официален магазин",
     },
     detail: {
       marketingTags: { new: 'Нов', hot: 'Топ', special: 'Специално', sale: 'Ограничено време', freeShip: 'Безплатна доставка', cut: 'Отстъпка', clearance: 'Разпродажба', instock: 'Наличност', 'flash-sale': 'Бърза разпродажба', limited: 'Ограничено количество', 'price-drop': 'Намаление', 'new-arrival': 'Ново пристигане' },
@@ -517,6 +519,19 @@ export default defineI18nLocale(() =>
       email: "Имейл",
     },
     error: {
+      title404: "404",
+      title500: "500",
+      shopNotFound: "Магазинът не е намерен",
+      shopNotFoundDesc: "Този магазин може да е преименуван или спрян",
+      pageNotFound: "Страницата не е намерена",
+      pageNotFoundDesc: "Тази страница може да е премахната",
+      serverError: "Услугата временно не е достъпна",
+      serverErrorDesc: "Опитайте отново по-късно или се върнете към началото",
+      backHome: "Към началото",
+      chooseShop: "Избор на друг магазин",
+      maybeLike: "Може да харесате",
+      switchFailed: "Този магазин е недостъпен, изберете друг",
+      cityReset: "Магазинът е сменен, изберете град отново",
       invalidPasswordResetLink:
         "Връзката за възстановяване на паролата е невалидна.",
       resetFail: "Неуспешно нулиране",

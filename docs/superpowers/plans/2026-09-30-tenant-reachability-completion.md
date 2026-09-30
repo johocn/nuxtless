@@ -112,7 +112,14 @@ Invoke-RestMethod -Uri "https://www.youshop.cn/shop-api" -Method Post -ContentTy
 
 ---
 
-## Task 1: i18n 词条（13 键 × 12 语言包）
+## Task 1: i18n 词条（13 error 键 + 2 nav 键 × 12 语言包）— ✅ 已完成
+
+> **实施记录（偏离原计划，已按实际结构修正）**：原计划假设「新增 error 块」，实测**每个语言包早已存在 `error` 块**
+> （`zhMessages.error` 10 键；各语言在 `zhFallbackLocale(arg1, arg2)` 的 arg1 / arg2 各有一块）。
+> 同对象内再加一个 `error` 会触发**重复键**（后者覆盖前者，新词条被静默丢弃）。
+> 实际做法：把 13 个新键**并入各文件 arg1 的既有 `error` 块**（锚点 `    error: {\n      invalidPasswordResetLink:`，全文件唯一）。
+> 另：原计划漏了 `nav.selectShop` / `nav.officialShop` 的 11 语言译文，已一并对齐（否则非中文站会回退中文，违反多语言硬规范）。
+> 校验：`node <temp>/i18n-check.js` → `files=12 parsed=12 parseFailures=0 duplicateKeys=0`，每文件 `errorKeys=23`、`navOk=true`。
 
 **Files:**
 - Modify: `nshop/layers/base/i18n/locales/zh-CN.ts`（在 `zhMessages.nav` 内追加 2 键，并新增 `error` 块）

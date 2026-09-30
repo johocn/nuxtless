@@ -38,6 +38,8 @@ export default defineI18nLocale(() =>
       next: "Weiter",
       noMatchProducts: "Keine passenden Produkte",
       qualityZone: "Qualitätszone",
+      selectShop: "Shop wählen",
+      officialShop: "Offizieller Shop",
     },
     pages: {
       index: {
@@ -550,6 +552,19 @@ export default defineI18nLocale(() =>
       email: "E-Mail",
     },
     error: {
+      title404: "404",
+      title500: "500",
+      shopNotFound: "Shop nicht gefunden",
+      shopNotFoundDesc: "Dieser Shop wurde möglicherweise umbenannt oder deaktiviert",
+      pageNotFound: "Seite nicht gefunden",
+      pageNotFoundDesc: "Diese Seite wurde möglicherweise entfernt",
+      serverError: "Dienst vorübergehend nicht verfügbar",
+      serverErrorDesc: "Bitte später erneut versuchen oder zur Startseite zurückkehren",
+      backHome: "Zur Startseite",
+      chooseShop: "Anderen Shop wählen",
+      maybeLike: "Das könnte Ihnen gefallen",
+      switchFailed: "Dieser Shop ist nicht verfügbar, bitte einen anderen wählen",
+      cityReset: "Shop gewechselt, bitte Stadt neu wählen",
       invalidPasswordResetLink: "Der Passwort-Reset-Link ist ungültig.",
       resetFail: "Zurücksetzen fehlgeschlagen",
       general: "Etwas ist schiefgelaufen",
