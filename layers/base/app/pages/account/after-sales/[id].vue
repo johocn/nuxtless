@@ -223,21 +223,26 @@ function onPrimary() {
 
     <!-- 凭证图灯箱 -->
     <UModal v-model:open="lightboxOpen" :ui="{ content: 'sm:max-w-xl' }">
-      <div class="p-3">
-        <img v-if="activeEvidence" :src="activeEvidence" :alt="t('messages.afterSales.evidence')" class="w-full rounded-md object-contain" />
-      </div>
+      <!-- 必须放 #body：UModal 默认插槽是触发器，内容写那里会常驻页面 -->
+      <template #body>
+        <div class="p-3">
+          <img v-if="activeEvidence" :src="activeEvidence" :alt="t('messages.afterSales.evidence')" class="w-full rounded-md object-contain" />
+        </div>
+      </template>
     </UModal>
 
     <!-- 取消确认 -->
     <UModal v-model:open="cancelConfirmOpen" :ui="{ content: 'sm:max-w-sm' }">
-      <div class="p-5 text-center">
-        <h2 class="text-base font-medium">{{ t("messages.afterSales.cancelConfirm") }}</h2>
-        <p class="mt-1 text-sm text-neutral-500">{{ t("messages.afterSales.cancelConfirmDesc") }}</p>
-        <div class="mt-5 flex justify-center gap-3">
-          <UButton variant="soft" :label="t('messages.afterSales.keepRequest')" @click="cancelConfirmOpen = false" />
-          <UButton color="error" :loading="canceling" :label="t('messages.afterSales.confirmCancel')" @click="onCancelConfirm" />
+      <template #body>
+        <div class="p-5 text-center">
+          <h2 class="text-base font-medium">{{ t("messages.afterSales.cancelConfirm") }}</h2>
+          <p class="mt-1 text-sm text-neutral-500">{{ t("messages.afterSales.cancelConfirmDesc") }}</p>
+          <div class="mt-5 flex justify-center gap-3">
+            <UButton variant="soft" :label="t('messages.afterSales.keepRequest')" @click="cancelConfirmOpen = false" />
+            <UButton color="error" :loading="canceling" :label="t('messages.afterSales.confirmCancel')" @click="onCancelConfirm" />
+          </div>
         </div>
-      </div>
+      </template>
     </UModal>
   </main>
 </template>
