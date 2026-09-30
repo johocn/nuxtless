@@ -33,6 +33,13 @@ const unitPrice = line.unitPriceWithTax;
 const lineTotal = line.linePriceWithTax;
 const currency = selectedVariant.value?.currencyCode ?? (line as any).currencyCode ?? "CNY";
 
+const localePath = useTenantLocalePath();
+
+/** 酒店房型行：有入住日期即按酒店渲染（隐藏单价与步进器） */
+const isHotel = computed(() => !!line.customFields?.hotelCheckIn && !!line.customFields?.hotelCheckOut);
+const hotelNights = computed(() => line.customFields?.hotelNights ?? line.quantity);
+const hotelSlug = computed(() => line.productVariant?.product?.slug ?? "");
+
 async function onAdjust(val: number) {
   if (val === line.quantity) return;
   if (val < 1) {
@@ -71,22 +78,38 @@ const remove = async () => {
       <div v-else class="h-16 w-16 rounded bg-neutral-100 dark:bg-neutral-800" />
     </div>
 
-    <!-- 中间商品描述：名称/单价/规格 -->
+    <!-- 中间商品描述：名称/单价/规格；酒店行改为起止日期与晚数 -->
     <div class="min-w-0 flex-1 flex flex-col justify-center">
       <div class="truncate text-sm font-medium">
         {{ displayName }}
       </div>
-      <div class="mt-1 text-xs text-neutral-500">
-        {{ t("messages.shop.price") }}: {{ (unitPrice / 100).toFixed(2) }} {{ currency }}
-      </div>
-      <div v-if="line.quantity > 1" class="mt-0.5 text-xs text-neutral-400">
-        {{ t("messages.shop.subtotal") }}: {{ (lineTotal / 100).toFixed(2) }} {{ currency }}
-      </div>
+      <template v-if="isHotel">
+        <div class="mt-1 text-xs text-neutral-500">
+          {{ t("messages.hotel.nights", { n: hotelNights }) }} ·
+          {{ t("messages.hotel.dateRange", { in: line.customFields?.hotelCheckIn, out: line.customFields?.hotelCheckOut }) }}
+        </div>
+        <div class="mt-0.5 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+          {{ (lineTotal / 100).toFixed(2) }} {{ currency }}
+        </div>
+      </template>
+      <template v-else>
+        <div class="mt-1 text-xs text-neutral-500">
+          {{ t("messages.shop.price") }}: {{ (unitPrice / 100).toFixed(2) }} {{ currency }}
+        </div>
+        <div v-if="line.quantity > 1" class="mt-0.5 text-xs text-neutral-400">
+          {{ t("messages.shop.subtotal") }}: {{ (lineTotal / 100).toFixed(2) }} {{ currency }}
+        </div>
+      </template>
     </div>
 
-    <!-- 右侧操作区：数量步进器 + 删除按钮同一列（右对齐竖排）；步进器数字固定宽度加粗，多位数也看得清 -->
+    <!-- 右侧操作区：普通商品为步进器；酒店行为「修改日期 + 删除」 -->
     <div class="flex shrink-0 flex-col items-end justify-center gap-1.5">
-      <div class="flex items-center gap-0.5">
+      <NuxtLink
+        v-if="isHotel && hotelSlug"
+        :to="`${localePath(`/product/${hotelSlug}`)}?checkIn=${line.customFields?.hotelCheckIn}&checkOut=${line.customFields?.hotelCheckOut}`"
+        class="text-xs text-primary-600 dark:text-primary-400"
+      >{{ t("messages.hotel.changeDates") }}</NuxtLink>
+      <div v-else-if="!isHotel" class="flex items-center gap-0.5">
         <button
           type="button"
           aria-label="减少数量"
