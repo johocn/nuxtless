@@ -57,7 +57,12 @@ const items = computed<NavigationMenuItem[]>(
     />
 
     <template #right>
-      <HeaderTenantSelector />
+      <!-- 移动端隐藏：抽屉 #body 里已有一份租户选择器（见下方），页头再放一份会把右侧组撑到
+           338px 超出 390px 视口（横向可滚 + 购物车角标被切），并把品牌 logo 压成 32px 细缝。
+           城市选择器保留——它决定配送/库存，是多城市店的主操作。 -->
+      <div class="hidden items-center sm:flex">
+        <HeaderTenantSelector />
+      </div>
       <HeaderCitySelector />
       <SearchModal />
       <AccountMenu />

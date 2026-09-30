@@ -123,6 +123,15 @@ export default defineI18nLocale(() =>
       tCustom: 'Special',
       bedType: 'Bed',
     },
+    hotel: {
+      nights: '{n}박',
+      dateRange: '{in} ~ {out}',
+      nightlyDetail: '1박별 상세',
+      changeDates: '날짜 변경',
+      stayTotal: '숙박 합계',
+      selectDatesFirst: '먼저 체크인·체크아웃 날짜를 선택하세요',
+      nightsOutOfRange: '{min}~{max}박 필요',
+    },
     home: {
       newsTitle: "JD 뉴스",
       adsAlt: "이벤트 광고",

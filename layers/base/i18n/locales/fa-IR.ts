@@ -92,6 +92,15 @@ export default defineI18nLocale(() =>
       nearbyStoresCount: 'مجموعاً {n} فروشگاه · نزدیک‌ترین حدود {d}',
       nearbyUnknownDistance: 'فاصله نامشخص',
     },
+    hotel: {
+      nights: '{n} شب',
+      dateRange: '{in} تا {out}',
+      nightlyDetail: 'جزئیات هر شب',
+      changeDates: 'تغییر تاریخ',
+      stayTotal: 'مجموع اقامت',
+      selectDatesFirst: 'ابتدا تاریخ ورود و خروج را انتخاب کنید',
+      nightsOutOfRange: 'نیاز به {min} تا {max} شب',
+    },
     home: {
       newsTitle: "اخبار جی‌دونگ",
       adsAlt: "تبلیغات ویژه",

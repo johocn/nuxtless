@@ -110,6 +110,15 @@ export default defineI18nLocale(() =>
       nearbyStoresCount: "{n} Filialen · nächste ca. {d}",
       nearbyUnknownDistance: "Entfernung unbekannt",
     },
+    hotel: {
+      nights: '{n} Nächte',
+      dateRange: '{in} – {out}',
+      nightlyDetail: 'Detail pro Nacht',
+      changeDates: 'Daten ändern',
+      stayTotal: 'Aufenthalt gesamt',
+      selectDatesFirst: 'Bitte zuerst An- und Abreisedatum auswählen',
+      nightsOutOfRange: '{min}-{max} Nächte erforderlich',
+    },
     home: {
       newsTitle: "JD-News",
       adsAlt: "Aktionswerbung",
