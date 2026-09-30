@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>多租户渠道「永久可达」· 操作手册与验收报告</title>
+<style>
+  :root { --p:#2b7cff; --ok:#16a34a; --warn:#d97706; --line:#e8e8e8; --muted:#888; }
+  body { font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; line-height: 1.7; color:#222; }
+  h1 { font-size: 24px; border-bottom: 2px solid var(--p); padding-bottom: 10px; }
+  h2 { font-size: 18px; margin-top: 34px; border-left: 4px solid var(--p); padding-left: 8px; }
+  h3 { font-size: 15px; margin-top: 22px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13.5px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #fafafa; }
+  code { background: #f4f4f4; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+  pre { background:#f7f7f9; border:1px solid var(--line); border-radius:8px; padding:12px; overflow:auto; font-size:12.5px; }
+  .note { background: #fff7e6; border: 1px solid #ffe1a8; border-radius: 8px; padding: 12px 14px; margin: 16px 0; font-size: 13.5px; }
+  .ok { color: var(--ok); font-weight: 600; }
+  .bad { color: #dc2626; font-weight: 600; }
+  .warn { color: var(--warn); font-weight: 600; }
+  .wall { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-top:12px; }
+  .wall figure { margin:0; }
+  .wall img { width:100%; border:1px solid var(--line); border-radius:8px; display:block; }
+  .wall figcaption { font-size:12px; color:#666; margin-top:4px; }
+  a { color: var(--p); }
+</style>
+</head>
+<body>
+  <h1>多租户渠道「永久可达」· 操作手册与验收报告</h1>
+  <p>
+    项目：<b>nshop</b>（用户端商城，<code>www.youshop.cn</code>）+ <b>vshop</b>（H5 商城，<code>e.joho.cn</code>）<br/>
+    设计：<code>nshop/docs/superpowers/specs/2026-09-30-tenant-reachability-completion-design.md</code><br/>
+    实施计划：<code>nshop/docs/superpowers/plans/2026-09-30-tenant-reachability-completion.md</code><br/>
+    状态：<span class="ok">已部署上线并线上复验通过</span>（2026-09-30）
+  </p>
+
+  <h2>一、功能说明</h2>
+  <p>补齐多租户「永久可达」的三块缺口，让用户无论通过 <b>渠道前缀 URL</b>、<b>店铺自有域名</b> 还是 <b>失效链接</b> 进入，都能落到正确的店铺，且不出现白屏 / 空导航：</p>
+  <ul>
+    <li><b>全局错误页</b>：区分「店铺不存在」与「页面不存在」两类 404，以及 500；自带站点外壳、多语言文案与恢复出口（返回首页 / 选择其他店铺）。</li>
+    <li><b>域名直达</b>：店铺自有域名命中渠道、且 URL 未带租户段时，服务端 301 归一为 <code>/&lt;code&gt;/原路径</code>，使站内链接天然带租户前缀（域名不变）。</li>
+    <li><b>页头店铺切换器</b>：桌面在页头右侧、移动端在抽屉内，与城市选择器并列；切换走整页导航，彻底重置渠道态（购物车 / 城市 / GQL 头）。</li>
+    <li><b>vshop 对齐</b>：<code>?tenant=&lt;不存在&gt;</code> 由原「静默回退默认店」改为<b>明示弹窗</b>告知，与 nshop 的 404 行为一致。</li>
+    <li><b>店铺清单 GQL</b>：新增公开查询 <code>shopChannels</code>，供页头切换器与错误页「选择其他店铺」共用（单点数据源）。</li>
+  </ul>
+
+  <h2>二、租户解析机制（收敛到一处）</h2>
+  <table>
+    <tr><th>层级</th><th>来源</th><th>实现位置</th><th>触发条件 / 结果</th></tr>
+    <tr><td>1. 路径首段</td><td><code>/&lt;locale?&gt;/&lt;code&gt;/…</code></td><td><code>server/middleware/tenant.ts</code></td><td>首段（跳过 i18n 前缀）命中已知渠道 → 写 <code>event.context.tenant</code>，放行</td></tr>
+    <tr><td>2. 访问域名</td><td>渠道 <code>customDomains</code></td><td><code>server/utils/tenant-registry.ts#resolveTenantByDomain</code></td><td>首段未命中 → 按 <code>host</code> 解析；命中非默认渠道 → <b>301</b> 到 <code>/&lt;locale?&gt;/&lt;code&gt;/原路径</code></td></tr>
+    <tr><td>3. 平台默认店</td><td><code>__default_channel__</code></td><td>同上（默认渠道返回 <code>null</code>）</td><td>域名绑定的是默认渠道 → <b>不 301</b>（默认店本就不带前缀，零回归）</td></tr>
+    <tr><td>4. 未命中</td><td>—</td><td><code>layers/base/app/middleware/tenant.global.ts</code></td><td>Vue 路由层判定 404，<code>data.kind = "shop-not-found"</code>（逻辑页前缀不匹配 → <code>page</code> 版式）</td></tr>
+  </table>
+  <table>
+    <tr><th>状态</th><th>触发条件</th><th>表现</th></tr>
+    <tr><td><b>200</b></td><td>首段命中渠道（或平台默认店无前缀）</td><td>正常渲染该店铺</td></tr>
+    <tr><td><b>301</b></td><td>域名命中<b>非默认</b>渠道，且 URL 未带租户段</td><td>同域跳 <code>/&lt;code&gt;/…</code>（<code>/en/product/x</code> → <code>/en/&lt;code&gt;/product/x</code>，语言前缀保留在租户段之前）</td></tr>
+    <tr><td><b>404</b></td><td>首段是租户段但渠道不存在/停用</td><td>错误页「店铺不存在」（店铺版式）</td></tr>
+    <tr><td><b>404</b></td><td>已知租户段下路径不匹配</td><td>错误页「页面不存在」（页面版式 + 推荐店铺）</td></tr>
+  </table>
+  <div class="note">
+    <b>绝不 301 的排除清单</b>（<code>server/middleware/tenant.ts</code>）：<code>/_</code>（<code>/_nuxt/</code>、<code>/_ipx/</code>、<code>/_og/</code>）、<code>/api/</code>、<code>/shop-api</code>、<code>/admin-api</code>、<code>/images/</code>、<code>/static/</code>、<code>/assets/</code>；带扩展名的请求（<code>favicon.ico</code>、<code>robots.txt</code>、<code>sitemap.xml</code> 等）与明确声明非 HTML 的请求一律放行。
+  </div>
+
+  <h2>三、店铺清单 GraphQL（数据源）</h2>
+  <p>切换器与错误页共用同一份公开查询（无需鉴权），定义于 <code>layers/base/gql/queries/tenant.gql</code>，由 <code>nuxt-graphql-client</code> 生成 SDK 函数 <code>GqlShopChannelsForSwitcher()</code>，经 <code>useTenantSwitcher()</code> 消费：</p>
+  <pre>query ShopChannelsForSwitcher {
+  shopChannels { code token name tenantNo isOfficial isDefault }
+}</pre>
+  <p>页头切换器采用<b>按需懒加载</b>（打开面板时才取数），避免 setup 期异步取数造成的页头水合失配。</p>
+
+  <h2>四、HTTP 断言表</h2>
+
+  <h3>4.1 线上可达性（<code>scripts/_verify_online_tenant.py</code>，2026-09-30 实测）</h3>
+  <table>
+    <tr><th>#</th><th>URL</th><th>期望</th><th>实测</th></tr>
+    <tr><td>1</td><td><code>https://www.youshop.cn/t1</code></td><td>200</td><td class="ok">200</td></tr>
+    <tr><td>2</td><td><code>https://www.youshop.cn/t2</code></td><td>200</td><td class="ok">200</td></tr>
+    <tr><td>3</td><td><code>https://www.youshop.cn/t3</code></td><td>200</td><td class="ok">200</td></tr>
+    <tr><td>4</td><td><code>https://www.youshop.cn/official-01</code></td><td>200</td><td class="ok">200</td></tr>
+    <tr><td>5</td><td><code>https://www.youshop.cn/en/t1</code></td><td>200</td><td class="ok">200</td></tr>
+    <tr><td>6</td><td><code>https://www.youshop.cn/t24</code>（已停用渠道）</td><td>404</td><td class="ok">404</td></tr>
+    <tr><td>7</td><td><code>https://www.youshop.cn/nonexistent-xyz</code></td><td>404</td><td class="ok">404</td></tr>
+    <tr><td>8</td><td><code>https://www.youshop.cn/zh/t1</code>（zh 非前缀语言）</td><td>404</td><td class="ok">404</td></tr>
+    <tr><td>9</td><td><code>https://www.youshop.cn/t1/no-such-page-xyz</code></td><td>404</td><td class="ok">404</td></tr>
+    <tr><td>10</td><td><code>https://www.youshop.cn/no-such-shop-xyz</code></td><td>404</td><td class="ok">404</td></tr>
+  </table>
+  <p>文案断言 2/2 通过：404 页分别命中「店铺不存在」与「页面不存在」；页头切换器 SSR 已存在（HTML 含 <code>i-lucide:store</code>），且未挤掉城市选择器。</p>
+
+  <h3>4.2 租户解析接口三态（<code>/api/tenant/resolve</code>）</h3>
+  <table>
+    <tr><th>请求</th><th>期望</th><th>实测</th></tr>
+    <tr><td><code>?code=t1&fresh=1</code></td><td><code>{"status":"ok","code":"t1","name":"新生",…}</code></td><td class="ok">ok / 新生</td></tr>
+    <tr><td><code>?code=t24&fresh=1</code></td><td><code>{"status":"unknown","code":"t24"}</code></td><td class="ok">unknown</td></tr>
+    <tr><td><code>?code=__default_channel__&fresh=1</code></td><td><code>{"status":"ok",…,"name":"优商铺"}</code></td><td class="ok">ok / 优商铺</td></tr>
+  </table>
+
+  <h3>4.3 域名直达 301 排除清单（本地回归 <code>scripts/_diag_domain301.py</code>，15/15 PASS）</h3>
+  <p>在本地生产构建 + <code>/shop-api</code> 代理下，逐条请求下列 URL，<b>断言全部不得为 301</b>：</p>
+  <table>
+    <tr><th>类别</th><th>用例</th><th>实测</th></tr>
+    <tr><td>平台域 / 常规路径</td><td><code>localhost /</code>、<code>/t1</code>、<code>/en/t1</code>、<code>/product/foo</code></td><td class="ok">不 301</td></tr>
+    <tr><td>接口</td><td><code>/api/tenant/resolve</code>、<code>/shop-api</code>、<code>/admin-api</code></td><td class="ok">不 301</td></tr>
+    <tr><td>静态资源</td><td><code>/_nuxt/entry.js</code>、<code>/favicon.ico</code>、<code>/images/x.png</code>、<code>/static/x.png</code>、<code>/assets/x.png</code></td><td class="ok">不 301</td></tr>
+    <tr><td>默认渠道域名</td><td><code>Host: e.joho.cn</code> → <code>/</code>、<code>/t1</code>、<code>/product/foo</code></td><td class="ok">不 301</td></tr>
+  </table>
+  <div class="note">
+    <b>正向 301 的线上验证待补</b>：生产库 <code>customDomains</code> 目前仅一条 <code>e.joho.cn → __default_channel__</code>（默认渠道按设计不 301），且该域服务的是 vshop。若需线上验收「域名直达」，请在部署侧给某渠道（如 <code>t1</code>）配一个 <code>customDomains</code>，并把该域 nginx <code>server_name</code> 指到 nshop 实例，然后执行：<br/>
+    <code>curl.exe -s -o NUL -w "%{http_code} %{redirect_url}" "https://&lt;店铺域&gt;/product/x"</code> → 期望 <code>301 https://&lt;店铺域&gt;/&lt;code&gt;/product/x</code>。
+  </div>
+
+  <h2>五、截图墙（手机视口 390×844 / dpr=2）</h2>
+
+  <h3>5.1 全局错误页</h3>
+  <div class="wall">
+    <figure><img src="shots/error-404-shop-mobile.png" alt="店铺不存在" /><figcaption>404 店铺不存在（<code>/no-such-shop-xyz</code>）：返回首页 + 选择其他店铺</figcaption></figure>
+    <figure><img src="shots/error-404-page-mobile.png" alt="页面不存在" /><figcaption>404 页面不存在（<code>/t1/no-such-page-xyz</code>）：推荐店铺入口</figcaption></figure>
+  </div>
+
+  <h3>5.2 页头店铺切换器</h3>
+  <div class="wall">
+    <figure><img src="shots/switcher-desktop-closed.png" alt="桌面收起态" /><figcaption>桌面 · 收起态</figcaption></figure>
+    <figure><img src="shots/switcher-desktop-open.png" alt="桌面展开态" /><figcaption>桌面 · 展开态（默认店带「平台官方」标记）</figcaption></figure>
+    <figure><img src="shots/switcher-mobile-drawer.png" alt="移动端抽屉" /><figcaption>移动端 · 抽屉内切换器</figcaption></figure>
+  </div>
+
+  <h3>5.3 线上渠道可达性（<code>scripts/_tenant_reach_shots.mjs</code>）</h3>
+  <div class="wall">
+    <figure><img src="shots/online-default-home.png" alt="平台默认店" /><figcaption>平台默认店 <code>/</code> → 优商铺</figcaption></figure>
+    <figure><img src="shots/online-t1-home.png" alt="t1" /><figcaption><code>/t1</code> → 新生</figcaption></figure>
+    <figure><img src="shots/online-en-t1-home.png" alt="en/t1" /><figcaption><code>/en/t1</code> → 新生（英文）</figcaption></figure>
+    <figure><img src="shots/online-t3-product.png" alt="t3 商品" /><figcaption><code>/t3/product/guoxin-nanshan-ticket</code> → 命中渠道</figcaption></figure>
+    <figure><img src="shots/vshop-unknown-tenant-notice.png" alt="vshop 未知租户" /><figcaption>vshop <code>?tenant=nope</code> → 「店铺不存在」明示弹窗</figcaption></figure>
+  </div>
+
+  <h2>六、vshop 未知租户明示化（与 nshop 对齐）</h2>
+  <p>入口：<code>e.joho.cn/?tenant=&lt;code&gt;</code>。当 <code>&lt;code&gt;</code> 不存在或已停用时：</p>
+  <ol>
+    <li>仍回退到平台默认店（保证页面可用，不停在占位态）；</li>
+    <li>弹出模态框：<b>「店铺不存在 / 店铺「&lt;code&gt;」可能已更名或停用，已为你切换到平台默认店铺。」</b>，按钮「知道了 / 选择其他店铺」；</li>
+    <li>点「选择其他店铺」→ 移除 URL 上的 <code>?tenant</code> 并 <code>reLaunch</code> 到首页，由页头 <code>TenantBar</code> 重新选择。</li>
+  </ol>
+  <p>实现：<code>vshop/src/stores/tenant.ts</code> 新增 <code>tenantInvalid</code> 标记并在 <code>initTenant()</code> 失败时记录原始 code；<code>vshop/src/App.vue</code> 在 <code>initTenant()</code> 与 <code>openTenantGate()</code> 之间弹提示。</p>
+  <table>
+    <tr><th>用例</th><th>期望</th><th>实测（线上）</th></tr>
+    <tr><td><code>e.joho.cn/?tenant=t1</code></td><td>命中「新生」，不弹框</td><td class="ok">不弹框（vendure-token=t1）</td></tr>
+    <tr><td><code>e.joho.cn/?tenant=nope</code></td><td>弹「店铺不存在」，回退默认店</td><td class="ok">弹框（modal 节点 = 1）</td></tr>
+    <tr><td><code>e.joho.cn/?tenant=no-such-shop</code></td><td>弹「店铺不存在」</td><td class="ok">弹框</td></tr>
+    <tr><td>页头 <code>TenantBar</code> 店铺列表</td><td>真实店铺清单</td><td class="ok">25 项</td></tr>
+  </table>
+
+  <h2>七、后台操作说明</h2>
+
+  <h3>7.1 给渠道配置自有域名（域名直达）</h3>
+  <ol>
+    <li>在 Vendure 后台渠道设置中，为该渠道的 <code>customFields.customDomains</code> 填入域名（如 <code>shop.example.com</code>）。</li>
+    <li>在部署侧把该域的 nginx <code>server_name</code> 指向 <b>nshop 实例</b>（默认店域名无需配置）。</li>
+    <li>生效窗口：nshop 侧域名解析按 <code>host</code> 做 60s 正/负缓存（含负向缓存），最长 <b>60 秒</b>后自动生效；如需立即生效见 §7.3。</li>
+    <li>验收：访问 <code>https://shop.example.com/product/x</code> → 应 301 到 <code>https://shop.example.com/&lt;code&gt;/product/x</code>。</li>
+  </ol>
+
+  <h3>7.2 停用渠道</h3>
+  <p>在后台停用（或删除）渠道后：该 <code>code</code> 的 URL 将返回 <b>404 店铺不存在</b>，错误页给出「返回首页 / 选择其他店铺」出口；vshop 侧 <code>?tenant=&lt;该 code&gt;</code> 将弹明示提示并回退默认店。租户表为 60s SWR，缓存未过期前最长有 60 秒窗口仍可访问。</p>
+
+  <h3>7.3 让新建/停用渠道立即生效</h3>
+  <p>店铺清单走前端 GQL 直连后端（实时）；真正受 60s SWR 影响的是<b>路由解析</b>。入口有两处：</p>
+  <ul>
+    <li>页头切换器 / 错误页「选择其他店铺」：切换动作前会自动打 <code>/api/tenant/resolve?code=&lt;code&gt;&amp;fresh=1</code> 强制刷新租户表（带 5s 频控，防高频刷爆后端）。</li>
+    <li>手动触发：<code>curl "https://www.youshop.cn/api/tenant/resolve?code=&lt;code&gt;&amp;fresh=1"</code>。</li>
+  </ul>
+
+  <h3>7.4 回滚</h3>
+  <ul>
+    <li>nshop：<code>git revert</code> 相关提交 → <code>node scripts/deploy.mjs</code>（本地构建 → scp → <code>pm2 restart nshop</code>）。</li>
+    <li>vshop H5：把 <code>.../sites/e.joho.cn/index.bak_&lt;epoch&gt;</code> 备份目录覆盖回站点目录（见 vshop 手册 §6.4）。</li>
+  </ul>
+
+  <h2>八、部署记录</h2>
+  <table>
+    <tr><th>端</th><th>机制</th><th>状态</th></tr>
+    <tr><td>nshop C 端</td><td>本地 <code>pnpm build</code> → <code>scripts/deploy.mjs</code>（scp <code>.output</code> → 服务器 <code>pm2 restart nshop</code>）</td><td class="ok">已部署（online）</td></tr>
+    <tr><td>vshop H5</td><td>本地 <code>npm run build:h5</code> → tar → scp → 解压到 <code>.../sites/e.joho.cn/index</code>（备份轮转）</td><td class="ok">已部署</td></tr>
+    <tr><td>后端 vendure</td><td>本轮<b>零改动</b>（<code>shopChannels</code> / <code>resolveChannelByDomain</code> 已存在）</td><td>—</td></tr>
+  </table>
+  <p>部署铁律：一律本地构建，服务器只解压 + 重启，绝不在服务器构建。</p>
+</body>
+</html>
