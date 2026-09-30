@@ -2,6 +2,7 @@
 import type { SearchResult } from "~~/types/product";
 import { assetSrc } from "../../utils/image";
 import { pickDisplayPrice } from "../../utils/display-price";
+import { formatMoney } from "../../utils/format-money";
 
 const { product, serviceInfo, eager } = defineProps<{
   product: SearchResult[number];
@@ -16,7 +17,7 @@ if (!product) {
   throw new Error("ProductCard: 'product' prop is required");
 }
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const localePath = useTenantLocalePath();
 const locationStore = useLocationStore();
 const { isServiceable } = useCityService();
@@ -26,18 +27,16 @@ const productStartPrice = computed(() => {
   const price = pickDisplayPrice(product, taxMode.value, pricesIncludeTax.value);
   if (!price) return "";
 
-  const currency = product.currencyCode ?? "EUR";
+  // 币种缺省 CNY（本店结算币种）；文案按当前站点语言格式化，避免出现「168.00 CNY」这类非本地化写法
+  const currency = product.currencyCode ?? "CNY";
 
   if ("min" in price && "max" in price) {
-    const min = (price.min / 100).toFixed(2);
-    const max = (price.max / 100).toFixed(2);
-    return min === max
-      ? `${min} ${currency}`
-      : `${t("messages.shop.priceFrom")} ${min} ${currency}`;
+    const min = formatMoney(price.min, currency, locale.value);
+    const max = formatMoney(price.max, currency, locale.value);
+    return min === max ? min : `${t("messages.shop.priceFrom")} ${min}`;
   }
 
-  const value = (price.value / 100).toFixed(2);
-  return `${value} ${currency}`;
+  return formatMoney(price.value, currency, locale.value);
 });
 
 const imageSrc = computed(
