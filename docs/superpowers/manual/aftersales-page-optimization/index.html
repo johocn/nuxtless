@@ -75,6 +75,8 @@
     <tr><td>后台构建</td><td><code>npm run build:h5</code></td><td><code>d:\zhao\vshop\web-admin</code></td></tr>
     <tr><td>本手册截图复现（C 端）</td><td><code>python scripts/_shot_after_sales.py</code>（前置：本地生产构建起在 3000，8080 反代 <code>/shop-api</code> → 线上）</td><td><code>d:\zhao\nshop</code></td></tr>
     <tr><td>本手册截图复现（后台）</td><td><code>python scripts/_shot_after_sales_admin.py</code>（前置：<code>$env:VITE_API_URL="https://e.joho.cn"; npm run dev:h5</code> → localhost:5280/guanli）</td><td><code>d:\zhao\vshop\web-admin</code></td></tr>
+    <tr><td>线上验收截图（第七节）</td><td><code>python scripts/_shot_after_sales_online.py</code>（直连线上，无需本地服务）</td><td><code>d:\zhao\nshop</code></td></tr>
+    <tr><td>线上验收链路（API）</td><td><code>python scripts/_verify_online_after_sales.py probe</code> / <code>approve &lt;id&gt;</code> / <code>track &lt;id&gt;</code> / <code>receive &lt;id&gt;</code></td><td><code>d:\zhao\nshop</code></td></tr>
   </table>
 
   <h2>六、本次验证中发现并修复的缺陷</h2>
@@ -101,6 +103,23 @@
       <td>Vendure 的 <code>OrderLine</code> 没有 <code>sku</code> 字段（SKU 挂在 <code>productVariant</code> 上）。查询与类型定义去掉 <code>orderLine.sku</code>，SKU 展示统一取 <code>orderLine.productVariant.sku</code>。</td>
     </tr>
   </table>
+
+  <h2>七、线上验收</h2>
+  <p>线上环境：C 端 <code>www.youshop.cn</code>、后台 <code>e.joho.cn/guanli</code>、后端渠道 <code>cnx87ezvmjx8nn3bth6c</code>。取工单 <strong>#17</strong>（订单 <code>R4KA52ZC9M3TJWV9</code> 第 208 行「仅退款」¥33.63）走完整链路，四步状态流转均成功：</p>
+  <table>
+    <tr><th>#</th><th>操作端</th><th>操作</th><th>结果</th></tr>
+    <tr><td>1</td><td>后台</td><td>同意</td><td><code>Pending → Approved</code></td></tr>
+    <tr><td>2</td><td>C 端</td><td>填写退货单号（顺丰速运 SF1234567890）</td><td><code>Approved → Returning</code></td></tr>
+    <tr><td>3</td><td>后台</td><td>确认收货</td><td><code>Returning → Received</code></td></tr>
+    <tr><td>4</td><td>后台</td><td>执行退款</td><td><code>Received → Refunded</code>；实退金额 3363 分（¥33.63），退款时间 2026-09-30 01:27</td></tr>
+  </table>
+  <div class="shots">
+    <figure><img src="shots/online-c-list.png" alt="线上 C 端售后列表" /><figcaption>线上 C 端售后列表（www.youshop.cn）</figcaption></figure>
+    <figure><img src="shots/online-c-detail.png" alt="线上 C 端售后详情" /><figcaption>线上 C 端售后详情 #17：进度时间线含「退货中 顺丰速运 SF1234567890 → 已收货 → 已退款」</figcaption></figure>
+    <figure><img src="shots/online-a-list.png" alt="线上后台售后列表" /><figcaption>线上后台售后列表（e.joho.cn/guanli）</figcaption></figure>
+    <figure><img src="shots/online-a-detail.png" alt="线上后台售后详情" /><figcaption>线上后台售后详情 #17：订单号 <code>R4KA52ZC9M3TJWV9</code>、SKU <code>XIA-500</code>、状态「已退款」均正确</figcaption></figure>
+  </div>
+  <p>两端线上截图均无裸 i18n key；后台详情的订单号与 SKU 正确显示，说明 <code>orderLine.productVariant.sku</code> 修复已在线上生效。</p>
 </main>
 </body>
 </html>
