@@ -30,6 +30,11 @@ fragment OrderBase on Order {
       id
       preview
     }
+    customFields {
+      hotelCheckIn
+      hotelCheckOut
+      hotelNights
+    }
   }
   customFields {
     lat
@@ -94,6 +99,11 @@ fragment OrderDetail on Order {
     featuredAsset {
       id
       preview
+    }
+    customFields {
+      hotelCheckIn
+      hotelCheckOut
+      hotelNights
     }
   }
   payments {
