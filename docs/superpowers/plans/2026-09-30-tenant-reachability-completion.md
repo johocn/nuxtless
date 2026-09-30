@@ -59,20 +59,20 @@
 
 **Files:** 无（只读验证）
 
-- [ ] **Step 1: 验证购物车不跨渠道复用**
+- [x] **Step 1: 验证购物车不跨渠道复用** — ✅ **已验证通过**（2026-09-30 实测线上）
 
 ```powershell
 $default = "cnx87ezvmjx8nn3bth6c"
-$t1 = "<t1 的 channel token，见下方 Step 3 输出>"
-$body = '{"query":"{ activeOrder { id state } }"}'
-Invoke-RestMethod -Uri "https://www.youshop.cn/shop-api" -Method Post -ContentType "application/json" -Headers @{ "vendure-token" = $default } -Body $body
-Invoke-RestMethod -Uri "https://www.youshop.cn/shop-api" -Method Post -ContentType "application/json" -Headers @{ "vendure-token" = $t1 } -Body $body
+$t1 = "a6fn474hhiqasmyiyrfl"   # t1「新生」
 ```
 
-预期：两次返回的 `activeOrder` 相互独立（不同渠道下 `activeOrder` 分别为 `null` 或各自订单）。
-若两次返回**同一个** order id → 停止，回到设计文档修订「切店 = 整页导航」这一前提。
+**实测结果**：同一 WebSession 下，`default` 渠道 `addItemToOrder` → `Order#169 (BRQHJX36GHG5G53D)`；
+换成 `vendure-token: a6fn474hhiqasmyiyrfl` 后 `activeOrder` 返回 `null`。
 
-- [ ] **Step 2: 验证店铺域是否指向同一 Nuxt 实例**
+→ **购物车按渠道隔离成立**，「切店 = 整页导航」前提有效，Task 6 可照原设计实施。
+（若两次返回**同一个** order id → 停止，回到设计文档修订「切店 = 整页导航」这一前提。）
+
+- [x] **Step 2: 验证店铺域是否指向同一 Nuxt 实例** — ⚠️ **线上暂无此类域名（见 Step 3）**
 
 ```powershell
 Invoke-WebRequest -Uri "https://<店铺域>/" -UseBasicParsing | Select-Object StatusCode
@@ -82,16 +82,33 @@ Invoke-WebRequest -Uri "https://<店铺域>/" -UseBasicParsing | Select-Object S
 预期：`StatusCode = 200` 且 `True`（返回的是 nshop 首页 HTML）。
 若返回 nginx 默认页或其它站点 → 需先在部署侧把该域 `server_name` 指到 nshop 实例，否则 Task 5 无法在线上成立。
 
-- [ ] **Step 3: 列出已有 customDomains 与渠道 token**
+**实测结果**：线上目前**没有任何**绑定到非默认渠道、且指向 nshop 实例的自定义域名
+（`e.joho.cn` 虽已登记但绑在**默认渠道**，且它服务的是 vshop）。
+→ Task 5 代码可照原设计实施；但**线上验收前需人工补一步**：给某个渠道（如 `t1`）配一个
+`customDomains` 值，并把该域 nginx `server_name` 指到 nshop 实例。此动作属部署侧，需用户配合。
+
+- [x] **Step 3: 列出已有 customDomains 与渠道 token** — ✅ **已获取**（2026-09-30 实测线上）
+
+Step 3 原方案用 `admin-api` + superadmin token 读 `channels`；实测**无需 token 也能等价完成**——
+公开查询 `shopChannels` 直接给出全部渠道 code/token，`resolveChannelByDomain(host)` 单查域名归属：
 
 ```powershell
-$body = '{"query":"{ channels { items { code token customFields { customDomains shopName enabled } } } }"}'
-Invoke-RestMethod -Uri "https://e.joho.cn/admin-api" -Method Post -ContentType "application/json" `
-  -Headers @{ "vendure-token" = "cnx87ezvmjx8nn3bth6c"; "Authorization" = "Bearer <superadmin token>" } -Body $body
+# 渠道清单（code / token / name / isOfficial / isDefault）—— 公开，无需鉴权
+$body = '{"query":"{ shopChannels { code token name tenantNo isOfficial isDefault } }"}'
+Invoke-RestMethod -Uri "https://www.youshop.cn/shop-api" -Method Post -ContentType "application/json" -Body $body
+
+# 域名归属（逐个 host 单查）
+$body = '{"query":"{ resolveChannelByDomain(host: \"e.joho.cn\") { token code } }"}'
+Invoke-RestMethod -Uri "https://www.youshop.cn/shop-api" -Method Post -ContentType "application/json" -Body $body
 ```
 
-预期：拿到 `<店铺域>` ↔ `<code>` 的对应关系，以及 `t1` 的 token（供 Step 1 使用）。
-若全部渠道 `customDomains` 为空 → Task 5 的线上验收改为先给某个渠道补一个 `customDomains` 值（走后台渠道编辑），再验收。
+**实测结果**：
+1. 渠道共 **25** 个（`__default_channel__` 优商铺 + `official-01..20` + `t1..t3` + `test-marketplace-shop`），
+   token 齐备（如 `t1` = `a6fn474hhiqasmyiyrfl`、`t2` = `66ruvnhh34svhckaa2i`、`t3` = `jmjobmq5lak9o50kevf`）。
+2. **`customDomains` 线上仅一条**：`e.joho.cn` → `__default_channel__`（token `cnx87ezvmjx8nn3bth6c`）。
+   `www.youshop.cn` / `shop.youshop.cn` / `youshop.cn` / `t1.youshop.cn` 查询均返回 `null`。
+3. **对 Task 5 的关键确认**：`resolveTenantByDomain` 已对 `code === "__default_channel__"` 返回 `null`，
+   因此即便 nshop 服务到 `e.joho.cn`，也**不会**被 301 成 `/__default_channel__/...`（Task 5 Step 1 代码 `:851` 已覆盖）。
 
 ---
 
