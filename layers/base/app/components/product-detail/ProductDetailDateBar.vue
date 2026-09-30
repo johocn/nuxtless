@@ -6,6 +6,7 @@ const productStore = useProductStore();
 const parseHotel = (raw: unknown) => { if (typeof raw !== 'string') return raw ?? null; try { return JSON.parse(raw); } catch { return null; } };
 const hotel = computed(() => parseHotel(productStore.selectedVariant?.customFields?.hotelRoomConfig));
 
+const route = useRoute();
 const today = new Date();
 const toDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const minDate = toDateStr(new Date(today.getTime() + 86400000)); // 最早明天入住
@@ -15,8 +16,14 @@ const maxAdvance = computed(() => {
   return toDateStr(d);
 });
 
-const checkIn = ref(minDate);
-const checkOut = ref(toDateStr(new Date(today.getTime() + 2 * 86400000)));
+// 「修改日期」从结算页跳回时带 ?checkIn=&checkOut=，以 query 预填（命中格式且不早于明天才采用）
+const qIn = typeof route.query.checkIn === "string" ? route.query.checkIn : "";
+const qOut = typeof route.query.checkOut === "string" ? route.query.checkOut : "";
+const dateOk = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && v >= minDate;
+const checkIn = ref(dateOk(qIn) ? qIn : minDate);
+const checkOut = ref(dateOk(qOut) && dateOk(qIn) && qOut > qIn
+  ? qOut
+  : toDateStr(new Date(today.getTime() + 2 * 86400000)));
 const nights = computed(() => {
   const d = (new Date(checkOut.value).getTime() - new Date(checkIn.value).getTime()) / 86400000;
   return Math.round(d);
