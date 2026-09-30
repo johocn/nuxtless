@@ -44,6 +44,7 @@ export const useOrderStore = defineStore("order", () => {
   async function addItemToOrder(
     variantId: string,
     quantity: number,
+    customFields?: Record<string, unknown>,
   ): Promise<OrderStatus> {
     loading.value = true;
     error.value = null;
@@ -52,6 +53,7 @@ export const useOrderStore = defineStore("order", () => {
       const { addItemToOrder: result } = await GqlAddItemToOrder({
         variantId,
         quantity,
+        customFields,
       });
 
       if (!result) return { status: "error", message: "No result" };
@@ -96,6 +98,7 @@ export const useOrderStore = defineStore("order", () => {
   async function adjustOrderLine(
     orderLineId: string,
     quantity: number,
+    customFields?: Record<string, unknown>,
   ): Promise<void> {
     loading.value = true;
     error.value = null;
@@ -104,6 +107,7 @@ export const useOrderStore = defineStore("order", () => {
       const { adjustOrderLine: result } = await GqlAdjustOrderLine({
         orderLineId,
         quantity,
+        customFields,
       });
 
       if (result) {
