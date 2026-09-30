@@ -8,7 +8,7 @@ type OrderListOrder = NonNullable<
 
 const props = defineProps<{ order: OrderListOrder }>();
 
-const { locale } = useI18n();
+const { t, locale } = useI18n();
 
 const fmt = (amount: number) =>
   new Intl.NumberFormat(locale.value, {
@@ -34,7 +34,11 @@ const fmt = (amount: number) =>
         <p class="truncate text-sm font-medium">
           {{ line.productVariant?.name }}
         </p>
-        <p class="text-xs text-neutral-500">×{{ line.quantity }}</p>
+        <p class="text-xs text-neutral-500">
+          {{ line.customFields?.hotelCheckIn
+            ? `${t("messages.hotel.nights", { n: line.customFields.hotelNights ?? line.quantity })} · ${line.customFields.hotelCheckIn} ~ ${line.customFields.hotelCheckOut}`
+            : `×${line.quantity}` }}
+        </p>
       </div>
       <p class="text-sm font-medium">{{ fmt(line.linePriceWithTax) }}</p>
     </li>

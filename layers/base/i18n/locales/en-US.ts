@@ -170,6 +170,15 @@ export default defineI18nLocale(() =>
       tCustom: 'Special',
       bedType: 'Bed',
     },
+    hotel: {
+      nights: '{n} nights',
+      dateRange: '{in} – {out}',
+      nightlyDetail: 'Nightly breakdown',
+      changeDates: 'Change dates',
+      stayTotal: 'Stay total',
+      selectDatesFirst: 'Please select check-in and check-out dates first',
+      nightsOutOfRange: '{min}-{max} nights required',
+    },
     pages: {
       index: {
         welcome: "Welcome to",

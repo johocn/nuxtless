@@ -29,12 +29,22 @@ const fmt = (amount: number) =>
       />
       <div class="min-w-0 flex-1">
         <p class="truncate font-medium">{{ line.productVariant?.name }}</p>
-        <p class="text-sm text-neutral-500">
+        <template v-if="line.customFields?.hotelCheckIn">
+          <p class="text-sm text-neutral-500">
+            {{ t("messages.hotel.nights", { n: line.customFields.hotelNights ?? line.quantity }) }} ·
+            {{ t("messages.hotel.dateRange", { in: line.customFields.hotelCheckIn, out: line.customFields.hotelCheckOut }) }}
+          </p>
+        </template>
+        <p v-else class="text-sm text-neutral-500">
           {{ t("messages.shop.price") }}: {{ fmt(line.unitPriceWithTax) }}
         </p>
       </div>
       <div class="text-right">
-        <p class="text-sm">×{{ line.quantity }}</p>
+        <p class="text-sm">
+          {{ line.customFields?.hotelCheckIn
+            ? t("messages.hotel.nights", { n: line.customFields.hotelNights ?? line.quantity })
+            : `×${line.quantity}` }}
+        </p>
         <p class="font-semibold">{{ fmt(line.linePriceWithTax) }}</p>
       </div>
       <slot name="line-actions" :line="line" :order="order" />

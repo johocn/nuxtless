@@ -143,6 +143,15 @@ export const zhMessages = {
       tCustom: '特惠日',
       bedType: '床型',
     },
+    hotel: {
+      nights: '共 {n} 晚',
+      dateRange: '{in} 至 {out}',
+      nightlyDetail: '逐晚明细',
+      changeDates: '修改日期',
+      stayTotal: '住宿合计',
+      selectDatesFirst: '请先选择入住与离店日期',
+      nightsOutOfRange: '需 {min}-{max} 晚',
+    },
     home: {
       newsTitle: '京东快讯',
       adsAlt: '活动广告',
