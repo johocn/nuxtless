@@ -51,7 +51,7 @@ function lineImage(l: OrderBoxInfo["lines"][number]): string {
   } else {
     full = `${origin}/assets/${s}`;
   }
-  return assetSrc(full, 48);
+  return assetSrc(full, 128); // 显示 56px @dpr2，取 2× 位图避免放大发虚
 }
 
 const localePath = useTenantLocalePath();
@@ -75,14 +75,13 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
 </script>
 
 <template>
-  <!-- 酒店行需 flex-wrap：展开的「逐晚明细」块用 basis-full 独占一行，
-       否则（nowrap）会被压在同一行内挤压描述列，导致日期文案逐字换行。
-       普通商品行不加 wrap，保持原有单行布局。 -->
+  <!-- 统一 flex-wrap：两个分支都靠 basis-full 的子块折到第二行独占整行。
+       否则（nowrap）子块会被压进同一行，把描述列挤到趋近 0 宽——
+       酒店行表现为日期文案逐字换行，普通商品行表现为商品名只剩 1 个字。 -->
   <li
     v-for="l in box.lines ?? []"
     :key="l.orderLineId"
-    class="flex items-start gap-2 px-3 py-2 text-sm"
-    :class="l.isHotel ? 'flex-wrap' : ''"
+    class="flex flex-wrap items-start gap-2 px-3 py-2 text-sm"
   >
     <input
       type="checkbox"
@@ -95,12 +94,12 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
       v-if="lineImage(l)"
       :src="lineImage(l)"
       :alt="l.productName"
-      class="h-9 w-9 shrink-0 rounded-md object-cover"
-      width="36"
-      height="36"
+      class="h-14 w-14 shrink-0 rounded-md object-cover"
+      width="56"
+      height="56"
       loading="lazy"
     />
-    <span v-else class="h-9 w-9 shrink-0 rounded-md bg-neutral-100 dark:bg-neutral-800" />
+    <span v-else class="h-14 w-14 shrink-0 rounded-md bg-neutral-100 dark:bg-neutral-800" />
 
     <div class="min-w-0 flex-1 leading-tight">
       <div class="truncate text-neutral-900 dark:text-neutral-100">{{ l.productName }}</div>
@@ -154,37 +153,41 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
       </div>
     </template>
 
-    <!-- 普通商品：保持原有单价 / 步进 / 小计 / 删除 -->
+    <!-- 普通商品：商品名独占首行，单价 / 步进 / 小计 / 删除折到第二行（左对齐缩略图内侧）。
+         390px 下若与商品名同排，四个固定块会把商品名挤到只剩 1 个字。 -->
     <template v-else>
-      <span class="mt-1 shrink-0 text-neutral-500 dark:text-neutral-400">{{ fmt(l.unitPrice) }}</span>
+      <!-- flex-wrap 兜底多语言：en-US「Delete」比「删除」宽约 14px，单行放不下时换行而非溢出容器 -->
+      <div class="mt-0.5 flex w-full basis-full flex-wrap items-center gap-2 pl-22">
+        <span class="shrink-0 text-neutral-500 dark:text-neutral-400">{{ fmt(l.unitPrice) }}</span>
 
-      <div class="mt-0.5 flex shrink-0 items-center gap-0.5">
+        <div class="flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            :disabled="orderLoading"
+            class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 text-neutral-600 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="减少数量"
+            @click="adjustQty(l, l.quantity - 1)"
+          >−</button>
+          <b class="w-7 shrink-0 text-center text-neutral-700 dark:text-neutral-200">{{ l.quantity }}</b>
+          <button
+            type="button"
+            :disabled="orderLoading"
+            class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 text-neutral-600 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="增加数量"
+            @click="adjustQty(l, l.quantity + 1)"
+          >＋</button>
+        </div>
+
+        <span class="ml-auto w-14 shrink-0 text-right font-medium text-neutral-900 dark:text-neutral-100">
+          {{ fmt(l.lineTotal) }}
+        </span>
+
         <button
-          type="button"
           :disabled="orderLoading"
-          class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 text-neutral-600 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="减少数量"
-          @click="adjustQty(l, l.quantity - 1)"
-        >−</button>
-        <b class="w-7 shrink-0 text-center text-neutral-700 dark:text-neutral-200">{{ l.quantity }}</b>
-        <button
-          type="button"
-          :disabled="orderLoading"
-          class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 text-neutral-600 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="增加数量"
-          @click="adjustQty(l, l.quantity + 1)"
-        >＋</button>
+          class="shrink-0 text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+          @click="removeLine(l)"
+        >{{ t("messages.account.delete") }}</button>
       </div>
-
-      <span class="mt-1 w-14 shrink-0 text-right font-medium text-neutral-900 dark:text-neutral-100">
-        {{ fmt(l.lineTotal) }}
-      </span>
-
-      <button
-        :disabled="orderLoading"
-        class="mt-1 shrink-0 text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
-        @click="removeLine(l)"
-      >{{ t("messages.account.delete") }}</button>
     </template>
 
     <!-- 逐晚明细：横跨整行，仅在展开时出现 -->
