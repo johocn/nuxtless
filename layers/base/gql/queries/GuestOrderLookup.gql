@@ -12,7 +12,7 @@ query GuestOrderLookup($input: GuestOrderLookupInput!) {
     pickupCode
     pickupClaimable
     pickupLocation { name address businessHours }
-    lines { productName sku quantity linePriceWithTax }
+    lines { productName sku quantity linePriceWithTax hotelCheckIn hotelCheckOut hotelNights }
     hasPhone
   }
 }
