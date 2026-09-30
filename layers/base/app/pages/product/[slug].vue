@@ -162,7 +162,7 @@ if (product.value && selectedVariant.value) {
         "@type": "Offer",
         url: `${i18NBaseUrl}/products/${product.value.slug}`,
         price: (selectedVariant.value.priceWithTax ?? 0) / 100,
-        priceCurrency: selectedVariant.value.currencyCode ?? "EUR",
+        priceCurrency: selectedVariant.value.currencyCode ?? "CNY",
         availability:
           selectedVariant.value.stockLevel === "IN_STOCK"
             ? "https://schema.org/InStock"
