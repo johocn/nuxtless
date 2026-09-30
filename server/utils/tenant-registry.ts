@@ -115,6 +115,20 @@ export function refreshTenantRegistry(force = false): Promise<void> {
   return inFlight;
 }
 
+/** ?fresh=1 强制刷新的最小间隔：避免被高频点击刷爆后端 */
+const FORCE_MIN_INTERVAL_MS = 5_000;
+let lastForceAt = 0;
+
+/**
+ * 运营侧「立即生效」入口：绕过 SWR 的 TTL 强制刷新一次租户表。
+ * 5s 内重复调用直接复用上一次结果，不重复打后端。
+ */
+export async function refreshTenantRegistryForced(): Promise<void> {
+  if (Date.now() - lastForceAt < FORCE_MIN_INTERVAL_MS) return;
+  lastForceAt = Date.now();
+  await refreshTenantRegistry(true);
+}
+
 /**
  * SWR 读取租户表：
  * - 新鲜（< TTL）：直接返回；
