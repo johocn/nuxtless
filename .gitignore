@@ -72,6 +72,7 @@ _shot_c_price.py
 /scripts/_preview_manual.py
 /scripts/_check_svg_text.py
 /scripts/_local_proxy.mjs
+/scripts/_local_proxy.py
 /scripts/debug-*
 /scripts/probe-*
 /scripts/repro-*
