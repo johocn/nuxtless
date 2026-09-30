@@ -28,9 +28,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (import.meta.server) {
     // 服务端命中结果由 Nitro 中间件给出；走到这里说明未命中 → 404
+    // kind 供 error.vue 区分「店铺不存在」与「页面不存在」（错误态下 route.params 不可靠）
     const evt = useRequestEvent();
     if (evt) setResponseStatus(evt, 404);
-    return showError(createError({ statusCode: 404, message: "店铺不存在" }));
+    return showError(
+      createError({ statusCode: 404, data: { kind: "shop-not-found" } }),
+    );
   }
 
   // 客户端软导航：解析目标租户（接口不可用时按「未命中」处理，避免未捕获的 reject）
@@ -42,5 +45,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     applyResolved(res);
     return;
   }
-  return showError(createError({ statusCode: 404, message: "店铺不存在" }));
+  return showError(
+    createError({ statusCode: 404, data: { kind: "shop-not-found" } }),
+  );
 });
