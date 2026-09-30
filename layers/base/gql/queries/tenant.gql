@@ -1,0 +1,10 @@
+query ShopChannelsForSwitcher {
+  shopChannels {
+    code
+    token
+    name
+    tenantNo
+    isOfficial
+    isDefault
+  }
+}

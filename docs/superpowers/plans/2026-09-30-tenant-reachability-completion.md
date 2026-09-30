@@ -380,7 +380,11 @@ git commit -m "feat(i18n): 错误页词条（店铺不存在/页面不存在/服
 
 ---
 
-## Task 2: 店铺清单查询 + 切换动作 + `?fresh=1`
+## Task 2: 店铺清单查询 + 切换动作 + `?fresh=1` — ✅ 代码已完成（运行时验证并入 Task 7）
+
+> **实施记录**：4 个文件按计划落地（`tenant.gql` / `tenant-registry.ts` 追加 `refreshTenantRegistryForced` /
+> `resolve.get.ts` 支持 `fresh=1` / `useTenantSwitcher.ts`）。语法校验 3/3 OK。
+> Step 5 的接口验证依赖 dev server（本地 3000 未启动），与 Task 3/5/6 一并放到 Task 7 启动后统一回归。
 
 **Files:**
 - Create: `nshop/layers/base/gql/queries/tenant.gql`
