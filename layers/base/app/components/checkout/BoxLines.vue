@@ -75,10 +75,14 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
 </script>
 
 <template>
+  <!-- 酒店行需 flex-wrap：展开的「逐晚明细」块用 basis-full 独占一行，
+       否则（nowrap）会被压在同一行内挤压描述列，导致日期文案逐字换行。
+       普通商品行不加 wrap，保持原有单行布局。 -->
   <li
     v-for="l in box.lines ?? []"
     :key="l.orderLineId"
     class="flex items-start gap-2 px-3 py-2 text-sm"
+    :class="l.isHotel ? 'flex-wrap' : ''"
   >
     <input
       type="checkbox"
@@ -112,28 +116,30 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
 
       <!-- 酒店房型：显示入离日期与晚数，不出单价与步进器 -->
       <template v-if="l.isHotel">
-        <div class="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
+        <div class="mt-0.5 truncate text-[11px] text-neutral-500 dark:text-neutral-400">
           {{ t("messages.hotel.dateRange", { in: l.hotelCheckIn, out: l.hotelCheckOut }) }}
         </div>
-        <button
-          v-if="l.hotelNightly?.length"
-          type="button"
-          class="mt-0.5 text-[11px] text-primary-600 dark:text-primary-400"
-          @click="toggleDetail(l.orderLineId)"
-        >
-          {{ t("messages.hotel.nightlyDetail") }}
-          {{ expanded[l.orderLineId] ? "▴" : "▾" }}
-        </button>
+        <div class="mt-0.5 flex items-center justify-between gap-2 whitespace-nowrap text-[11px]">
+          <span class="text-neutral-500 dark:text-neutral-400">
+            {{ t("messages.hotel.nights", { n: l.hotelNights ?? l.quantity }) }}
+          </span>
+          <button
+            v-if="l.hotelNightly?.length"
+            type="button"
+            class="text-primary-600 dark:text-primary-400"
+            @click="toggleDetail(l.orderLineId)"
+          >
+            {{ t("messages.hotel.nightlyDetail") }}
+            {{ expanded[l.orderLineId] ? "▴" : "▾" }}
+          </button>
+        </div>
       </template>
     </div>
 
     <template v-if="l.isHotel">
-      <span class="mt-1 w-14 shrink-0 text-center text-neutral-600 dark:text-neutral-300">
-        {{ t("messages.hotel.nights", { n: l.hotelNights ?? l.quantity }) }}
-      </span>
       <div class="shrink-0 text-right">
         <div class="font-semibold text-neutral-900 dark:text-neutral-100">{{ fmt(l.lineTotal) }}</div>
-        <div class="mt-0.5 flex justify-end gap-2 text-[11px]">
+        <div class="mt-0.5 flex justify-end gap-2 whitespace-nowrap text-[11px]">
           <NuxtLink
             v-if="l.productSlug && l.hotelCheckIn && l.hotelCheckOut"
             :to="`${localePath(`/product/${l.productSlug}`)}?checkIn=${l.hotelCheckIn}&checkOut=${l.hotelCheckOut}`"
