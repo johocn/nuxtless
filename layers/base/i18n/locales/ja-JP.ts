@@ -124,6 +124,15 @@ export default defineI18nLocale(() =>
       tCustom: 'Special',
       bedType: 'Bed',
     },
+    hotel: {
+      nights: '{n}泊',
+      dateRange: '{in} ～ {out}',
+      nightlyDetail: '1泊ごとの内訳',
+      changeDates: '日付を変更',
+      stayTotal: '宿泊合計',
+      selectDatesFirst: '先にチェックイン・チェックアウトの日付を選択してください',
+      nightsOutOfRange: '{min}～{max}泊が必要です',
+    },
     home: {
       newsTitle: "JD ニュース",
       adsAlt: "キャンペーン広告",
