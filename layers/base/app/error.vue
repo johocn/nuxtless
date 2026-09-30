@@ -35,7 +35,10 @@ const description = computed(() =>
 const shopPickerOpen = ref(false);
 /** 店铺清单：客户端懒加载（错误页内不做 SSR 取数，避免错误渲染期再触发异步副作用）。
  *  首帧为空，水合后填入；为空时 UI 自行降级，不阻塞错误页本身。 */
-const { shops, goToShopHome } = useTenantSwitcher();
+const { shops, load, goToShopHome } = useTenantSwitcher();
+onMounted(() => {
+  void load();
+});
 const recommended = computed(() => shops.value.slice(0, 3));
 const switching = ref(false);
 const switchError = ref("");

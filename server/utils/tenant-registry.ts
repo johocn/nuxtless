@@ -151,3 +151,67 @@ export async function resolveTenant(code: string): Promise<TenantHit | null> {
   if (!entry) return null;
   return { status: "ok", code: entry.code, token: entry.token, name: entry.name };
 }
+
+/** Vendure 默认渠道 code：命中默认渠道时不 301（默认店本就不带前缀） */
+const DEFAULT_CHANNEL_CODE = "__default_channel__";
+
+const RESOLVE_BY_DOMAIN_QUERY = `query ResolveChannelByDomainForRegistry($host: String!) {
+  resolveChannelByDomain(host: $host) { token code }
+}`;
+
+/** 域名 → 渠道（含负向缓存），TTL 与租户表一致 */
+const domainCache = new Map<string, { token: string; code: string; at: number }>();
+
+async function fetchChannelByDomain(host: string): Promise<{ token: string; code: string } | null> {
+  const { public: pub } = useRuntimeConfig();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(gqlEndpoint(), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "vendure-token": (pub.channelToken as string) || "",
+      },
+      body: JSON.stringify({
+        query: RESOLVE_BY_DOMAIN_QUERY,
+        variables: { host },
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      data?: { resolveChannelByDomain?: { token: string; code: string } | null };
+    };
+    const hit = json.data?.resolveChannelByDomain;
+    if (!hit?.code || hit.code === DEFAULT_CHANNEL_CODE) return null;
+    return { token: hit.token, code: hit.code };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * 按访问域名解析租户（一店一域）。域名清单无法枚举（后端只提供按 host 单查），
+ * 因此按 host 逐条做 60s 缓存，未命中同样写入负向缓存。
+ */
+export async function resolveTenantByDomain(host: string): Promise<TenantHit | null> {
+  const h = host.split(":")[0]?.toLowerCase() ?? "";
+  if (!h) return null;
+
+  const cached = domainCache.get(h);
+  if (cached && Date.now() - cached.at < TENANT_TTL_MS) {
+    if (!cached.code) return null;
+    const name = (await getTenantRegistry()).get(cached.code)?.name || cached.code;
+    return { status: "ok", code: cached.code, token: cached.token, name };
+  }
+
+  const found = await fetchChannelByDomain(h);
+  domainCache.set(h, found ? { ...found, at: Date.now() } : { token: "", code: "", at: Date.now() });
+  if (!found) return null;
+
+  const name = (await getTenantRegistry()).get(found.code)?.name || found.code;
+  return { status: "ok", code: found.code, token: found.token, name };
+}
