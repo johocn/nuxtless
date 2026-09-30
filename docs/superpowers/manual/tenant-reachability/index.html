@@ -106,9 +106,27 @@
     <tr><td>静态资源</td><td><code>/_nuxt/entry.js</code>、<code>/favicon.ico</code>、<code>/images/x.png</code>、<code>/static/x.png</code>、<code>/assets/x.png</code></td><td class="ok">不 301</td></tr>
     <tr><td>默认渠道域名</td><td><code>Host: e.joho.cn</code> → <code>/</code>、<code>/t1</code>、<code>/product/foo</code></td><td class="ok">不 301</td></tr>
   </table>
+  <h3>4.4 域名直达 301 线上验证（2026-09-30，<code>customDomains: t1 → t1.youshop.cn</code>）</h3>
+  <p>验证方式：在服务器内直连生产 nshop（<code>127.0.0.1:3000</code>）并注入 <code>Host</code> 头，等价于该域名解析到本机后的表现；链路为<b>真实生产 nshop + 真实生产 Vendure</b>。</p>
+  <table>
+    <tr><th>#</th><th>用例</th><th>Host</th><th>路径</th><th>期望</th><th>实测</th></tr>
+    <tr><td>1</td><td>域名直达：无租户段</td><td><code>t1.youshop.cn</code></td><td><code>/product/x</code></td><td>301 → <code>/t1/product/x</code></td><td class="ok">301 → <code>/t1/product/x</code></td></tr>
+    <tr><td>2</td><td>域名直达：带语言前缀</td><td><code>t1.youshop.cn</code></td><td><code>/en/product/x</code></td><td>301 → <code>/en/t1/product/x</code></td><td class="ok">301 → <code>/en/t1/product/x</code></td></tr>
+    <tr><td>3</td><td>已有租户段：不再 301（无循环）</td><td><code>t1.youshop.cn</code></td><td><code>/t1/product/x</code></td><td>非 301</td><td class="ok">500（不复跳）</td></tr>
+    <tr><td>4</td><td>静态资源</td><td><code>t1.youshop.cn</code></td><td><code>/_nuxt/entry.js</code></td><td>非 301</td><td class="ok">404（不复跳）</td></tr>
+    <tr><td>5</td><td>接口</td><td><code>t1.youshop.cn</code></td><td><code>/api/tenant/resolve?code=t1</code></td><td>非 301</td><td class="ok">200（不复跳）</td></tr>
+    <tr><td>6</td><td>favicon</td><td><code>t1.youshop.cn</code></td><td><code>/favicon.ico</code></td><td>非 301</td><td class="ok">200（不复跳）</td></tr>
+    <tr><td>7</td><td>默认渠道域名：不 301</td><td><code>e.joho.cn</code></td><td><code>/product/x</code></td><td>非 301</td><td class="ok">500（不复跳）</td></tr>
+    <tr><td>8</td><td>未知域名：不 301</td><td><code>unknown-xyz.example.com</code></td><td><code>/product/x</code></td><td>非 301</td><td class="ok">500（不复跳）</td></tr>
+  </table>
+  <p>公开解析同批校验：<code>resolveChannelByDomain("t1.youshop.cn")</code> → <code>t1</code>；<code>"e.joho.cn"</code> → <code>__default_channel__</code>；<code>"www.youshop.cn"</code> → <code>null</code>。</p>
   <div class="note">
-    <b>正向 301 的线上验证待补</b>：生产库 <code>customDomains</code> 目前仅一条 <code>e.joho.cn → __default_channel__</code>（默认渠道按设计不 301），且该域服务的是 vshop。若需线上验收「域名直达」，请在部署侧给某渠道（如 <code>t1</code>）配一个 <code>customDomains</code>，并把该域 nginx <code>server_name</code> 指到 nshop 实例，然后执行：<br/>
-    <code>curl.exe -s -o NUL -w "%{http_code} %{redirect_url}" "https://&lt;店铺域&gt;/product/x"</code> → 期望 <code>301 https://&lt;店铺域&gt;/&lt;code&gt;/product/x</code>。
+    <b>公网提示（重要）</b>：本次验证走「服务器内 Host 注入」，因为 <code>t1.youshop.cn</code> <b>目前没有该子域</b>（线上只提供 <code>www.youshop.cn/t1</code> 这种路径形式，该形式本就正常 200）。若将来要真正启用「域名直达」，需同时满足三点：<br/>
+    ① <b>DNS</b>：为店铺域加 A 记录指向 <code>39.97.54.5</code>；<br/>
+    ② <b>nginx</b>：把该域加入 nshop 站点 <code>www.youshop.cn.conf</code> 的 <code>server_name</code>（:80 / :443 两段），<code>nginx -t</code> 后 reload；<br/>
+    ③ <b>证书</b>：现有证书仅含 <code>www.youshop.cn</code>、<code>youshop.cn</code>，需换成含该域的证书（建议 <code>*.youshop.cn</code> 通配），否则 HTTPS 会证书告警。<br/>
+    三者齐备后，<code>curl -s -o NUL -w "%{http_code} %{redirect_url}" "https://&lt;店铺域&gt;/product/x"</code> 应得 <code>301</code> → <code>https://&lt;店铺域&gt;/&lt;code&gt;/product/x</code>。<br/>
+    当前 <code>t1</code> 的 <code>customDomains</code> 已写入 <code>["t1.youshop.cn"]</code> 作为占位；如需清空，见 §7.5。
   </div>
 
   <h2>五、截图墙（手机视口 390×844 / dpr=2）</h2>
@@ -156,7 +174,7 @@
   <h3>7.1 给渠道配置自有域名（域名直达）</h3>
   <ol>
     <li>在 Vendure 后台渠道设置中，为该渠道的 <code>customFields.customDomains</code> 填入域名（如 <code>shop.example.com</code>）。</li>
-    <li>在部署侧把该域的 nginx <code>server_name</code> 指向 <b>nshop 实例</b>（默认店域名无需配置）。</li>
+    <li>在部署侧把该域的 nginx <code>server_name</code> 指向 <b>nshop 实例</b>（默认店域名无需配置）；同时该域需有 <b>DNS A 记录</b> 指向 <code>39.97.54.5</code>，且 <b>TLS 证书需覆盖该域</b>（建议 <code>*.youshop.cn</code> 通配），否则 HTTPS 会证书告警。</li>
     <li>生效窗口：nshop 侧域名解析按 <code>host</code> 做 60s 正/负缓存（含负向缓存），最长 <b>60 秒</b>后自动生效；如需立即生效见 §7.3。</li>
     <li>验收：访问 <code>https://shop.example.com/product/x</code> → 应 301 到 <code>https://shop.example.com/&lt;code&gt;/product/x</code>。</li>
   </ol>
@@ -176,6 +194,21 @@
     <li>nshop：<code>git revert</code> 相关提交 → <code>node scripts/deploy.mjs</code>（本地构建 → scp → <code>pm2 restart nshop</code>）。</li>
     <li>vshop H5：把 <code>.../sites/e.joho.cn/index.bak_&lt;epoch&gt;</code> 备份目录覆盖回站点目录（见 vshop 手册 §6.4）。</li>
   </ul>
+
+  <h3>7.5 配置 / 清空渠道 <code>customDomains</code>（脚本化）</h3>
+  <p>Admin API 在服务器本机（<code>http://127.0.0.1:3020/admin-api</code>，公网未暴露）。鉴权用 <code>vendure-auth-token</code> 响应头做 <code>Authorization: Bearer</code>（注意：cookie 方式需同时带 <code>session</code> 与 <code>session.sig</code>，只带前者会 FORBIDDEN）。凭据从环境变量读取，勿硬编码：</p>
+  <pre># 登录（取 vendure-auth-token）
+TOKEN=$(curl -s -D - -o /dev/null -X POST http://127.0.0.1:3020/admin-api \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"mutation{login(username:\"'"$ADMIN_USER"'\",password:\"'"$ADMIN_PASS"'\"){...on CurrentUser{identifier}}}"}' \
+  | grep -i '^vendure-auth-token:' | awk '{print $2}')
+
+# 写入 customDomains（t1 的 channel id 见 channels 查询；当前为 7）
+curl -s -X POST http://127.0.0.1:3020/admin-api \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"query":"mutation($i:UpdateChannelInput!){updateChannel(input:$i){...on Channel{id code customFields{customDomains}} ...on ErrorResult{errorCode message}}}","variables":{"i":{"id":"7","customFields":{"customDomains":["t1.youshop.cn"]}}}}'</pre>
+  <p><b>清空</b>：把上面的 <code>customDomains</code> 传 <code>[]</code> 即可（等价于「该渠道无自有域名」）。查当前归属：公开查询 <code>{ resolveChannelByDomain(host: "t1.youshop.cn") { code token } }</code>。</p>
+  <p>改完若需立刻生效，见 §7.3（60s 缓存）。</p>
 
   <h2>八、部署记录</h2>
   <table>
