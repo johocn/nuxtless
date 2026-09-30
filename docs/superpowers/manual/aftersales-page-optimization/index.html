@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>售后页面优化 · 操作手册与测试用例</title>
+  <style>
+    :root { --ink:#1f2329; --muted:#72767b; --line:#e8eaed; --accent:#2563eb; --danger:#e64340; --bg:#f6f7f9; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:32px 20px 80px; font:15px/1.7 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); }
+    main { max-width:1160px; margin:0 auto; }
+    h1 { font-size:28px; margin:0 0 8px; }
+    h2 { font-size:20px; margin:40px 0 12px; padding-left:10px; border-left:4px solid var(--accent); }
+    h3 { font-size:16px; margin:24px 0 8px; }
+    p.lead { color:var(--muted); margin:0 0 24px; }
+    table { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+    th,td { padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; font-size:14px; vertical-align:top; }
+    th { background:#fafbfc; color:var(--muted); font-weight:600; }
+    tr:last-child td { border-bottom:none; }
+    .shots { display:flex; gap:20px; flex-wrap:wrap; }
+    figure { margin:0; background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px; width:390px; }
+    figure img { width:100%; border-radius:6px; display:block; border:1px solid var(--line); }
+    figcaption { margin-top:10px; font-size:13px; color:var(--muted); }
+    code { background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:13px; }
+    .danger { color:var(--danger); }
+  </style>
+</head>
+<body>
+<main>
+  <h1>售后页面优化 · 操作手册与测试用例</h1>
+  <p class="lead">覆盖 C 端（nshop）与后台（web-admin）售后页面重构；下图为 390×844、dpr=2 手机视口实拍（真实数据、真实流程）。</p>
+
+  <h2>一、本次改动概览</h2>
+  <table>
+    <tr><th>端</th><th>页面</th><th>主要变化</th></tr>
+    <tr><td>C 端</td><td>售后列表</td><td>页签 5 个（进行中 / 全部 / 已完成 / 已拒绝 / 已取消，「退款异常」并入进行中并按异常色高亮）；卡片补商品图/名称、退款金额、申请时间；搜索（订单号 / 售后单号 / 商品名）+ 排序</td></tr>
+    <tr><td>C 端</td><td>售后详情</td><td>新增「下一步该做什么」引导条 + 纵向处理进度时间线 + 凭证九宫格（可点开灯箱）+ 吸底动作区（联系客服 / 主操作）</td></tr>
+    <tr><td>C 端</td><td>申请售后弹窗</td><td>分步表单：类型（退货退款 / 仅退款 / 换货）、可退上限与「全额」快捷、常用原因、详细说明、图片上传（<strong>最多 3 张</strong>、失败可单张重试）</td></tr>
+    <tr><td>后台</td><td>售后列表</td><td>页签全量化 8 个并默认落「待处理」；卡片补顾客 / 商品 / 等待时长（超 24h 标红）；卡上直接处理（同意 / 拒绝 / 收货 / 退款 / 重试 / 详情）；详细筛选默认折叠</td></tr>
+    <tr><td>后台</td><td>售后详情</td><td class="danger">修正动作可用性（确认收货仅 <code>Returning</code>、执行退款仅 <code>Received</code>）；补顾客 / 商品（SKU）/ 凭证 / 处理进度；吸底操作区</td></tr>
+  </table>
+
+  <h2>二、C 端页面</h2>
+  <div class="shots">
+    <figure><img src="shots/c-list.png" alt="C 端售后列表" /><figcaption>售后列表：页签 + 卡片（商品 / 金额 / 时间）+ 搜索排序</figcaption></figure>
+    <figure><img src="shots/c-detail.png" alt="C 端售后详情" /><figcaption>售后详情：引导条 + 进度时间线（申请 → 审核通过 → 退货中 → 已收货 → 已退款）+ 凭证 + 联系客服</figcaption></figure>
+    <figure><img src="shots/c-create.png" alt="C 端申请售后" /><figcaption>申请售后：类型 / 退款金额（最多可退 ¥33.63）/ 原因 / 详细说明 / 凭证上传</figcaption></figure>
+    <figure><img src="shots/c-track-form.png" alt="C 端填写退货单号" /><figcaption>填写退货单号（由详情页吸底主操作直达）</figcaption></figure>
+  </div>
+
+  <h2>三、后台页面</h2>
+  <div class="shots">
+    <figure><img src="shots/a-list.png" alt="后台售后列表" /><figcaption>后台列表：8 页签 + 卡上直接处理 + 等待时长 + 筛选折叠</figcaption></figure>
+    <figure><img src="shots/a-detail.png" alt="后台售后详情" /><figcaption>后台详情：顾客 / 商品(SKU) / 售后信息 / 处理进度 + 吸底操作区</figcaption></figure>
+  </div>
+
+  <h2>四、测试用例</h2>
+  <table>
+    <tr><th>#</th><th>场景</th><th>步骤</th><th>预期</th></tr>
+    <tr><td>1</td><td>C 端·仅退款直连退款</td><td>对一笔已完成订单申请「仅退款」→ 后台同意 → 后台执行退款</td><td>详情进度时间线推进到「已退款」；列表页签从〈进行中〉移出，落〈已完成〉</td></tr>
+    <tr><td>2</td><td>C 端·退货退款全链路</td><td>申请「退货退款」→ 后台同意 → C 端吸底点「填写退货单号」→ 后台确认收货 → 后台执行退款</td><td>中间态停在〈退货中〉；填写单号后后台才可「确认收货」；收货后才可「执行退款」</td></tr>
+    <tr><td>3</td><td class="danger">后台动作可用性回归</td><td>取一笔 <code>Approved</code> 工单，观察后台详情吸底区</td><td class="danger">只出现「拒绝」+「同意」；<strong>不出现</strong>「确认收货」「执行退款」。<code>Returning</code> 才出「确认收货」，<code>Received</code> 才出「执行退款」</td></tr>
+    <tr><td>4</td><td>C 端·凭证上传</td><td>申请售后时上传 4 张图；再上传一张超大图</td><td>第 4 张被拦（提示「最多上传 3 张」）；超大图提示「图片过大，请重新选择」；上传失败项可单张「重试」；上传中提交按钮为禁用态</td></tr>
+    <tr><td>5</td><td>C 端·重复申请拦截</td><td>对同一订单行再次发起售后</td><td>弹窗内提示「该商品已有进行中的售后申请」，不产生新工单，已填内容与已传图片保留</td></tr>
+    <tr><td>6</td><td>后台·等待时长与超时标红</td><td>列表页取一笔 24h 前申请、仍处 <code>Pending</code> 的工单</td><td>显示「已等待 1 天 x 小时」且该行标红</td></tr>
+    <tr><td>7</td><td>退款失败可重试</td><td>构造一笔 <code>RefundFailed</code>（如退款通道异常）</td><td>C 端并入〈进行中〉并显示退款异常提示；后台卡上出现「重试」</td></tr>
+    <tr><td>8</td><td>多语言</td><td>切换任意语言包查看售后列表 / 详情 / 申请弹窗</td><td>无裸 key（<code>messages.afterSales.*</code> / <code>afterSale.*</code> 不直接出现在页面上）</td></tr>
+  </table>
+
+  <h2>五、回归命令</h2>
+  <table>
+    <tr><th>层</th><th>命令</th><th>工作目录</th></tr>
+    <tr><td>插件 e2e</td><td><code>pnpm e2e</code></td><td><code>d:\zhao\vendure\packages\after-sales-plugin</code></td></tr>
+    <tr><td>C 端单测</td><td><code>pnpm exec vitest run layers/base/app/utils/__tests__/after-sales-state.spec.ts</code></td><td><code>d:\zhao\nshop</code></td></tr>
+    <tr><td>后台构建</td><td><code>npm run build:h5</code></td><td><code>d:\zhao\vshop\web-admin</code></td></tr>
+    <tr><td>本手册截图复现（C 端）</td><td><code>python scripts/_shot_after_sales.py</code>（前置：本地生产构建起在 3000，8080 反代 <code>/shop-api</code> → 线上）</td><td><code>d:\zhao\nshop</code></td></tr>
+    <tr><td>本手册截图复现（后台）</td><td><code>python scripts/_shot_after_sales_admin.py</code>（前置：<code>$env:VITE_API_URL="https://e.joho.cn"; npm run dev:h5</code> → localhost:5280/guanli）</td><td><code>d:\zhao\vshop\web-admin</code></td></tr>
+  </table>
+
+  <h2>六、本次验证中发现并修复的缺陷</h2>
+  <table>
+    <tr><th>#</th><th>现象</th><th>根因与修复</th></tr>
+    <tr>
+      <td>1</td>
+      <td>申请售后时凭证图<strong>永远卡在「进行中」</strong>，提交按钮恒灰（上传接口其实已 200 返回）</td>
+      <td><code>EvidenceUploader</code> 用 <code>ref&lt;Cell[]&gt;</code> 存队列，push 裸对象后被写入 <code>toRaw</code>，之后改 <code>cell.status</code> 不触发依赖更新。改为 <code>reactive&lt;Cell&gt;({...})</code> 包装后再 push。</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>订单详情页底部<strong>常驻渲染</strong>「放弃本次填写？」整块文案</td>
+      <td>Nuxt UI v3 的 <code>UModal</code> 默认插槽是「触发器」，内容会常驻页面。把弹窗正文移入 <code>&lt;template #body&gt;</code>（申请弹窗 + 售后详情页的凭证灯箱 / 取消确认，共 3 处）。</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>售后详情页吸底主操作「填写退货单号」<strong>被全局底部导航盖住</strong>，点不到</td>
+      <td>全局 <code>JdTabBar</code> 为 <code>z-[60]</code>，高于页面吸底区。把 <code>/account/after-sales/</code> 加入 <code>JDTAB_HIDE_PREFIXES</code>（与商品详情 / 结算 / 订单页一致，自带吸底动作的流程页隐藏全局底栏）。</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>后台售后列表整页报错 <code>Cannot query field "sku" on type "OrderLine"</code>，列表与详情均空白</td>
+      <td>Vendure 的 <code>OrderLine</code> 没有 <code>sku</code> 字段（SKU 挂在 <code>productVariant</code> 上）。查询与类型定义去掉 <code>orderLine.sku</code>，SKU 展示统一取 <code>orderLine.productVariant.sku</code>。</td>
+    </tr>
+  </table>
+</main>
+</body>
+</html>

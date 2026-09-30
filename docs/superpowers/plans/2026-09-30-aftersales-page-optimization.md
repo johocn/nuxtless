@@ -1407,7 +1407,7 @@ async function onSubmit() {
 
         <!-- ⑥ 凭证图 -->
         <p class="mb-2 text-sm font-medium">{{ t("messages.afterSales.evidence") }}</p>
-        <EvidenceUploader ref="evidenceRef" v-model="evidenceUrls" :max="MAX_EVIDENCE" />
+        <AfterSalesEvidenceUploader ref="evidenceRef" v-model="evidenceUrls" :max="MAX_EVIDENCE" />
 
         <p v-if="formError" class="mt-4 text-sm text-error">{{ formError }}</p>
       </div>
@@ -1459,7 +1459,7 @@ async function onSubmit() {
 pnpm typecheck
 ```
 
-Expected: 全绿。若 `EvidenceUploader` 的 `ref` 类型报错，把 `evidenceRef` 类型改为 `InstanceType<typeof EvidenceUploader> | null`。
+Expected: 全绿。若 `AfterSalesEvidenceUploader` 的 `ref` 类型报错，把 `evidenceRef` 类型改为 `InstanceType<typeof AfterSalesEvidenceUploader> | null`。
 
 - [ ] **Step 3: 本地手测（dev）**
 
