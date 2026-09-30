@@ -11,28 +11,43 @@ export interface ShopChannelEntry {
 
 /** 店铺切换：页头 HeaderTenantSelector 与错误页「选择其他店铺」共用。
  *
+ *  清单**按需懒加载**（不用 useAsyncGql）：切换器位于 UHeader 插槽内，若在 setup 阶段
+ *  发起异步取数，SSR 与客户端水合时该插槽的子节点数可能不一致，直接触发 hydration mismatch
+ *  （整页空白）。故一律由用户交互（打开面板）或 onMounted 调 load() 拉取，
+ *  首帧两侧都是空数组，保证水合一致。
+ *
  *  切换前先打 /api/tenant/resolve?fresh=1 强制刷新 Nitro 租户表，命中才跳转；
  *  跳转采用**整页导航**（external: true），确保渠道态（购物车、城市、GQL 头）彻底重置 ——
  *  Vendure 的 activeOrder 按 channel 隔离，软导航会残留旧渠道的客户端状态。 */
-export function useTenantSwitcher(opts: { server?: boolean } = {}) {
-  const { data } = useAsyncGql("ShopChannelsForSwitcher", {}, {
-    server: !!opts.server,
-    lazy: !opts.server,
-  });
+export function useTenantSwitcher() {
+  const shops = useState<ShopChannelEntry[]>("tenantSwitcherShops", () => []);
+  const loading = useState<boolean>("tenantSwitcherLoading", () => false);
   const router = useRouter();
   const route = useRoute();
   const localePath = useLocalePath();
   const { code, applyResolved } = useTenantChannel();
 
-  const shops = computed<ShopChannelEntry[]>(() =>
-    ((data.value?.shopChannels ?? []) as ShopChannelEntry[]).map((c) => ({
-      code: c.code,
-      token: c.token,
-      name: c.name || c.code,
-      isDefault: !!c.isDefault,
-      isOfficial: !!c.isOfficial,
-    })),
-  );
+  /** 拉取店铺清单（幂等；force=true 强制刷新）。失败时保持现状由 UI 降级，不抛出。 */
+  async function load(force = false): Promise<ShopChannelEntry[]> {
+    if (shops.value.length && !force) return shops.value;
+    if (loading.value) return shops.value;
+    loading.value = true;
+    try {
+      const { shopChannels } = await GqlShopChannelsForSwitcher();
+      shops.value = ((shopChannels ?? []) as ShopChannelEntry[]).map((c) => ({
+        code: c.code,
+        token: c.token,
+        name: c.name || c.code,
+        isDefault: !!c.isDefault,
+        isOfficial: !!c.isOfficial,
+      }));
+    } catch {
+      // 静默：清单为空时页头/错误页各自降级展示
+    } finally {
+      loading.value = false;
+    }
+    return shops.value;
+  }
 
   /** 强制刷新租户表并校验目标店铺可用；返回是否可用 */
   async function ensureAvailable(next: string): Promise<boolean> {
@@ -68,5 +83,5 @@ export function useTenantSwitcher(opts: { server?: boolean } = {}) {
     return true;
   }
 
-  return { shops, currentCode: code, switchTo, goToShopHome };
+  return { shops, loading, load, currentCode: code, switchTo, goToShopHome };
 }

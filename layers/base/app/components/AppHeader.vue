@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
 import type { MenuCollections } from "~~/types/collection";
 import { assetSrc } from "../utils/image";
@@ -57,6 +57,7 @@ const items = computed<NavigationMenuItem[]>(
     />
 
     <template #right>
+      <HeaderTenantSelector />
       <HeaderCitySelector />
       <SearchModal />
       <AccountMenu />
@@ -70,6 +71,9 @@ const items = computed<NavigationMenuItem[]>(
         orientation="vertical"
         :ui="{ item: 'py-1', childItem: 'pt-2' }"
       />
+      <div class="mt-2 border-t border-default pt-2">
+        <HeaderTenantSelector />
+      </div>
     </template>
   </UHeader>
   <CartPanel />
