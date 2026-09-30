@@ -12,19 +12,6 @@ const localePath = useTenantLocalePath();
 const toast = useToast();
 
 const currency = computed(() => overview.currencyCode ?? "CNY");
-// 游客查询接口（GuestOrderLine）暂未暴露 hotel* 自定义字段：按可选读取，后端补齐后自动生效
-const lines = computed(
-  () =>
-    overview.lines as Array<
-      (typeof overview.lines)[number] & {
-        customFields?: {
-          hotelCheckIn?: string | null;
-          hotelCheckOut?: string | null;
-          hotelNights?: number | null;
-        } | null;
-      }
-    >,
-);
 const totalWithTax = computed(() => formatMoney(overview.totalWithTax, currency.value, locale.value));
 const subTotal = computed(() => formatMoney(overview.subTotal, currency.value, locale.value));
 const shippingWithTax = computed(() =>
@@ -122,21 +109,21 @@ async function copyCode(code: string) {
     <section class="mt-4 rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-800">
       <h2 class="mb-2 font-medium">{{ t("messages.order.orderItems") }} {{ t("messages.checkout.itemsCount", { n: overview.totalQuantity }) }}</h2>
       <div
-        v-for="(line, idx) in lines"
+        v-for="(line, idx) in overview.lines"
         :key="idx"
         class="flex items-center justify-between gap-3 border-t border-neutral-100 py-2 first:border-t-0 first:pt-0 dark:border-neutral-800"
       >
         <div class="min-w-0">
           <p class="truncate font-medium">{{ line.productName || line.sku }}</p>
-          <p v-if="line.customFields?.hotelCheckIn" class="text-xs text-neutral-500">
-            {{ t("messages.hotel.dateRange", { in: line.customFields.hotelCheckIn, out: line.customFields.hotelCheckOut }) }}
+          <p v-if="line.hotelCheckIn" class="text-xs text-neutral-500">
+            {{ t("messages.hotel.dateRange", { in: line.hotelCheckIn, out: line.hotelCheckOut }) }}
           </p>
           <p class="text-xs text-neutral-500">SKU: {{ line.sku }}</p>
         </div>
         <div class="shrink-0 text-right">
           <p>
-            {{ line.customFields?.hotelCheckIn
-              ? t("messages.hotel.nights", { n: line.customFields.hotelNights ?? line.quantity })
+            {{ line.hotelCheckIn
+              ? t("messages.hotel.nights", { n: line.hotelNights ?? line.quantity })
               : `x${line.quantity}` }}
           </p>
           <p class="text-xs text-neutral-500">{{ formatMoney(line.linePriceWithTax, currency, locale) }}</p>
