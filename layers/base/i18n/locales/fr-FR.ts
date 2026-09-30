@@ -38,6 +38,8 @@ export default defineI18nLocale(() =>
       next: "Suivant",
       noMatchProducts: "Aucun produit correspondant",
       qualityZone: "Zone qualité",
+      selectShop: "Choisir la boutique",
+      officialShop: "Boutique officielle",
     },
     detail: {
       marketingTags: { new: 'Nouveau', hot: 'Populaire', special: 'Spécial', sale: 'Vente flash', freeShip: 'Livraison gratuite', cut: 'Réduction', clearance: 'Déstockage', instock: 'En stock', 'flash-sale': 'Vente éclair', limited: 'Édition limitée', 'price-drop': 'Baisse de prix', 'new-arrival': 'Nouveauté' },
@@ -543,6 +545,19 @@ export default defineI18nLocale(() =>
       email: "E-mail",
     },
     error: {
+      title404: "404",
+      title500: "500",
+      shopNotFound: "Boutique introuvable",
+      shopNotFoundDesc: "Cette boutique a peut-être été renommée ou désactivée",
+      pageNotFound: "Page introuvable",
+      pageNotFoundDesc: "Cette page a peut-être été supprimée",
+      serverError: "Service temporairement indisponible",
+      serverErrorDesc: "Réessayez plus tard ou revenez à l’accueil",
+      backHome: "Retour à l’accueil",
+      chooseShop: "Choisir une autre boutique",
+      maybeLike: "Vous aimerez peut-être",
+      switchFailed: "Cette boutique est indisponible, choisissez-en une autre",
+      cityReset: "Boutique changée, veuillez choisir à nouveau la ville",
       invalidPasswordResetLink:
         "Le lien de réinitialisation du mot de passe est invalide.",
       resetFail: "Échec de la réinitialisation",
