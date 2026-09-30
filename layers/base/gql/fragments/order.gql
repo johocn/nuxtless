@@ -24,6 +24,7 @@ fragment OrderBase on Order {
       product {
         id
         name
+        slug
       }
     }
     featuredAsset {
@@ -94,6 +95,7 @@ fragment OrderDetail on Order {
       product {
         id
         name
+        slug
       }
     }
     featuredAsset {
