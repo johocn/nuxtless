@@ -1,4 +1,4 @@
-﻿import { storeToRefs } from "pinia";
+import { storeToRefs } from "pinia";
 
 export function useBuyActions() {
   const { t } = useI18n();
@@ -10,16 +10,41 @@ export function useBuyActions() {
   const productStore = useProductStore();
   const { selectedVariant } = storeToRefs(productStore);
   const { isServiceable } = useCityService();
+  const { isHotelVariant, hotelConfig, resolveStay } = useHotelStay();
 
   const canBuy = computed(() => {
     const v = selectedVariant.value;
     return !!v?.id && isServiceable(v);
   });
 
+  /** 解析下单参数：酒店走日期→晚数，普通商品恒为 1 件 */
+  function resolveLine():
+    | { ok: true; quantity: number; customFields?: Record<string, unknown> }
+    | { ok: false; message: string } {
+    if (!isHotelVariant.value) return { ok: true, quantity: 1 };
+    const stay = resolveStay();
+    if (stay.ok) {
+      return { ok: true, quantity: stay.quantity, customFields: stay.customFields };
+    }
+    if (stay.error === "selectDatesFirst") {
+      return { ok: false, message: t("messages.hotel.selectDatesFirst") };
+    }
+    const cfg = hotelConfig.value ?? {};
+    return {
+      ok: false,
+      message: t("messages.hotel.nightsOutOfRange", { min: cfg.minNights ?? 1, max: cfg.maxNights ?? 30 }),
+    };
+  }
+
   async function addToCartHandler() {
     const id = selectedVariant.value?.id;
     if (!id || !canBuy.value) return;
-    const res = await addItemToOrder(id, 1);
+    const line = resolveLine();
+    if (!line.ok) {
+      toast.add({ title: t("messages.detail.addToCart"), description: line.message, color: "error" });
+      return;
+    }
+    const res = await addItemToOrder(id, line.quantity, line.customFields);
     if (res.status === "error") {
       toast.add({
         title: t("messages.detail.addToCart"),
@@ -44,7 +69,12 @@ export function useBuyActions() {
   async function buyNowHandler() {
     const id = selectedVariant.value?.id;
     if (!id || !canBuy.value) return;
-    const res = await addItemToOrder(id, 1);
+    const line = resolveLine();
+    if (!line.ok) {
+      toast.add({ title: t("messages.detail.buyNow"), description: line.message, color: "error" });
+      return;
+    }
+    const res = await addItemToOrder(id, line.quantity, line.customFields);
     if (res.status === "error") {
       toast.add({
         title: t("messages.detail.buyNow"),
