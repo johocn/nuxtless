@@ -328,22 +328,26 @@ async function onSubmit() {
 
   <!-- 放弃填写二次确认 -->
   <UModal v-model:open="discardConfirmOpen" :ui="{ content: 'sm:max-w-sm' }">
-    <div class="p-5 text-center">
-      <h2 class="text-base font-medium">{{ t("messages.afterSales.discardTitle") }}</h2>
-      <p class="mt-1 text-sm text-neutral-500">{{ t("messages.afterSales.discardDesc") }}</p>
-      <div class="mt-5 flex justify-center gap-3">
-        <UButton variant="soft" :label="t('messages.afterSales.keepEditing')" @click="discardConfirmOpen = false" />
-        <UButton
-          color="error"
-          :label="t('messages.afterSales.discard')"
-          @click="
-            () => {
-              discardConfirmOpen = false;
-              isOpen = false;
-            }
-          "
-        />
+    <!-- 必须放 #body：UModal 的默认插槽是「触发器」，内容写在那里会常驻页面
+         （曾导致订单详情页底部永久渲染「放弃本次填写？」整块文案） -->
+    <template #body>
+      <div class="p-5 text-center">
+        <h2 class="text-base font-medium">{{ t("messages.afterSales.discardTitle") }}</h2>
+        <p class="mt-1 text-sm text-neutral-500">{{ t("messages.afterSales.discardDesc") }}</p>
+        <div class="mt-5 flex justify-center gap-3">
+          <UButton variant="soft" :label="t('messages.afterSales.keepEditing')" @click="discardConfirmOpen = false" />
+          <UButton
+            color="error"
+            :label="t('messages.afterSales.discard')"
+            @click="
+              () => {
+                discardConfirmOpen = false;
+                isOpen = false;
+              }
+            "
+          />
+        </div>
       </div>
-    </div>
+    </template>
   </UModal>
 </template>

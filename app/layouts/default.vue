@@ -26,6 +26,8 @@ const JDTAB_HIDE_PREFIXES = [
   "/product/",
   "/checkout",
   "/order/",
+  // 售后详情页自带吸底动作区（联系客服/主操作），隐藏全局底栏避免双底条重叠遮挡按钮
+  "/account/after-sales/",
 ];
 function stripRoutePrefixes(path: string): string {
   const segs = path.split("/").filter(Boolean);

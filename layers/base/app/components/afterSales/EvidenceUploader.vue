@@ -118,7 +118,14 @@ async function onPick(e: Event) {
     useToast().add({ title: t("messages.afterSales.evidenceMax", { n: MAX }), color: "warning" });
   }
   const queue = accepted.map((file) => {
-    const cell: Cell = { id: ++seed, status: "compressing", localSrc: URL.createObjectURL(file) };
+    // 必须是 reactive 包装后的对象：reactive 数组在 set 时会写入 toRaw(value)，
+    // 若此处用裸对象，之后 runCell 里对 cell.status 的改动不会触发依赖更新
+    // （表现为「上传永远卡在进行中」，即使接口已 200 返回）。
+    const cell = reactive<Cell>({
+      id: ++seed,
+      status: "compressing",
+      localSrc: URL.createObjectURL(file),
+    });
     cells.value.push(cell);
     return { cell, file };
   });
