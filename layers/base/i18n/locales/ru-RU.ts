@@ -525,8 +525,6 @@ export default defineI18nLocale(() =>
       graphqlError: "Ошибка GraphQL",
     },
     billing: {
-      firstName: "Имя",
-      lastName: "Фамилия",
       address1: "Адрес",
       address2: "Адрес 2 (подъезд, этаж, квартира)",
       city: "Город",

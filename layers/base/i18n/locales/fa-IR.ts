@@ -528,8 +528,6 @@ export default defineI18nLocale(() =>
       graphqlError: "خطای GraphQL",
     },
     billing: {
-      firstName: "نام",
-      lastName: "نام خانوادگی",
       address1: "آدرس",
       address2: "واحد، طبقه، پلاک",
       city: "شهر",
