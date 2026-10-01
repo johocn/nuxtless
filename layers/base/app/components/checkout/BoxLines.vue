@@ -81,7 +81,7 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
   <li
     v-for="l in box.lines ?? []"
     :key="l.orderLineId"
-    class="flex flex-wrap items-start gap-2 px-3 py-2 text-sm"
+    class="box-line flex flex-wrap items-start gap-2 px-3 py-2 text-sm"
   >
     <input
       type="checkbox"
@@ -94,12 +94,15 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
       v-if="lineImage(l)"
       :src="lineImage(l)"
       :alt="l.productName"
-      class="h-14 w-14 shrink-0 rounded-md object-cover"
+      class="h-[var(--line-thumb)] w-[var(--line-thumb)] shrink-0 rounded-md object-cover"
       width="56"
       height="56"
       loading="lazy"
     />
-    <span v-else class="h-14 w-14 shrink-0 rounded-md bg-neutral-100 dark:bg-neutral-800" />
+    <span
+      v-else
+      class="h-[var(--line-thumb)] w-[var(--line-thumb)] shrink-0 rounded-md bg-neutral-100 dark:bg-neutral-800"
+    />
 
     <div class="min-w-0 flex-1 leading-tight">
       <div class="truncate text-neutral-900 dark:text-neutral-100">{{ l.productName }}</div>
@@ -156,8 +159,10 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
     <!-- 普通商品：商品名独占首行，单价 / 步进 / 小计 / 删除折到第二行（左对齐缩略图内侧）。
          390px 下若与商品名同排，四个固定块会把商品名挤到只剩 1 个字。 -->
     <template v-else>
-      <!-- flex-wrap 兜底多语言：en-US「Delete」比「删除」宽约 14px，单行放不下时换行而非溢出容器 -->
-      <div class="mt-0.5 flex w-full basis-full flex-wrap items-center gap-2 pl-22">
+      <!-- basis-full 折到整行；左缩进 ps-(--line-indent) 由「勾选框 + gap + 缩略图 + gap」
+           推导（见文件末尾 <style>），与商品名左边缘对齐，避免调尺寸后错位。
+           flex-wrap 兜底多语言：en-US「Delete」比「删除」宽约 14px，单行放不下时换行而非溢出容器。 -->
+      <div class="mt-0.5 flex basis-full flex-wrap items-center gap-2 ps-[var(--line-indent)]">
         <span class="shrink-0 text-neutral-500 dark:text-neutral-400">{{ fmt(l.unitPrice) }}</span>
 
         <div class="flex shrink-0 items-center gap-0.5">
@@ -215,3 +220,13 @@ const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
     </div>
   </li>
 </template>
+
+<style scoped>
+/* 商品行几何单一来源：缩略图边长由此定义，第二行左缩进由它推导。
+   原为写死的 pl-22（= 5.5rem），改动缩略图/勾选框/间距尺寸时会与商品名左边缘错位。 */
+.box-line {
+  --line-thumb: 3.5rem; /* 56px，与模板 width/height="56" 一致 */
+  /* 勾选框 1rem(h-4 w-4) + gap 0.5rem(gap-2) + 缩略图 + gap 0.5rem = 5.5rem */
+  --line-indent: calc(1rem + 0.5rem + var(--line-thumb) + 0.5rem);
+}
+</style>
