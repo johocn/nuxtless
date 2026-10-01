@@ -550,8 +550,6 @@ export default defineI18nLocale(() =>
       graphqlError: "GraphQL-Fehler",
     },
     billing: {
-      firstName: "Vorname",
-      lastName: "Nachname",
       address1: "Addresse",
       address2: "Adresse 2 (Hausnr., Etage, Wohnung)",
       city: "Ort",
