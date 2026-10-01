@@ -196,6 +196,7 @@ export async function useCuratedGoods(section: CuratedGoodsSection) {
    * 商品列表：recommend（dedupe 开启，默认）排除同页 hot 区块已展示的 productId，再按 limit 截断
    * （去重路径取数时已多取，见上方 take）。
    * 只依赖 hot 区块的登记项 → 单向依赖，不存在区块间互相排除导致的反复重算。
+   * 排除后为空则回退未去重列表（见下），保证区块不空。
    */
   const products = computed<CuratedItem[]>(() => {
     const items = resolvedItems.value;
@@ -206,7 +207,11 @@ export async function useCuratedGoods(section: CuratedGoodsSection) {
       for (const id of ids) excluded.add(id);
     }
     if (!excluded.size) return items.slice(0, cfg.value.limit);
-    return items.filter((i) => !excluded.has(i.productId)).slice(0, cfg.value.limit);
+    const rest = items.filter((i) => !excluded.has(i.productId));
+    // 全站商品数不多于同页「热门商品」展示数时（如 t2：热门 6 件 = 商品总数），去重会把本区块清空
+    // → 渲染成「当前城市/配送方式下暂无可用商品」的误导空态。此时回退未去重列表：
+    // 宁可跨楼层重复，也不让运营配置的区块静默消失。
+    return (rest.length ? rest : items).slice(0, cfg.value.limit);
   });
 
   // 本区块实际展示的 productId 登记进同页登记表（键 = 本区块取数 key），供后续 recommend 区块去重；
