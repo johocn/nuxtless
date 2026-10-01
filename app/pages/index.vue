@@ -136,7 +136,13 @@ const { data: fallbackSearch } = await useAsyncData(
     } catch {
       /* 划线价补拉失败时保留原结果 */
     }
-    return { hot: enriched.slice(0, 10), more: enriched.slice(10, 20) };
+    // 热门 = 前 10，为你推荐 = 11–20；商品总数不足 11 件时第二段恒为空，
+    // 「为你推荐」楼层会渲染成「当前城市/配送方式下暂无可用商品」的误导空态
+    // （t2 现网：热门 9 件、推荐 0 件）。此时回退为与热门同一列表：
+    // 宁可两楼层商品重复，也不让楼层消失成空态。
+    const hot = enriched.slice(0, 10);
+    const more = enriched.slice(10, 20);
+    return { hot, more: more.length ? more : hot };
   },
   // 用户切换「邮寄 / 自提」后重查：SSR 首帧的筛选值即默认配送，客户端仅在真正变化时重查
   { server: true, watch: [facetKey] },
