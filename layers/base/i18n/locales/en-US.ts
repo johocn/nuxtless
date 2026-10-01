@@ -250,6 +250,11 @@ export default defineI18nLocale(() =>
       redeemFailed: 'Redemption failed',
       drawerUnavailableAll: 'You have {n} coupon(s) not usable at this store',
       drawerUnavailableReasons: '{m} below threshold · {k} not for this store',
+      codeValidUntil: 'Valid until',
+      codeTip: 'Show this code to the merchant; settle at the coupon discount after redemption.',
+      showCode: 'Show code',
+      discountPercent: '{n}0% off',
+      discountFixed: '¥{n} off',
     },
     general: {
       recommendations: 'Recommended for you',

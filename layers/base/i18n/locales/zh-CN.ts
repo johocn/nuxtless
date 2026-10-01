@@ -262,6 +262,11 @@ export const zhMessages = {
       redeemFailed: '兑换失败',
       drawerUnavailableAll: '你有 {n} 张券，在本店不可用',
       drawerUnavailableReasons: '未达门槛 {m} 张 · 不适用本店 {k} 张',
+      codeValidUntil: '有效期至',
+      codeTip: '请向商户出示此券码，核销后按券折扣结算',
+      showCode: '出示券码',
+      discountPercent: '{n} 折',
+      discountFixed: '减 {n} 元',
     },
     general: {
       cancel: '取消',
