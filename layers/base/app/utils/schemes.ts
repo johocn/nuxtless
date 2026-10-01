@@ -6,10 +6,37 @@ export interface Scheme {
   text?: string | Record<string, string>;
 }
 
+// 前端 locale → Vendure LanguageCode（12 种，与 vendure LanguageCode 枚举一一对应）
 export const VENDURE_LOCALE_MAP: Record<string, string> = {
   "zh-CN": "zh_Hans",
   "en-US": "en",
+  "bg-BG": "bg",
+  "ru-RU": "ru",
+  "fa-IR": "fa",
+  "de-DE": "de",
+  "es-ES": "es",
+  "fr-FR": "fr",
+  "it-IT": "it",
+  "pt-BR": "pt",
+  "ja-JP": "ja",
+  "ko-KR": "ko",
 };
+
+/** Vendure 默认语言码（映射缺失时的回退终点） */
+export const DEFAULT_VENDURE_LANGUAGE_CODE = "zh_Hans";
+
+/**
+ * locale → Vendure LanguageCode。
+ * 未命中时回退 fallback（默认 zh_Hans），**不透传**——Vendure 对 ?languageCode
+ * 只做格式校验、不做枚举校验，透传无效码会落到渠道 defaultLanguageCode 之外的死路。
+ */
+export function toVendureLanguageCode(
+  locale: string | null | undefined,
+  fallback: string = DEFAULT_VENDURE_LANGUAGE_CODE,
+): string {
+  if (!locale) return fallback;
+  return VENDURE_LOCALE_MAP[locale] ?? fallback;
+}
 
 export function parseSchemeList(raw: string | null | undefined): Scheme[] | null {
   if (!raw) return null;
@@ -31,8 +58,9 @@ export function localizeSchemeText(
 ): string {
   if (!text) return "";
   if (typeof text === "string") return text;
-  const lk = VENDURE_LOCALE_MAP[locale] ?? locale;
-  return text[lk] ?? text[VENDURE_LOCALE_MAP[defaultLocale] ?? defaultLocale] ?? Object.values(text)[0] ?? "";
+  const dk = VENDURE_LOCALE_MAP[defaultLocale] ?? defaultLocale;
+  const lk = toVendureLanguageCode(locale, dk);
+  return text[lk] ?? text[dk] ?? Object.values(text)[0] ?? "";
 }
 
 export function resolveSchemeText(

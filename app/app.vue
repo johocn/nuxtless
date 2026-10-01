@@ -2,6 +2,7 @@
 // R4 配置版本化响应头：模板/全局配置 version 变化即派生 Unique 响应头
 import { setResponseHeader } from "h3";
 import type { MenuCollections } from "~~/types/collection";
+import { toVendureLanguageCode } from "../layers/base/app/utils/schemes";
 // 按 URL 首段租户动态取 channel token；未命中回退默认渠道
 const { token: channelToken } = useTenantChannel();
 const colorMode = useColorMode();
@@ -12,7 +13,7 @@ const siteName = useSiteName();
 // Set initial locale for Vendure requests (must run before any useAsyncGql,
 // otherwise queries like GetChannelTheme fall back to the baked GQL_HOST=localhost
 // which is NOT proxied in production and returns 404, so the theme stays "default")
-useGqlHost(`${useGqlHostUrl()}?languageCode=${locale.value}`);
+useGqlHost(`${useGqlHostUrl()}?languageCode=${toVendureLanguageCode(locale.value)}`);
 
 const { config: themeConfig, loadTheme, customFields } = useChannelTheme();
 // 渠道级固定主题：SSR 首帧即写入 <html data-theme>，避免 FOUC
@@ -121,7 +122,7 @@ onBeforeMount(async () => {
 watch(locale, (val, oldVal) => {
   if (val === oldVal) return;
 
-  useGqlHost(`?languageCode=${val}`);
+  useGqlHost(`?languageCode=${toVendureLanguageCode(val)}`);
   // Workaround for refreshing Vendure data
   const route = useRoute();
   const localePath = useTenantLocalePath();
