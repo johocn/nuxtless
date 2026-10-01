@@ -697,6 +697,11 @@ export default defineI18nLocale(() =>
       noCoupon: "쿠폰 사용 안 함",
       drawerUnavailableAll: "이 매장에서 사용할 수 없는 쿠폰이 {n}장 있습니다",
       drawerUnavailableReasons: "최소 금액 미달 {m}장 · 이 매장 미적용 {k}장",
+      codeValidUntil: 'Valid until',
+      codeTip: 'Show this code to the merchant; settle at the coupon discount after redemption.',
+      showCode: 'Show code',
+      discountPercent: '{n}0% off',
+      discountFixed: '¥{n} off',
     },
     general: {
       back: "뒤로",

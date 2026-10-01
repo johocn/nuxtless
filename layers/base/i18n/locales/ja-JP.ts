@@ -698,6 +698,11 @@ export default defineI18nLocale(() =>
       noCoupon: "クーポンを使わない",
       drawerUnavailableAll: "この店舗で利用できないクーポンが {n} 枚あります",
       drawerUnavailableReasons: "最低額未満 {m} 枚 · この店舗対象外 {k} 枚",
+      codeValidUntil: 'Valid until',
+      codeTip: 'Show this code to the merchant; settle at the coupon discount after redemption.',
+      showCode: 'Show code',
+      discountPercent: '{n}0% off',
+      discountFixed: '¥{n} off',
     },
     general: {
       back: "戻る",

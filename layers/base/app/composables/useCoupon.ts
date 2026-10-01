@@ -48,6 +48,8 @@ export interface CouponTemplate {
   variantId?: string | null;
   enabled: boolean;
   shopId?: string | null;
+  /** 券使用场景：ONLINE 仅线上 / IN_STORE 到店买单 / ALL 通用（后端现有字段，仅补充类型） */
+  usageScene?: "ONLINE" | "IN_STORE" | "ALL" | null;
   /** 是否可被 C 端直接领取（商品专属券/兑换码券模板由后端扩展字段驱动） */
   claimable: boolean;
   /** 兑换码（凭码领券，非空时走 redeemCouponByCode） */
@@ -186,7 +188,7 @@ function resolveClient(): GraphQLClient {
 const COUPON_TEMPLATE_FIELDS = `
   id name description type discountValue minSpend
   startsAt endsAt totalCount claimedCount pointsPrice perUserLimit
-  scope categoryId variantId enabled shopId createdAt updatedAt
+  scope categoryId variantId enabled shopId usageScene createdAt updatedAt
   claimable claimCode validDays newCustomerOnly memberLevel
 `;
 

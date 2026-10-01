@@ -232,6 +232,25 @@ function formatDateRange(c?: CouponTemplate | null): string {
   return "";
 }
 
+// ── 出示券码（到店买单券，跳券码页）──
+function goCode(c: CustomerCoupon) {
+  const discount =
+    c.template?.type === "PERCENT"
+      ? t("messages.coupon.discountPercent", { n: (c.template?.discountValue ?? 0) / 10 })
+      : c.template?.type === "FIXED"
+        ? t("messages.coupon.discountFixed", { n: (c.template?.discountValue ?? 0) / 100 })
+        : "";
+  navigateTo({
+    path: localePath("/coupon/code"),
+    query: {
+      code: c.code ?? "",
+      name: c.template?.name ?? "",
+      expiresAt: c.expiredAt || c.template?.endsAt || "",
+      discount,
+    },
+  });
+}
+
 function walletEmptyText(): string {
   const map: Record<WalletKey, string> = {
     unused: t("messages.coupon.emptyUnused"),
@@ -407,6 +426,16 @@ onMounted(loadCentre);
                 </p>
               </div>
             </div>
+            <!-- 到店买单券：出示券码入口（未使用且场景为到店/通用） -->
+            <UButton
+              v-if="mc.status === 'UNUSED' && (mc.template?.usageScene === 'IN_STORE' || mc.template?.usageScene === 'ALL')"
+              class="mt-4 w-full justify-center"
+              size="sm"
+              variant="soft"
+              @click="goCode(mc)"
+            >
+              {{ t("messages.coupon.showCode") }}
+            </UButton>
             <!-- 临期 badge（仅未使用 tab） -->
             <div
               v-if="walletTab === 'unused' && isExpiring(mc)"

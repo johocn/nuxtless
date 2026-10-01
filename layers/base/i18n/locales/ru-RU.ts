@@ -690,6 +690,11 @@ export default defineI18nLocale(() =>
       noCoupon: "Без купона",
       drawerUnavailableAll: "У вас {n} купон(ов), неприменимых в этом магазине",
       drawerUnavailableReasons: "{m} ниже минимума · {k} недействительны в магазине",
+      codeValidUntil: 'Valid until',
+      codeTip: 'Show this code to the merchant; settle at the coupon discount after redemption.',
+      showCode: 'Show code',
+      discountPercent: '{n}0% off',
+      discountFixed: '¥{n} off',
     },
     general: {
       back: "Назад",
