@@ -1,8 +1,8 @@
 # 优惠券使用手册
 
 > 适用：nshop C 端商城 + vendure 后端 coupon-plugin + vshop/web-admin 运营后台
-> 更新：2026-09-19（全环节受控测试后整理）
-> 环境：测试店铺渠道 92（code `official-01`）线上实测
+> 更新：2026-10-02（新增 §8 多渠道分发 C 端：券商城/积分商城/兑换码/我的券/加价购/支付）
+> 环境：测试店铺渠道 92（code `official-01`）线上实测；§8 为本地环境（nshop `.output` + 本地 vendure）手机视口实测
 
 ---
 
@@ -176,3 +176,81 @@ USED ──退单──> RETURNED
 - **核心抵扣逻辑验证通过**（shop-api 确凿）：FIXED 满 1 减 1（40000→39900）、PERCENT 8.5 折（→34000 减 15%）、FULL 直减、凭码/兑换/新客/会员券全部抵扣正确。
 - **P6 线上复测（2026-09-19，默认商城 youshop 部署后）**：shop-api 健康、新码（memberLevel/nameZh）已上线；`couponCentre` 仅返回 claimable 券（P3 生效）、memberLevel=null 券可正常领（UNUSED）、配送下单链路（加购→地址→配送方式 sm=9→支付方式 fixed-aggregate-collection/balance-wallet）在默认商城**可正常走通**。
 - **USED→RETURNED 全流程已闭环**（2026-09-19 更新，推翻此前「未能封闭」结论）：默认商城可通过**平台券（`shopId=null`）**绕过「券←→商品同店」硬规则（`lineHasShopId` 对 `shopId==null` 恒返回 true）——创建平台券 → 变体55 加购 → `applyCouponToOrder` 成功 → `checkoutSplitted` 下单 → **券 `USED`**；再 `cancelOrder` 取消订单 → **券 `RETURNED`**（实测券62 C-8Z5A-7FL9：USED(`usedOrderId=86`)→RETURNED(`usedOrderId=null`)）。结论：`OrderPlaced→bindAsUsed→Cancelled→returnCoupon` 事件监听全链路在线可用，「店券挂他店商品」受限属业务语义而非 bug。复测 harness：`scripts/_p6_flow.mjs`（USED 段）+ `scripts/_p6_cancel.mjs`（RETURNED 段，admin `cancelOrder` 而非 `transitionOrderToState`，PaymentAuthorized→Cancelled 有 `checkAllItemsBeforeCancel` 守卫须先全 items 取消）。channel92 结算配送不可达仍为数据未铺好。
+
+---
+
+## 8. 多渠道分发（C 端）
+
+> 新增于 2026-10-02（plan4）。手机视口 390×844（dpr=2，Playwright mobile）。代码：`layers/base/app/pages/coupon/index.vue`、`layers/base/app/components/product-detail/ProductCouponBlock.vue`、`layers/base/app/composables/useCoupon.ts`。
+
+### 8.1 六分发渠道与 C 端入口对照
+
+| 渠道 | 含义 | C 端入口 |
+|---|---|---|
+| `CENTRE` | 领券中心自助领取 | 券页「领券中心」 |
+| `SALE` | 券商城付费购买 | 券页「券商城」；商品页「加价购券」 |
+| `POINTS` | 积分兑换 | 券页「积分商城」 |
+| `CODE` | 凭码兑换 | 券页「兑换码」 |
+| `PRODUCT` | 商品绑定（详情页领取） | 商品详情页「商品专属券」领取区 |
+| `GRANT` | 后台定向发放 | 券页「我的券」 |
+
+> `distributionChannels` 未显式配置时按老字段推导：`claimable`→CENTRE、`pointsPrice>0`→POINTS、`claimCode`→CODE、有商品绑定→PRODUCT。`usageScene=ALL` 同时匹配线上与到店；`null` 按 ONLINE 处理。
+
+### 8.2 券页 5 Tab（B 图标 tab 栏）
+
+- 领券中心 / 券商城 / 积分商城 / 兑换码 / 我的券，5 项等分固定，图标在上文字在下，窄屏不挤压；选中态 `text-primary`。
+- 注意：领券中心**不做**线上/到店分组（后端 `couponCentre` 只返回 ONLINE 场景）；场景切换落在券商城与我的券。
+- 截图：[券页 5 Tab（领券中心）](shots/plan4-01-tabs.png)
+
+### 8.3 券商城（A 券包大卡版式）
+
+- 券包大卡：包名 + 「含 N 种券 · 共 M 张」+ 券明细 chip（面额 ×张数）+ 售价 + 「合计可省 ¥X」；单券用同款卡（面额 + 门槛 + 有效期 + 「立即购买 ¥N」）。
+- 场景切换「线上可用 / 到店可用」→ `couponSaleCatalogue(scene)`。
+- 券包 `items`（shop SDL）仅含 `templateId` + `quantity`，前端用 `catalogue.templates` 按 id 映射券名/面额；映射不到降级「券 ×N」（不新增后端字段）。
+- 截图：[券商城·线上券包大卡](shots/plan4-02-sale-bundle.png)、[券商城·到店可用](shots/plan4-03-sale-instore.png)
+
+### 8.4 积分商城
+
+- `pointsMallTemplates` 列表：面额 / 门槛 / 「N 积分」+「立即兑换」→ `exchangeCouponWithPoints`。
+- 截图：[积分商城](shots/plan4-05-points.png)
+
+### 8.5 兑换码
+
+- 输入后台配置的 `claimCode` → `redeemCouponByCode`，成功即入「我的券」。
+- 截图：[兑换码](shots/plan4-06-code.png)
+
+### 8.6 我的券（状态 + 场景子筛）
+
+- 状态筛：未使用 / 已使用 / 已过期 / 已退回；场景子筛：全部 / 线上可用 / 到店可用。
+- 到店券带「到店可用」标签与「出示券码」入口；未使用券按剩余有效天数值升序置顶，≤7 天橙色高亮并显示「剩 N 天」。
+- 截图：[我的券（含场景子筛）](shots/plan4-07-wallet.png)
+
+### 8.7 商品页加价购入口（A 券块内分隔区）
+
+- 商品详情券块 `ProductCouponBlock`：上半「商品专属券」领取区（`PRODUCT` 渠道），虚线分隔后下半「加价购券」区（`SALE` 渠道且 `salePrice>0`），一行「付 ¥N 得此券」+「加价购」按钮。
+- 点击「加价购」→ `useOrderStore` 取活动订单（无则 `fetchOrder('base')`）→ `attachCouponToOrder(orderId, templateId)`；成功 toast「已加购，随单结算」并可「取消加购」（`detachCouponFromOrder`）。无活动订单提示「请先加入购物车」。
+- 渠道区分（关键）：后端 `productCoupons` 同时返回 `SALE` 渠道绑定（供加价购），故领取区必须按渠道过滤（`PRODUCT`），否则 `SALE`-only 券会误入领取区、点击领取被后端拒绝（`Coupon is not claimable`）。
+- 截图：[商品页加价购入口（券块）](shots/plan4-08-product-addon.png)、[商品页整页](shots/plan4-08b-product-page.png)
+
+### 8.8 券商城支付（微信 JSAPI + 余额双通道）
+
+- 点「立即购买」→ `createCouponSaleOrder` 建出售单 → 支付方式弹层（`z-[70]`，须高于固定底部导航 `z-[60]`，否则手机上「取消 / 确认支付」被拦截不可点）。
+- 微信 JSAPI：微信内置浏览器传 `tradeType=JSAPI` → `createWechatCouponPayment` → `WeixinJSBridge.invoke('getBrandWCPayRequest', pay)` 拉起；**openid 无需前端取**，由后端 `wechatpay-plugin` 的 `resolveCustomerOpenid` 从 `Customer.customFields.wechatOpenid / wechatMiniOpenid` 推导。
+- 非微信/无 openid → `H5` 跳 `pay.payUrl`，或改用「余额支付」（`payCouponSaleWithBalance`，同步结算）。
+- 取消未支付的弹层 → `cancelCouponSaleOrder`。
+- 截图：[支付方式弹层（微信/余额双通道）](shots/plan4-04-pay-sheet.png)
+
+### 8.9 plan4 修复项（含后端）
+
+| 现象 | 根因 | 代码点 |
+|---|---|---|
+| 商品页加价购入口永远拿不到数据（`productCoupons` 返回空） | `listByProduct` 用 `visibleBinding` 过滤，要求模板含 `PRODUCT` 渠道，把 `SALE`-only 券滤掉 | `vendure/packages/coupon-plugin/src/coupon-binding.service.ts` 新增 `visibleEntryBinding`（`PRODUCT` 或 `SALE` 均可见） |
+| 手机上支付弹层「取消 / 确认支付」点不动 | 弹层 `z-50` < 固定底部导航 `z-[60]` | `nshop/layers/base/app/pages/coupon/index.vue` 弹层改 `z-[70]` |
+| `SALE`-only 券误入商品页「领取」区，领取被拒 | 领取区只按 `claimable` 过滤，未按渠道区分 | `nshop/layers/base/app/components/product-detail/ProductCouponBlock.vue` 新增 `claimableViaProduct()`（显式渠道优先，未配置回落 `claimable`） |
+
+### 8.10 验收
+
+- `pnpm build` 通过，无 TS 报错（`✨ Build complete!`）。
+- 手机视口（390×844，dpr=2，Playwright mobile）截图：5 Tab / 券包大卡 / 到店切换 / 积分商城 / 兑换码 / 我的券 / 支付弹层 / 商品页加价购入口（见 8.2–8.8 各节）。
+- 裸 i18n key 检查 = `[]`（`messages.coupon.*` 无遗漏，zh-CN 与 en-US 同步）。
+- API 正确性以后端 e2e（计划2）为准；本轮前端以手机视口截图回归为主。

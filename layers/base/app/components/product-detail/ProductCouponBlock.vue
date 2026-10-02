@@ -6,6 +6,9 @@ import type { ProductCouponBinding } from "../../composables/useCoupon";
 import {
   getProductCoupons,
   claimProductCoupon,
+  attachCouponToOrder,
+  detachCouponFromOrder,
+  templateHasChannel,
   couponErrorMessage,
 } from "../../composables/useCoupon";
 import { useProductDetailView } from "../../composables/useProductDetailView";
@@ -13,6 +16,8 @@ import { useProductDetailView } from "../../composables/useProductDetailView";
 const { t } = useI18n();
 const toast = useToast();
 const { product } = useProductDetailView();
+const orderStore = useOrderStore();
+const { order } = storeToRefs(orderStore);
 
 const productId = computed(() => product.value?.id ?? "");
 
@@ -35,9 +40,101 @@ const { data: bindings } = useAsyncData(
 const claimedIds = ref<Set<string>>(new Set());
 const claimingId = ref<string | null>(null);
 
+/** 是否可经 PRODUCT 渠道领取：显式渠道配置优先；未配置时回落 claimable（与后端 resolveCouponChannels 同口径）。
+ *  后端 productCoupons 同时返回 SALE 渠道绑定（供加价购），故此处必须按渠道区分，
+ *  否则 SALE-only 的券会误入领取区（点击领取会被后端拒绝）。 */
+function claimableViaProduct(b: ProductCouponBinding): boolean {
+  const tpl = b.template;
+  if (!tpl) return false;
+  const explicit = (tpl.distributionChannels ?? "").trim();
+  if (explicit) return templateHasChannel(tpl, "PRODUCT");
+  return !!tpl.claimable;
+}
+
 const available = computed<ProductCouponBinding[]>(() =>
-  (bindings.value ?? []).filter((b) => b.enabled && !!b.template?.claimable),
+  (bindings.value ?? []).filter((b) => b.enabled && claimableViaProduct(b)),
 );
+
+// 到店可用标签：场景为 IN_STORE 或 ALL
+function isStore(b: ProductCouponBinding): boolean {
+  const s = (b.template?.usageScene ?? "").toUpperCase();
+  return s === "IN_STORE" || s === "ALL";
+}
+
+// 加价购可售券：模板渠道含 SALE 且 salePrice>0；且非纯到店券（到店券不可线上加购）
+const saleable = computed<ProductCouponBinding[]>(() =>
+  (bindings.value ?? []).filter(
+    (b) =>
+      b.enabled &&
+      !!b.template &&
+      templateHasChannel(b.template, "SALE") &&
+      (b.template.salePrice ?? 0) > 0 &&
+      (b.template.usageScene ?? "ONLINE").toUpperCase() !== "IN_STORE",
+  ),
+);
+
+const attachingTplId = ref<string | null>(null);
+const attachedTplIds = ref<Set<string>>(new Set());
+
+function isAttached(tplId?: string | null): boolean {
+  return !!tplId && attachedTplIds.value.has(tplId);
+}
+
+/** 取活动订单 id；无活动订单时先拉取（未下单返回 null） */
+async function ensureOrderId(): Promise<string | null> {
+  if (order.value?.id) return order.value.id;
+  try {
+    await orderStore.fetchOrder("base");
+  } catch {
+    // 忽略：未登录/无活动订单
+  }
+  return order.value?.id ?? null;
+}
+
+async function attachAddon(b: ProductCouponBinding) {
+  const tplId = b.template?.id;
+  if (!tplId || attachingTplId.value) return;
+  attachingTplId.value = tplId;
+  try {
+    const orderId = await ensureOrderId();
+    if (!orderId) {
+      toast.add({ title: t("messages.coupon.surchargeNeedCart"), color: "warning" });
+      return;
+    }
+    await attachCouponToOrder(orderId, tplId);
+    const next = new Set(attachedTplIds.value);
+    next.add(tplId);
+    attachedTplIds.value = next;
+    toast.add({ title: t("messages.coupon.surchargeAdded"), color: "success" });
+  } catch (e) {
+    toast.add({
+      title: t("messages.coupon.surchargeFailed"),
+      description: couponErrorMessage(e),
+      color: "error",
+    });
+  } finally {
+    attachingTplId.value = null;
+  }
+}
+
+async function detachAddon(b: ProductCouponBinding) {
+  const tplId = b.template?.id;
+  if (!tplId) return;
+  const orderId = order.value?.id ?? (await ensureOrderId());
+  if (!orderId) return;
+  try {
+    await detachCouponFromOrder(orderId, tplId);
+    const next = new Set(attachedTplIds.value);
+    next.delete(tplId);
+    attachedTplIds.value = next;
+  } catch (e) {
+    toast.add({
+      title: t("messages.coupon.surchargeFailed"),
+      description: couponErrorMessage(e),
+      color: "error",
+    });
+  }
+}
 
 function isClaimed(id: string): boolean {
   return claimedIds.value.has(id);
@@ -98,7 +195,7 @@ async function claim(b: ProductCouponBinding) {
 </script>
 
 <template>
-  <div v-if="available.length" class="mt-3 rounded-lg border border-primary/15 bg-primary/5 p-3">
+  <div v-if="available.length || saleable.length" class="mt-3 rounded-lg border border-primary/15 bg-primary/5 p-3">
     <div class="mb-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
       <UIcon name="i-lucide-ticket-percent" class="size-3.5" />
       {{ t("messages.detail.couponTitle") }}
@@ -126,6 +223,10 @@ async function claim(b: ProductCouponBinding) {
               v-if="b.template?.newCustomerOnly"
               class="rounded bg-orange-100 px-1 py-px text-[10px] font-semibold text-orange-600"
             >{{ t("messages.detail.couponNewCustomer") }}</span>
+            <span
+              v-if="isStore(b)"
+              class="rounded bg-primary/10 px-1 py-px text-[10px] font-semibold text-primary"
+            >{{ t("messages.coupon.storeUsable") }}</span>
           </div>
           <p class="mt-0.5 truncate text-xs font-semibold text-gray-800">
             {{ b.promoTitle || b.template?.name }}
@@ -145,6 +246,54 @@ async function claim(b: ProductCouponBinding) {
           {{ isClaimed(b.id) ? t("messages.detail.couponClaimed") : t("messages.detail.couponClaim") }}
         </UButton>
       </div>
+
+      <!-- 加价购券（随主订单结算） -->
+      <template v-if="saleable.length">
+        <div class="my-1 border-t border-dashed border-primary/25" />
+        <div class="mb-1 flex items-center gap-1.5 text-xs font-semibold text-primary">
+          <UIcon name="i-lucide-plus-circle" class="size-3.5" />
+          {{ t("messages.coupon.surchargeTitle") }}
+        </div>
+        <div
+          v-for="b in saleable"
+          :key="'addon-' + b.id"
+          class="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-2.5"
+        >
+          <div
+            class="flex w-20 shrink-0 flex-col items-center justify-center rounded-md bg-primary/10 py-1.5 text-primary"
+          >
+            <span class="text-base font-bold leading-tight">{{ formatAmount(b) }}</span>
+          </div>
+          <div class="flex min-w-0 flex-1 flex-col">
+            <p class="mt-0.5 truncate text-xs font-semibold text-gray-800">
+              {{ b.promoTitle || b.template?.name }}
+            </p>
+            <p class="mt-0.5 text-[11px] text-gray-500">
+              {{ t("messages.coupon.surchargePrice", { n: ((b.template?.salePrice ?? 0) / 100).toString() }) }}
+            </p>
+          </div>
+          <UButton
+            v-if="isAttached(b.template?.id)"
+            size="sm"
+            color="neutral"
+            variant="soft"
+            @click="detachAddon(b)"
+          >
+            {{ t("messages.coupon.surchargeRemove") }}
+          </UButton>
+          <UButton
+            v-else
+            size="sm"
+            color="primary"
+            variant="soft"
+            :disabled="!!attachingTplId"
+            :loading="attachingTplId === b.template?.id"
+            @click="attachAddon(b)"
+          >
+            {{ t("messages.coupon.surchargeBuy") }}
+          </UButton>
+        </div>
+      </template>
     </div>
   </div>
 </template>
