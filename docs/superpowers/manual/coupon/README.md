@@ -1,8 +1,8 @@
 # 优惠券使用手册
 
 > 适用：nshop C 端商城 + vendure 后端 coupon-plugin + vshop/web-admin 运营后台
-> 更新：2026-10-02（新增 §8 多渠道分发 C 端：券商城/积分商城/兑换码/我的券/加价购/支付）
-> 环境：测试店铺渠道 92（code `official-01`）线上实测；§8 为本地环境（nshop `.output` + 本地 vendure）手机视口实测
+> 更新：2026-10-02（新增 §9 到店核销「租户归属 + 销售员配送档案范围」收口）
+> 环境：测试店铺渠道 92（code `official-01`）线上实测；§8 为本地环境（nshop `.output` + 本地 vendure）手机视口实测；§9 为线上环境（e.joho.cn 后端 + 本地 web-admin dev 指向线上 API）手机视口实测
 
 ---
 
@@ -254,3 +254,44 @@ USED ──退单──> RETURNED
 - 手机视口（390×844，dpr=2，Playwright mobile）截图：5 Tab / 券包大卡 / 到店切换 / 积分商城 / 兑换码 / 我的券 / 支付弹层 / 商品页加价购入口（见 8.2–8.8 各节）。
 - 裸 i18n key 检查 = `[]`（`messages.coupon.*` 无遗漏，zh-CN 与 en-US 同步）。
 - API 正确性以后端 e2e（计划2）为准；本轮前端以手机视口截图回归为主。
+
+---
+
+## 9. 到店核销「租户归属 + 销售员配送档案范围」收口
+
+> 新增于 2026-10-02。手机视口 390×844（dpr=2，Playwright mobile）。代码：`vendure/packages/cjk-plugin/src/tenant/redeem-scope.service.ts`、`vendure/packages/coupon-plugin/src/redeem-scope.ts`、`vshop/web-admin/src/pages/platform/members/index.vue`。
+
+### 9.1 目标与模型
+
+- 一个租户（渠道）内的**销售/收银**人员，只允许核销**其被授权的配送档案范围**内的订单与到店买单券；范围外的单/券对受限核销员「不可见」（不泄漏存在性）。
+- 数据模型：`TenantMember.shippingProfileIds: [ID!]!`（非空 JSON 数组，迁移 `add-tenant-member-redeem-profiles` 幂等补列，默认 `[]`）。
+- **空白名单 = 默认拒绝**：受限核销员未授权任何档案时，看不到任何待核销单，且扫码/核销一律按「查不到」处理。
+- 判定分层：先看权限（是否含 `VerifyOrder`）→ 受限则按白名单 + 订单行/券绑定商品的 `variant.customFields.shippingProfileId` 判定；**店主 / 超管不受限**（全量可见）。
+
+### 9.2 后台配置（人员授权）
+
+路径：运营后台 → 平台 → 人员管理 → 某成员「角色」→ 勾选含「核销·按配送档案」权限（`VerifyOrder`）的角色（如「销售」）。
+
+- 选中含 `VerifyOrder` 的角色后，弹层内出现「**可核销配送档案**」多选区，可勾选本租户可见的配送档案；未勾选时显示橙色告警「未授权任何档案（默认拒绝核销）」。
+- 保存时同步写入角色与白名单；成员信息弹窗也会展示其「可核销配送档案」（空白名单显示告警文案）。
+- 截图：[人员授权·角色弹层含「可核销配送档案」多选](shots/scope-01-members-role-scope.png)
+
+### 9.3 受限核销员的收口行为
+
+- **到店自提核销**（`redemption-code.service.ts listPending`）：范围过滤在**分页前**完成，`totalItems` 与分页均为过滤后口径；范围外订单不出现。
+- **扫码 / 核销**：范围外统一按「查不到」返回（`null` / 拒绝），不区分「不存在」与「越权」。
+- **到店买单**（`in-store-bill.service.ts`）：券码试算 `quote` 在定位后追加档案范围校验，越界返回 `SCOPE_MISMATCH`（C 端文案「该券不在你的核销范围内，请联系店主配置可核销配送档案」）；券列表按「券模板全部关联商品档案命中」过滤，通用券（无商品绑定）不返回给受限核销员；**流水按 `operatorId = 当前用户`** 只展示自己经手的单据。
+- 受限核销员进入待核销页且未被授权任何档案时，显示空态「你尚未被授权核销任何配送档案范围，请联系店主配置」。
+- 截图：[受限核销员·待核销列表空态（默认拒绝）](shots/scope-02-restricted-empty.png)
+
+### 9.4 不受限视角（店主 / 超管）
+
+- 店主 / 超管不受档案范围限制：到店买单流水展示**本租户全量**单据（含核销笔数 / 实收合计 / 优惠合计汇总）。
+- 截图：[店主/超管·到店买单全量流水](shots/scope-03-owner-bills.png)
+
+### 9.5 回归与单测
+
+- `cjk-plugin`：43 文件 / **315 用例**全绿（含 `redeem-scope.service.spec.ts` 16 例、`redemption-code.service.spec.ts` 4 例：空白名单→列表空、跨档案不可见、全命中放行、受限+分页在过滤后计算）。
+- `coupon-plugin`：13 文件 / **161 用例**全绿（含 `redeem-scope.spec.ts` 6 例、`in-store-bill.service.spec.ts` 28 例：范围外→`SCOPE_MISMATCH`、流水追加 `operatorId` 过滤）。
+- 依赖方向：`cjk-plugin → coupon-plugin`（注册式适配器 `setRedeemScopeResolver`），coupon-plugin 不反向依赖；未注册实现时一律「不受限」，保持既有用例行为。
+- 前端 i18n：`zh-Hans` / `en` 同步新增 `platformMembers.redeemScope*`、`pickupRedeem.emptyRestricted`、`inStoreBills.emptyRestricted`、`inStoreRedeem.errScope`。
