@@ -27,7 +27,16 @@ export type CouponStatus =
   | "RETURNED"
   | "EXPIRED"
   | "INVALID";
-export type CouponIssuedBy = "CENTRE" | "ADMIN" | "EXCHANGE";
+export type CouponIssuedBy = "CENTRE" | "ADMIN" | "EXCHANGE" | "SALE";
+export type CouponChannel =
+  | "CENTRE"
+  | "SALE"
+  | "POINTS"
+  | "CODE"
+  | "PRODUCT"
+  | "GRANT";
+export type CouponSaleStatus = "PENDING" | "PAID" | "CANCELLED" | "REFUNDED";
+export type CouponSalePayMode = "WECHAT" | "ORDER_SURCHARGE";
 
 export interface CouponTemplate {
   id: string;
@@ -60,8 +69,77 @@ export interface CouponTemplate {
   newCustomerOnly: boolean;
   /** 会员等级限制（如 GOLD），null 表示不限 */
   memberLevel?: string | null;
+  /** 分发渠道（逗号分隔：CENTRE,SALE,POINTS,CODE,PRODUCT,GRANT）；null=未显式配置（按老字段推导） */
+  distributionChannels?: string | null;
+  /** 出售价（分）；0=不可售 */
+  salePrice: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/** 券包（出售型）：items 仅含 templateId + quantity，模板详情需用 catalogue.templates 映射 */
+export interface CouponBundleItem {
+  id: string;
+  bundleId: string;
+  templateId: string;
+  quantity: number;
+}
+
+export interface CouponBundle {
+  id: string;
+  name: string;
+  description?: string | null;
+  /** 整包售价（分） */
+  salePrice: number;
+  enabled: boolean;
+  channelId: string;
+  items: CouponBundleItem[];
+}
+
+/** 券商城目录：可售单券模板 + 启用券包 */
+export interface CouponSaleCatalogue {
+  templates: CouponTemplate[];
+  bundles: CouponBundle[];
+}
+
+/** 出售单（独立单据，不生成 Vendure Order） */
+export interface CouponSaleOrder {
+  id: string;
+  customerId: string;
+  payMode: CouponSalePayMode;
+  templateId?: string | null;
+  bundleId?: string | null;
+  orderId?: string | null;
+  amount: number;
+  status: CouponSaleStatus;
+  paidAt?: string | null;
+  refundedAt?: string | null;
+  createdAt: string;
+}
+
+/** 微信支付参数（对齐充值卡 CouponWechatPayParams） */
+export interface CouponWechatPayParams {
+  payType: string;
+  prepayId?: string | null;
+  appId?: string | null;
+  timeStamp?: string | null;
+  nonceStr?: string | null;
+  package?: string | null;
+  signType?: string | null;
+  paySign?: string | null;
+  payUrl?: string | null;
+}
+
+export interface CouponWechatPayResult {
+  saleOrderId: string;
+  outTradeNo: string;
+  pay: CouponWechatPayParams;
+}
+
+/** 积分兑换结果 */
+export interface ExchangeCouponResult {
+  coupon: CustomerCoupon;
+  spentPoints: number;
 }
 
 export interface CustomerCoupon {
@@ -190,6 +268,17 @@ const COUPON_TEMPLATE_FIELDS = `
   startsAt endsAt totalCount claimedCount pointsPrice perUserLimit
   scope categoryId variantId enabled shopId usageScene createdAt updatedAt
   claimable claimCode validDays newCustomerOnly memberLevel
+  distributionChannels salePrice
+`;
+
+const BUNDLE_FIELDS = `
+  id name description salePrice enabled channelId
+  items { id bundleId templateId quantity }
+`;
+
+const SALE_ORDER_FIELDS = `
+  id customerId payMode templateId bundleId orderId amount status
+  paidAt refundedAt createdAt
 `;
 
 const CUSTOMER_COUPON_FIELDS = `
@@ -230,6 +319,36 @@ interface ClaimProductCouponMutation {
 }
 interface RedeemCouponByCodeMutation {
   redeemCouponByCode: CustomerCoupon;
+}
+interface PointsMallQuery {
+  pointsMallTemplates: CouponTemplate[];
+}
+interface ExchangeWithPointsMutation {
+  exchangeCouponWithPoints: ExchangeCouponResult;
+}
+interface CouponSaleCatalogueQuery {
+  couponSaleCatalogue: CouponSaleCatalogue;
+}
+interface MyCouponSaleOrdersQuery {
+  myCouponSaleOrders: CouponSaleOrder[];
+}
+interface CreateCouponSaleOrderMutation {
+  createCouponSaleOrder: CouponSaleOrder;
+}
+interface PayCouponSaleWithBalanceMutation {
+  payCouponSaleWithBalance: CouponSaleOrder;
+}
+interface CreateWechatCouponPaymentMutation {
+  createWechatCouponPayment: CouponWechatPayResult;
+}
+interface CancelCouponSaleOrderMutation {
+  cancelCouponSaleOrder: CouponSaleOrder;
+}
+interface AttachCouponToOrderMutation {
+  attachCouponToOrder: CouponSaleOrder;
+}
+interface DetachCouponFromOrderMutation {
+  detachCouponFromOrder: boolean;
 }
 
 /** 领券中心：当前可领取的优惠券模板列表 */
@@ -322,6 +441,169 @@ export async function redeemCouponByCode(claimCode: string): Promise<CustomerCou
   return data.redeemCouponByCode;
 }
 
+/* ------------------------- 积分商城 ------------------------- */
+
+/** 积分商城：可用积分兑换的券模板列表 */
+export async function getPointsMallTemplates(): Promise<CouponTemplate[]> {
+  const client = resolveClient();
+  const data = await client.request<PointsMallQuery>(`query PointsMallTemplates {
+    pointsMallTemplates { ${COUPON_TEMPLATE_FIELDS} }
+  }`);
+  return data.pointsMallTemplates;
+}
+
+/** 积分兑换券，成功返回兑换结果（含新券与消耗积分） */
+export async function exchangeCouponWithPoints(
+  templateId: string,
+): Promise<ExchangeCouponResult> {
+  const client = resolveClient();
+  const data = await client.request<ExchangeWithPointsMutation>(
+    `mutation ExchangeCouponWithPoints($templateId: ID!) {
+      exchangeCouponWithPoints(templateId: $templateId) {
+        spentPoints
+        coupon { ${CUSTOMER_COUPON_FIELDS} }
+      }
+    }`,
+    { templateId },
+  );
+  return data.exchangeCouponWithPoints;
+}
+
+/* ------------------------- 券商城（出售单） ------------------------- */
+
+/** 券商城目录：可售单券 + 启用券包；scene 缺省 ONLINE */
+export async function getCouponSaleCatalogue(
+  scene?: "ONLINE" | "IN_STORE" | "ALL",
+): Promise<CouponSaleCatalogue> {
+  const client = resolveClient();
+  const data = await client.request<CouponSaleCatalogueQuery>(
+    `query CouponSaleCatalogue($scene: CouponUsageScene) {
+      couponSaleCatalogue(scene: $scene) {
+        templates { ${COUPON_TEMPLATE_FIELDS} }
+        bundles { ${BUNDLE_FIELDS} }
+      }
+    }`,
+    { scene: scene ?? null },
+  );
+  return data.couponSaleCatalogue;
+}
+
+/** 创建出售单（templateId / bundleId 二选一），返回 PENDING 单 */
+export async function createCouponSaleOrder(input: {
+  templateId?: string;
+  bundleId?: string;
+}): Promise<CouponSaleOrder> {
+  const client = resolveClient();
+  const data = await client.request<CreateCouponSaleOrderMutation>(
+    `mutation CreateCouponSaleOrder($templateId: ID, $bundleId: ID) {
+      createCouponSaleOrder(templateId: $templateId, bundleId: $bundleId) { ${SALE_ORDER_FIELDS} }
+    }`,
+    { templateId: input.templateId ?? null, bundleId: input.bundleId ?? null },
+  );
+  return data.createCouponSaleOrder;
+}
+
+/** 生成微信支付参数（openid 由后端从客户档案推导，前端可不传） */
+export async function createWechatCouponPayment(
+  saleOrderId: string,
+  tradeType?: "JSAPI" | "NATIVE" | "H5" | "APP",
+  openid?: string,
+): Promise<CouponWechatPayResult> {
+  const client = resolveClient();
+  const data = await client.request<CreateWechatCouponPaymentMutation>(
+    `mutation CreateWechatCouponPayment($saleOrderId: ID!, $tradeType: String, $openid: String) {
+      createWechatCouponPayment(saleOrderId: $saleOrderId, tradeType: $tradeType, openid: $openid) {
+        saleOrderId outTradeNo
+        pay { payType prepayId appId timeStamp nonceStr package signType paySign payUrl }
+      }
+    }`,
+    { saleOrderId, tradeType: tradeType ?? null, openid: openid ?? null },
+  );
+  return data.createWechatCouponPayment;
+}
+
+/** 余额支付（同步结算） */
+export async function payCouponSaleWithBalance(
+  id: string,
+): Promise<CouponSaleOrder> {
+  const client = resolveClient();
+  const data = await client.request<PayCouponSaleWithBalanceMutation>(
+    `mutation PayCouponSaleWithBalance($id: ID!) {
+      payCouponSaleWithBalance(id: $id) { ${SALE_ORDER_FIELDS} }
+    }`,
+    { id },
+  );
+  return data.payCouponSaleWithBalance;
+}
+
+/** 取消出售单（仅 PENDING） */
+export async function cancelCouponSaleOrder(
+  id: string,
+): Promise<CouponSaleOrder> {
+  const client = resolveClient();
+  const data = await client.request<CancelCouponSaleOrderMutation>(
+    `mutation CancelCouponSaleOrder($id: ID!) {
+      cancelCouponSaleOrder(id: $id) { ${SALE_ORDER_FIELDS} }
+    }`,
+    { id },
+  );
+  return data.cancelCouponSaleOrder;
+}
+
+/** 我的出售单（含 PENDING/PAID/…） */
+export async function getMyCouponSaleOrders(): Promise<CouponSaleOrder[]> {
+  const client = resolveClient();
+  const data = await client.request<MyCouponSaleOrdersQuery>(
+    `query MyCouponSaleOrders { myCouponSaleOrders { ${SALE_ORDER_FIELDS} } }`,
+  );
+  return data.myCouponSaleOrders;
+}
+
+/* ------------------------- 商品页加价购 ------------------------- */
+
+/** 加价购挂券到活动订单（券价随主订单结算） */
+export async function attachCouponToOrder(
+  orderId: string,
+  templateId: string,
+): Promise<CouponSaleOrder> {
+  const client = resolveClient();
+  const data = await client.request<AttachCouponToOrderMutation>(
+    `mutation AttachCouponToOrder($orderId: ID!, $templateId: ID!) {
+      attachCouponToOrder(orderId: $orderId, templateId: $templateId) { ${SALE_ORDER_FIELDS} }
+    }`,
+    { orderId, templateId },
+  );
+  return data.attachCouponToOrder;
+}
+
+/** 取消加价购（移除 surcharge + 出售单置 CANCELLED） */
+export async function detachCouponFromOrder(
+  orderId: string,
+  templateId: string,
+): Promise<boolean> {
+  const client = resolveClient();
+  const data = await client.request<DetachCouponFromOrderMutation>(
+    `mutation DetachCouponFromOrder($orderId: ID!, $templateId: ID!) {
+      detachCouponFromOrder(orderId: $orderId, templateId: $templateId)
+    }`,
+    { orderId, templateId },
+  );
+  return data.detachCouponFromOrder;
+}
+
+/** 判断模板分发渠道是否包含指定渠道（distributionChannels 为逗号分隔字符串） */
+export function templateHasChannel(
+  tpl: Pick<CouponTemplate, "distributionChannels">,
+  channel: CouponChannel,
+): boolean {
+  const raw = tpl.distributionChannels;
+  if (!raw) return false;
+  return raw
+    .split(",")
+    .map((s) => s.trim().toUpperCase())
+    .includes(channel);
+}
+
 // ─────────────────────────────────────────────────────────────
 // 错误映射
 // ─────────────────────────────────────────────────────────────
@@ -350,6 +632,30 @@ const COUPON_ERROR_MESSAGES: Array<[string, string]> = [
   ["Invalid claim code", "兑换码无效"],
   ["Claim code not available in this shop", "该兑换码在当前店铺不可用"],
   ["Coupon is for new customers only", "该券仅限新客领取"],
+  // —— 券商城 / 出售单 / 加价购 / 积分兑换 ——
+  ["Balance payment is not available", "余额支付暂不可用，请改用微信支付"],
+  ["Payment gateway not configured", "支付通道未配置，请稍后再试"],
+  ["Coupon sale order not found", "出售单不存在或不属于当前店铺"],
+  ["templateId or bundleId is required", "请选择要购买的券或券包"],
+  ["Only one of templateId / bundleId is allowed", "单券与券包只能二选一"],
+  ["Coupon is not for sale", "该券暂不可购买"],
+  ["Coupon has no sale price", "该券暂不可购买"],
+  ["Coupon is not available in this shop", "该券在当前店铺不可用"],
+  ["Coupon bundle not found", "券包不存在或已下架"],
+  ["Coupon bundle has no sale price", "该券包暂不可购买"],
+  ["Coupon bundle is empty", "该券包暂无可发放的券"],
+  ["Bundle template", "券包内含不可用的券，暂不可购买"],
+  ["Balance refund is not available", "余额退款暂不可用，请联系客服"],
+  ["Please refund the main order instead", "该券随主订单购买，请在订单中申请退款"],
+  ["Coupon already used, refund rejected", "券已使用，无法退款"],
+  ["Coupon sale order is", "该出售单当前不可支付或退款"],
+  ["Order does not belong to the current customer", "只能操作本人的订单"],
+  ["Coupon already attached to this order", "该券已加购"],
+  ["Coupon is not available for online orders", "该券仅限到店使用，无法线上加购"],
+  ["No customer for the current user", "登录状态异常，请重新登录"],
+  ["This coupon is not exchangeable with points", "该券暂不支持积分兑换"],
+  ["Points service is not enabled", "积分功能暂不可用"],
+  ["Insufficient points", "积分不足"],
 ];
 
 /** 将 coupon 接口抛出的 GraphQL 错误规范化为友好中文提示 */
@@ -386,6 +692,21 @@ export function useCoupon() {
     redeemCouponByCode,
     applyCouponToOrder,
     clearCouponFromOrder,
+    // 积分商城
+    getPointsMallTemplates,
+    exchangeCouponWithPoints,
+    // 券商城 / 出售单
+    getCouponSaleCatalogue,
+    createCouponSaleOrder,
+    createWechatCouponPayment,
+    payCouponSaleWithBalance,
+    cancelCouponSaleOrder,
+    getMyCouponSaleOrders,
+    // 商品页加价购
+    attachCouponToOrder,
+    detachCouponFromOrder,
+    // 工具
+    templateHasChannel,
     couponErrorMessage,
   };
 }
