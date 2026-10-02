@@ -1,7 +1,7 @@
 # 优惠券使用手册
 
 > 适用：nshop C 端商城 + vendure 后端 coupon-plugin + vshop/web-admin 运营后台
-> 更新：2026-10-02（新增 §9 到店核销「租户归属 + 销售员配送档案范围」收口）
+> 更新：2026-10-03（新增 §9 到店核销「租户归属 + 销售员配送档案范围」收口；补 §9.6 迁移上线注意）
 > 环境：测试店铺渠道 92（code `official-01`）线上实测；§8 为本地环境（nshop `.output` + 本地 vendure）手机视口实测；§9 为线上环境（e.joho.cn 后端 + 本地 web-admin dev 指向线上 API）手机视口实测
 
 ---
@@ -295,3 +295,9 @@ USED ──退单──> RETURNED
 - `coupon-plugin`：13 文件 / **161 用例**全绿（含 `redeem-scope.spec.ts` 6 例、`in-store-bill.service.spec.ts` 28 例：范围外→`SCOPE_MISMATCH`、流水追加 `operatorId` 过滤）。
 - 依赖方向：`cjk-plugin → coupon-plugin`（注册式适配器 `setRedeemScopeResolver`），coupon-plugin 不反向依赖；未注册实现时一律「不受限」，保持既有用例行为。
 - 前端 i18n：`zh-Hans` / `en` 同步新增 `platformMembers.redeemScope*`、`pickupRedeem.emptyRestricted`、`inStoreBills.emptyRestricted`、`inStoreRedeem.errScope`。
+
+### 9.6 迁移上线注意（踩坑）
+
+- `add-tenant-member-redeem-profiles` 必须用 raw SQL：`ALTER TABLE "tenant_member" ADD COLUMN IF NOT EXISTS "shipping_profile_ids" text NOT NULL DEFAULT '[]'`（与 `migrate-shipping-contact-flags` 同款，幂等、跨 pg/sqlite）。
+- **踩坑**：若改用 TypeORM `new TableColumn({ default: '[]' })`，PostgreSQL 会产出**未加引号**的 `DEFAULT []`，报 `syntax error at or near "["`；该迁移 `catch` 异常不阻塞启动，列会**静默缺失**，进而 `tenantMembers` 等查询报 `column ... does not exist`。默认值字符串须写成 `"'[]'"`，或直接走 raw SQL。
+- 上线后自检：`psql -c '\d tenant_member'` 应见 `shipping_profile_ids | text | not null | '[]'::text`。
