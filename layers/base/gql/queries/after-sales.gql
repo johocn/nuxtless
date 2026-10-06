@@ -52,7 +52,16 @@ query MyAfterSalesRequests($options: AfterSalesRequestListOptions) {
 query AfterSalesRequest($id: ID!) {
   afterSalesRequest(id: $id) {
     ...AfterSalesFragment
+    history {
+      fromState
+      toState
+      createdAt
+    }
   }
+}
+
+query AfterSalesReturnAddress {
+  afterSalesReturnAddress
 }
 
 mutation CreateAfterSalesRequest($input: CreateAfterSalesRequestInput!) {
