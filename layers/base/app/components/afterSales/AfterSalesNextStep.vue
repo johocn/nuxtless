@@ -25,5 +25,6 @@ const toneClass = computed(() => {
   <section class="mb-6 rounded-lg border p-4" :class="toneClass">
     <p class="text-sm font-medium">{{ t(step.titleKey) }}</p>
     <p class="mt-1 text-xs text-neutral-500">{{ t(step.descKey) }}</p>
+    <slot />
   </section>
 </template>
