@@ -15,17 +15,52 @@ const sortBy = ref<"newest" | "amount">("newest");
 const loading = ref(true);
 const listError = ref(false);
 
-const { data: listData, refresh } = await useAsyncGql(
-  "MyAfterSalesRequests",
-  { options: { take: 100 } },
-  { immediate: false, server: false },
+// 加载更多分页：ListQueryBuilder 原生 skip/take；搜索/筛选/排序仍为本地实现（作用于已加载数据）
+const PAGE_SIZE = 20;
+const requests = ref<any[]>([]);
+const totalItems = ref(0);
+const loadingMore = ref(false);
+const loadMoreError = ref(false);
+const hasMore = computed(() => requests.value.length < totalItems.value);
+const shownText = computed(() =>
+  t("messages.afterSales.shownCount")
+    .replace("{n}", String(requests.value.length))
+    .replace("{m}", String(totalItems.value)),
 );
 
-const requests = computed(() => listData.value?.myAfterSalesRequests?.items ?? []);
-const truncated = computed(() => requests.value.length >= 100);
+async function loadFirst() {
+  listError.value = false;
+  try {
+    const res = await GqlMyAfterSalesRequests({ options: { take: PAGE_SIZE, skip: 0 } });
+    requests.value = (res?.myAfterSalesRequests?.items ?? []) as any[];
+    totalItems.value = res?.myAfterSalesRequests?.totalItems ?? 0;
+  } catch {
+    listError.value = true;
+  }
+}
 
-// 搜索/排序/筛选全部本地完成：
-// 插件 SDL 的 AfterSalesRequestListOptions 是空声明（无 filter / sort），列表本就走 take:100 全量拉取。
+async function loadMore() {
+  if (loadingMore.value || !hasMore.value) return;
+  loadingMore.value = true;
+  loadMoreError.value = false;
+  try {
+    const res = await GqlMyAfterSalesRequests({ options: { take: PAGE_SIZE, skip: requests.value.length } });
+    const items = (res?.myAfterSalesRequests?.items ?? []) as any[];
+    requests.value = requests.value.concat(items);
+    totalItems.value = res?.myAfterSalesRequests?.totalItems ?? totalItems.value;
+  } catch {
+    loadMoreError.value = true; // 保留已加载内容，行内重试
+  } finally {
+    loadingMore.value = false;
+  }
+}
+
+async function load() {
+  await loadFirst();
+}
+
+// 搜索/排序/筛选全部本地完成（作用于已加载数据）：
+// 插件 SDL 的 AfterSalesRequestListOptions 是空声明（无 filter / sort）。
 const matched = computed(() => {
   const kw = keyword.value.trim().toLowerCase();
   let list = requests.value;
@@ -49,15 +84,6 @@ const matched = computed(() => {
 const tabItems = computed(() =>
   AFTER_SALES_TABS.map((tb) => ({ value: tb.key, label: t(tb.labelKey) })),
 );
-
-async function load() {
-  listError.value = false;
-  try {
-    await refresh();
-  } catch {
-    listError.value = true;
-  }
-}
 
 onMounted(async () => {
   await load();
@@ -117,9 +143,22 @@ onMounted(async () => {
       <AfterSalesCard v-for="r in matched" :key="r.id" :request="r" />
     </div>
 
-    <p v-if="truncated && matched.length" class="mt-4 text-center text-xs text-neutral-400">
-      {{ t("messages.afterSales.onlyRecent100") }}
+    <!-- 加载更多 -->
+    <div v-if="hasMore" class="mt-6 text-center">
+      <p v-if="loadMoreError" class="mb-2 text-xs text-error">
+        {{ t("messages.afterSales.loadMoreFailed") }}
+      </p>
+      <UButton
+        variant="soft"
+        :loading="loadingMore"
+        :label="loadMoreError ? t('messages.afterSales.retry') : t('messages.afterSales.loadMore')"
+        @click="loadMore"
+      />
+    </div>
+    <p v-else-if="requests.length" class="mt-6 text-center text-xs text-neutral-400">
+      {{ t("messages.afterSales.allLoaded") }}
     </p>
+    <p v-if="requests.length" class="mt-2 text-center text-xs text-neutral-400">{{ shownText }}</p>
 
     <div class="mt-10">
       <CustomerServiceCard />
