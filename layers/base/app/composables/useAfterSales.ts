@@ -96,5 +96,15 @@ export function useAfterSales() {
     }
   }
 
-  return { loading, error, createRequest, cancelRequest, updateTracking, uploadEvidence };
+  /** 读当前店铺售后寄回地址（未配置返回空串） */
+  async function fetchReturnAddress(): Promise<string> {
+    try {
+      const res = await GqlAfterSalesReturnAddress();
+      return res?.afterSalesReturnAddress ?? "";
+    } catch {
+      return "";
+    }
+  }
+
+  return { loading, error, createRequest, cancelRequest, updateTracking, uploadEvidence, fetchReturnAddress };
 }

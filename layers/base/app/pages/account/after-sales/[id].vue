@@ -26,7 +26,19 @@ const { data, error, refresh } = await useAsyncGql(
 const request = computed(() => data.value?.afterSalesRequest ?? null);
 const pageLoading = ref(true);
 const hasError = computed(() => !!error.value || !request.value);
-const { cancelRequest } = useAfterSales();
+const { cancelRequest, fetchReturnAddress } = useAfterSales();
+
+// 售后寄回地址（Approved 态展示）
+const returnAddress = ref("");
+const toast = useToast();
+async function copyReturnAddress() {
+  try {
+    await navigator.clipboard.writeText(returnAddress.value);
+    toast.add({ title: t("messages.afterSales.copied"), color: "success" });
+  } catch {
+    /* 剪贴板不可用忽略 */
+  }
+}
 
 onMounted(async () => {
   try {
@@ -35,6 +47,9 @@ onMounted(async () => {
     /* hasError 已覆盖 */
   } finally {
     pageLoading.value = false;
+  }
+  if (request.value?.state === "Approved") {
+    void fetchReturnAddress().then((a) => (returnAddress.value = a));
   }
   // 从列表卡片带过来的动作直达参数
   const action = route.query.action;
@@ -127,7 +142,18 @@ function onPrimary() {
     </header>
 
     <!-- 你需要做什么 -->
-    <AfterSalesNextStep :state="request.state" />
+    <AfterSalesNextStep :state="request.state">
+      <div
+        v-if="returnAddress"
+        class="mt-3 flex items-center justify-between gap-3 rounded-md border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900"
+      >
+        <div class="min-w-0">
+          <p class="text-xs text-neutral-500">{{ t("messages.afterSales.returnAddress") }}</p>
+          <p class="mt-0.5 text-sm break-all">{{ returnAddress }}</p>
+        </div>
+        <UButton size="xs" variant="soft" icon="i-lucide-copy" :label="t('messages.afterSales.copyAddress')" @click="copyReturnAddress" />
+      </div>
+    </AfterSalesNextStep>
 
     <!-- 商品卡 -->
     <section class="mb-6 flex items-center gap-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
@@ -150,7 +176,7 @@ function onPrimary() {
     <!-- 处理进度 -->
     <section class="mb-6 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
       <h2 class="mb-3 text-sm font-medium text-neutral-500">{{ t("messages.afterSales.progressTitle") }}</h2>
-      <AfterSalesTimeline :request="request" />
+      <AfterSalesTimeline :request="request" :return-address="returnAddress" />
     </section>
 
     <!-- 申请信息 -->

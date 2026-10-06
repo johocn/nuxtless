@@ -12,9 +12,10 @@ interface TimelineRequest {
   returnCarrier?: string | null;
   returnTrackingNo?: string | null;
   receivedQuantity?: number | null;
+  history?: { fromState?: string | null; toState: string; createdAt: string }[] | null;
 }
 
-const props = defineProps<{ request: TimelineRequest }>();
+const props = defineProps<{ request: TimelineRequest; returnAddress?: string | null }>();
 const { t, locale } = useI18n();
 
 const STEP_LABEL_KEY: Record<string, string> = {
@@ -43,24 +44,42 @@ function fmt(value?: string | null): string | null {
   return d.toLocaleString(locale.value);
 }
 
+function fmtShort(value?: string | null): string | null {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/** 节点精确时间：取该状态最后一次历史行 */
+function historyTime(state: string): string | null {
+  const rows = (props.request.history ?? []).filter((h) => h.toState === state);
+  return rows.length ? fmtShort(rows[rows.length - 1].createdAt) : null;
+}
+
 const nodes = computed<Node[]>(() => {
   const r = props.request;
   const doneIndex = afterSalesProgressIndex(r.state);
   const list: Node[] = AFTER_SALES_PROGRESS.map((state, i) => {
     const isCurrent = i === doneIndex && r.state === state;
     let time: string | null = null;
-    if (state === "Pending" && r.createdAt) time = fmt(r.createdAt);
-    if (state === "Refunded" && r.refundedAt) time = fmt(r.refundedAt);
-    if (isCurrent && r.updatedAt) time = fmt(r.updatedAt);
+    const ht = historyTime(state);
+    if (state === "Pending") time = ht ?? (r.createdAt ? fmt(r.createdAt) : null);
+    else if (state === "Refunded") time = ht ?? (r.refundedAt ? fmt(r.refundedAt) : null);
+    else if (ht) time = ht;
+    if (!time && isCurrent && r.updatedAt) time = fmt(r.updatedAt);
     return {
       key: state,
       label: t(STEP_LABEL_KEY[state] ?? ""),
       time,
-      timeIsRecent: isCurrent && !!r.updatedAt,
+      timeIsRecent: isCurrent && !!r.updatedAt && !ht,
       detail:
         state === "Returning" && (r.returnCarrier || r.returnTrackingNo)
           ? `${r.returnCarrier ?? ""} ${r.returnTrackingNo ?? ""}`.trim()
-          : null,
+          : state === "Approved" && props.returnAddress
+            ? t("messages.afterSales.returnAddressSeeAbove")
+            : null,
       reached: i <= doneIndex,
       current: isCurrent,
       failed: false,
@@ -71,7 +90,7 @@ const nodes = computed<Node[]>(() => {
     list.push({
       key: "RefundFailed",
       label: t("messages.afterSales.stateRefundFailed"),
-      time: fmt(r.updatedAt),
+      time: historyTime("RefundFailed") ?? fmt(r.updatedAt),
       timeIsRecent: true,
       detail: null,
       reached: true,
@@ -82,7 +101,7 @@ const nodes = computed<Node[]>(() => {
     list.push({
       key: "Rejected",
       label: t("messages.afterSales.stateRejected"),
-      time: fmt(r.updatedAt),
+      time: historyTime("Rejected") ?? fmt(r.updatedAt),
       timeIsRecent: true,
       detail: r.rejectReason ?? null,
       reached: true,
@@ -93,7 +112,7 @@ const nodes = computed<Node[]>(() => {
     list.push({
       key: "Closed",
       label: t("messages.afterSales.stateClosed"),
-      time: fmt(r.updatedAt),
+      time: historyTime("Closed") ?? fmt(r.updatedAt),
       timeIsRecent: true,
       detail: null,
       reached: true,
