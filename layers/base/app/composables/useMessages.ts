@@ -56,7 +56,7 @@ function readLocale(): string {
   }
 }
 
-function resolveClient(): GraphQLClient {
+export function resolveClient(): GraphQLClient {
   const { token: channelToken } = useTenantChannel();
   const locale = readLocale();
   const gqlHost = useGqlHostUrl();
