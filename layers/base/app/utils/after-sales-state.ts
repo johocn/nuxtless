@@ -6,6 +6,7 @@ export type AfterSalesState =
   | "Received"
   | "Refunded"
   | "RefundFailed"
+  | "ExchangeShipped"
   | "Closed";
 
 export type AfterSalesType = "return_refund" | "refund_only" | "exchange";
@@ -28,6 +29,7 @@ export const AFTER_SALES_ACTIVE_STATES = new Set<string>([
   "Returning",
   "Received",
   "RefundFailed",
+  "ExchangeShipped",
 ]);
 
 const TYPE_LABEL_KEY: Record<AfterSalesType, string> = {
@@ -61,6 +63,8 @@ export function afterSalesStateInfo(state: string): AfterSalesStateInfo {
       return { labelKey: "messages.afterSales.stateRefunded", color: "success" };
     case "RefundFailed":
       return { labelKey: "messages.afterSales.stateRefundFailed", color: "error" };
+    case "ExchangeShipped":
+      return { labelKey: "messages.afterSales.stateExchangeShipped", color: "info" };
     case "Closed":
       return { labelKey: "messages.afterSales.stateClosed", color: "neutral" };
     default:
@@ -77,6 +81,15 @@ export const AFTER_SALES_PROGRESS: AfterSalesState[] = [
   "Refunded",
 ];
 
+/** 换货流程节点：第 5 节点为「换货已发货」而非退款（exchange 单不走 Refunded） */
+export const AFTER_SALES_EXCHANGE_PROGRESS: AfterSalesState[] = [
+  "Pending",
+  "Approved",
+  "Returning",
+  "Received",
+  "ExchangeShipped",
+];
+
 /**
  * 当前处于主流程第几节点。
  * RefundFailed 落在「商家收货」之上（退款在收货后失败）；Rejected / Closed 落在「提交申请」。
@@ -84,6 +97,8 @@ export const AFTER_SALES_PROGRESS: AfterSalesState[] = [
 export function afterSalesProgressIndex(state: string): number {
   const i = AFTER_SALES_PROGRESS.indexOf(state as AfterSalesState);
   if (i >= 0) return i;
+  const j = AFTER_SALES_EXCHANGE_PROGRESS.indexOf(state as AfterSalesState);
+  if (j >= 0) return j;
   if (state === "RefundFailed") return 3;
   if (state === "Rejected" || state === "Closed") return 0;
   return -1;
@@ -154,6 +169,12 @@ export function afterSalesNextStep(state: string): AfterSalesNextStep {
         descKey: "messages.afterSales.nextClosedDesc",
         tone: "neutral",
       };
+    case "ExchangeShipped":
+      return {
+        titleKey: "messages.afterSales.nextExchangeShippedTitle",
+        descKey: "messages.afterSales.nextExchangeShippedDesc",
+        tone: "info",
+      };
     default:
       return {
         titleKey: "messages.afterSales.nextUnknownTitle",
@@ -164,7 +185,7 @@ export function afterSalesNextStep(state: string): AfterSalesNextStep {
 }
 
 /** 卡片 / 详情页主行动 */
-export type AfterSalesPrimaryAction = "cancel" | "tracking" | "service" | "detail" | "none";
+export type AfterSalesPrimaryAction = "cancel" | "tracking" | "service" | "detail" | "exchangeReceive" | "none";
 
 export function afterSalesPrimaryAction(state: string): AfterSalesPrimaryAction {
   switch (state) {
@@ -172,6 +193,8 @@ export function afterSalesPrimaryAction(state: string): AfterSalesPrimaryAction 
       return "cancel";
     case "Approved":
       return "tracking";
+    case "ExchangeShipped":
+      return "exchangeReceive";
     case "Returning":
     case "Received":
     case "RefundFailed":
@@ -195,6 +218,8 @@ export function afterSalesPrimaryActionLabelKey(action: AfterSalesPrimaryAction)
       return "messages.afterSales.customerService";
     case "detail":
       return "messages.afterSales.viewDetail";
+    case "exchangeReceive":
+      return "messages.afterSales.actionConfirmExchange";
     default:
       return "messages.afterSales.viewDetail";
   }
@@ -206,6 +231,11 @@ export function canCancelAfterSales(state: string): boolean {
 
 export function canFillTracking(state: string): boolean {
   return state === "Approved";
+}
+
+/** 换货单顾客确认收货（ExchangeShipped → Closed） */
+export function canConfirmExchange(state: string): boolean {
+  return state === "ExchangeShipped";
 }
 
 export const AFTER_SALES_ELIGIBLE_ORDER_STATES = new Set([

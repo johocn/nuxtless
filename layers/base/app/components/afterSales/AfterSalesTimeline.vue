@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AFTER_SALES_PROGRESS, afterSalesProgressIndex } from "../../utils/after-sales-state";
+import { AFTER_SALES_PROGRESS, AFTER_SALES_EXCHANGE_PROGRESS, afterSalesProgressIndex } from "../../utils/after-sales-state";
 
 interface TimelineRequest {
   state: string;
@@ -12,6 +12,9 @@ interface TimelineRequest {
   returnCarrier?: string | null;
   returnTrackingNo?: string | null;
   receivedQuantity?: number | null;
+  type?: string | null;
+  exchangeTrackingNo?: string | null;
+  exchangeCarrier?: string | null;
   history?: { fromState?: string | null; toState: string; createdAt: string }[] | null;
 }
 
@@ -24,6 +27,7 @@ const STEP_LABEL_KEY: Record<string, string> = {
   Returning: "messages.afterSales.stepReturning",
   Received: "messages.afterSales.stepReceived",
   Refunded: "messages.afterSales.stepRefunded",
+  ExchangeShipped: "messages.afterSales.timelineExchangeShipped",
 };
 
 interface Node {
@@ -61,7 +65,9 @@ function historyTime(state: string): string | null {
 const nodes = computed<Node[]>(() => {
   const r = props.request;
   const doneIndex = afterSalesProgressIndex(r.state);
-  const list: Node[] = AFTER_SALES_PROGRESS.map((state, i) => {
+  // 换货单第 5 节点显示「换货已发货」而非「已退款」
+  const progress = r.type === "exchange" ? AFTER_SALES_EXCHANGE_PROGRESS : AFTER_SALES_PROGRESS;
+  const list: Node[] = progress.map((state, i) => {
     const isCurrent = i === doneIndex && r.state === state;
     let time: string | null = null;
     const ht = historyTime(state);
@@ -75,7 +81,9 @@ const nodes = computed<Node[]>(() => {
       time,
       timeIsRecent: isCurrent && !!r.updatedAt && !ht,
       detail:
-        state === "Returning" && (r.returnCarrier || r.returnTrackingNo)
+        state === "ExchangeShipped" && (r.exchangeCarrier || r.exchangeTrackingNo)
+          ? `${r.exchangeCarrier ?? ""} ${r.exchangeTrackingNo ?? ""}`.trim()
+          : state === "Returning" && (r.returnCarrier || r.returnTrackingNo)
           ? `${r.returnCarrier ?? ""} ${r.returnTrackingNo ?? ""}`.trim()
           : state === "Approved" && props.returnAddress
             ? t("messages.afterSales.returnAddressSeeAbove")
