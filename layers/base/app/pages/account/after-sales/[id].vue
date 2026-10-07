@@ -7,6 +7,7 @@ import {
   afterSalesStateInfo,
   afterSalesTypeLabelKey,
   canCancelAfterSales,
+  canConfirmExchange,
   canFillTracking,
 } from "../../../utils/after-sales-state";
 import { formatMoney } from "../../../utils/format-money";
@@ -26,7 +27,7 @@ const { data, error, refresh } = await useAsyncGql(
 const request = computed(() => data.value?.afterSalesRequest ?? null);
 const pageLoading = ref(true);
 const hasError = computed(() => !!error.value || !request.value);
-const { cancelRequest, fetchReturnAddress } = useAfterSales();
+const { cancelRequest, fetchReturnAddress, exchangeReceive } = useAfterSales();
 
 // 售后寄回地址（Approved 态展示）
 const returnAddress = ref("");
@@ -113,9 +114,27 @@ async function onCancelConfirm() {
   }
 }
 
+// 换货确认收货（ExchangeShipped → Closed）
+const exchangeConfirmOpen = ref(false);
+const receiving = ref(false);
+async function onExchangeReceive() {
+  if (!request.value) return;
+  receiving.value = true;
+  try {
+    const res = await exchangeReceive(request.value.id);
+    exchangeConfirmOpen.value = false;
+    if (res.ok) await refresh();
+  } finally {
+    receiving.value = false;
+  }
+}
+
 function onPrimary() {
   if (primaryAction.value === "cancel") cancelConfirmOpen.value = true;
   else if (primaryAction.value === "tracking") trackingOpen.value = true;
+  else if (primaryAction.value === "exchangeReceive") {
+    if (request.value && canConfirmExchange(request.value.state)) exchangeConfirmOpen.value = true;
+  }
 }
 </script>
 
@@ -179,6 +198,9 @@ function onPrimary() {
       <AfterSalesTimeline :request="request" :return-address="returnAddress" />
     </section>
 
+    <!-- 协商留言（时间线下方） -->
+    <AfterSalesMessages :request="request" />
+
     <!-- 申请信息 -->
     <dl class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div>
@@ -231,7 +253,7 @@ function onPrimary() {
           @click="() => $el?.scrollIntoView?.()"
         />
         <UButton
-          v-if="primaryAction === 'cancel' || primaryAction === 'tracking'"
+          v-if="primaryAction === 'cancel' || primaryAction === 'tracking' || primaryAction === 'exchangeReceive'"
           color="primary"
           :label="primaryLabel"
           @click="onPrimary"
@@ -266,6 +288,20 @@ function onPrimary() {
           <div class="mt-5 flex justify-center gap-3">
             <UButton variant="soft" :label="t('messages.afterSales.keepRequest')" @click="cancelConfirmOpen = false" />
             <UButton color="error" :loading="canceling" :label="t('messages.afterSales.confirmCancel')" @click="onCancelConfirm" />
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- 换货确认收货 -->
+    <UModal v-model:open="exchangeConfirmOpen" :ui="{ content: 'sm:max-w-sm' }">
+      <template #body>
+        <div class="p-5 text-center">
+          <h2 class="text-base font-medium">{{ t("messages.afterSales.exchangeConfirmTitle") }}</h2>
+          <p class="mt-1 text-sm text-neutral-500">{{ t("messages.afterSales.exchangeConfirmBody") }}</p>
+          <div class="mt-5 flex justify-center gap-3">
+            <UButton variant="soft" :label="t('messages.afterSales.cancel')" @click="exchangeConfirmOpen = false" />
+            <UButton color="primary" :loading="receiving" :label="t('messages.afterSales.actionConfirmExchange')" @click="onExchangeReceive" />
           </div>
         </div>
       </template>

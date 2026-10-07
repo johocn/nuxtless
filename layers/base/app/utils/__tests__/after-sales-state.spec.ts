@@ -10,6 +10,7 @@ import {
   canApplyAfterSales,
   canCancelAfterSales,
   canFillTracking,
+  canConfirmExchange,
   tabOfAfterSales,
 } from "../after-sales-state";
 
@@ -24,8 +25,8 @@ describe("after-sales-state", () => {
     ]);
   });
 
-  it("进行中收纳 Pending/Approved/Returning/Received/RefundFailed", () => {
-    for (const s of ["Pending", "Approved", "Returning", "Received", "RefundFailed"]) {
+  it("进行中收纳 Pending/Approved/Returning/Received/RefundFailed/ExchangeShipped", () => {
+    for (const s of ["Pending", "Approved", "Returning", "Received", "RefundFailed", "ExchangeShipped"]) {
       expect(AFTER_SALES_ACTIVE_STATES.has(s)).toBe(true);
       expect(tabOfAfterSales(s)).toBe("ACTIVE");
     }
@@ -48,6 +49,7 @@ describe("after-sales-state", () => {
     expect(afterSalesProgressIndex("Received")).toBe(3);
     expect(afterSalesProgressIndex("Refunded")).toBe(4);
     expect(afterSalesProgressIndex("RefundFailed")).toBe(3);
+    expect(afterSalesProgressIndex("ExchangeShipped")).toBe(4);
     expect(afterSalesProgressIndex("Rejected")).toBe(0);
     expect(afterSalesProgressIndex("Closed")).toBe(0);
   });
@@ -93,5 +95,15 @@ describe("after-sales-state", () => {
     expect(canApplyAfterSales("PaymentSettled")).toBe(false);
     expect(afterSalesTypeLabelKey("exchange")).toBe("messages.afterSales.typeExchange");
     expect(afterSalesTypeLabelKey("nope")).toBe("messages.afterSales.typeUnknown");
+  });
+
+  it("ExchangeShipped：徽标文案 + 主行动确认收货 + 时间线换货节点", () => {
+    const info = afterSalesStateInfo("ExchangeShipped");
+    expect(info.labelKey).toBe("messages.afterSales.stateExchangeShipped");
+    expect(info.color).toBe("info");
+    expect(canConfirmExchange("ExchangeShipped")).toBe(true);
+    expect(canConfirmExchange("Received")).toBe(false);
+    expect(afterSalesPrimaryAction("ExchangeShipped")).toBe("exchangeReceive");
+    expect(afterSalesNextStep("ExchangeShipped").titleKey).toBe("messages.afterSales.nextExchangeShippedTitle");
   });
 });
