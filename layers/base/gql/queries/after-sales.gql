@@ -15,6 +15,9 @@ fragment AfterSalesFragment on AfterSalesRequest {
   actualRefundAmount
   refundedAt
   refundError
+  exchangeTrackingNo
+  exchangeCarrier
+  messageCount
   createdAt
   updatedAt
   order {
@@ -64,6 +67,21 @@ query AfterSalesReturnAddress {
   afterSalesReturnAddress
 }
 
+query AfterSalesMessages($id: ID!, $options: AfterSalesMessageListOptions) {
+  afterSalesMessages(id: $id, options: $options) {
+    totalItems
+    items {
+      id
+      requestId
+      senderType
+      senderName
+      content
+      images
+      createdAt
+    }
+  }
+}
+
 mutation CreateAfterSalesRequest($input: CreateAfterSalesRequestInput!) {
   createAfterSalesRequest(input: $input) {
     ...AfterSalesFragment
@@ -84,4 +102,16 @@ mutation UpdateReturnTracking($id: ID!, $trackingNo: String!, $carrier: String!)
 
 mutation UploadAfterSalesEvidence($images: [String!]!) {
   uploadAfterSalesEvidence(images: $images)
+}
+
+mutation AddAfterSalesMessage($id: ID!, $content: String!, $images: [String!]) {
+  addAfterSalesMessage(id: $id, content: $content, images: $images) {
+    id
+  }
+}
+
+mutation ExchangeReceiveAfterSalesRequest($id: ID!) {
+  exchangeReceiveAfterSalesRequest(id: $id) {
+    ...AfterSalesFragment
+  }
 }

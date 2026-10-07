@@ -106,5 +106,46 @@ export function useAfterSales() {
     }
   }
 
-  return { loading, error, createRequest, cancelRequest, updateTracking, uploadEvidence, fetchReturnAddress };
+  /** 售后单协商留言（createdAt 正序；skip/take 分页，默认 take=50 上限 100） */
+  async function fetchMessages(id: string, skip?: number, take?: number) {
+    const res = await GqlAfterSalesMessages({ id, options: { skip: skip ?? undefined, take: take ?? undefined } });
+    return res?.afterSalesMessages ?? { items: [], totalItems: 0 };
+  }
+
+  /** 顾客追加协商留言（Closed 后服务端拒绝；图片 ≤3、正文 ≤1000 由服务端校验） */
+  async function addMessage(id: string, content: string, images?: string[]): Promise<AfterSalesResult> {
+    loading.value = true;
+    error.value = null;
+    try {
+      await GqlAddAfterSalesMessage({ id, content, images: images && images.length ? images : undefined });
+      return { ok: true, id };
+    } catch (e: any) {
+      const msg = e?.gqlErrors?.[0]?.message ?? e?.message ?? "add message failed";
+      error.value = msg;
+      toast.add({ title: msg, color: "error" });
+      return { ok: false, message: msg };
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /** 顾客确认收到换货商品（ExchangeShipped → Closed） */
+  async function exchangeReceive(id: string): Promise<AfterSalesResult> {
+    loading.value = true;
+    error.value = null;
+    try {
+      await GqlExchangeReceiveAfterSalesRequest({ id });
+      toast.add({ title: t("messages.afterSales.exchangeReceiveSuccess"), color: "success" });
+      return { ok: true, id };
+    } catch (e: any) {
+      const msg = e?.gqlErrors?.[0]?.message ?? e?.message ?? "exchange receive failed";
+      error.value = msg;
+      toast.add({ title: msg, color: "error" });
+      return { ok: false, message: msg };
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return { loading, error, createRequest, cancelRequest, updateTracking, uploadEvidence, fetchReturnAddress, fetchMessages, addMessage, exchangeReceive };
 }

@@ -1,14 +1,17 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 definePageMeta({ middleware: "account" });
 
 import type { ActiveCustomerDetail } from "~~/types/customer";
 import { isActiveCustomerDetail } from "~~/types/guard";
+import { getInboxUnreadCount } from "~~/layers/base/app/composables/useInbox";
 
 const { t } = useI18n();
 const localePath = useTenantLocalePath();
 const { customer } = storeToRefs(useCustomerStore());
 const { fetchCustomer } = useCustomerStore();
 const loading = ref(true);
+const { isAuthenticated } = storeToRefs(useAuthStore());
+const inboxUnread = ref(0);
 
 const activeCustomer = computed<ActiveCustomerDetail | null>(() =>
   isActiveCustomerDetail(customer.value) ? customer.value : null,
@@ -30,6 +33,14 @@ const profileMenus = computed<Array<{ icon: string; title: string; url: string }
 onMounted(async () => {
   if (!isActiveCustomerDetail(customer.value)) {
     await fetchCustomer("detail");
+  }
+
+  if (isAuthenticated.value) {
+    try {
+      inboxUnread.value = await getInboxUnreadCount();
+    } catch {
+      /* 未读数失败不影响页面 */
+    }
   }
 
   loading.value = false;
@@ -115,6 +126,19 @@ onMounted(async () => {
           class="px-7"
         >
           {{ t("messages.account.coupons") }}
+        </UButton>
+        <UButton
+          :to="localePath('/messages')"
+          variant="soft"
+          class="relative px-7"
+        >
+          {{ t("messages.account.messages") }}
+          <span
+            v-if="inboxUnread > 0"
+            class="absolute right-2 top-1/2 -translate-y-1/2 flex h-5 min-w-5 items-center justify-center rounded-full bg-(--ui-error) px-1 text-xs text-white"
+          >
+            {{ inboxUnread > 99 ? "99+" : inboxUnread }}
+          </span>
         </UButton>
       </template>
     </section>
