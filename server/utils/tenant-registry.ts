@@ -53,18 +53,33 @@ let fetchedAt = 0;
 let lastAttemptAt = 0;
 let inFlight: Promise<void> | null = null;
 
-/** 取 GraphQL 端点：与 layers/base/app/composables/useGqlHostUrl.ts 同口径（同源 /shop-api） */
-function gqlEndpoint(): string {
+/** 取 GraphQL 端点：与 layers/base/app/composables/useGqlHostUrl.ts 同口径（同源 /shop-api）。
+ *  缺失时不回退 localhost——生产漏配会静默打到 127.0.0.1 造成难排查的假数据故障；
+ *  返回 null 由调用方跳过刷新，走既有降级链（上次成功结果 → 构建期种子）。 */
+let gqlHostWarned = false;
+function gqlEndpoint(): string | null {
   const { public: pub } = useRuntimeConfig();
-  return (pub.GQL_HOST as string) || "http://localhost:3000/shop-api";
+  const host = (pub.GQL_HOST as string) || "";
+  if (!host) {
+    if (!gqlHostWarned) {
+      gqlHostWarned = true;
+      console.error(
+        "[tenant-registry] public.GQL_HOST 未配置：租户表运行时刷新停用，恒用构建期种子 tenant-channels.json",
+      );
+    }
+    return null;
+  }
+  return host;
 }
 
 async function fetchShopChannels(): Promise<TenantEntry[] | null> {
+  const endpoint = gqlEndpoint();
+  if (!endpoint) return null;
   const { public: pub } = useRuntimeConfig();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(gqlEndpoint(), {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -163,11 +178,13 @@ const RESOLVE_BY_DOMAIN_QUERY = `query ResolveChannelByDomainForRegistry($host: 
 const domainCache = new Map<string, { token: string; code: string; at: number }>();
 
 async function fetchChannelByDomain(host: string): Promise<{ token: string; code: string } | null> {
+  const endpoint = gqlEndpoint();
+  if (!endpoint) return null;
   const { public: pub } = useRuntimeConfig();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(gqlEndpoint(), {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: {
         "content-type": "application/json",
