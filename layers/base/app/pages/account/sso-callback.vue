@@ -8,7 +8,7 @@ const { t } = useI18n();
 const toast = useToast();
 const authStore = useAuthStore();
 const localePath = useTenantLocalePath();
-const { fetchProviders, exchangeSsoAccessToken, ssoLoginWithCode, clearSsoState, readSsoReturnUrl, clearSsoReturnUrl } = useSso();
+const { fetchProviders, exchangeSsoAccessToken, ssoLoginWithCode, clearSsoState, readSsoReturnUrl, clearSsoReturnUrl, consumeSsoCsrfState } = useSso();
 
 const tokenEl = computed(() => (typeof route.query.token === "string" ? route.query.token : ""));
 const codeEl = computed(() => (typeof route.query.code === "string" ? route.query.code : ""));
@@ -32,6 +32,19 @@ function parseUserInviteCode(userParam: string): string {
 }
 
 async function run() {
+  // 登录 CSRF 防护：先按流程类型校验并一次性消费发起证明（useSso 生成），
+  // 未经本站发起的回调 URL（如直开的 ?token=<他人 accessToken>）因证明缺失/过期被拒绝。
+  if (tokenEl.value && !consumeSsoCsrfState("unified")) {
+    toast.add({ title: t("messages.share.loginFail"), color: "error" });
+    leave();
+    return;
+  }
+  if (codeEl.value && !consumeSsoCsrfState("wechat")) {
+    toast.add({ title: t("messages.share.loginFail"), color: "error" });
+    leave();
+    return;
+  }
+
   const providerKey = sessionStorage.getItem("youshop_sso_provider");
   const providers = await fetchProviders();
   const provider = providers.find((p) => p.providerKey === providerKey) ?? providers[0];

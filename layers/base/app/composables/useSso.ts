@@ -19,6 +19,16 @@ interface SsoLoginResult {
   message?: string;
 }
 
+/** SSO 登录流程类型：unified = 统一页 token 直验；wechat = 直连微信授权 code 兑换 */
+type SsoLoginFlow = "unified" | "wechat";
+
+/** 发起证明（登录 CSRF 防护的本地侧 state）：nonce 64 hex + 流程类型 + 发起时间 */
+interface SsoCsrfState {
+  nonce: string;
+  flow: SsoLoginFlow;
+  at: number;
+}
+
 const UNIFIED_LOGIN_PATH = "/#/pages/sso/login";
 const CALLBACK_PATH = "/account/sso-callback";
 const SSO_PROVIDER_KEY = "youshop_sso_provider";
@@ -26,6 +36,8 @@ const SSO_BASE_URL_KEY = "youshop_sso_base_url";
 const SSO_RETURN_URL_KEY = "youshop_sso_return_url";
 const SSO_PROVIDERS_CACHE_KEY = "youshop_sso_providers";
 const SSO_PROVIDERS_CACHE_TTL = 10 * 60 * 1000; // 10 分钟
+const SSO_CSRF_STATE_KEY = "youshop_sso_csrf_state";
+const SSO_CSRF_STATE_TTL = 10 * 60 * 1000; // 10 分钟
 const PREFETCH_STATE_KEY = "sso-providers-prefetch";
 const PENDING_STATE_KEY = "sso-redirect-pending";
 
@@ -151,6 +163,7 @@ export function useSso() {
     sessionStorage.setItem(SSO_RETURN_URL_KEY, returnUrl);
     sessionStorage.setItem(SSO_PROVIDER_KEY, provider.providerKey);
     sessionStorage.setItem(SSO_BASE_URL_KEY, provider.baseUrl);
+    generateSsoCsrfState("unified");
     const url = `${unifiedLoginUrl(provider)}?${new URLSearchParams(params).toString()}`;
     window.location.href = url;
   }
@@ -196,6 +209,7 @@ export function useSso() {
     sessionStorage.setItem("youshop_sso_app_code", provider.clientId);
     sessionStorage.setItem("youshop_sso_redirect_uri", callbackUrl);
     sessionStorage.setItem("youshop_sso_base_url", provider.baseUrl);
+    generateSsoCsrfState("wechat");
 
     window.location.href = `${provider.baseUrl}/v1/auth/wechat?${new URLSearchParams(params).toString()}`;
   }
@@ -301,14 +315,51 @@ export function useSso() {
     }
   }
 
-  /** 是否有待处理的 SSO 回调（URL 带 token 且 sessionStorage 记录了发起时选择的 provider） */
+  /** 发起 SSO 登录前生成本次登录绑定的随机发起证明（登录 CSRF 防护）。
+   *  zhao-sso 统一页与 /v1/auth/wechat 均不透传调用方 state（前者不接收 state 参数，
+   *  后者 state 为 Type A 信封由 SSO 自构），回调侧无法做 URL 强相等校验，
+   *  故退而校验「发起证明存在 + 未过期 + 流程匹配」并一次性消费：
+   *  未经本站发起的回调 URL（如攻击者诱导直开 ?token=<他人 accessToken>）将被拒绝。 */
+  function generateSsoCsrfState(flow: SsoLoginFlow): void {
+    try {
+      const bytes = new Uint8Array(32);
+      crypto.getRandomValues(bytes);
+      const nonce = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+      const rec: SsoCsrfState = { nonce, flow, at: Date.now() };
+      sessionStorage.setItem(SSO_CSRF_STATE_KEY, JSON.stringify(rec));
+    } catch {
+      // 存储不可用（如隐私模式）：无法生成发起证明，回调侧将拒绝登录（安全优先）
+    }
+  }
+
+  /** 回调侧校验并一次性消费发起证明：存在、flow 匹配、TTL 内才允许登录。
+   *  先删后验，保证同一证明只可用一次（防重放）。 */
+  function consumeSsoCsrfState(flow: SsoLoginFlow): boolean {
+    try {
+      const raw = sessionStorage.getItem(SSO_CSRF_STATE_KEY);
+      sessionStorage.removeItem(SSO_CSRF_STATE_KEY);
+      if (!raw) return false;
+      const rec = JSON.parse(raw) as SsoCsrfState | null;
+      if (!rec || rec.flow !== flow) return false;
+      if (typeof rec.at !== "number" || Date.now() - rec.at > SSO_CSRF_STATE_TTL) return false;
+      return typeof rec.nonce === "string" && rec.nonce.length === 64;
+    } catch {
+      return false;
+    }
+  }
+
+  /** 是否有待处理的 SSO 回调：URL 带 token 且存在本次发起的有效发起证明（校验即一次性消费） */
   function hasPendingCallback(token?: string | null): boolean {
     if (!token) return false;
-    return !!sessionStorage.getItem("youshop_sso_provider");
+    return consumeSsoCsrfState("unified");
   }
 
   function clearSsoState() {
     sessionStorage.removeItem("youshop_sso_provider");
+    sessionStorage.removeItem("youshop_sso_app_code");
+    sessionStorage.removeItem("youshop_sso_redirect_uri");
+    sessionStorage.removeItem(SSO_CSRF_STATE_KEY);
+    // youshop_sso_base_url 保留：fetchJssdkSignature 用作签名端点缓存，非登录会话记录
   }
 
   return {
@@ -325,6 +376,7 @@ export function useSso() {
     ssoLoginWithCode,
     fetchJssdkSignature,
     hasPendingCallback,
+    consumeSsoCsrfState,
     clearSsoState,
   };
 }
