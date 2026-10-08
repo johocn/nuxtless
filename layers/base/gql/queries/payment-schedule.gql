@@ -1,0 +1,17 @@
+query GetPaymentSchedule($orderId: ID!) {
+  paymentSchedule(orderId: $orderId) {
+    ...PaymentScheduleFields
+  }
+}
+
+mutation PaySchedulePeriod($orderId: ID!, $seq: Int!, $method: String!) {
+  paySchedulePeriod(orderId: $orderId, seq: $seq, method: $method) {
+    ...PaymentScheduleFields
+  }
+}
+
+mutation CancelSchedule($orderId: ID!, $confirmForfeit: Boolean) {
+  cancelSchedule(orderId: $orderId, confirmForfeit: $confirmForfeit) {
+    ...PaymentScheduleFields
+  }
+}

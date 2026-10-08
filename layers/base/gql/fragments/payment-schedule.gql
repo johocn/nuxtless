@@ -1,0 +1,31 @@
+fragment ScheduleItemFields on PaymentScheduleItem {
+  id
+  seq
+  kind
+  amount
+  paidAmount
+  allowCod
+  status
+  dueAt
+  graceHours
+  trigger
+  paidAt
+  lateFeeAccrued
+}
+
+fragment PaymentScheduleFields on PaymentSchedule {
+  id
+  orderId
+  scenario
+  status
+  breachType
+  depositRule
+  deliveryGate
+  agreementVersion
+  meta
+  totalAmount
+  paidTotal
+  items {
+    ...ScheduleItemFields
+  }
+}
