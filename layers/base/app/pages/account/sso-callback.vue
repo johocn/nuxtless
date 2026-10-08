@@ -21,7 +21,11 @@ function leave() {
   router.replace(tgt);
 }
 
-/** 解析统一页回跳的 ?user 参数（base64(encodeURIComponent(JSON))），取用户自有邀请码 */
+/** 解析统一页回跳的 ?user 参数（base64(encodeURIComponent(JSON))），取用户自有邀请码。
+ *  信任边界（勿升级为权威值）：?user 来自 URL，本地可任意构造，仅作首屏展示占位；
+ *  真实分销归因由 SSO 服务端 buildReferralRelation 落库，Vendure 侧 me 查询无
+ *  inviteCode 字段可回拉。后续若有功能依赖 inviteCode（推荐人展示/返佣计算），
+ *  必须新增服务端权威查询，不得直接消费 authStore 里此处写入的值。 */
 function parseUserInviteCode(userParam: string): string {
   try {
     const json = decodeURIComponent(atob(userParam));

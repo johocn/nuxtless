@@ -153,6 +153,16 @@ mutation TransitionToState($state: String!) {
   }
 }
 
+# 顾客自助取消订单（cjk-plugin cancelMyOrder：本人归属校验 + Created/AddingItems/ArrangingPayment 守卫 + 释放库存）。
+# 勿用原生 transitionOrderToState 取消历史订单——它无 orderId 参数，恒作用当前渠道 active order（购物车）。
+mutation CancelMyOrder($orderId: ID!) {
+  cancelMyOrder(orderId: $orderId) {
+    __typename
+    id
+    state
+  }
+}
+
 mutation AddPaymentToOrder($input: PaymentInput!) {
   addPaymentToOrder(input: $input) {
     __typename

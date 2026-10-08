@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { getMyCoupons } from "~~/layers/base/app/composables/useCoupon";
+
 definePageMeta({
   title: "券码",
 });
@@ -6,14 +8,40 @@ definePageMeta({
 const { t } = useI18n();
 const route = useRoute();
 
+// URL query 仅作首屏占位——本地可任意构造（伪造「满 1000 减 900」券面做社工素材），
+// onMounted 后按 code 在「我的券包」中匹配回填权威字段，以服务端为准；匹配失败保持占位。
 const code = computed(() => String(route.query.code || ""));
-const name = computed(() => String(route.query.name || ""));
-const expiresAt = computed(() => String(route.query.expiresAt || ""));
-const discount = computed(() => String(route.query.discount || ""));
+const fallbackName = computed(() => String(route.query.name || ""));
+const fallbackExpiresAt = computed(() => String(route.query.expiresAt || ""));
+const fallbackDiscount = computed(() => String(route.query.discount || ""));
+
+const authName = ref("");
+const authDiscount = ref("");
+const authExpiresAt = ref("");
+const verified = ref(false);
 
 const qrDataUrl = ref("");
 onMounted(async () => {
   if (!code.value) return;
+  try {
+    const myCoupons = await getMyCoupons();
+    const hit = myCoupons.find((c) => c.code === code.value);
+    if (hit) {
+      authName.value = hit.template?.name ?? "";
+      authExpiresAt.value = hit.expiredAt ?? "";
+      const type = hit.template?.type;
+      const value = hit.template?.discountValue ?? 0;
+      authDiscount.value =
+        type === "PERCENT"
+          ? t("messages.coupon.discountPercent", { n: value / 10 })
+          : type === "FIXED" || type === "FULL"
+            ? t("messages.coupon.discountFixed", { n: value / 100 })
+            : "";
+      verified.value = true;
+    }
+  } catch {
+    // 未登录/网络失败：保留 query 占位展示（核销以后端为准）
+  }
   try {
     const QRCode = (await import("qrcode")).default;
     qrDataUrl.value = await QRCode.toDataURL(code.value, { width: 420, margin: 1 });
@@ -21,6 +49,10 @@ onMounted(async () => {
     qrDataUrl.value = "";
   }
 });
+
+const name = computed(() => (verified.value ? authName.value : fallbackName.value));
+const discount = computed(() => (verified.value ? authDiscount.value : fallbackDiscount.value));
+const expiresAt = computed(() => (verified.value ? authExpiresAt.value : fallbackExpiresAt.value));
 
 const expiresText = computed(() => {
   if (!expiresAt.value) return "";

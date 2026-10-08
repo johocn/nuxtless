@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import type { GuestOrderLookupQuery } from "#gql/default";
 import OrderDetailConfirmation from "../../../components/order/OrderDetailConfirmation.vue";
 import GuestOrderConfirmation from "../../../components/order/GuestOrderConfirmation.vue";
@@ -114,12 +114,26 @@ async function sleep(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// 仅当订单真实存在且处于过渡态时才轮询；订单一旦不可用立即停止
+// 仅当订单真实存在且处于过渡态时才轮询；订单一旦不可用立即停止。
+// 标签页隐藏时跳过本轮接口调用（回到前台下一轮继续）；组件卸载（SPA 导航离开）
+// 置中断标志退出循环——避免后台标签/已离开页面仍每 2s 打一次 GetOrderByCode。
+let pollingDisposed = false;
+onScopeDispose(() => {
+  pollingDisposed = true;
+});
+
 async function pollOrder(maxAttempts = 20, interval = 2000) {
   let attempts = 0;
 
   while (attempts < maxAttempts) {
+    if (pollingDisposed) return false;
     attempts++;
+
+    if (typeof document !== "undefined" && document.hidden) {
+      await sleep(interval);
+      continue;
+    }
+
     await refresh();
 
     if (hasError.value || order.value == null) {
@@ -147,7 +161,13 @@ onMounted(async () => {
     redirectStatus.value &&
     !isSuccessfulStripeReturn.value
   ) {
-    await orderStore.transitionToState("AddingItems");
+    // 回流校验：transitionToState 作用于当前渠道 active order（无订单绑定），
+    // 旧失败链接在其他渠道打开时，本单在该渠道查不到 → 直接去结算页，
+    // 不打回「用户正在支付的另一单」，防多渠道场景误转。
+    await refresh();
+    if (order.value?.state === "ArrangingPayment") {
+      await orderStore.transitionToState("AddingItems");
+    }
     await router.replace(localePath("/checkout"));
 
     toast.add({

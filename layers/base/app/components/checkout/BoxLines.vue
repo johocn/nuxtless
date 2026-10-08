@@ -71,7 +71,7 @@ const typeLabel = (ty: string): string =>
     custom: t("messages.detail.tCustom"),
   } as Record<string, string>)[ty] ?? ty;
 
-const fmt = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
+const fmt = formatCents;
 </script>
 
 <template>

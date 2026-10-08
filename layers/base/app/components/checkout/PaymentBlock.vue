@@ -120,7 +120,7 @@ watch([paymentMethodList, boxPayList], () => {
   applyBoxDefault();
 });
 
-const fmt = (v: number | null | undefined) => `¥${((v ?? 0) / 100).toFixed(2)}`;
+const fmt = (v: number | null | undefined) => formatCents(v ?? 0);
 
 function fail(key: string) {
   orderStore.error = t(key);

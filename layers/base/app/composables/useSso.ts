@@ -1,5 +1,5 @@
 import { resolveSsoReturnUrl } from "../utils/sso-return-url";
-import { readVendureSessionToken } from "../utils/vendure-session";
+import { readVendureTokenWithContext } from "../utils/vendure-session";
 import { selectPrimaryProvider, type ProviderSource } from "../utils/sso-provider";
 
 export interface SsoProviderInfo {
@@ -222,7 +222,7 @@ export function useSso() {
     if (!gqlHost) return null;
     const authStore = useAuthStore();
     const headers = baseHeaders();
-    const guestToken = authStore.session?.token ?? readVendureSessionToken();
+    const guestToken = readVendureTokenWithContext();
     if (guestToken) headers.authorization = `Bearer ${guestToken}`;
 
     const res = await fetch(gqlHost, {
