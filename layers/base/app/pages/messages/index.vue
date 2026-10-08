@@ -73,7 +73,7 @@ async function read(item: FeedItem) {
   // 售后等带跳转链接的通知：直达目标页（如 /account/after-sales/{id}）
   if (item.link) {
     if (!item.isRead) void markRead(item);
-    router.push(localePath(item.link));
+    router.push(localePath(safeDecorLink(item.link)));
     return;
   }
   if (item.isRead) return;

@@ -205,16 +205,16 @@ flow.submitFns.submitDelivery = async () => {
             <dt>{{ t("messages.checkout.shipping") }}</dt>
             <dd class="text-neutral-700 dark:text-neutral-300">
               <template v-if="(box.shippingDiscount ?? 0) > 0">
-                <s class="text-neutral-400">¥{{ ((box.shippingCost + box.shippingDiscount) / 100).toFixed(2) }}</s>
-                <span class="ml-1 text-red-500">-¥{{ (box.shippingDiscount / 100).toFixed(2) }}</span>
-                <span class="ml-1">= ¥{{ (box.shippingCost / 100).toFixed(2) }}</span>
+                <s class="text-neutral-400">{{ formatCents((box.shippingCost ?? 0) + (box.shippingDiscount ?? 0)) }}</s>
+                <span class="ml-1 text-red-500">-{{ formatCents(box.shippingDiscount ?? 0) }}</span>
+                <span class="ml-1">= {{ formatCents(box.shippingCost ?? 0) }}</span>
               </template>
-              <template v-else>¥{{ (box.shippingCost / 100).toFixed(2) }}</template>
+              <template v-else>{{ formatCents(box.shippingCost ?? 0) }}</template>
             </dd>
           </div>
           <div class="flex items-center justify-between font-medium text-neutral-700 dark:text-neutral-300">
             <dt>{{ t("messages.checkout.subtotal") }}</dt>
-            <dd>¥{{ (boxSubtotal(box) / 100).toFixed(2) }}</dd>
+            <dd>{{ formatCents(boxSubtotal(box)) }}</dd>
           </div>
         </dl>
 

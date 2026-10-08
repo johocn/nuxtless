@@ -34,7 +34,8 @@ onMounted(play);
 onBeforeUnmount(stop);
 
 function to(s: { link?: string; [key: string]: unknown }) {
-  return s.link ? localePath(s.link) : "";
+  // 装修链接白名单：外链/协议相对地址回退站内首页
+  return s.link ? localePath(safeDecorLink(s.link)) : "";
 }
 </script>
 

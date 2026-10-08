@@ -101,9 +101,15 @@ export function blockStyle(cfg: DetailConfig | null, key: string, def = ''): str
   return cfg?.blocks?.[key]?.style ?? def;
 }
 
-// 解析；坏 JSON / 缺 sections 等价字段 → null
-export function parseDetailConfig(raw: string | null | undefined): DetailConfig | null {
+// 解析；坏 JSON / 非对象 → null。对象入参直接透传（省去调用方 JSON 序列化往返），
+// 结构校验交给逐级兜底的消费方（blockVisible/detailLayout 等对缺字段均有内建默认）。
+export function parseDetailConfig(
+  raw: string | DetailConfig | null | undefined,
+): DetailConfig | null {
   if (!raw) return null;
+  if (typeof raw !== "string") {
+    return typeof raw === "object" ? (raw as DetailConfig) : null;
+  }
   try {
     const data = JSON.parse(raw);
     if (typeof data !== 'object' || data === null) return null;

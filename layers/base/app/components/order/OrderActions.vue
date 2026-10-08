@@ -40,7 +40,7 @@ const reorderClass = computed(() =>
 );
 
 async function onCancel() {
-  const ok = await cancelOrder(props.order.state);
+  const ok = await cancelOrder(props.order);
   if (ok) emit("updated");
 }
 

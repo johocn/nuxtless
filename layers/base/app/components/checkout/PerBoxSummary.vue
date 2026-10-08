@@ -14,7 +14,7 @@ const sel = usePerBoxSelection();
 
 const { orderBoxes } = storeToRefs(orderStore);
 
-const fmt = (cents: number) => `¥${(cents / 100).toFixed(2)}`;
+const fmt = formatCents;
 
 /** 该箱被选行 lineTotal 求和（整行粒度：不可调数量，金额=行原数量×单价；未选行不计入） */
 function boxGoodsTotal(box: OrderBoxInfo): number {

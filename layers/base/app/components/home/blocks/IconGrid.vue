@@ -6,7 +6,7 @@ defineProps<{ block: { id: string; data: { items?: Array<{ icon?: string; label:
     <NuxtLink
       v-for="it in block.data?.items ?? []"
       :key="it.label + it.link"
-      :to="it.link ?? '/'"
+      :to="safeDecorLink(it.link)"
       class="flex flex-col items-center gap-1 text-sm text-gray-700 hover:text-primary"
     >
       <UIcon v-if="it.icon" :name="it.icon" class="h-8 w-8" />

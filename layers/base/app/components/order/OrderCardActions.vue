@@ -47,7 +47,7 @@ async function onReorder() {
 }
 
 async function onCancel() {
-  if (await cancelOrder(props.order.state)) emit("changed");
+  if (await cancelOrder(props.order)) emit("changed");
 }
 </script>
 

@@ -9,10 +9,10 @@
  *   `vendure-token`（runtime public.channelToken）、`Accept-Language`（当前 locale）。
  */
 import { GraphQLClient } from "graphql-request";
-import { useAuthStore } from "../../stores/useAuthStore";
+import { toVendureLanguageCode } from "../utils/schemes";
 import {
   VENDURE_AUTH_HEADER,
-  readVendureSessionToken,
+  readVendureTokenWithContext,
   writeVendureSessionToken,
 } from "../utils/vendure-session";
 
@@ -188,27 +188,6 @@ export interface CouponClientOptions {
   locale?: string;
 }
 
-// nshop i18n locale code → Vendure LanguageCode 枚举值（zh-CN 需映射为 zh_Hans，
-// 否则 `?languageCode=zh-CN` 不被 Vendure 识别，券名/说明会回退英文）
-const VENDURE_LOCALE_MAP: Record<string, string> = {
-  "zh-CN": "zh_Hans",
-  en: "en",
-  bg: "bg_BG",
-  ru: "ru_RU",
-  fa: "fa_IR",
-  de: "de_DE",
-  es: "es_ES",
-  fr: "fr_FR",
-  it: "it_IT",
-  pt: "pt_BR",
-  ja: "ja_JP",
-  ko: "ko_KR",
-};
-
-function toVendureLocale(locale: string): string {
-  return VENDURE_LOCALE_MAP[locale] ?? locale;
-}
-
 /**
  * 只读当前 locale。禁止在事件回调里直接调用 `useI18n()`——vue-i18n 要求组件 setup 上下文，
  * 在点击/提交等 handler 中 getCurrentInstance() 为 null，会抛 vue-i18n 错误 26
@@ -234,27 +213,28 @@ function resolveClient(): GraphQLClient {
   const { token: channelToken } = useTenantChannel();
   const locale = readLocale();
   const gqlHost = useGqlHostUrl();
-  const authStore = useAuthStore();
-
   const headers: Record<string, string> = { "Content-Type": "application/json" };
 
-  // 优先登录态 token，游客回退 cookie 中的匿名会话 token（与 useGqlSession 一致）
-  const token = authStore.session?.token ?? readVendureSessionToken();
+  // 会话 token 单一来源 cookie（vendure_shop_token，登录态/游客共用，与 useGqlSession 一致）
+  const token = readVendureTokenWithContext();
   if (token) headers.authorization = `Bearer ${token}`;
   if (channelToken.value) headers["vendure-token"] = channelToken.value;
   if (locale) headers["Accept-Language"] = locale;
 
-  const client = new GraphQLClient(`${gqlHost}?languageCode=${toVendureLocale(locale)}`, {
-    headers,
-    // 复刻 gql-session 插件：捕获响应头 `vendure-auth-token` 持久化，保证游客/登录同会话
-    responseMiddleware: (response: any) => {
-      const headersObj = response?.headers ?? response?.response?.headers;
-      const sessionToken =
-        headersObj?.get?.(VENDURE_AUTH_HEADER) ??
-        headersObj?.entries?.()?.find?.(([k]: [string, string]) => k.toLowerCase() === VENDURE_AUTH_HEADER.toLowerCase())?.[1];
-      if (sessionToken) writeVendureSessionToken(sessionToken);
+  const client = new GraphQLClient(
+    `${gqlHost}?languageCode=${toVendureLanguageCode(locale)}`,
+    {
+      headers,
+      // 复刻 gql-session 插件：捕获响应头 `vendure-auth-token` 持久化，保证游客/登录同会话
+      responseMiddleware: (response: any) => {
+        const headersObj = response?.headers ?? response?.response?.headers;
+        const sessionToken =
+          headersObj?.get?.(VENDURE_AUTH_HEADER) ??
+          headersObj?.entries?.()?.find?.(([k]: [string, string]) => k.toLowerCase() === VENDURE_AUTH_HEADER.toLowerCase())?.[1];
+        if (sessionToken) writeVendureSessionToken(sessionToken);
+      },
     },
-  });
+  );
 
   return client;
 }

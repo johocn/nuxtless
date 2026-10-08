@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import type { DropdownMenuItem } from "@nuxt/ui";
 
 const { token: channelToken } = useTenantChannel();
@@ -13,10 +13,6 @@ const { fetchOrder } = useOrderStore();
 const { localeItems, currentLocaleName } = useLangSwitcher();
 const isOpen = ref(false);
 const loading = ref(true);
-
-if (!customer.value) {
-  await fetchCustomer();
-}
 
 const colorModeItems = computed<DropdownMenuItem[]>(() => [
   {
@@ -118,11 +114,13 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
       color: "error",
       class: "items-center",
       onSelect: async () => {
-        await navigateTo(localePath("/"), { replace: true });
-        clearSession();
+        // 顺序不可反：先服务端销毁会话（logout 内部已容错），再清本地凭证，最后导航。
+        // 旧实现先导航后登出，导航竞态/网络失败会留下服务端会话仍有效而本地已清空。
         await logout();
+        clearSession();
         await useGqlSession(locale.value, useGqlHostUrl(), channelToken.value, "default");
         await fetchOrder();
+        await navigateTo(localePath("/"), { replace: true });
       },
     },
   ],
@@ -167,8 +165,15 @@ const items = computed(() =>
 
 defineShortcuts(extractShortcuts(items.value));
 
-onMounted(() => {
-  loading.value = false;
+onMounted(async () => {
+  try {
+    // me 查询放客户端：本组件在全站布局内，顶层 await 会让 SSR Suspense 每页
+    // 串行多等一次 GraphQL RTT（游客也等），与 GetMenuCollections 的 server:false
+    // 处理对齐。菜单先按 authStore.isAuthenticated（hydration 即知）渲染，用户名稍后填充。
+    if (!customer.value) await fetchCustomer();
+  } finally {
+    loading.value = false;
+  }
 });
 </script>
 

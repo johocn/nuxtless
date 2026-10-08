@@ -34,9 +34,20 @@ const inviteCode = computed(
 const shareNonce = ref<number | null>(null);
 if (import.meta.client) shareNonce.value = Date.now();
 
+// 分享链接脱敏：剥离会话/支付/回调类参数。当前消费面虽无敏感参数，但组件一旦复用到
+// SSO 回调（token/state）、OAuth（code）、支付（payment_intent）等页面，全量透传会把
+// 会话凭证带给接收者。invite 一并剥离后再按当前用户重写，避免残留旧邀请码。
+const SHARE_QUERY_STRIP = new Set([
+  "token", "code", "state", "session", "invite",
+  "payment_intent", "paymentIntent", "redirect_status", "redirectStatus",
+]);
+
 const baseShareUrl = computed(() => {
   const path = route.fullPath.split("?")[0];
   const q = new URLSearchParams(route.query as Record<string, string>);
+  for (const key of [...q.keys()]) {
+    if (SHARE_QUERY_STRIP.has(key)) q.delete(key);
+  }
   if (inviteCode.value) q.set("invite", inviteCode.value);
   const qs = q.toString();
   return `${window.location.origin}${path}${qs ? `?${qs}` : ""}`;

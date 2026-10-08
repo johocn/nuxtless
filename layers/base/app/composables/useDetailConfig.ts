@@ -16,7 +16,8 @@ export function useDetailConfig() {
     const merged = pageConfig("product");
     if (!merged) return null;
     // 合并结果与 detailConfig 同构（version/layout/blocks），经解析器走 L4 兜底链
-    return parseDetailConfig(JSON.stringify(merged));
+    // （对象入参直接结构透传，避免 stringify+parse 往返）
+    return parseDetailConfig(merged);
   });
   const layout = computed<DetailLayout>(() => detailLayout(config.value));
   const visible = (key: string) => blockVisible(config.value, key);

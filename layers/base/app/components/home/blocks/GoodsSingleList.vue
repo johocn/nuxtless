@@ -54,11 +54,11 @@ function price(p?: SearchItem, cur?: string | null) {
   if (!sel) return "";
   const c = cur ?? "CNY";
   if ("min" in sel && "max" in sel) {
-    const min = (sel.min / 100).toFixed(2);
-    const max = (sel.max / 100).toFixed(2);
-    return min === max ? `¥${min}` : `${min}~${max}`;
+    const min = centsToFixed(sel.min);
+    const max = centsToFixed(sel.max);
+    return min === max ? formatCents(sel.min) : `${min}~${max}`;
   }
-  return `¥${(sel.value / 100).toFixed(2)}`;
+  return formatCents(sel.value);
 }
 
 // 划线原价（分→文本）：仅当带 listPriceCents 且大于现行价时输出删除线原价，避免倒挂
@@ -67,7 +67,7 @@ function listText(p?: SearchItem, cur?: string | null) {
   if (typeof list !== "number" || list <= 0) return "";
   const current = pickCurrentCents(p, taxMode.value, pricesIncludeTax.value);
   if (current != null && list <= current) return "";
-  return `¥${(list / 100).toFixed(2)}`;
+  return formatCents(list);
 }
 </script>
 
