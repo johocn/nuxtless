@@ -15,7 +15,12 @@ export const ORDER_TABS: { key: OrderTabKey; labelKey: string }[] = [
   { key: "CANCELLED", labelKey: "messages.order.tabCancelled" },
 ];
 
-const PAYMENT_PENDING = new Set(["AddingItems", "ArrangingPayment"]);
+const PAYMENT_PENDING = new Set([
+  "AddingItems",
+  "ArrangingPayment",
+  "Deposited",      // 预售定金已付（PartiallyPaid 别名，老订单兼容）
+  "PartiallyPaid",  // 支付计划进行中（预订尾款 / 分期 / 租赁）
+]);
 const TO_SHIP = new Set([
   "PaymentAuthorized",
   "PaymentSettled",
@@ -44,6 +49,9 @@ export function stateBadge(state: string, order?: any): StateBadge {
     case "AddingItems":
     case "ArrangingPayment":
       return { labelKey: "messages.order.statePaymentPending", color: "warning" };
+    case "Deposited":
+    case "PartiallyPaid":
+      return { labelKey: "messages.order.statePartiallyPaid", color: "info" };
     case "PaymentAuthorized":
     case "PaymentSettled":
       if (isCodCollectPending(order)) {
