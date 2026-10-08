@@ -160,17 +160,22 @@ function switchTab(key: CouponPageTab) {
   tab.value = key;
   if (key === "center" && centreCoupons.value.length === 0) loadCentre();
   if (key === "wallet") loadMy();
-  if (key === "sale") loadSale();
-  if (key === "points") loadPoints();
+  // 券商城/积分商城需登录：匿名时短路走登录提示，避免 API FORBIDDEN toast
+  if (key === "sale" && isAuthenticated.value) loadSale();
+  if (key === "points" && isAuthenticated.value) loadPoints();
 }
 
 watch(saleScene, () => {
   if (tab.value === "sale") loadSale();
 });
 
-// 鉴权就绪后兜底加载券包：规避登录态/持久化水合未完成时切到「我的券」静默为空
+// 鉴权就绪后兜底加载：规避登录态/持久化水合未完成时切到「我的券」静默为空；
+// 以及匿名期间点过「券商城/积分商城」被短路、登录后停留在该 tab 时补加载
 watch(isAuthenticated, (ok) => {
-  if (ok && myCoupons.value.length === 0) loadMy();
+  if (!ok) return;
+  if (myCoupons.value.length === 0) loadMy();
+  if (tab.value === "sale" && !loadingSale.value && saleTemplates.value.length === 0 && saleBundles.value.length === 0) loadSale();
+  if (tab.value === "points" && !loadingPoints.value && pointsCoupons.value.length === 0) loadPoints();
 }, { immediate: true });
 
 async function requireLogin(): Promise<boolean> {
