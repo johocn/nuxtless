@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// hotel 版式：DateBar → Gallery → RoomList → PricePreview → Policy → Service → Reviews → Purchase
+// hotel 版式：DateBar → Gallery → RoomList → RatePlanChips → PricePreview → Policy → Service → Reviews → Purchase
 // 块显隐走 blockVisible 兜底链（L2 配置 → 内建默认 → true）
 import { computed } from "vue";
 import { useDetailConfig } from "../../composables/useDetailConfig";
@@ -16,6 +16,7 @@ const v = (k: string) => blockVisible(config.value, k);
     <ProductDetailDateBar v-if="v('datebar')" />
     <ProductGallery v-if="v('gallery')" />
     <ProductDetailRoomList v-if="v('roomList')" />
+    <ProductDetailRatePlanChips v-if="v('ratePlans')" />
     <ProductDetailPricePreview v-if="v('pricePreview')" />
     <ProductStockInfoBlock v-if="v('nearby')" :variant-id="productStore.selectedVariant?.id" />
     <ProductDetailPolicy v-if="v('policy')" />

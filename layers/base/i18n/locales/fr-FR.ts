@@ -103,6 +103,13 @@ export default defineI18nLocale(() =>
       roomsLeft: '{n} chambres restantes pour les dates choisies',
       roomsTight: 'Plus que {n} — réservez vite',
       roomsSoldOut: '{date} est complet, ajustez vos dates d’arrivée',
+      ratePlans: 'Tarifs',
+      defaultPlan: 'Standard',
+      planDiscount: 'Promo',
+      planFixed: 'Tarif fixe',
+      planSurcharge: 'Haute saison',
+      planMember: 'Membre',
+      perNight: '/nuit',
     },
     home: {
       newsTitle: "Actualités JD",

@@ -103,6 +103,13 @@ export default defineI18nLocale(() =>
       roomsLeft: '{n} اتاق برای تاریخ‌های انتخابی باقی مانده',
       roomsTight: 'فقط {n} اتاق باقی مانده — سریع رزرو کنید',
       roomsSoldOut: '{date} پر است، لطفاً تاریخ ورود را تغییر دهید',
+      ratePlans: 'پلن‌های قیمت',
+      defaultPlan: 'استاندارد',
+      planDiscount: 'تخفیف',
+      planFixed: 'قیمت ثابت',
+      planSurcharge: 'فصل شلوغ',
+      planMember: 'عضو',
+      perNight: '/شب',
     },
     home: {
       newsTitle: "اخبار جی‌دونگ",

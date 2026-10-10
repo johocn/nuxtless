@@ -154,6 +154,13 @@ export const zhMessages = {
       roomsLeft: '所选日期余 {n} 间',
       roomsTight: '仅剩 {n} 间，建议尽快预订',
       roomsSoldOut: '{date} 已满房，请调整入住日期',
+      ratePlans: '房价方案',
+      defaultPlan: '标准价',
+      planDiscount: '特惠',
+      planFixed: '协议价',
+      planSurcharge: '节假日',
+      planMember: '会员',
+      perNight: '/晚',
     },
     home: {
       newsTitle: '京东快讯',

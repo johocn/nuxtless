@@ -5,6 +5,7 @@ export type HotelOrderLineFields = {
   hotelCheckIn: string;
   hotelCheckOut: string;
   hotelNights: number;
+  ratePlanCode?: string;
 };
 
 export function useHotelStay() {
@@ -45,7 +46,15 @@ export function useHotelStay() {
     return {
       ok: true,
       quantity: nights,
-      customFields: { hotelCheckIn: checkIn, hotelCheckOut: checkOut, hotelNights: nights },
+      customFields: {
+        hotelCheckIn: checkIn,
+        hotelCheckOut: checkOut,
+        hotelNights: nights,
+        // 已选房价方案（C 端 chips 仅展示当前会员可见方案；坏码/不可售服务端静默回退基价）
+        ...(productStore.selectedRatePlanCode
+          ? { ratePlanCode: productStore.selectedRatePlanCode }
+          : {}),
+      },
     };
   }
 

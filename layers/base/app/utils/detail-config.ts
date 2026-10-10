@@ -37,6 +37,7 @@ const BLOCK_DEFAULT_VISIBLE: Record<string, boolean> = {
   related: true,
   datebar: true,
   roomList: true,
+  ratePlans: true,
   pricePreview: true,
   policy: true,
 };
