@@ -16,6 +16,8 @@ function isPickup(order: any) { return isPickupOrder(order); }
     class="mb-4"
   />
 
+  <OrderHotelBookingCard :order="props.order" variant="classic" />
+
   <section v-if="!isPickup(props.order)" class="mb-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
     <OrderAddress :address="props.order.shippingAddress" />
   </section>

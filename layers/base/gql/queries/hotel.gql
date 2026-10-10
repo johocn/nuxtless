@@ -23,3 +23,24 @@ query HotelRatePlans($variantId: ID!, $checkIn: String) {
     avgNightlyEstimateCent
   }
 }
+
+# 我的酒店预订单（订单详情「酒店预订卡」数据源）：按登录顾客名下订单过滤，组件内按 orderCode 二次筛选
+query GetMyHotelBookings($status: String) {
+  myHotelBookings(status: $status) {
+    id
+    orderCode
+    productVariantId
+    checkIn
+    checkOut
+    nights
+    roomCount
+    status
+    ratePlanCode
+    totalCent
+    guestName
+    guestPhone
+    bookingCode
+    cancelDeadlineAt
+    createdAt
+  }
+}
