@@ -9,3 +9,17 @@ query HotelAvailability($variantId: ID!, $from: String!, $to: String!) {
     closed
   }
 }
+
+# 酒店房价方案：按登录会员等级过滤 memberOnly + 售卖期（checkIn 传当前入住日）
+# avgNightlyEstimateCent = 变体基准价套用单晚方案价的日均价预估（展示用）
+query HotelRatePlans($variantId: ID!, $checkIn: String) {
+  hotelRatePlans(variantId: $variantId, checkIn: $checkIn) {
+    id
+    code
+    name
+    adjustType
+    adjustValue
+    memberOnly
+    avgNightlyEstimateCent
+  }
+}

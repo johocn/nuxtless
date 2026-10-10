@@ -18,6 +18,12 @@ export const useProductStore = defineStore("product", () => {
   // 酒店版式：所选区间内第一个不可订（关房/满房）晚；null = 全部可订（DateBar 写入，下单动作读取做前端拦截）
   const hotelRangeSoldOut = ref<string | null>(null);
 
+  // 酒店版式：已选房价方案 code（RatePlanChips 写入；下单与价格预览共用；空 = 按基价）
+  const selectedRatePlanCode = ref<string>("");
+
+  // 酒店版式：当前可见方案列表快照（RatePlanChips 写入，PricePreview 重算用）
+  const ratePlanChips = ref<Array<{ code: string; name: string; adjustType: "discount" | "fixed" | "surcharge"; adjustValue: number }>>([]);
+
   const optionGroups = computed(() => {
     if (!product.value?.variants?.length) return [];
 
@@ -109,6 +115,9 @@ export const useProductStore = defineStore("product", () => {
   function init(p: ProductDetail) {
     product.value = p;
     Object.assign(selectedOptions, {});
+    selectedRatePlanCode.value = "";
+    hotelDates.value = { checkIn: "", checkOut: "" };
+    hotelRangeSoldOut.value = null;
     if (!p?.variants?.length) return;
 
     const defaultVariant =
@@ -159,6 +168,8 @@ export const useProductStore = defineStore("product", () => {
     mediaAssets,
     hotelDates,
     hotelRangeSoldOut,
+    selectedRatePlanCode,
+    ratePlanChips,
     init,
     setOption,
     refreshStock,

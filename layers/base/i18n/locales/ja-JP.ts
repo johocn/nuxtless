@@ -135,6 +135,13 @@ export default defineI18nLocale(() =>
       roomsLeft: '選択した日程の残り {n} 室',
       roomsTight: '残り {n} 室のみ — お早めに',
       roomsSoldOut: '{date} は満室です。日程をご調整ください',
+      ratePlans: '料金プラン',
+      defaultPlan: '標準料金',
+      planDiscount: '特価',
+      planFixed: '契約価格',
+      planSurcharge: '繁忙期',
+      planMember: '会員',
+      perNight: '/泊',
     },
     home: {
       newsTitle: "JD ニュース",

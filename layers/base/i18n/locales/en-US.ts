@@ -181,6 +181,13 @@ export default defineI18nLocale(() =>
       roomsLeft: '{n} rooms left for the selected dates',
       roomsTight: 'Only {n} left — book soon',
       roomsSoldOut: '{date} is fully booked, please adjust your dates',
+      ratePlans: 'Rate plans',
+      defaultPlan: 'Standard',
+      planDiscount: 'Deal',
+      planFixed: 'Fixed',
+      planSurcharge: 'Peak',
+      planMember: 'Member',
+      perNight: '/night',
     },
     pages: {
       index: {

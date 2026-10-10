@@ -53,3 +53,30 @@ describe('calcNightPrices', () => {
     expect(calcNightPrices(cfg, '2026-09-16', '2026-09-16')).toBeNull(); // 0 晚
   });
 });
+
+describe('calcNightPrices × ratePlan（P2 房价方案，与后端同语义）', () => {
+  it('discount 千分比：逐晚打折，连住优惠继续叠加', () => {
+    const r = calcNightPrices(cfg, '2026-09-14', '2026-09-17', { adjustType: 'discount', adjustValue: 800 }); // 3 晚平日
+    expect(r!.nights.map(n => n.priceCent)).toEqual([Math.round(88800 * 0.8), Math.round(88800 * 0.8), Math.round(88800 * 0.8)]);
+    expect(r!.totalCent).toBe(Math.round(88800 * 3 * 0.8 * 0.9));
+  });
+  it('fixed 固定价：每晚 =adjustValue，连住优惠不再叠加', () => {
+    const r = calcNightPrices(cfg, '2026-09-18', '2026-09-21', { adjustType: 'fixed', adjustValue: 50000 }); // 3 晚周末
+    expect(r!.nights.map(n => n.priceCent)).toEqual([50000, 50000, 50000]);
+    expect(r!.totalCent).toBe(150000); // 不 ×0.9
+  });
+  it('surcharge 加价：每晚 +adjustValue，连住优惠继续叠加', () => {
+    const r = calcNightPrices(cfg, '2026-09-14', '2026-09-16', { adjustType: 'surcharge', adjustValue: 2000 }); // 2 晚平日
+    expect(r!.nights.map(n => n.priceCent)).toEqual([90800, 90800]);
+    expect(r!.totalCent).toBe(90800 * 2);
+  });
+  it('ratePlan 作用于日类型换算后的段价（weekend rate 1.2 再打折）', () => {
+    const r = calcNightPrices(cfg, '2026-09-18', '2026-09-19', { adjustType: 'discount', adjustValue: 500 }); // 周五 1 晚
+    expect(r!.nights[0].priceCent).toBe(Math.round(88800 * 1.2 * 0.5));
+  });
+  it('ratePlan=null 等价不传（基线口径不变）', () => {
+    const a = calcNightPrices(cfg, '2026-09-14', '2026-09-17');
+    const b = calcNightPrices(cfg, '2026-09-14', '2026-09-17', null);
+    expect(b).toEqual(a);
+  });
+});

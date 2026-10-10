@@ -134,6 +134,13 @@ export default defineI18nLocale(() =>
       roomsLeft: '선택한 날짜에 {n}개 남음',
       roomsTight: '{n}개만 남았어요 — 서두르세요',
       roomsSoldOut: '{date}은(는) 만실입니다. 날짜를 조정해 주세요',
+      ratePlans: '요금제',
+      defaultPlan: '기본 요금',
+      planDiscount: '특가',
+      planFixed: '계약가',
+      planSurcharge: '성수기',
+      planMember: '회원',
+      perNight: '/박',
     },
     home: {
       newsTitle: "JD 뉴스",

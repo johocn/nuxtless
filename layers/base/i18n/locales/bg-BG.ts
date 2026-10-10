@@ -103,6 +103,13 @@ export default defineI18nLocale(() =>
       roomsLeft: 'Остават {n} стаи за избраните дати',
       roomsTight: 'Остават само {n} — резервирайте скоро',
       roomsSoldOut: '{date} е пълно, моля променете датата на настаняване',
+      ratePlans: 'Ценовни планове',
+      defaultPlan: 'Стандартна',
+      planDiscount: 'Промоция',
+      planFixed: 'Фиксирана',
+      planSurcharge: 'Висок сезон',
+      planMember: 'Член',
+      perNight: '/нощ',
     },
     home: {
       newsTitle: "Новини на JD",

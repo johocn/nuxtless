@@ -1,17 +1,31 @@
 <script setup lang="ts">
 // 逐日计价预览：calcNightPrices → 每日单价 + 总价/日均价（含节假日标注与连住折扣）
+// P2：已选房价方案（ProductStore.selectedRatePlanCode）套用单晚价后重算
 import { computed } from "vue";
-import { calcNightPrices } from "../../utils/hotel-pricing";
+import { calcNightPrices, type RatePlanAdjustment } from "../../utils/hotel-pricing";
 const { t } = useI18n();
 const productStore = useProductStore();
 const parseHotel = (raw: unknown) => { if (typeof raw !== 'string') return raw ?? null; try { return JSON.parse(raw); } catch { return null; } };
 const hotel = computed(() => parseHotel(productStore.selectedVariant?.customFields?.hotelRoomConfig));
 // 与 DateBar 共享日期：DateBar watch 写入 ProductStore.hotelDates（见 useProductStore），兜底取空（无日期不渲染）
 const dates = computed(() => (productStore as any).hotelDates ?? { checkIn: "", checkOut: "" });
+// 可见方案里找已选 code → 套用计价（chips 不可见/未选 → null 基价口径）
+const plans = computed(() => productStore.ratePlanChips ?? []);
+const selectedPlan = computed<RatePlanAdjustment | null>(() => {
+  const code = productStore.selectedRatePlanCode;
+  if (!code) return null;
+  const p = plans.value.find((x) => x.code === code);
+  return p ? { adjustType: p.adjustType, adjustValue: p.adjustValue } : null;
+});
+const selectedPlanName = computed(() => {
+  const code = productStore.selectedRatePlanCode;
+  if (!code) return "";
+  return plans.value.find((x) => x.code === code)?.name ?? "";
+});
 
 const result = computed(() => {
   if (!dates.value.checkIn || !dates.value.checkOut) return null;
-  return calcNightPrices(hotel.value, dates.value.checkIn, dates.value.checkOut);
+  return calcNightPrices(hotel.value, dates.value.checkIn, dates.value.checkOut, selectedPlan.value);
 });
 // 日类型 → 本地化标签（holiday/custom 高亮；weekday 不加角标）
 const typeLabel = (ty: string): string =>
@@ -25,7 +39,10 @@ const typeLabel = (ty: string): string =>
 
 <template>
   <div v-if="result" class="mx-4 mb-3 rounded-xl border border-gray-100 bg-white p-3 text-sm">
-    <p class="text-xs text-gray-400">{{ t("messages.detail.priceByDay") }}</p>
+    <p class="text-xs text-gray-400">
+      {{ t("messages.detail.priceByDay") }}
+      <span v-if="selectedPlanName" class="ml-1 rounded bg-orange-50 px-1 text-orange-500">{{ selectedPlanName }}</span>
+    </p>
     <ul class="mt-2 space-y-1">
       <li v-for="n in result.nights" :key="n.date" class="flex justify-between text-xs text-gray-500">
         <span>{{ n.date }}<span v-if="n.type !== 'weekday'" class="ml-1 rounded bg-orange-50 px-1 text-orange-500">{{ typeLabel(n.type) }}</span></span>

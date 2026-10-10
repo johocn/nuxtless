@@ -103,6 +103,13 @@ export default defineI18nLocale(() =>
       roomsLeft: 'Осталось {n} номеров на выбранные даты',
       roomsTight: 'Осталось всего {n} — бронируйте скорее',
       roomsSoldOut: '{date} полностью занят, измените даты заезда',
+      ratePlans: 'Тарифы',
+      defaultPlan: 'Стандарт',
+      planDiscount: 'Акция',
+      planFixed: 'Фикс. цена',
+      planSurcharge: 'Высокий сезон',
+      planMember: 'Участник',
+      perNight: '/ночь',
     },
     home: {
       newsTitle: "Новости JD",
