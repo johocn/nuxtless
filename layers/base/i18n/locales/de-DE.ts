@@ -118,6 +118,9 @@ export default defineI18nLocale(() =>
       stayTotal: 'Aufenthalt gesamt',
       selectDatesFirst: 'Bitte zuerst An- und Abreisedatum auswählen',
       nightsOutOfRange: '{min}-{max} Nächte erforderlich',
+      roomsLeft: '{n} Zimmer für die gewählten Daten verfügbar',
+      roomsTight: 'Nur noch {n} — bald buchen',
+      roomsSoldOut: '{date} ist ausgebucht, bitte Anreisedatum anpassen',
     },
     home: {
       newsTitle: "JD-News",

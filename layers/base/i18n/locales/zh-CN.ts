@@ -151,6 +151,9 @@ export const zhMessages = {
       stayTotal: '住宿合计',
       selectDatesFirst: '请先选择入住与离店日期',
       nightsOutOfRange: '需 {min}-{max} 晚',
+      roomsLeft: '所选日期余 {n} 间',
+      roomsTight: '仅剩 {n} 间，建议尽快预订',
+      roomsSoldOut: '{date} 已满房，请调整入住日期',
     },
     home: {
       newsTitle: '京东快讯',

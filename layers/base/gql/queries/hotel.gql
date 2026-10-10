@@ -1,0 +1,11 @@
+# 酒店房型房态：变体在日期区间（含头不含尾，checkOut 当晚不计）内逐晚可订情况
+# remaining=null 表示不限房；closed=true 当日关房（remaining 恒 0）
+query HotelAvailability($variantId: ID!, $from: String!, $to: String!) {
+  hotelAvailability(variantId: $variantId, from: $from, to: $to) {
+    date
+    priceCent
+    dayType
+    remaining
+    closed
+  }
+}

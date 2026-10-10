@@ -17,6 +17,19 @@ export function useBuyActions() {
     return !!v?.id && isServiceable(v);
   });
 
+  /** 所选区间含关房/满房晚 → 前端拦截（服务端 OrderInterceptor 仍是最终防线） */
+  function soldOutBlock(): string | null {
+    if (!isHotelVariant.value) return null;
+    return (productStore as any).hotelRangeSoldOut ?? null;
+  }
+
+  /** 拦截器错误原文 → i18n 文案：HOTEL_SOLD_OUT: <date> … → 满房提示；非满房返回 null 走通用 message */
+  function hotelSoldOutDesc(msg?: string): string | null {
+    if (!msg || !msg.startsWith("HOTEL_SOLD_OUT")) return null;
+    const date = msg.match(/\d{4}-\d{2}-\d{2}/)?.[0];
+    return t("messages.hotel.roomsSoldOut", date ? { date } : {});
+  }
+
   /** 解析下单参数：酒店走日期→晚数，普通商品恒为 1 件 */
   function resolveLine():
     | { ok: true; quantity: number; customFields?: Record<string, unknown> }
@@ -39,6 +52,11 @@ export function useBuyActions() {
   async function addToCartHandler() {
     const id = selectedVariant.value?.id;
     if (!id || !canBuy.value) return;
+    const blocked = soldOutBlock();
+    if (blocked) {
+      toast.add({ title: t("messages.detail.addToCart"), description: t("messages.hotel.roomsSoldOut", { date: blocked }), color: "error" });
+      return;
+    }
     const line = resolveLine();
     if (!line.ok) {
       toast.add({ title: t("messages.detail.addToCart"), description: line.message, color: "error" });
@@ -48,7 +66,7 @@ export function useBuyActions() {
     if (res.status === "error") {
       toast.add({
         title: t("messages.detail.addToCart"),
-        description: res.message || t("messages.shop.addToCart"),
+        description: hotelSoldOutDesc(res.message) || res.message || t("messages.shop.addToCart"),
         color: "error",
       });
     } else if (res.status === "partial") {
@@ -69,6 +87,11 @@ export function useBuyActions() {
   async function buyNowHandler() {
     const id = selectedVariant.value?.id;
     if (!id || !canBuy.value) return;
+    const blocked = soldOutBlock();
+    if (blocked) {
+      toast.add({ title: t("messages.detail.buyNow"), description: t("messages.hotel.roomsSoldOut", { date: blocked }), color: "error" });
+      return;
+    }
     const line = resolveLine();
     if (!line.ok) {
       toast.add({ title: t("messages.detail.buyNow"), description: line.message, color: "error" });
@@ -78,7 +101,7 @@ export function useBuyActions() {
     if (res.status === "error") {
       toast.add({
         title: t("messages.detail.buyNow"),
-        description: res.message || t("messages.detail.buyNowFailed"),
+        description: hotelSoldOutDesc(res.message) || res.message || t("messages.detail.buyNowFailed"),
         color: "error",
       });
       return;

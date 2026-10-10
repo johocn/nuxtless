@@ -100,6 +100,9 @@ export default defineI18nLocale(() =>
       stayTotal: 'Total da estadia',
       selectDatesFirst: 'Selecione primeiro as datas de check-in e check-out',
       nightsOutOfRange: 'São necessárias {min}-{max} noites',
+      roomsLeft: '{n} quartos restantes para as datas selecionadas',
+      roomsTight: 'Restam apenas {n} — reserve em breve',
+      roomsSoldOut: '{date} está lotado, ajuste as datas de entrada',
     },
     home: {
       newsTitle: "JD Notícias",

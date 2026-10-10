@@ -36,6 +36,14 @@ watch([checkIn, checkOut], () => {
   (productStore as any).hotelDates = { checkIn: checkIn.value, checkOut: checkOut.value };
 }, { immediate: true });
 
+// 房态余量：按所选区间拉逐晚可订情况；区间含关房/满房晚时记录首个日期，供下单动作前端拦截
+const variantId = computed(() => productStore.selectedVariant?.id ?? null);
+const range = computed(() => ({ checkIn: checkIn.value, checkOut: checkOut.value }));
+const { summary } = useHotelAvailability(variantId, range);
+watch(summary, (s) => {
+  (productStore as any).hotelRangeSoldOut = s.firstBlockedDate;
+}, { immediate: true });
+
 function onIn(v: string) {
   checkIn.value = v;
   const n = (new Date(checkOut.value).getTime() - new Date(v).getTime()) / 86400000;
@@ -63,6 +71,16 @@ function onIn(v: string) {
     <p class="mt-2 text-xs text-gray-400">
       {{ t("messages.detail.nights", { n: nights }) }}
       <template v-if="nights > maxN || nights < minN"> · <span class="text-red-400">{{ t("messages.detail.nightsRange", { min: minN, max: maxN }) }}</span></template>
+    </p>
+    <!-- 房态余量：所选区间可订情况（关房/满房红色警示；紧张橙色；正常灰色） -->
+    <p v-if="summary.firstBlockedDate" class="mt-1 text-xs text-red-500">
+      {{ t("messages.hotel.roomsSoldOut", { date: summary.firstBlockedDate }) }}
+    </p>
+    <p v-else-if="summary.minRemaining != null && summary.minRemaining <= 2" class="mt-1 text-xs text-orange-500">
+      {{ t("messages.hotel.roomsTight", { n: summary.minRemaining }) }}
+    </p>
+    <p v-else-if="summary.minRemaining != null" class="mt-1 text-xs text-gray-400">
+      {{ t("messages.hotel.roomsLeft", { n: summary.minRemaining }) }}
     </p>
   </div>
 </template>

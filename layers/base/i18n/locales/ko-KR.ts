@@ -131,6 +131,9 @@ export default defineI18nLocale(() =>
       stayTotal: '숙박 합계',
       selectDatesFirst: '먼저 체크인·체크아웃 날짜를 선택하세요',
       nightsOutOfRange: '{min}~{max}박 필요',
+      roomsLeft: '선택한 날짜에 {n}개 남음',
+      roomsTight: '{n}개만 남았어요 — 서두르세요',
+      roomsSoldOut: '{date}은(는) 만실입니다. 날짜를 조정해 주세요',
     },
     home: {
       newsTitle: "JD 뉴스",
