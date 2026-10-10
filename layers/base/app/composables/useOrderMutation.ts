@@ -29,8 +29,17 @@ export function useOrderMutation(
     case "OrderModificationError":
     case "OrderLimitError":
     case "NegativeQuantityError":
-    case "OrderInterceptorError":
     case "CouponCodeExpiredError":
+    // 拦截器错误：优先透出 interceptorError（拦截器业务原因原文，如 "HOTEL_SOLD_OUT: 2026-10-12 …"），
+    // 供调用方识别错误码转 i18n 文案；无则回退通用 message
+    case "OrderInterceptorError": {
+      const interceptor = (result as { interceptorError?: string | null }).interceptorError;
+      return {
+        status: "error",
+        message: interceptor || (result.message ?? "Order mutation failed"),
+      };
+    }
+
     case "CouponCodeInvalidError":
     case "CouponCodeLimitError":
     case "AlreadyLoggedInError":

@@ -178,6 +178,9 @@ export default defineI18nLocale(() =>
       stayTotal: 'Stay total',
       selectDatesFirst: 'Please select check-in and check-out dates first',
       nightsOutOfRange: '{min}-{max} nights required',
+      roomsLeft: '{n} rooms left for the selected dates',
+      roomsTight: 'Only {n} left — book soon',
+      roomsSoldOut: '{date} is fully booked, please adjust your dates',
     },
     pages: {
       index: {

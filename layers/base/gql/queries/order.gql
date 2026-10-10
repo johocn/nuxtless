@@ -57,6 +57,10 @@ mutation AddItemToOrder($variantId: ID!, $quantity: Int!, $customFields: OrderLi
       errorCode
       message
     }
+    ... on OrderInterceptorError {
+      # 拦截器业务原因原文（如 HOTEL_SOLD_OUT: YYYY-MM-DD …），供前端识别转 i18n 文案
+      interceptorError
+    }
     ... on InsufficientStockError {
       quantityAvailable
       order {

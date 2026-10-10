@@ -100,6 +100,9 @@ export default defineI18nLocale(() =>
       stayTotal: 'Итого за проживание',
       selectDatesFirst: 'Сначала выберите даты заезда и выезда',
       nightsOutOfRange: 'Требуется {min}-{max} ноч.',
+      roomsLeft: 'Осталось {n} номеров на выбранные даты',
+      roomsTight: 'Осталось всего {n} — бронируйте скорее',
+      roomsSoldOut: '{date} полностью занят, измените даты заезда',
     },
     home: {
       newsTitle: "Новости JD",

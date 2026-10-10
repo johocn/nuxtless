@@ -100,6 +100,9 @@ export default defineI18nLocale(() =>
       stayTotal: 'Общо за престоя',
       selectDatesFirst: 'Първо изберете дати за настаняване и напускане',
       nightsOutOfRange: 'Нужни са {min}-{max} нощувки',
+      roomsLeft: 'Остават {n} стаи за избраните дати',
+      roomsTight: 'Остават само {n} — резервирайте скоро',
+      roomsSoldOut: '{date} е пълно, моля променете датата на настаняване',
     },
     home: {
       newsTitle: "Новини на JD",

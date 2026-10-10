@@ -132,6 +132,9 @@ export default defineI18nLocale(() =>
       stayTotal: '宿泊合計',
       selectDatesFirst: '先にチェックイン・チェックアウトの日付を選択してください',
       nightsOutOfRange: '{min}～{max}泊が必要です',
+      roomsLeft: '選択した日程の残り {n} 室',
+      roomsTight: '残り {n} 室のみ — お早めに',
+      roomsSoldOut: '{date} は満室です。日程をご調整ください',
     },
     home: {
       newsTitle: "JD ニュース",

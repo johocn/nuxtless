@@ -15,6 +15,9 @@ export const useProductStore = defineStore("product", () => {
   // 酒店版式：入住/离店日期跨块共享（DateBar 写入，PricePreview 读取）
   const hotelDates = ref<{ checkIn: string; checkOut: string }>({ checkIn: "", checkOut: "" });
 
+  // 酒店版式：所选区间内第一个不可订（关房/满房）晚；null = 全部可订（DateBar 写入，下单动作读取做前端拦截）
+  const hotelRangeSoldOut = ref<string | null>(null);
+
   const optionGroups = computed(() => {
     if (!product.value?.variants?.length) return [];
 
@@ -155,6 +158,7 @@ export const useProductStore = defineStore("product", () => {
     galleryAssets,
     mediaAssets,
     hotelDates,
+    hotelRangeSoldOut,
     init,
     setOption,
     refreshStock,

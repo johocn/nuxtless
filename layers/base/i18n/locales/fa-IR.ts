@@ -100,6 +100,9 @@ export default defineI18nLocale(() =>
       stayTotal: 'مجموع اقامت',
       selectDatesFirst: 'ابتدا تاریخ ورود و خروج را انتخاب کنید',
       nightsOutOfRange: 'نیاز به {min} تا {max} شب',
+      roomsLeft: '{n} اتاق برای تاریخ‌های انتخابی باقی مانده',
+      roomsTight: 'فقط {n} اتاق باقی مانده — سریع رزرو کنید',
+      roomsSoldOut: '{date} پر است، لطفاً تاریخ ورود را تغییر دهید',
     },
     home: {
       newsTitle: "اخبار جی‌دونگ",
