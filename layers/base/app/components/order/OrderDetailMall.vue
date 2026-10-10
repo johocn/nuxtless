@@ -43,6 +43,8 @@ const bar = "mr-2 h-[15px] w-[5px] rounded bg-[#e0433f]";
     class="mb-4"
   />
 
+  <OrderHotelBookingCard v-if="visible('redemption')" :order="order" variant="mall" />
+
   <section v-if="!pickup && visible('address')" :class="['mb-4', box]">
     <OrderAddress :address="order.shippingAddress" />
   </section>

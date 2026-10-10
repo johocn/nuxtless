@@ -42,6 +42,8 @@ const titleCls = "mb-3 font-semibold";
     class="mb-4"
   />
 
+  <OrderHotelBookingCard v-if="visible('redemption')" :order="order" variant="cn" />
+
   <section v-if="!pickup && visible('address')" :class="['mb-4', box]">
     <OrderAddress :address="order.shippingAddress" />
   </section>
