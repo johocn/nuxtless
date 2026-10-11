@@ -41,6 +41,92 @@ query GetMyHotelBookings($status: String) {
     guestPhone
     bookingCode
     cancelDeadlineAt
+    cancelledAt
+    cancelReason
+    cancelFeeCent
+    afterSalesRequestId
+    rescheduleCount
+    rescheduledAt
+    reschedulePending
     createdAt
+  }
+}
+
+# 取消报价（取消确认弹层）：mode = free | partial | forfeit | unpaid | blocked
+query GetHotelBookingCancelQuote($id: ID!) {
+  hotelBookingCancelQuote(id: $id) {
+    bookingId
+    mode
+    free
+    cancellable
+    refundCent
+    feeCent
+    totalCent
+    paidCent
+    firstNightFeeCent
+    deadline
+  }
+}
+
+# 改期报价（改期弹层）：eligible=false 时 reason 给出拦截码，逐晚 availability 标出满房/关房
+query GetHotelBookingRescheduleQuote($id: ID!, $checkIn: String!, $checkOut: String!) {
+  hotelBookingRescheduleQuote(id: $id, checkIn: $checkIn, checkOut: $checkOut) {
+    bookingId
+    eligible
+    reason
+    message
+    oldCheckIn
+    oldCheckOut
+    newCheckIn
+    newCheckOut
+    nights
+    oldTotalCent
+    newTotalCent
+    diffCent
+    refundCent
+    supplementCent
+    availability {
+      date
+      remaining
+      closed
+      feasible
+    }
+  }
+}
+
+# 顾客自助取消预订（unpaid/forfeit 立即取消；free 自动全额退款；partial 建售后单待商家审批）
+mutation CancelMyHotelBooking($id: ID!, $reason: String) {
+  cancelMyHotelBooking(id: $id, reason: $reason) {
+    id
+    status
+  }
+}
+
+# 顾客自助改期（等价/退差直接完成；补差需传 paymentMethod，即时支付直接完成，异步支付返回在途）
+mutation RescheduleMyHotelBooking($id: ID!, $checkIn: String!, $checkOut: String!, $paymentMethod: String) {
+  rescheduleMyHotelBooking(id: $id, checkIn: $checkIn, checkOut: $checkOut, paymentMethod: $paymentMethod) {
+    booking {
+      id
+      status
+      checkIn
+      checkOut
+      nights
+      totalCent
+      rescheduleCount
+      reschedulePending
+    }
+    applied
+    paymentState
+    paymentId
+    supplementCent
+    paymentPublic
+  }
+}
+
+# 放弃在途改期补差（取消补差支付并清空意向）
+mutation CancelMyRescheduleSupplement($id: ID!) {
+  cancelMyRescheduleSupplement(id: $id) {
+    id
+    reschedulePending
   }
 }

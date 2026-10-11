@@ -5,6 +5,7 @@
 // 状态机：pendingDeposit → confirmed（入住码+取消截止）→ checkedIn → completed；cancelled/noShow 终态提示。
 const { t, locale } = useI18n();
 const gql = useGql();
+const toast = useToast();
 
 const props = withDefaults(defineProps<{
   order: any;
@@ -27,11 +28,16 @@ interface HotelBooking {
   guestPhone?: string | null;
   bookingCode?: string | null;
   cancelDeadlineAt?: string | null;
+  cancelFeeCent?: number | null;
+  afterSalesRequestId?: string | null;
+  rescheduleCount?: number | null;
+  rescheduledAt?: string | null;
+  reschedulePending?: boolean | null;
 }
 
 const bookings = ref<HotelBooking[]>([]);
 
-onMounted(async () => {
+async function refresh() {
   try {
     const res: any = await gql("GetMyHotelBookings", {});
     const all: HotelBooking[] = res?.myHotelBookings ?? [];
@@ -39,7 +45,55 @@ onMounted(async () => {
   } catch {
     bookings.value = [];
   }
-});
+}
+
+onMounted(refresh);
+
+// ===== 取消 / 改期入口（P4 Task 16）=====
+const cancelOpen = ref(false);
+const rescheduleOpen = ref(false);
+const activeBooking = ref<HotelBooking | null>(null);
+
+/** 原订单支付方式（补差收款渠道沿用） */
+const originalPaymentMethod = computed<string | null>(
+  () => props.order?.payments?.[0]?.method ?? null,
+);
+
+/** 改期按钮：confirmed 且未用过改期名额且无在途补差 */
+const canReschedule = (b: HotelBooking) =>
+  b.status === "confirmed" && (b.rescheduleCount ?? 0) < 1 && !b.reschedulePending;
+/** 取消按钮：confirmed（走退款政策）或 pendingDeposit（未付款直接取消） */
+const canCancel = (b: HotelBooking) => b.status === "confirmed" || b.status === "pendingDeposit";
+
+function openCancel(b: HotelBooking) {
+  activeBooking.value = b;
+  cancelOpen.value = true;
+}
+function openReschedule(b: HotelBooking) {
+  activeBooking.value = b;
+  rescheduleOpen.value = true;
+}
+
+/** 放弃在途补差：轻量二次确认（首次点击进入确认态，3s 未确认自动回退） */
+const giveUpArmed = ref<string | null>(null);
+let giveUpTimer: ReturnType<typeof setTimeout> | null = null;
+async function giveUpSupplement(b: HotelBooking) {
+  const key = String(b.id);
+  if (giveUpArmed.value !== key) {
+    giveUpArmed.value = key;
+    if (giveUpTimer) clearTimeout(giveUpTimer);
+    giveUpTimer = setTimeout(() => (giveUpArmed.value = null), 3000);
+    return;
+  }
+  giveUpArmed.value = null;
+  try {
+    await gql("CancelMyRescheduleSupplement", { id: String(b.id) });
+    toast.add({ title: t("messages.order.hotelRescheduleGiveUpSuccess"), color: "success" });
+    await refresh();
+  } catch (e: any) {
+    toast.add({ title: e?.gqlErrors?.[0]?.message ?? e?.message ?? "error", color: "error" });
+  }
+}
 
 /** 流转中的状态才显示步骤条（终态显示提示条） */
 const FLOW = ["pendingDeposit", "confirmed", "checkedIn", "completed"];
@@ -213,18 +267,67 @@ const cellCls = "rounded-lg bg-neutral-100 dark:bg-neutral-800";
           <p class="text-xs text-neutral-500">{{ t("messages.order.hotelCodeHint") }}</p>
         </div>
 
-        <!-- 底部：免费取消倒计时 + 联系酒店 -->
-        <div v-if="dl(b) || hotelPhone" class="mt-3 flex items-center justify-between gap-2">
+        <!-- 底部：在途补差提示 / 免费取消倒计时 + 操作按钮 -->
+        <div
+          v-if="b.reschedulePending && (b.status === 'confirmed' || b.status === 'pendingDeposit')"
+          class="mt-3 flex items-center justify-between gap-2 rounded-lg bg-orange-50 px-3 py-2 dark:bg-orange-950/30"
+        >
+          <p class="min-w-0 text-xs text-orange-600 dark:text-orange-400">
+            {{ t("messages.order.hotelReschedulePending") }}
+          </p>
+          <button
+            type="button"
+            class="shrink-0 text-xs font-medium"
+            :class="giveUpArmed === String(b.id) ? 'text-red-600' : 'text-neutral-500 underline dark:text-neutral-400'"
+            @click="giveUpSupplement(b)"
+          >
+            {{ giveUpArmed === String(b.id) ? t("messages.order.hotelRescheduleGiveUpConfirm") : t("messages.order.hotelRescheduleGiveUp") }}
+          </button>
+        </div>
+        <div v-if="dl(b) || hotelPhone || canCancel(b) || canReschedule(b)" class="mt-3 flex items-center justify-between gap-2">
           <p v-if="dl(b)" class="min-w-0 text-xs" :class="dl(b)!.ended ? 'text-neutral-500' : 'text-orange-600'">
             {{ dl(b)!.ended
               ? t("messages.order.hotelFreeCancelEnded")
               : t("messages.order.hotelFreeCancelUntil", { dt: dl(b)!.dt }) + " · " + dl(b)!.left }}
           </p>
-          <a v-if="hotelPhone" :href="'tel:' + hotelPhone" class="shrink-0 rounded-full border border-neutral-300 px-3.5 py-1.5 text-xs font-medium dark:border-neutral-700">
-            {{ t("messages.order.hotelContact") }}
-          </a>
+          <div class="ml-auto flex shrink-0 items-center gap-2">
+            <a v-if="hotelPhone" :href="'tel:' + hotelPhone" class="rounded-full border border-neutral-300 px-3.5 py-1.5 text-xs font-medium dark:border-neutral-700">
+              {{ t("messages.order.hotelContact") }}
+            </a>
+            <button
+              v-if="canReschedule(b)"
+              type="button"
+              class="rounded-full border border-brand-500/60 px-3.5 py-1.5 text-xs font-medium text-brand-700 dark:text-brand-500"
+              @click="openReschedule(b)"
+            >
+              {{ t("messages.order.hotelRescheduleBtn") }}
+            </button>
+            <button
+              v-if="canCancel(b)"
+              type="button"
+              class="rounded-full border border-neutral-300 px-3.5 py-1.5 text-xs font-medium text-neutral-600 dark:border-neutral-700 dark:text-neutral-300"
+              @click="openCancel(b)"
+            >
+              {{ t("messages.order.hotelCancelBtn") }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- 取消 / 改期弹层（同一时刻只挂一个 booking 的操作） -->
+    <OrderHotelCancelModal
+      v-if="activeBooking"
+      v-model:open="cancelOpen"
+      :booking="activeBooking"
+      @done="refresh"
+    />
+    <OrderHotelRescheduleModal
+      v-if="activeBooking"
+      v-model:open="rescheduleOpen"
+      :booking="activeBooking"
+      :payment-method="originalPaymentMethod"
+      @done="refresh"
+    />
   </section>
 </template>
