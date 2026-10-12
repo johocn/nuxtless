@@ -64,14 +64,31 @@ python scripts\_shot_order_modals.py
 | 「放弃」关闭全部弹层 | PASS | 两层弹窗全关 |
 | ScheduleDialog 首笔款弹窗 | SKIP | 线上 `paymentSchedules` 为 0 条，无数据（10-09 上线时已验收） |
 | 酒店取消 / 改期弹层 | SKIP | 线上 `hotelBookings` 为 0 条，无数据（P4 Task 16 交付时已验收） |
-| 取消订单按钮 | 观察项 | 按钮存在性依赖订单状态（qa 账号无可取消状态订单）；**无二次确认弹窗，点击即 mutation**，见 §4 |
+| 取消订单（无确认） | **已改进** | 当日即补二次确认弹窗，见 §4 |
 
-## 4. 已知发现（待定夺，未改代码）
+## 4. 取消订单二次确认弹窗（2026-10-12 当日补齐）
 
-1. **「取消订单」无二次确认**：`useOrderActions.cancelOrder` 点击直接调 `cancelMyOrder`，误触即真实取消（有状态守卫，仅 AddingItems/ArrangingPayment 可取消）。如需加确认弹窗，参考售后「放弃填写」的二次确认模式。
-2. **ScheduleDialog 组件复用不重挂载**：详情页路由参数变化（订单 A → 订单 B）时 `onMounted` 不重跑，首笔款自动弹窗只在该组件首次挂载时触发一次。手动点「在线支付」不受影响。
+首轮检查发现「取消订单」点击直接调 `cancelMyOrder`（误触即真实取消），当日按售后「放弃填写」的模式补齐二次确认：
+
+- 新组件 [OrderCancelConfirm.vue](../../../layers/base/app/components/order/OrderCancelConfirm.vue)（UModal + #body，两处共用；确认按钮 loading 由父侧 `confirmLoading` 传入）
+- 接入 [OrderActions.vue](../../../layers/base/app/components/order/OrderActions.vue)（详情页）与 [OrderCardActions.vue](../../../layers/base/app/components/order/OrderCardActions.vue)（列表卡片）：点「取消订单」→ 弹窗 → 「再想想」关闭 /「确认取消」执行
+- i18n 新增 `order.cancelConfirmTitle / cancelConfirmDesc / cancelConfirmBtn / cancelKeep`，12 个语言包同步（zh/ja/ko 本地化译文，其余按该包既有英文兜底风格）
+
+线上验证（探针 `_shot_cancel_confirm.py`，两入口 × 三分支，7/7 PASS）：
+
+| 检查项 | 详情页 | 列表卡片 |
+|---|---|---|
+| 弹窗打开（「确认取消订单？」） | PASS ![detail](./shots/modal-cancel-confirm-detail.png) | PASS ![list](./shots/modal-cancel-confirm-list.png) |
+| 「再想想」关闭 | PASS | PASS |
+| 「确认取消」执行（toast「订单已取消」） | PASS | PASS |
+| 确认后操作区刷新（按钮消失） | PASS | — |
+
+**测试数据口径**：线上所有支付方式 checkout 均一步到 `PaymentAuthorized`，状态机禁止回退，`ArrangingPayment` 挂起态造不出来；`canCancel` 覆盖 `AddingItems | ArrangingPayment`，故用**购物车单（AddingItems）**验证可取消路径（验后即取消，不留垃圾数据）。
+
+**顺带发现（未改，待定夺）**：由于线上 checkout 从不停在 `ArrangingPayment`，该按钮实际只在购物车单（AddingItems）上出现；「已下单未支付」的单（PaymentAuthorized）前端不可取消（提示走客服）。若业务需要用户自助取消已下单未支付单，需扩 `canCancel` 状态集 + 后端配套退款逻辑，单独立项评估。
 
 ## 5. 关联
 
 - 订单三版式/深链回归手册：[orders-multi-layout/README.md](../orders-multi-layout/README.md)
 - 售后页手册：[aftersales-page-optimization](../aftersales-page-optimization/index.html)
+- vendure 侧同日修复：cjk-plugin 注册 PaymentProfileMethod 实体 + 幂等建表（checkoutSplitted 对关联支付档案的商品下单报 No metadata，commit fe148303f）
