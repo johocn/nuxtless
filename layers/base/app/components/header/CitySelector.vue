@@ -17,9 +17,9 @@ const cities = ref<DistrictNode[]>([]);
 const currentProvince = ref<DistrictNode | null>(null);
 const loadingDistricts = ref(false);
 
-// 热门城市兜底（adcode + 中心坐标）：仅用于「渠道无可推导可用城市」时展示，
-// 属静态常量数据（城市行政数据，非 UI 文案），暂无后端下发接口。
-// TODO 待城市服务/配置提供「热门城市」能力后改为服务下发，此处仅作最后兜底。
+// 热门城市（adcode + 中心坐标）：优先服务下发——shopGlobalConfig(app).defaults.hotCities
+// （L1 全局配置，管理端 updateShopGlobalConfig 运营可改），经 normalizeHotCities 校验；
+// 未配置/全非法时回退此静态表（城市行政数据，非 UI 文案）。
 const HOT_CITIES_FALLBACK: { info: CityInfo; coords: GeoCoords }[] = [
   { info: { adcode: "110000", name: "北京市" }, coords: { lat: 39.9042, lng: 116.4074 } },
   { info: { adcode: "310000", name: "上海市" }, coords: { lat: 31.2304, lng: 121.4737 } },
@@ -32,6 +32,34 @@ const HOT_CITIES_FALLBACK: { info: CityInfo; coords: GeoCoords }[] = [
   { info: { adcode: "500000", name: "重庆市" }, coords: { lat: 29.563, lng: 106.5516 } },
   { info: { adcode: "610100", name: "西安市" }, coords: { lat: 34.3416, lng: 108.9398 } },
 ];
+
+// 服务下发热门城市规范化校验：name 必填非空；adcode/lat/lng 可选（类型合法才保留）。
+function normalizeHotCities(raw: unknown): { info: CityInfo; coords?: GeoCoords }[] {
+  if (!Array.isArray(raw)) return [];
+  const out: { info: CityInfo; coords?: GeoCoords }[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const c = item as Record<string, unknown>;
+    const name = typeof c.name === "string" ? c.name.trim() : "";
+    if (!name) continue;
+    const info: CityInfo = { name };
+    if (typeof c.adcode === "string" && c.adcode) info.adcode = c.adcode;
+    const okLat = typeof c.lat === "number" && Number.isFinite(c.lat);
+    const okLng = typeof c.lng === "number" && Number.isFinite(c.lng);
+    out.push(
+      okLat && okLng
+        ? { info, coords: { lat: c.lat as number, lng: c.lng as number } }
+        : { info },
+    );
+  }
+  return out;
+}
+
+const { globalConfig } = useThemeConfig();
+const hotCities = computed<{ info: CityInfo; coords?: GeoCoords }[]>(() => {
+  const served = normalizeHotCities(globalConfig.value?.defaults?.hotCities);
+  return served.length ? served : HOT_CITIES_FALLBACK;
+});
 
 // 挂载时启动定位（已有持久化结果则跳过）
 onMounted(() => {
@@ -141,8 +169,8 @@ async function reLocate() {
           <p class="mb-1.5 text-xs text-neutral-500">{{ t('messages.nav.hotCities') }}</p>
           <div class="flex flex-wrap gap-1.5">
             <UButton
-              v-for="item in HOT_CITIES_FALLBACK"
-              :key="item.info.adcode"
+              v-for="item in hotCities"
+              :key="item.info.adcode || item.info.name"
               size="xs"
               variant="soft"
               color="neutral"
