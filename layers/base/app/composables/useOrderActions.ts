@@ -12,11 +12,31 @@ export function useOrderActions() {
   const { copy } = useClipboard();
   const { i18NBaseUrl } = useRuntimeConfig().public;
 
-  const canCancel = (state: string) =>
-    state === "AddingItems" || state === "ArrangingPayment";
+  /**
+   * 可否自助取消：
+   * - 未下单/未支付（AddingItems/ArrangingPayment）恒可；
+   * - 已下单未支付（PaymentAuthorized）可，但含酒店行的订单除外
+   *   （酒店单走 OrderHotelCancelModal 专用取消/退款流程）。
+   */
+  const canCancel = (order: {
+    state: string;
+    lines?: Array<{ customFields?: { hotelCheckIn?: string | null; hotelCheckOut?: string | null } | null } | null> | null;
+  }) => {
+    if (order.state === "AddingItems" || order.state === "ArrangingPayment") return true;
+    if (order.state === "PaymentAuthorized") {
+      return !(order.lines ?? []).some(
+        (l) => !!l?.customFields?.hotelCheckIn && !!l?.customFields?.hotelCheckOut,
+      );
+    }
+    return false;
+  };
 
-  async function cancelOrder(order: { id: string; state: string }): Promise<boolean> {
-    if (!canCancel(order.state)) {
+  async function cancelOrder(order: {
+    id: string;
+    state: string;
+    lines?: Array<{ customFields?: { hotelCheckIn?: string | null; hotelCheckOut?: string | null } | null } | null> | null;
+  }): Promise<boolean> {
+    if (!canCancel(order)) {
       toast.add({ title: t("messages.order.cancelNotAllowed"), color: "warning" });
       return false;
     }

@@ -62,7 +62,7 @@ async function onConfirmCancel() {
 <template>
   <div class="flex flex-wrap justify-end gap-2">
     <UButton
-      v-if="canCancel(order.state)"
+      v-if="canCancel(order)"
       size="sm"
       :variant="cancelVariant"
       color="neutral"

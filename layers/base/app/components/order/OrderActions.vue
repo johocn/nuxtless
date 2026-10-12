@@ -61,7 +61,7 @@ async function onReorder() {
 <template>
   <div class="flex flex-wrap gap-3">
     <UButton
-      v-if="canCancel(order.state)"
+      v-if="canCancel(order)"
       icon="i-lucide-x"
       :color="cancelColor"
       :variant="cancelVariant"
