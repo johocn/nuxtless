@@ -1007,6 +1007,7 @@ export default defineI18nLocale(() =>
       titlePlaceholder: "مشکل را به‌طور خلاصه توضیح دهید (حداکثر ۲۰ نویسه)",
       contentLabel: "متن بازخورد",
       contentPlaceholder: "مشکل یا پیشنهاد خود را با جزئیات توضیح دهید",
+      imgsLabel: "تصاویر (اختیاری)",
       contactLabel: "راه ارتباطی",
       contactPlaceholder: "اختیاری، برای اینکه فروشگاه بتواند با شما تماس بگیرد",
       submit: "ارسال",

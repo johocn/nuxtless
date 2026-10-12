@@ -1030,6 +1030,7 @@ export default defineI18nLocale(() =>
       titlePlaceholder: "Problem kurz beschreiben (max. 20 Zeichen)",
       contentLabel: "Feedback-Inhalt",
       contentPlaceholder: "Beschreiben Sie das Problem oder Ihren Vorschlag ausführlich",
+      imgsLabel: "Bilder (optional)",
       contactLabel: "Kontaktangaben",
       contactPlaceholder: "Optional, damit der Händler Sie erreichen kann",
       submit: "Absenden",

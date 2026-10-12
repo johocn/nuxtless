@@ -6,12 +6,13 @@
  */
 import { resolveClient } from "./useMessages";
 
-/** 提交反馈入参（type/contactWay 可选；imgs 本期不做） */
+/** 提交反馈入参（type/contactWay 可选；imgs 为上传成功后的图片 URL 数组，最多 3 张） */
 export interface CreateFeedbackInput {
   type?: string;
   title: string;
   content: string;
   contactWay?: string;
+  imgs?: string[];
 }
 
 /** shop：我的反馈列表（分页），返回原始 myFeedbacks 载荷，防御式解析交给调用方 */

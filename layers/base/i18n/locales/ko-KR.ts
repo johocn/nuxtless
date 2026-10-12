@@ -987,6 +987,7 @@ export default defineI18nLocale(() =>
       titlePlaceholder: "문제를 간략히 입력해 주세요 (20자 이내)",
       contentLabel: "피드백 내용",
       contentPlaceholder: "겪은 문제나 제안을 자세히 적어 주세요",
+      imgsLabel: "이미지 (선택)",
       contactLabel: "연락처",
       contactPlaceholder: "선택 사항, 판매자 연락용",
       submit: "제출",
