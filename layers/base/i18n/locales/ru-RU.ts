@@ -1006,6 +1006,7 @@ export default defineI18nLocale(() =>
       titlePlaceholder: "Кратко опишите проблему (до 20 символов)",
       contentLabel: "Текст обращения",
       contentPlaceholder: "Подробно опишите возникшую проблему или предложение",
+      imgsLabel: "Изображения (необязательно)",
       contactLabel: "Контактные данные",
       contactPlaceholder: "Необязательно, чтобы магазин мог связаться с вами",
       submit: "Отправить",

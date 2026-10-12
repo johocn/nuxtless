@@ -1054,6 +1054,7 @@ export const zhMessages = {
       titlePlaceholder: "请简要描述问题（20 字以内）",
       contentLabel: "反馈内容",
       contentPlaceholder: "请详细描述你遇到的问题或建议",
+      imgsLabel: "图片（可选）",
       contactLabel: "联系方式",
       contactPlaceholder: "选填，方便商家联系你",
       submit: "提交",

@@ -135,7 +135,11 @@ const submitType = ref<string | undefined>(undefined);
 const submitTitle = ref("");
 const submitContent = ref("");
 const submitContact = ref("");
+const submitImgs = ref<string[]>([]);
 const submitting = ref(false);
+
+/** 上传器模板 ref：hasPending 为 true（仍有图片在压缩/上传中）时禁止提交，避免丢图 */
+const uploaderRef = ref<{ hasPending: boolean; hasFailed: boolean } | null>(null);
 
 const typeItems = computed(() =>
   TYPE_KEYS.map((k) => ({
@@ -145,7 +149,11 @@ const typeItems = computed(() =>
 );
 
 const canSubmit = computed(
-  () => !!submitTitle.value.trim() && !!submitContent.value.trim() && !submitting.value,
+  () =>
+    !!submitTitle.value.trim() &&
+    !!submitContent.value.trim() &&
+    !submitting.value &&
+    !uploaderRef.value?.hasPending,
 );
 
 function resetForm() {
@@ -153,6 +161,7 @@ function resetForm() {
   submitTitle.value = "";
   submitContent.value = "";
   submitContact.value = "";
+  submitImgs.value = [];
   submitting.value = false;
 }
 
@@ -170,6 +179,7 @@ async function onSubmit() {
       title: submitTitle.value.trim(),
       content: submitContent.value.trim(),
       contactWay: submitContact.value.trim() || undefined,
+      imgs: submitImgs.value.length ? submitImgs.value : undefined,
     });
     createOpen.value = false;
     resetForm();
@@ -290,6 +300,10 @@ async function onSubmit() {
           :placeholder="t('messages.feedback.contentPlaceholder')"
           class="mb-4 w-full rounded-md border border-neutral-300 px-3 py-2 text-base dark:border-neutral-700 dark:bg-neutral-900"
         />
+
+        <!-- 图片上传（可选）：复用售后九宫格上传组件（客户端压缩/失败重试/并发控制），最多 3 张 -->
+        <p class="mb-2 text-sm font-medium">{{ t("messages.feedback.imgsLabel") }}</p>
+        <AfterSalesEvidenceUploader ref="uploaderRef" v-model="submitImgs" :max="3" class="mb-4" />
 
         <p class="mb-2 text-sm font-medium">{{ t("messages.feedback.contactLabel") }}</p>
         <input

@@ -1023,6 +1023,7 @@ export default defineI18nLocale(() =>
       titlePlaceholder: "Décrivez brièvement le problème (20 caractères max.)",
       contentLabel: "Contenu du commentaire",
       contentPlaceholder: "Décrivez en détail le problème rencontré ou votre suggestion",
+      imgsLabel: "Images (facultatif)",
       contactLabel: "Coordonnées",
       contactPlaceholder: "Facultatif, pour que le marchand puisse vous contacter",
       submit: "Envoyer",

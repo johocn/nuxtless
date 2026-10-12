@@ -1017,6 +1017,7 @@ export default defineI18nLocale(() =>
       titlePlaceholder: "Descrivi brevemente il problema (max 20 caratteri)",
       contentLabel: "Contenuto del feedback",
       contentPlaceholder: "Descrivi in dettaglio il problema riscontrato o i tuoi suggerimenti",
+      imgsLabel: "Immagini (facoltative)",
       contactLabel: "Contatti",
       contactPlaceholder: "Facoltativo, per consentire al venditore di contattarti",
       submit: "Invia",

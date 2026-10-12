@@ -988,6 +988,7 @@ export default defineI18nLocale(() =>
       titlePlaceholder: "問題を簡潔に記入してください（20 文字以内）",
       contentLabel: "フィードバック内容",
       contentPlaceholder: "遭遇した問題やご提案を詳しくご記入ください",
+      imgsLabel: "画像（任意）",
       contactLabel: "連絡先",
       contactPlaceholder: "任意：ショップからの連絡用",
       submit: "送信",

@@ -1074,6 +1074,7 @@ export default defineI18nLocale(() =>
       titlePlaceholder: "Briefly describe the issue (within 20 characters)",
       contentLabel: "Feedback Content",
       contentPlaceholder: "Describe the problem or suggestion in detail",
+      imgsLabel: "Images (optional)",
       contactLabel: "Contact Info",
       contactPlaceholder: "Optional, so the merchant can reach you",
       submit: "Submit",
