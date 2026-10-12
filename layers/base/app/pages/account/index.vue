@@ -4,6 +4,7 @@ definePageMeta({ middleware: "account" });
 import type { ActiveCustomerDetail } from "~~/types/customer";
 import { isActiveCustomerDetail } from "~~/types/guard";
 import { getInboxUnreadCount } from "~~/layers/base/app/composables/useInbox";
+import { getUnreadFeedbackCount } from "~~/layers/base/app/composables/useFeedback";
 
 const { t } = useI18n();
 const localePath = useTenantLocalePath();
@@ -12,6 +13,7 @@ const { fetchCustomer } = useCustomerStore();
 const loading = ref(true);
 const { isAuthenticated } = storeToRefs(useAuthStore());
 const inboxUnread = ref(0);
+const feedbackUnread = ref(0);
 
 const activeCustomer = computed<ActiveCustomerDetail | null>(() =>
   isActiveCustomerDetail(customer.value) ? customer.value : null,
@@ -36,10 +38,16 @@ onMounted(async () => {
   }
 
   if (isAuthenticated.value) {
-    try {
-      inboxUnread.value = await getInboxUnreadCount();
-    } catch {
-      /* 未读数失败不影响页面 */
+    // 站内消息与意见反馈未读数并行拉取，各自失败静默不影响页面
+    const [inboxRes, feedbackRes] = await Promise.allSettled([
+      getInboxUnreadCount(),
+      getUnreadFeedbackCount(),
+    ]);
+    if (inboxRes.status === "fulfilled") {
+      inboxUnread.value = inboxRes.value;
+    }
+    if (feedbackRes.status === "fulfilled") {
+      feedbackUnread.value = feedbackRes.value;
     }
   }
 
@@ -139,6 +147,26 @@ onMounted(async () => {
           >
             {{ inboxUnread > 99 ? "99+" : inboxUnread }}
           </span>
+        </UButton>
+        <UButton
+          :to="localePath('/account/feedback')"
+          variant="soft"
+          class="relative px-7"
+        >
+          {{ t("messages.account.feedback") }}
+          <span
+            v-if="feedbackUnread > 0"
+            class="absolute right-2 top-1/2 -translate-y-1/2 flex h-5 min-w-5 items-center justify-center rounded-full bg-(--ui-error) px-1 text-xs text-white"
+          >
+            {{ feedbackUnread > 99 ? "99+" : feedbackUnread }}
+          </span>
+        </UButton>
+        <UButton
+          :to="localePath('/faq')"
+          variant="soft"
+          class="px-7"
+        >
+          {{ t("messages.account.faq") }}
         </UButton>
       </template>
     </section>

@@ -1,0 +1,11 @@
+# 常见问题查询：type 不传返回全部分类（general/order/pay/afterSale/account/register）；
+# lang 直传内容语言键（zh-CN/zh-TW/en/ja/ko），后端缺该语言时回退基线语言。
+query Faqs($type: String, $lang: String) {
+  faqs(type: $type, lang: $lang) {
+    id
+    title
+    content
+    type
+    sort
+  }
+}

@@ -1,0 +1,36 @@
+# 意见反馈（feedback-plugin shop API）。
+# 注意：本地 graphql.schema.json 快照已过期（缺 unreadFeedbackCount 等新字段），
+# 页面运行时请求走 useFeedback.ts 的字符串查询（登录态 Bearer），
+# 本文件用于 schema 快照更新后 codegen 恢复类型生成。
+mutation CreateFeedback($input: CreateFeedbackInput!) {
+  createFeedback(input: $input) {
+    id
+    status
+  }
+}
+
+query MyFeedbacks($options: FeedbackListOptions) {
+  myFeedbacks(options: $options) {
+    items {
+      id
+      type
+      title
+      content
+      status
+      reply
+      repliedAt
+      repliedBy
+      readAt
+      createdAt
+    }
+    totalItems
+  }
+}
+
+mutation MarkFeedbacksRead {
+  markFeedbacksRead
+}
+
+query UnreadFeedbackCount {
+  unreadFeedbackCount
+}
