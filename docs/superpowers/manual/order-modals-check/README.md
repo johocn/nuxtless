@@ -87,7 +87,60 @@ python scripts\_shot_order_modals.py
 
 **顺带发现（未改，待定夺）**：由于线上 checkout 从不停在 `ArrangingPayment`，该按钮实际只在购物车单（AddingItems）上出现；「已下单未支付」的单（PaymentAuthorized）前端不可取消（提示走客服）。若业务需要用户自助取消已下单未支付单，需扩 `canCancel` 状态集 + 后端配套退款逻辑，单独立项评估。
 
-## 5. 关联
+## 6. 已下单未支付（PaymentAuthorized）自助取消闭环（2026-10-12 立项，当日交付）
+
+§4 顺带发现经用户批准立项：PaymentAuthorized（已下单未支付）订单开放顾客自助取消。
+
+### 6.1 后端（vendure cjk-plugin `cancelMyOrder`，commit a17dac2a4）
+
+[my-orders-shop.resolver.ts](https://github.com/johocn/vendure/blob/master/packages/cjk-plugin/src/order/my-orders-shop.resolver.ts) 新增 `PaymentAuthorized` 分支：
+
+1. **先取消支付**：逐笔 `paymentService.cancelPayment`（Authorized → Cancelled，走 handler.cancelPayment；本项目各支付方式均未覆写，默认直接成功）
+2. **再取消订单**：`orderService.cancelOrder`（已下单单走 `cancelOrderByOrderLines`：逐项取消订单行 + 幂等释放库存分配 → 状态机 `PaymentAuthorized → Cancelled`）
+
+守卫（任一命中即拒绝 `ORDER_CANNOT_BE_CANCELLED:PaymentAuthorized`）：
+
+| 守卫 | 原因 |
+|---|---|
+| 任一支付 Settled / Declined / Error | 实付单走售后退款流程，不可静默作废 |
+| 订单含酒店行（customFields.hotelCheckIn/Out） | 酒店单走 `OrderHotelCancelModal` 专用取消/退款（预订单锁房/取消截止点独立收口），防预订单悬空 |
+| 支付 0 笔 | PaymentAuthorized 必有授权支付，防御性拒绝 |
+
+幂等设计：支付已 Cancelled（如上次取消中断重试）→ 跳过支付取消直接继续订单取消。
+
+### 6.2 前端（nshop）
+
+- [useOrderActions.ts](../../../layers/base/app/composables/useOrderActions.ts)：`canCancel(order)` 改收订单对象——`AddingItems/ArrangingPayment` 恒可；`PaymentAuthorized` 可但**排除酒店行订单**（与后端守卫一致，避免展示必失败的按钮）
+- [OrderActions.vue](../../../layers/base/app/components/order/OrderActions.vue) / [OrderCardActions.vue](../../../layers/base/app/components/order/OrderCardActions.vue)：调用点 `canCancel(order.state)` → `canCancel(order)`
+- 二次确认弹窗复用 §4 的 `OrderCancelConfirm`（文案「取消后订单将作废，无法恢复」对未支付单同样准确，无新增词条）
+
+### 6.3 验证
+
+**直测（纯 shop-api，`_shot_cancel_authorized.py`，本地探针 gitignore）**——用 §4 遗留的三笔 PaymentAuthorized 测试废单，3/3 PASS（废单顺势清理）：
+
+| 订单 | 前置支付状态 | 路径 | 结果 |
+|---|---|---|---|
+| 52MBU7X5YZF2EXMP (372) | Authorized | 完整闭环（取消支付→取消订单） | PASS，state=Cancelled + payment Cancelled |
+| 1PVWH8R3HGDEPN2T (168) | 已 Cancelled | 幂等重试 | PASS |
+| CNX86ADFWN163QBY (369) | 已 Cancelled | 幂等重试 | PASS |
+
+**UI 探针（`_shot_cancel_unpaid.py`，390×844 dpr2，COD 自提单造 PaymentAuthorized 态，验后即取消，11/11 PASS）**：
+
+| 检查项 | 详情页 | 列表卡片 |
+|---|---|---|
+| PaymentAuthorized 态出现「取消订单」按钮（立项核心） | PASS ![detail-visible](./shots/detail-unpaid-cancel-visible.png) | PASS ![list-visible](./shots/list-unpaid-cancel-visible.png) |
+| 弹窗打开（「确认取消订单？」） | PASS ![detail-modal](./shots/modal-cancel-unpaid-detail.png) | PASS ![list-modal](./shots/modal-cancel-unpaid-list.png) |
+| 「再想想」关闭 | PASS | PASS |
+| 「确认取消」执行（toast「订单已取消」） | PASS | PASS |
+| 确认后操作区刷新（按钮消失） | PASS | — |
+| API 复查（订单 Cancelled + 支付全 Cancelled） | PASS | PASS |
+
+### 6.4 部署备注
+
+- vendure：git pull + pm2 restart（commit a17dac2a4）
+- nshop：本地构建 + `SKIP_BUILD=1 node scripts/deploy.mjs`。**坑**：deploy.mjs 内部自带 `pnpm build`（外层再套一层 build 会双重构建、超出命令超时被杀且中途 rimraf 掉 .output）——外层已构建时必须 `SKIP_BUILD=1`
+
+## 7. 关联
 
 - 订单三版式/深链回归手册：[orders-multi-layout/README.md](../orders-multi-layout/README.md)
 - 售后页手册：[aftersales-page-optimization](../aftersales-page-optimization/index.html)
