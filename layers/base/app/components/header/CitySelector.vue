@@ -110,6 +110,21 @@ function selectCity(info: CityInfo, coords?: GeoCoords) {
   open.value = false;
 }
 
+// 方案 C（并存 + 防误导）：热门城市始终展示；已有可用城市数据时，
+// 不在可用列表中的热门城市置灰、点击 toast 提示（早失败优于走完流程才发现不可达）。
+// 无可用城市数据的渠道（无配送能力配置）保持现状行为：热门直接可点，零回归。
+function hotBlocked(name: string): boolean {
+  return availableCities.value.length > 0 && !availableCities.value.includes(name);
+}
+
+function selectHot(item: { info: CityInfo; coords?: GeoCoords }) {
+  if (hotBlocked(item.info.name)) {
+    useToast().add({ title: t("messages.nav.cityNotAvailable"), color: "warning" });
+    return;
+  }
+  selectCity(item.info, item.coords);
+}
+
 async function reLocate() {
   locating.value = true;
   await locationStore.autoLocate();
@@ -148,7 +163,7 @@ async function reLocate() {
           {{ locationStore.error }}
         </p>
 
-        <!-- 可用城市（按配送能力推导）；非空时替代热门城市（热门城市可能对本站不可达，属误导） -->
+        <!-- 可用城市（按配送能力推导）；与热门城市并存展示，可用优先 -->
         <div v-if="availableCities.length" class="mb-3">
           <p class="mb-1.5 text-xs text-neutral-500">{{ t('messages.nav.availableCities') }}</p>
           <div class="flex flex-wrap gap-1.5">
@@ -164,8 +179,8 @@ async function reLocate() {
           </div>
         </div>
 
-        <!-- 热门城市（可用城市为空时保持现状：无自提配置的渠道零回归） -->
-        <div v-else class="mb-3">
+        <!-- 热门城市：始终展示（方案 C）；不可配送城市置灰，点击 toast 提示 -->
+        <div class="mb-3">
           <p class="mb-1.5 text-xs text-neutral-500">{{ t('messages.nav.hotCities') }}</p>
           <div class="flex flex-wrap gap-1.5">
             <UButton
@@ -174,8 +189,9 @@ async function reLocate() {
               size="xs"
               variant="soft"
               color="neutral"
+              :class="{ 'opacity-40': hotBlocked(item.info.name) }"
               :label="item.info.name"
-              @click="selectCity(item.info, item.coords)"
+              @click="selectHot(item)"
             />
           </div>
         </div>
