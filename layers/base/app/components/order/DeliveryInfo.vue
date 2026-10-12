@@ -55,7 +55,7 @@ const pickupCode = computed<string | null>(() => props.pickupCode ?? null);
     <div v-else class="space-y-2 text-sm">
       <p>
         {{ t("messages.general.shippingSelect") }}:
-        {{ props.order.shippingLines?.[0]?.shippingMethod?.name }}
+        {{ props.order.shippingLines?.[0]?.shippingMethod?.name || t("messages.general.na") }}
       </p>
       <p v-if="expressNo">
         {{ t("messages.order.expressNo") }}:
