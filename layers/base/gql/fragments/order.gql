@@ -111,11 +111,12 @@ fragment OrderDetail on Order {
   payments {
     method
   }
-  shippingLines {
-    shippingMethod {
-      name
-    }
-  }
+  # shippingLines 故意不查：ShippingLine.shippingMethod 在 schema 为非空，
+  # 历史订单的配送方式被后台删除后会悬空（resolver 返回 null）→ 整个查询
+  # 报 "Cannot return null for non-nullable field ShippingLine.shippingMethod"
+  # → 订单详情/列表一律 404（2026-10-12 线上事故）。前端展示处本就
+  # null-safe（DeliveryInfo / OrderMetaCard 可选链 + 兜底文案），移除该
+  # 子查询后悬空单自然回退兜底，不影响其余字段。
   taxSummary {
     description
     taxTotal

@@ -122,17 +122,22 @@ if (!existsSync(resolve(outputDir, "server", "index.mjs"))) {
 }
 
 // 3) 上传 .output/ 到服务器
+// 不用 `scp -r .output`：Nitro 产物 server/node_modules 是 symlink 结构，
+// Windows OpenSSH scp 递归 lstat 悬空/成环 symlink 会整包失败（2026-10-12）。
+// 改为本地 tar 打包 → scp 单文件 → 服务器解压（服务器不构建、不装依赖不变）。
 // 目标目录多为 root 所有（如 1panel 站点），admin 无写权限但一般有免密 sudo：
-// 先 scp 到暂存区，再用 sudo 清空并拷贝进 REMOTE_DIR，避免对站点根文件的删除权限问题。
+// 先传到暂存区，再用 sudo 清空并解包进 REMOTE_DIR。
 const STAGING = "/tmp/nshop-deploy";
-console.log(`\n[deploy] >> 上传 .output/ 到 ${target}:${REMOTE_DIR}`);
+const tarFile = resolve(cwd, ".output-deploy.tar.gz");
+run("本地打包产物", ["tar", "-czf", tarFile.replace(/\\/g, "/"), "-C", outputDir.replace(/\\/g, "/"), "."]);
 run("准备暂存目录", ["ssh", ...SSH_ARGS, target, `rm -rf ${STAGING} && mkdir -p ${STAGING}`]);
-run("SCP 上传 .output/ 到暂存区", ["scp", ...SSH_ARGS, "-r", outputDir, `${target}:${STAGING}`]);
+run("SCP 上传产物包", ["scp", ...SSH_ARGS, tarFile, `${target}:${STAGING}/output.tar.gz`]);
 ssh(
   `sudo rm -rf ${REMOTE_DIR} && sudo mkdir -p ${REMOTE_DIR} && ` +
-    `sudo cp -r ${STAGING}/.output/. ${REMOTE_DIR}/ && ` +
+    `sudo tar -xzf ${STAGING}/output.tar.gz -C ${REMOTE_DIR} && ` +
     `sudo chown -R $(whoami):$(whoami) ${REMOTE_DIR} && rm -rf ${STAGING}`
 );
+spawnSync("powershell", ["-NoProfile", "-Command", `Remove-Item -LiteralPath '${tarFile}' -Force -ErrorAction SilentlyContinue`], { stdio: "ignore" });
 
 // 4) pm2 startOrRestart（首次自动启动；服务器不安装任何依赖）
 console.log(`\n[deploy] >> 启动/重启 pm2 进程 ${APP_NAME}`);
