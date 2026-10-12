@@ -39,8 +39,16 @@ const reorderClass = computed(() =>
     : "",
 );
 
-async function onCancel() {
+// ---- 取消订单：先弹二次确认（误触即真实取消），确认后才执行 ----
+const cancelConfirmOpen = ref(false);
+
+function onCancel() {
+  cancelConfirmOpen.value = true;
+}
+
+async function onConfirmCancel() {
   const ok = await cancelOrder(props.order);
+  cancelConfirmOpen.value = false;
   if (ok) emit("updated");
 }
 
@@ -57,7 +65,6 @@ async function onReorder() {
       icon="i-lucide-x"
       :color="cancelColor"
       :variant="cancelVariant"
-      :loading="loading"
       :class="rounded"
       :label="t('messages.order.cancel')"
       @click="onCancel"
@@ -78,5 +85,7 @@ async function onReorder() {
       :label="t('messages.general.getLink')"
       @click="copyOrderLink(order.code)"
     />
+
+    <OrderCancelConfirm v-model:open="cancelConfirmOpen" :confirm-loading="loading" @confirm="onConfirmCancel" />
   </div>
 </template>

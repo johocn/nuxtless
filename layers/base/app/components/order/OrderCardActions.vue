@@ -46,8 +46,16 @@ async function onReorder() {
   if (await reorder(lines)) router.push(localePath("/checkout"));
 }
 
-async function onCancel() {
+// ---- 取消订单：先弹二次确认（误触即真实取消），确认后才执行 ----
+const cancelConfirmOpen = ref(false);
+
+function onCancel() {
+  cancelConfirmOpen.value = true;
+}
+
+async function onConfirmCancel() {
   if (await cancelOrder(props.order)) emit("changed");
+  cancelConfirmOpen.value = false;
 }
 </script>
 
@@ -60,7 +68,6 @@ async function onCancel() {
       color="neutral"
       :class="rounded"
       :label="t('messages.order.cancel')"
-      :loading="loading"
       @click="onCancel"
     />
     <UButton
@@ -79,5 +86,7 @@ async function onCancel() {
       :label="t('messages.order.viewDetail')"
       :to="localePath(`/account/orders/${order.code}`)"
     />
+
+    <OrderCancelConfirm v-model:open="cancelConfirmOpen" :confirm-loading="loading" @confirm="onConfirmCancel" />
   </div>
 </template>
