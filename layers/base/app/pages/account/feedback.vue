@@ -4,6 +4,7 @@
 // 数据在客户端 onMounted 拉取（SSR 拿不到会话 cookie 的场景可接受），首屏加载成功后幂等标记全部已读（失败静默）。
 // 响应按 unknown + 防御式解析（参考 faq.vue），接口异常显示占位文案不白屏。
 import { createFeedback, fetchMyFeedbacks, markFeedbacksRead } from "../../composables/useFeedback";
+import { assetSrc } from "../../utils/image";
 
 definePageMeta({ middleware: "account" });
 
@@ -22,6 +23,8 @@ interface FeedbackItem {
   reply?: string | null;
   repliedAt?: string | number | null;
   createdAt?: string | number | null;
+  /** 后端 JSON 序列化的图片 URL 数组（如 '["assets/.../x.webp"]'） */
+  imgs?: string | null;
 }
 
 /** 列表单页条数（与定稿 mockup 一致：首次 take=20，底部加载更多） */
@@ -72,6 +75,17 @@ function formatDateTime(v?: string | number | null): string {
   if (v === null || v === undefined || v === "") return "";
   const d = new Date(v);
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleString(locale.value);
+}
+
+/** imgs 为后端 JSON 序列化字符串，防御解析为 URL 数组（非法/空返回 []，不抛异常） */
+function parseImgs(raw: unknown): string[] {
+  if (typeof raw !== "string" || !raw.trim()) return [];
+  try {
+    const arr: unknown = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((u): u is string => typeof u === "string" && !!u.trim()) : [];
+  } catch {
+    return [];
+  }
 }
 
 async function loadFirstPage() {
@@ -125,9 +139,21 @@ const viewItems = computed(() =>
       createdAt: formatDateTime(it.createdAt),
       reply: typeof it.reply === "string" ? it.reply.trim() : "",
       repliedAt: formatDateTime(it.repliedAt),
+      imgs: parseImgs(it.imgs),
     };
   }),
 );
+
+// ---------- 图片灯箱（与售后详情页凭证灯箱同款交互：大图 + 底部小图切换条） ----------
+const lightboxOpen = ref(false);
+const lightboxImgs = ref<string[]>([]);
+const lightboxIndex = ref(0);
+
+function openLightbox(imgs: string[], index: number) {
+  lightboxImgs.value = imgs;
+  lightboxIndex.value = index;
+  lightboxOpen.value = true;
+}
 
 // ---------- 新建反馈表单（UModal 弹窗，不跳页） ----------
 const createOpen = ref(false);
@@ -232,6 +258,27 @@ async function onSubmit() {
             <p class="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-(--ui-text-muted)">
               {{ it.content }}
             </p>
+
+            <!-- 图片缩略图行（3 列方格，与售后详情页凭证图一致），点击开灯箱 -->
+            <div v-if="it.imgs.length" class="mt-3 grid grid-cols-3 gap-3">
+              <button
+                v-for="(img, gi) in it.imgs"
+                :key="gi"
+                type="button"
+                class="aspect-square overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800"
+                :aria-label="t('messages.feedback.imgsLabel')"
+                @click="openLightbox(it.imgs, gi)"
+              >
+                <NuxtImg
+                  :src="assetSrc(img, 256)"
+                  :alt="t('messages.feedback.imgsLabel')"
+                  class="h-full w-full object-cover"
+                  loading="lazy"
+                  format="webp"
+                />
+              </button>
+            </div>
+
             <p v-if="it.createdAt" class="mt-2 text-xs text-neutral-400">{{ it.createdAt }}</p>
 
             <!-- 商家回复：soft 背景卡片，视觉上与正文区分 -->
@@ -261,6 +308,37 @@ async function onSubmit() {
         </p>
       </template>
     </div>
+
+    <!-- 图片灯箱（列表缩略图点击预览） -->
+    <UModal v-model:open="lightboxOpen" :ui="{ content: 'sm:max-w-xl' }">
+      <template #body>
+        <NuxtImg
+          :src="assetSrc(lightboxImgs[lightboxIndex], 750)"
+          :alt="t('messages.feedback.imgsLabel')"
+          class="w-full rounded-md object-contain"
+          format="webp"
+        />
+        <div v-if="lightboxImgs.length > 1" class="mt-3 flex justify-center gap-2">
+          <button
+            v-for="(img, i) in lightboxImgs"
+            :key="i"
+            type="button"
+            class="h-11 w-11 overflow-hidden rounded-md border-2"
+            :class="i === lightboxIndex ? 'border-primary' : 'border-neutral-200 opacity-60 dark:border-neutral-800'"
+            :aria-label="t('messages.feedback.imgsLabel')"
+            @click="lightboxIndex = i"
+          >
+            <NuxtImg
+              :src="assetSrc(img, 128)"
+              :alt="t('messages.feedback.imgsLabel')"
+              class="h-full w-full object-cover"
+              loading="lazy"
+              format="webp"
+            />
+          </button>
+        </div>
+      </template>
+    </UModal>
 
     <!-- 新建反馈弹窗（注意：UModal 默认插槽是触发器，表单必须放 #body） -->
     <UModal v-model:open="createOpen" :ui="{ content: 'sm:max-w-lg' }">

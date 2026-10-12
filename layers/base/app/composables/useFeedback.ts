@@ -21,7 +21,7 @@ export async function fetchMyFeedbacks(skip: number, take: number): Promise<unkn
   const data = await client.request<{ myFeedbacks?: unknown }>(
     `query MyFeedbacks($options: FeedbackListOptions) {
       myFeedbacks(options: $options) {
-        items { id type title content status reply repliedAt repliedBy readAt createdAt }
+        items { id type title content status reply repliedAt repliedBy readAt createdAt imgs }
         totalItems
       }
     }`,
