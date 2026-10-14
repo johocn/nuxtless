@@ -1,14 +1,27 @@
 <script setup lang="ts">
 // JD 风格 PC 顶栏：品牌 + 实时搜索 + 热词
-// 搜索复用 nshop 的 useSimpleSearch（与 SearchModal 同数据源，商品点按进详情页），
+// 搜索走统一知识库 useKbSearch（与 SearchModal / /search 同一 Meili 数据源，商品点按进详情页），
 // 无需独立的搜索结果页路由。
 import type { TopLevelCollection } from "~~/types/collection";
 import { assetSrc } from "../../../utils/image";
+import { refDebounced } from "@vueuse/core";
 
 const { t } = useI18n();
 defineProps<{ categories: TopLevelCollection[] }>();
 const localePath = useTenantLocalePath();
-const { term, results, pending } = useSimpleSearch();
+
+const term = ref("");
+const debouncedTerm = refDebounced(term, 300);
+const ready = computed(() => debouncedTerm.value.trim().length >= 2);
+
+const { data, pending, execute } = useKbSearch(
+  () => ({ q: debouncedTerm.value.trim(), filter: 'type = "product"', limit: 8 }),
+  { key: "kb-header-products", immediate: false },
+);
+watch(debouncedTerm, () => {
+  if (ready.value) execute();
+});
+const results = computed(() => data.value?.hits ?? []);
 
 const focused = ref(false);
 // 延迟关闭下拉，留出点击结果项的时间
@@ -54,25 +67,25 @@ function submit() {
 
         <!-- 实时下拉结果 -->
         <div
-          v-if="focused && (pending || term)"
+          v-if="focused && (pending || debouncedTerm)"
           class="absolute top-full left-0 right-0 z-40 mt-1 overflow-hidden rounded-md border border-gray-100 bg-white shadow-lg"
         >
           <p v-if="pending" class="px-4 py-3 text-sm text-gray-400">{{ t('messages.nav.loading') }}</p>
           <template v-else>
             <NuxtLink
               v-for="item in results"
-              :key="item.slug"
+              :key="item.id"
               :to="localePath(`/product/${item.slug}`)"
               class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               external
             >
               <NuxtImg
-                v-if="item.productAsset?.preview"
-                :src="assetSrc(item.productAsset.preview, 64)"
+                v-if="item.thumbnail"
+                :src="assetSrc(item.thumbnail, 64)"
                 class="h-8 w-8 rounded object-cover"
               />
               <UIcon v-else name="i-lucide-package" class="h-4 w-4 text-gray-400" />
-              <span class="truncate">{{ item.productName }}</span>
+              <span class="truncate">{{ item.title }}</span>
             </NuxtLink>
             <p v-if="!results.length" class="px-4 py-3 text-sm text-gray-400">
               {{ t('messages.nav.noMatchProducts') }}

@@ -39,6 +39,15 @@ export default defineNuxtConfig({
         changeOrigin: true,
         secure: true,
       },
+      // MeiliSearch 统一知识库查询（P2）：dev 同源 /search-api 代理。
+      // devProxy 会剥离 /search-api 前缀，故 target 需带上后端期望的路径前缀：
+      //   - 默认走线上 nginx（/search-api/ -> 127.0.0.1:7700，需 nginx 已配 location）
+      //   - 本地调试可用 MEILI_DEV_PROXY_TARGET=http://127.0.0.1:7700（配 ssh 隧道直连 Meili）
+      "/search-api": {
+        target: process.env.MEILI_DEV_PROXY_TARGET || "https://www.youshop.cn/search-api",
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
 
@@ -51,6 +60,9 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // SSR 直连 Meili（服务器本机回环，仅 node 端可见）；生产 nitro 无 /search-api 路由，
+    // node 内相对路径 fetch 只会 404，必须绝对地址
+    meiliInternalHost: process.env.NUXT_MEILI_HOST,
     public: {
       GQL_HOST: process.env.GQL_HOST,
       channelToken: process.env.CHANNEL_TOKEN,
@@ -58,6 +70,9 @@ export default defineNuxtConfig({
       stripeAccountId: process.env.STRIPE_ACCOUNT_ID,
       stripePublicKey: process.env.STRIPE_PUBLIC_KEY,
       adminApiBase: process.env.ADMIN_API_BASE,
+      // MeiliSearch C 端只读 search key（限 indexes:kb-*；本就是随前端下发的公钥），
+      // 构建期从 NUXT_PUBLIC_MEILI_SEARCH_KEY 注入（.env 不入 git）
+      meiliSearchKey: process.env.NUXT_PUBLIC_MEILI_SEARCH_KEY,
     },
   },
 
