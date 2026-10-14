@@ -1098,6 +1098,7 @@ export const zhMessages = {
       typeTutorial: "教程",
       typeCase: "案例",
       typeDownload: "资料",
+      typeGeoArticle: "GEO 文章",
     },
     kb: {
       notFound: "内容不存在或已下线",

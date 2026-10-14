@@ -1071,6 +1071,7 @@ export default defineI18nLocale(() =>
       typeTutorial: "Tutorials",
       typeCase: "Cases",
       typeDownload: "Downloads",
+      typeGeoArticle: "Artículo GEO",
     },
     kb: {
       notFound: "Content not found or no longer available",

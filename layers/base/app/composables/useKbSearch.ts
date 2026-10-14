@@ -64,10 +64,13 @@ export function kbFormatDate(ts: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** 类型键 → i18n 词条（messages.search.typeArticle / typeFaq / ...）；product 复用「商品」词条 */
+/** 类型键 → i18n 词条（messages.search.typeArticle / typeFaq / typeGeoArticle / ...）；product 复用「商品」词条 */
 export function kbTypeLabelKey(type: string): string {
   if (type === "product") return "messages.search.products";
-  return `messages.search.type${String(type).charAt(0).toUpperCase()}${String(type).slice(1)}`;
+  // kebab-case 转 camel（geo-article → GeoArticle），保证生成的 i18n 键合法
+  const camel = String(type)
+    .replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+  return `messages.search.type${camel.charAt(0).toUpperCase()}${camel.slice(1)}`;
 }
 
 const EMPTY_RESPONSE: KbSearchResponse = {
