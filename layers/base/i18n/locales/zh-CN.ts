@@ -1076,6 +1076,33 @@ export const zhMessages = {
       submitFailed: "提交失败，请稍后重试",
       loadFailed: "反馈加载失败，请稍后重试",
     },
+    search: {
+      pageTitle: "搜索结果",
+      modalTitle: "搜索",
+      placeholder: "输入关键词搜索…",
+      inputHint: "输入至少 2 个字符开始搜索",
+      searching: "搜索中…",
+      all: "全部",
+      products: "商品",
+      knowledge: "知识内容",
+      viewAll: "查看全部 {count} 条结果",
+      resultCount: "共 {count} 条与「{q}」相关的结果",
+      empty: "未找到相关内容",
+      emptyHint: "换个关键词试试，或浏览商品与帮助内容",
+      loadMore: "加载更多",
+      noMore: "没有更多了",
+      related: "相关内容",
+      updatedAt: "更新于 {date}",
+      typeArticle: "文章",
+      typeFaq: "常见问题",
+      typeTutorial: "教程",
+      typeCase: "案例",
+      typeDownload: "资料",
+    },
+    kb: {
+      notFound: "内容不存在或已下线",
+      knowledgeBase: "知识内容",
+    },
 };
 
 export default defineI18nLocale(() => ({

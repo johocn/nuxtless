@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 // JD 风格「全部分类」抽屉（移动端）：TabBar「分类」与功能宫格「全部分类」共用触发
 // 数据来源：顶部分类(collection)（GetMenuCollections 已加载到 menuCollections 状态，未动底层）
 // 通过全局 state isAllCatOpen 控制显隐，任何页面/组件都可 set true 打开。
@@ -21,15 +21,19 @@ function close() {
 </script>
 
 <template>
-  <!-- 遮罩 -->
-  <Teleport to="body">
-    <Transition name="fade">
-      <div
-        v-if="open"
-        class="fixed inset-0 z-[70] bg-black/40 lg:hidden"
-        @click="close"
-      />
-    </Transition>
+  <!-- ClientOnly：Teleport to="body" SSR 直出会导致 hydration mismatch（dev 下甚至引发整树重挂载白屏）；
+       抽屉默认关闭，客户端挂载后再 teleport 无视觉影响 -->
+  <ClientOnly>
+    <!-- 遮罩 -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div
+          v-if="open"
+          class="fixed inset-0 z-[70] bg-black/40 lg:hidden"
+          @click="close"
+        />
+      </Transition>
+
 
     <!-- 抽屉 -->
     <Transition name="slide">
@@ -76,7 +80,8 @@ function close() {
         </div>
       </aside>
     </Transition>
-  </Teleport>
+    </Teleport>
+  </ClientOnly>
 </template>
 
 <style scoped>
