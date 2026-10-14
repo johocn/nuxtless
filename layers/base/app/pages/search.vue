@@ -28,7 +28,7 @@ useHead(() => ({ title: q.value ? `${q.value} - ${t("messages.search.pageTitle")
 type Segment = "all" | "product" | "knowledge";
 const segment = ref<Segment>("all");
 /** 知识态类型 chips（多选，空 = 全部知识类型） */
-const CONTENT_TYPES = ["article", "faq", "tutorial", "case", "download"] as const;
+const CONTENT_TYPES = ["article", "faq", "tutorial", "case", "download", "geo-article"] as const;
 const activeTypes = ref<string[]>([]);
 
 const filter = computed(() => {
