@@ -332,11 +332,16 @@ interface DetachCouponFromOrderMutation {
 }
 
 /** 领券中心：当前可领取的优惠券模板列表 */
-export async function getCouponCentre(): Promise<CouponTemplate[]> {
+export async function getCouponCentre(
+  scene?: "ONLINE" | "IN_STORE" | "ALL",
+): Promise<CouponTemplate[]> {
   const client = resolveClient();
-  const data = await client.request<CouponCentreQuery>(`query CouponCentre {
-    couponCentre { ${COUPON_TEMPLATE_FIELDS} }
-  }`);
+  const data = await client.request<CouponCentreQuery>(
+    `query CouponCentre($scene: CouponUsageScene) {
+      couponCentre(scene: $scene) { ${COUPON_TEMPLATE_FIELDS} }
+    }`,
+    { scene: scene ?? null },
+  );
   return data.couponCentre;
 }
 

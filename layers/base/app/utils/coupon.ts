@@ -12,7 +12,7 @@ import type {
 } from "../composables/useCoupon";
 
 // ── 页面 Tab / 筛选键 ──
-export type CouponPageTab = "center" | "sale" | "points" | "code" | "wallet";
+export type CouponPageTab = "center" | "store" | "sale" | "points" | "code" | "wallet";
 export type CouponWalletKey = "unused" | "used" | "expired" | "returned";
 export type CouponSceneKey = "ONLINE" | "IN_STORE" | "ALL";
 

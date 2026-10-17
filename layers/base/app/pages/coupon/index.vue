@@ -51,6 +51,9 @@ const saleScene = ref<Exclude<CouponSceneKey, "ALL">>("ONLINE");
 const centreCoupons = ref<CouponTemplate[]>([]);
 const loadingCenter = ref(false);
 const claimingId = ref<string | null>(null);
+// 到店券（IN_STORE 场景自助领取，到店买单出示券码核销）
+const storeCoupons = ref<CouponTemplate[]>([]);
+const loadingStore = ref(false);
 // 我的券
 const myCoupons = ref<CustomerCoupon[]>([]);
 const loadingWallet = ref(false);
@@ -117,6 +120,17 @@ async function loadCentre() {
   }
 }
 
+async function loadStore() {
+  loadingStore.value = true;
+  try {
+    storeCoupons.value = await getCouponCentre("IN_STORE");
+  } catch (e) {
+    toast.add({ title: t("messages.coupon.tabStore"), description: couponErrorMessage(e), color: "error" });
+  } finally {
+    loadingStore.value = false;
+  }
+}
+
 async function loadMy() {
   if (!isAuthenticated.value) return;
   loadingWallet.value = true;
@@ -159,6 +173,7 @@ async function loadPoints() {
 function switchTab(key: CouponPageTab) {
   tab.value = key;
   if (key === "center" && centreCoupons.value.length === 0) loadCentre();
+  if (key === "store" && storeCoupons.value.length === 0) loadStore();
   if (key === "wallet") loadMy();
   // 券商城/积分商城需登录：匿名时短路走登录提示，避免 API FORBIDDEN toast
   if (key === "sale" && isAuthenticated.value) loadSale();
@@ -378,7 +393,25 @@ onMounted(loadCentre);
       />
     </section>
 
-    <!-- ② 券商城 -->
+    <!-- ② 到店券：IN_STORE 场景，领后到店出示券码核销 -->
+    <section v-else-if="tab === 'store'">
+      <p class="mb-4 flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2 text-sm text-primary">
+        <span class="inline-flex size-5 shrink-0 items-center justify-center rounded bg-primary text-[10px] font-bold text-inverted">{{ t("messages.coupon.storeBadge") }}</span>
+        {{ t("messages.coupon.storeHint") }}
+      </p>
+      <BaseLoader v-if="loadingStore" width="sm:w-xs md:w-sm" />
+      <template v-else-if="storeCoupons.length">
+        <CouponCentreList
+          :coupons="storeCoupons"
+          :my-coupons="myCoupons"
+          :claiming-id="claimingId"
+          @claim="claim"
+        />
+      </template>
+      <p v-else class="text-sm text-(--ui-text-muted)">{{ t("messages.coupon.emptyStore") }}</p>
+    </section>
+
+    <!-- ③ 券商城 -->
     <section v-else-if="tab === 'sale'">
       <CouponLoginPrompt v-if="!isAuthenticated" />
       <CouponSaleList
@@ -392,7 +425,7 @@ onMounted(loadCentre);
       />
     </section>
 
-    <!-- ③ 积分商城 -->
+    <!-- ④ 积分商城 -->
     <section v-else-if="tab === 'points'">
       <CouponLoginPrompt v-if="!isAuthenticated" />
       <template v-else>
@@ -406,12 +439,12 @@ onMounted(loadCentre);
       </template>
     </section>
 
-    <!-- ④ 兑换码 -->
+    <!-- ⑤ 兑换码 -->
     <section v-else-if="tab === 'code'">
       <CouponRedeemForm v-model="redeemCode" :redeeming="redeeming" @submit="redeem" />
     </section>
 
-    <!-- ⑤ 我的券 -->
+    <!-- ⑥ 我的券 -->
     <section v-else>
       <CouponLoginPrompt v-if="!isAuthenticated" />
       <CouponWalletList
