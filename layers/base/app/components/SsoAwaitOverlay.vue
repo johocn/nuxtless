@@ -80,12 +80,12 @@ onUnmounted(() => timer && window.clearInterval(timer));
 }
 @keyframes sso-orbit { to { transform: rotate(360deg); } }
 
-.sso-logo { margin: 0; font-size: 20px; font-weight: 600; color: #333; }
-.sso-slogan { margin: 0; font-size: 14px; color: #667eea; min-height: 1.4em; }
+.sso-logo { margin: 0; font-size: 1.25rem; font-weight: 600; color: #333; }
+.sso-slogan { margin: 0; font-size: 0.875rem; color: #667eea; min-height: 1.4em; }
 .sso-slogan-anim { animation: sso-fade 0.9s ease; }
 @keyframes sso-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .sso-status {
-  font-size: 13px; color: #8898aa; padding: 6px 14px; border-radius: 999px;
+  font-size: 0.8125rem; color: #8898aa; padding: 6px 14px; border-radius: 999px;
   background: rgba(102, 126, 234, 0.12);
 }
 @media (prefers-reduced-motion: reduce) {

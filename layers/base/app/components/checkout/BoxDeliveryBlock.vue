@@ -156,7 +156,7 @@ flow.submitFns.submitDelivery = async () => {
           />
           <span class="h-3.5 w-1 rounded-sm bg-primary-500" />
           <span>{{ box.profileName }}</span>
-          <span class="rounded-sm bg-primary-50 px-1.5 py-0.5 text-[11px] font-normal text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+          <span class="rounded-sm bg-primary-50 px-1.5 py-0.5 text-[0.6875rem] font-normal text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
             {{ t("messages.checkout.logisticsDelivery") }}
           </span>
           <span class="text-xs font-normal text-neutral-400">{{ box.tenantName }}</span>

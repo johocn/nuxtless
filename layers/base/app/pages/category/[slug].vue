@@ -270,7 +270,7 @@ useSchemaOrg([
         >
           <UIcon name="i-lucide-grid-2x2" class="h-4 w-4" />
         </span>
-        <span class="line-clamp-2 text-center text-[11px] leading-tight">{{ item.name }}</span>
+        <span class="line-clamp-2 text-center text-[0.6875rem] leading-tight">{{ item.name }}</span>
       </NuxtLink>
     </aside>
 

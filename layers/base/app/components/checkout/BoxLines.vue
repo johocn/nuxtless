@@ -108,20 +108,20 @@ const fmt = formatCents;
       <div class="truncate text-neutral-900 dark:text-neutral-100">{{ l.productName }}</div>
       <div
         v-if="l.variantName && l.variantName !== l.productName"
-        class="truncate text-[11px] text-neutral-500 dark:text-neutral-400"
+        class="truncate text-[0.6875rem] text-neutral-500 dark:text-neutral-400"
       >
         {{ l.variantName }}<span v-if="l.sku"> ｜ {{ l.sku }}</span>
       </div>
-      <div v-else-if="l.sku" class="truncate text-[11px] text-neutral-500 dark:text-neutral-400">
+      <div v-else-if="l.sku" class="truncate text-[0.6875rem] text-neutral-500 dark:text-neutral-400">
         {{ l.sku }}
       </div>
 
       <!-- 酒店房型：显示入离日期与晚数，不出单价与步进器 -->
       <template v-if="l.isHotel">
-        <div class="mt-0.5 truncate text-[11px] text-neutral-500 dark:text-neutral-400">
+        <div class="mt-0.5 truncate text-[0.6875rem] text-neutral-500 dark:text-neutral-400">
           {{ t("messages.hotel.dateRange", { in: l.hotelCheckIn, out: l.hotelCheckOut }) }}
         </div>
-        <div class="mt-0.5 flex items-center justify-between gap-2 whitespace-nowrap text-[11px]">
+        <div class="mt-0.5 flex items-center justify-between gap-2 whitespace-nowrap text-[0.6875rem]">
           <span class="text-neutral-500 dark:text-neutral-400">
             {{ t("messages.hotel.nights", { n: l.hotelNights ?? l.quantity }) }}
           </span>
@@ -141,7 +141,7 @@ const fmt = formatCents;
     <template v-if="l.isHotel">
       <div class="shrink-0 text-right">
         <div class="font-semibold text-neutral-900 dark:text-neutral-100">{{ fmt(l.lineTotal) }}</div>
-        <div class="mt-0.5 flex justify-end gap-2 whitespace-nowrap text-[11px]">
+        <div class="mt-0.5 flex justify-end gap-2 whitespace-nowrap text-[0.6875rem]">
           <NuxtLink
             v-if="l.productSlug && l.hotelCheckIn && l.hotelCheckOut"
             :to="`${localePath(`/product/${l.productSlug}`)}?checkIn=${l.hotelCheckIn}&checkOut=${l.hotelCheckOut}`"
@@ -203,7 +203,7 @@ const fmt = formatCents;
       <div
         v-for="n in l.hotelNightly"
         :key="n.date"
-        class="flex justify-between text-[11px] text-neutral-500 dark:text-neutral-400"
+        class="flex justify-between text-[0.6875rem] text-neutral-500 dark:text-neutral-400"
       >
         <span>
           {{ n.date }}
@@ -213,7 +213,7 @@ const fmt = formatCents;
         </span>
         <span>{{ fmt(n.priceCent) }}</span>
       </div>
-      <div class="mt-1 flex justify-between border-t border-neutral-200 pt-1 text-[11px] font-medium text-neutral-700 dark:border-neutral-700 dark:text-neutral-200">
+      <div class="mt-1 flex justify-between border-t border-neutral-200 pt-1 text-[0.6875rem] font-medium text-neutral-700 dark:border-neutral-700 dark:text-neutral-200">
         <span>{{ t("messages.hotel.stayTotal") }}</span>
         <span>{{ fmt(l.lineTotal) }}</span>
       </div>

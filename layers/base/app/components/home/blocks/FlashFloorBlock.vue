@@ -111,8 +111,8 @@ function progressOf(it: FlashItem): number {
           v-if="countdown"
           class="flex items-center gap-1 rounded-full bg-gray-900 px-2 py-0.5"
         >
-          <span class="text-[10px] text-white">{{ t("messages.home.flashEndsIn") }}</span>
-          <span class="text-[11px] font-bold tabular-nums text-white">{{ countdown }}</span>
+          <span class="text-[0.625rem] text-white">{{ t("messages.home.flashEndsIn") }}</span>
+          <span class="text-[0.6875rem] font-bold tabular-nums text-white">{{ countdown }}</span>
         </span>
       </div>
     </div>
@@ -140,13 +140,13 @@ function progressOf(it: FlashItem): number {
         <p class="line-clamp-2 h-10 px-2 pt-1.5 text-xs leading-5 text-gray-800">{{ nameOf(it) }}</p>
         <div class="flex items-baseline gap-1.5 px-2 pt-0.5">
           <span class="text-sm font-bold text-primary">{{ formatCents(it.flashPrice) }}</span>
-          <span v-if="originOf(it)" class="text-[10px] text-gray-400 line-through">{{ originOf(it) }}</span>
+          <span v-if="originOf(it)" class="text-[0.625rem] text-gray-400 line-through">{{ originOf(it) }}</span>
         </div>
         <div class="flex items-center gap-1.5 px-2 pb-2 pt-1">
           <span class="h-1 flex-1 overflow-hidden rounded bg-gray-100">
             <i class="block h-full rounded bg-primary" :style="{ width: `${progressOf(it)}%` }"></i>
           </span>
-          <span class="text-[10px] text-gray-400">{{ t("messages.home.flashSold", { n: progressOf(it) }) }}</span>
+          <span class="text-[0.625rem] text-gray-400">{{ t("messages.home.flashSold", { n: progressOf(it) }) }}</span>
         </div>
       </NuxtLink>
     </div>
@@ -174,13 +174,13 @@ function progressOf(it: FlashItem): number {
         <p class="line-clamp-2 h-10 px-2 pt-1.5 text-xs leading-5 text-gray-800">{{ nameOf(it) }}</p>
         <div class="flex items-baseline gap-1.5 px-2 pt-0.5">
           <span class="text-sm font-bold text-primary">{{ formatCents(it.flashPrice) }}</span>
-          <span v-if="originOf(it)" class="text-[10px] text-gray-400 line-through">{{ originOf(it) }}</span>
+          <span v-if="originOf(it)" class="text-[0.625rem] text-gray-400 line-through">{{ originOf(it) }}</span>
         </div>
         <div class="flex items-center gap-1.5 px-2 pb-2 pt-1">
           <span class="h-1 flex-1 overflow-hidden rounded bg-gray-100">
             <i class="block h-full rounded bg-primary" :style="{ width: `${progressOf(it)}%` }"></i>
           </span>
-          <span class="text-[10px] text-gray-400">{{ t("messages.home.flashSold", { n: progressOf(it) }) }}</span>
+          <span class="text-[0.625rem] text-gray-400">{{ t("messages.home.flashSold", { n: progressOf(it) }) }}</span>
         </div>
       </NuxtLink>
     </div>

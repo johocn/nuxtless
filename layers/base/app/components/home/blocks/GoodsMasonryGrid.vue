@@ -115,7 +115,7 @@ function listText(p?: SearchItem, cur?: string | null) {
             >{{ listText(p, p.currencyCode) }}</span>
           </p>
           <p class="line-clamp-2 mt-1 min-h-8 text-xs leading-4 text-gray-700">{{ p.productName }}</p>
-          <div class="mt-1.5 flex items-center justify-between text-[10px] text-gray-400">
+          <div class="mt-1.5 flex items-center justify-between text-[0.625rem] text-gray-400">
             <span class="rounded bg-primary/10 px-1 py-0.5 text-primary">{{ t("messages.home.selfOperated") }}</span>
             <span>nshop</span>
           </div>

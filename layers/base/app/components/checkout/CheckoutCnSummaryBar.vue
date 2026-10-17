@@ -121,7 +121,7 @@ async function onGoCheckout() {
           <span class="text-xs text-neutral-400">{{ t("messages.shop.total") }}</span>
           <span class="font-bold text-primary-600 dark:text-primary-300">¥{{ orderTotal }}</span>
         </div>
-        <p class="text-[11px] text-neutral-400">
+        <p class="text-[0.6875rem] text-neutral-400">
           {{ t("messages.checkout.selectedCount", { n: selectedQty }) }}
         </p>
       </div>

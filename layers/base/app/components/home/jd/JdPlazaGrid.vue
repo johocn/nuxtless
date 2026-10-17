@@ -49,7 +49,7 @@ const heading = computed(() => props.title?.trim() || t('messages.nav.qualityZon
         </span>
         <span class="min-w-0">
           <span class="block truncate text-sm font-semibold text-gray-800">{{ cat.name }}</span>
-          <span v-if="cat.children?.length" class="block truncate text-[11px] text-gray-400">
+          <span v-if="cat.children?.length" class="block truncate text-[0.6875rem] text-gray-400">
             {{ cat.children.map((c) => c.name).join(" · ") }}
           </span>
         </span>

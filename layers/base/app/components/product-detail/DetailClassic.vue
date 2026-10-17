@@ -34,7 +34,7 @@ const inStock = computed(
         <ProductDetailPriceBlock />
         <div class="flex flex-col items-end gap-1">
           <span class="text-xs font-semibold text-primary">{{ t(`messages.detail.${inStock ? "inStock" : "outOfStock"}`) }}</span>
-          <span v-if="skuLabel" class="text-[11px] text-gray-400">
+          <span v-if="skuLabel" class="text-[0.6875rem] text-gray-400">
             <template v-if="skuLabel.type === 'sku'">
               {{ t('messages.detail.sku', { code: skuLabel.text }) }}
             </template>
