@@ -4,7 +4,7 @@ import type { OrderTabKey } from "../../utils/order-state";
 const { t } = useI18n();
 const activeTab = defineModel<OrderTabKey>("tab", { default: "ALL" });
 
-const { loading, error, rawItems, orders, filtered, total, loadMore, changed } =
+const { loading, error, rawItems, filtered, total, loadMore, changed } =
   useOrderList(activeTab);
 </script>
 
@@ -23,7 +23,7 @@ const { loading, error, rawItems, orders, filtered, total, loadMore, changed } =
       {{ t("messages.order.loadFailed") }}
     </div>
     <div
-      v-else-if="!orders.length"
+      v-else-if="!filtered.length"
       class="py-12 text-center text-neutral-500"
     >
       {{ t("messages.order.empty") }}
