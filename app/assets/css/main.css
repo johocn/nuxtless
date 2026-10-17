@@ -49,3 +49,16 @@
     border-color: var(--color-gray-200, currentColor);
   }
 }
+
+/* ===== 大字版兜底：Nuxt UI v4 组件默认主题中的 px 字号 → rem（2026-10-17 全站字号统一） =====
+   v4 组件主题是工厂硬编码类（app.config 的 ui 覆盖不会并入运行时主题，已实测），
+   故以无层级规则覆盖同名工具类（无层级 > @layer utilities，确定性生效）。
+   影响面：Badge xs/sm（text-[8px]/3、text-[10px]/3）及 Select/Combobox 等同款 px 字号 label，
+   全部转 rem 随根字号弹性缩放；Chip 微型计数泡（text-[4~12px] 无 /3 行高）为整泡 px 锁定，保持不动。 */
+[class*="text-[8px]/3"] {
+  font-size: 0.5rem;
+}
+
+[class*="text-[10px]/3"] {
+  font-size: 0.625rem;
+}
