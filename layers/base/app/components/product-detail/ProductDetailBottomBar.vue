@@ -26,13 +26,13 @@ function goBack() {
     aria-label="商品详情底部操作栏"
   >
     <div class="flex items-center">
-      <div class="flex items-center border-r border-gray-100 text-xs">
+      <div class="flex shrink-0 items-center border-r border-gray-100 text-xs">
         <button
           type="button"
           class="flex flex-col items-center gap-0.5 px-2 py-2.5 text-gray-500"
           @click="goBack"
         >
-          <UIcon name="i-lucide-arrow-left" class="h-6 w-6" />
+          <UIcon name="i-lucide-arrow-left" class="h-5 w-5" />
           <span>{{ t('messages.nav.back') }}</span>
         </button>
         <NuxtLink
@@ -40,26 +40,25 @@ function goBack() {
           class="hidden flex-col items-center gap-0.5 px-2 py-2.5 min-[375px]:flex"
           :class="route.path === '/' ? 'text-primary' : 'text-gray-500'"
         >
-          <UIcon name="i-lucide-home" class="h-6 w-6" />
+          <UIcon name="i-lucide-home" class="h-5 w-5" />
           <span>{{ t('messages.nav.home') }}</span>
         </NuxtLink>
       </div>
 
-      <div class="flex flex-1 items-center gap-2 px-3 py-2.5">
+      <!-- 大字版弹性：min-w-0 允许收缩、文字锁 15px（防 rem 放大后溢出裁切） -->
+      <div class="flex flex-1 items-center gap-2 px-2 py-2.5">
         <UButton
-          class="flex-1 justify-center whitespace-nowrap"
+          class="min-w-0 flex-1 justify-center text-[15px] whitespace-nowrap"
           color="secondary"
           size="lg"
-          icon="i-lucide-shopping-cart"
           :loading="loading"
           :disabled="!productServiceable || !canBuy"
           @click="addToCartHandler"
         >{{ t("messages.detail.addToCart") }}</UButton>
         <UButton
-          class="flex-1 justify-center whitespace-nowrap"
+          class="min-w-0 flex-1 justify-center text-[15px] whitespace-nowrap"
           color="primary"
           size="lg"
-          icon="i-lucide-zap"
           :loading="loading"
           :disabled="!productServiceable || !canBuy"
           @click="buyNowHandler"
