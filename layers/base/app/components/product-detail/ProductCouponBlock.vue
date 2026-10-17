@@ -214,11 +214,11 @@ async function claim(b: ProductCouponBinding) {
       <div
         v-for="b in available"
         :key="b.id"
-        class="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-2.5"
+        class="flex items-center gap-2 rounded-lg border border-gray-100 bg-white p-2.5"
       >
-        <!-- 面额 -->
+        <!-- 面额：宽锁 px（大字版不随 rem 放大挤占中列），数字仍随字号放大 -->
         <div
-          class="flex w-20 shrink-0 flex-col items-center justify-center rounded-md bg-primary/10 py-1.5 text-primary"
+          class="flex w-[72px] shrink-0 flex-col items-center justify-center rounded-md bg-primary/10 py-1.5 text-primary"
         >
           <span class="text-base font-bold leading-tight">{{ formatAmount(b) }}</span>
         </div>
@@ -238,17 +238,19 @@ async function claim(b: ProductCouponBinding) {
               class="rounded bg-primary/10 px-1 py-px text-[10px] font-semibold text-primary"
             >{{ t("messages.coupon.storeUsable") }}</span>
           </div>
-          <p class="mt-0.5 truncate text-xs font-semibold text-gray-800">
+          <!-- 大字版弹性：券名两行内完整展示（正常字号单行不触发），有效期整行不折 -->
+          <p class="mt-0.5 line-clamp-2 text-xs font-semibold text-gray-800">
             {{ b.promoTitle || b.template?.name }}
           </p>
           <p class="mt-0.5 text-[11px] text-gray-500">{{ formatCondition(b) }}</p>
-          <p v-if="formatValidity(b)" class="mt-0.5 text-[11px] text-gray-400">{{ formatValidity(b) }}</p>
+          <p v-if="formatValidity(b)" class="mt-0.5 whitespace-nowrap text-[11px] text-gray-400">{{ formatValidity(b) }}</p>
         </div>
         <!-- 领取 -->
         <UButton
           size="sm"
           color="primary"
           variant="soft"
+          class="shrink-0 px-[10px]"
           :disabled="isClaimed(b.id) || !!claimingId"
           :loading="claimingId === b.id"
           @click="claim(b)"
@@ -267,15 +269,15 @@ async function claim(b: ProductCouponBinding) {
         <div
           v-for="b in saleable"
           :key="'addon-' + b.id"
-          class="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-2.5"
+          class="flex items-center gap-2 rounded-lg border border-gray-100 bg-white p-2.5"
         >
           <div
-            class="flex w-20 shrink-0 flex-col items-center justify-center rounded-md bg-primary/10 py-1.5 text-primary"
+            class="flex w-[72px] shrink-0 flex-col items-center justify-center rounded-md bg-primary/10 py-1.5 text-primary"
           >
             <span class="text-base font-bold leading-tight">{{ formatAmount(b) }}</span>
           </div>
           <div class="flex min-w-0 flex-1 flex-col">
-            <p class="mt-0.5 truncate text-xs font-semibold text-gray-800">
+            <p class="mt-0.5 line-clamp-2 text-xs font-semibold text-gray-800">
               {{ b.promoTitle || b.template?.name }}
             </p>
             <p class="mt-0.5 text-[11px] text-gray-500">
@@ -287,6 +289,7 @@ async function claim(b: ProductCouponBinding) {
             size="sm"
             color="neutral"
             variant="soft"
+            class="shrink-0 px-[10px]"
             @click="detachAddon(b)"
           >
             {{ t("messages.coupon.surchargeRemove") }}
@@ -296,6 +299,7 @@ async function claim(b: ProductCouponBinding) {
             size="sm"
             color="primary"
             variant="soft"
+            class="shrink-0 px-[10px]"
             :disabled="!!attachingTplId"
             :loading="attachingTplId === b.template?.id"
             @click="attachAddon(b)"
