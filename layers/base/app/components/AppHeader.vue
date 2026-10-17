@@ -35,7 +35,11 @@ const items = computed<NavigationMenuItem[]>(
 </script>
 
 <template>
-  <UHeader toggle-side="left" class="sticky top-0">
+  <UHeader
+    toggle-side="left"
+    class="sticky top-0"
+    :ui="{ toggle: 'h-[36px]! w-[36px]! min-w-0! p-0! justify-center [&>span]:size-[20px]!' }"
+  >
     <template #left>
       <ULink
         :to="localePath('/')"
@@ -45,7 +49,7 @@ const items = computed<NavigationMenuItem[]>(
         <LogoElement
           :logo-light="logoTop.light"
           :logo-dark="logoTop.dark"
-          wrapper-class="w-full h-[40px] md:h-[50px]"
+          wrapper-class="w-[96px] shrink-0 h-[40px] md:w-[128px] md:h-[50px]"
         />
       </ULink>
     </template>
