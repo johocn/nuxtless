@@ -80,6 +80,12 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
       class: "items-center",
     },
     {
+      label: t("messages.couponMall.navTitle"),
+      icon: "i-lucide-store",
+      to: localePath("/coupon-mall"),
+      class: "items-center",
+    },
+    {
       label: t("messages.account.messages"),
       icon: "i-lucide-inbox",
       to: localePath("/messages"),

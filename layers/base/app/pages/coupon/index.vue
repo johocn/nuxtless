@@ -413,6 +413,9 @@ onMounted(loadCentre);
 
     <!-- ③ 券商城 -->
     <section v-else-if="tab === 'sale'">
+      <NuxtLink :to="localePath('/coupon-mall')" class="mall-promo">
+        {{ t("messages.couponMall.promoToMall") }}
+      </NuxtLink>
       <CouponLoginPrompt v-if="!isAuthenticated" />
       <CouponSaleList
         v-else
@@ -427,6 +430,9 @@ onMounted(loadCentre);
 
     <!-- ④ 积分商城 -->
     <section v-else-if="tab === 'points'">
+      <NuxtLink :to="localePath('/coupon-mall')" class="mall-promo">
+        {{ t("messages.couponMall.promoToMall") }}
+      </NuxtLink>
       <CouponLoginPrompt v-if="!isAuthenticated" />
       <template v-else>
         <BaseLoader v-if="loadingPoints" width="sm:w-xs md:w-sm" />
@@ -470,4 +476,6 @@ onMounted(loadCentre);
   </main>
 </template>
 
-<style lang="css" scoped></style>
+<style lang="css" scoped>
+.mall-promo { display: flex; align-items: center; justify-content: flex-end; padding: 4px 2px 8px; font-size: 12px; color: var(--ui-primary); }
+</style>
