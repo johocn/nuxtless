@@ -162,6 +162,8 @@ export default defineI18nLocale(() =>
       flashBadge: "특가",
       flashSold: "{n}% 판매",
       flashFallbackName: "상품",
+      limitFloor: "한정 특가",
+      hotPicksFloor: "인기 추천",
       news: [
         "전체 자체브랜드 상품 99,000원 이상 무료 배송",
         "신규 회원 첫 주문 시 20,000원 할인",

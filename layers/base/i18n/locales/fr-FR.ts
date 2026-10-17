@@ -128,6 +128,8 @@ export default defineI18nLocale(() =>
       flashBadge: "Flash",
       flashSold: "{n}% vendu",
       flashFallbackName: "Article",
+      limitFloor: "Sélection limitée",
+      hotPicksFloor: "Les plus populaires",
       news: [
         "Livraison gratuite pour toute commande de 99 ¥ ou plus",
         "Première commande : -20 ¥ pour les nouveaux clients",

@@ -163,6 +163,8 @@ export default defineI18nLocale(() =>
       flashBadge: "セール",
       flashSold: "{n}% 販売済み",
       flashFallbackName: "商品",
+      limitFloor: "限定セレクション",
+      hotPicksFloor: "人気のおすすめ",
       news: [
         "自社運営商品は99元以上で送料無料",
         "新規ユーザー初回注文で20元割引",

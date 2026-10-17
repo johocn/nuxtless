@@ -83,6 +83,26 @@ export interface FlashSection {
   limit?: number;
 }
 
+/** 限量精选楼层（usemall 签名楼层，nshop 以 sliding 大卡横滑渲染）：按集合 slug 取商品，无兜底 */
+export interface LimitGoodsSection {
+  type: 'limitGoods';
+  title?: LocalizedText;
+  /** 集合 slug；缺省退全站自动推荐（与 vshop collectionSlug 语义一致） */
+  collectionSlug?: string;
+  /** 展示条数 1-20，缺省 6 */
+  limit?: number;
+}
+
+/** 热门推荐楼层（usemall 签名楼层，nshop 以 compact 京东网格渲染）：按集合 slug 取商品，无兜底 */
+export interface HotPicksSection {
+  type: 'hotGoods';
+  title?: LocalizedText;
+  /** 集合 slug；缺省退全站自动推荐 */
+  collectionSlug?: string;
+  /** 首屏条数 1-20，缺省 10（vshop 有触底分页，nshop 首屏静态） */
+  pageSize?: number;
+}
+
 export type CuratedGoodsSection = HotGoodsSection | RecommendGoodsSection;
 
 export type ShopSection =
@@ -99,7 +119,9 @@ export type ShopSection =
   | LatestSection
   | VideoSection
   | PointsGoodsSection
-  | FlashSection;
+  | FlashSection
+  | LimitGoodsSection
+  | HotPicksSection;
 
 export interface ShopContent {
   version: 1;
@@ -113,6 +135,15 @@ export const JD_STYLE_DEFAULTS = {
   nav: { shape: 'square' as NavShape, layout: 'grid5x2' as NavLayout },
   goods: 'compact' as GoodsLayout,
 };
+
+/**
+ * 跨端楼层条数兜底（limitGoods.limit / hotGoods.pageSize 等）：
+ * 非正整数 → 缺省值；正整数按 20 截断（与后台校验 1-20 对齐）。
+ */
+export function floorCount(n: number | null | undefined, fallback: number): number {
+  if (typeof n !== 'number' || !Number.isInteger(n) || n <= 0) return fallback;
+  return Math.min(n, 20);
+}
 
 export function parseShopContent(raw: string | null | undefined): ShopContent | null {
   if (!raw) return null;

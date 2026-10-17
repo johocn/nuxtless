@@ -128,6 +128,8 @@ export default defineI18nLocale(() =>
       flashBadge: "حراج",
       flashSold: "{n}% فروخته شده",
       flashFallbackName: "کالا",
+      limitFloor: "انتخاب محدود",
+      hotPicksFloor: "محبوب‌ترین‌ها",
       news: [
         "ارسال رایگان برای تمام کالاهای اختصاصی بالای ۹۹ یوان",
         "۲۰ یوان تخفیف برای اولین سفارش کاربران جدید",

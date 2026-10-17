@@ -79,6 +79,8 @@ export default defineI18nLocale(() =>
       flashBadge: "Flash",
       flashSold: "{n}% sold",
       flashFallbackName: "Item",
+      limitFloor: "Limited Picks",
+      hotPicksFloor: "Hot Picks",
       news: [
         "Free shipping on all self-operated items over ¥99",
         "¥20 off your first order for new customers",

@@ -20,6 +20,8 @@ import LatestGoodsBlock from "./blocks/LatestGoodsBlock.vue";
 import VideoFloorBlock from "./blocks/VideoFloorBlock.vue";
 import PointsGoodsFloorBlock from "./blocks/PointsGoodsFloorBlock.vue";
 import FlashFloorBlock from "./blocks/FlashFloorBlock.vue";
+import LimitGoodsFloorBlock from "./blocks/LimitGoodsFloorBlock.vue";
+import HotPicksFloorBlock from "./blocks/HotPicksFloorBlock.vue";
 import GoodsCardBlock from "./blocks/GoodsCardBlock.vue";
 import type { SearchResult } from "~~/types/product";
 import type { ResolvedSection } from "../../utils/home-skeleton";
@@ -47,6 +49,8 @@ const componentMap: Record<string, any> = {
   video: VideoFloorBlock,
   pointsGoods: PointsGoodsFloorBlock,
   flash: FlashFloorBlock,
+  limitGoods: LimitGoodsFloorBlock,
+  hotGoods: HotPicksFloorBlock,
 };
 
 /** 自动补位的商品槽位：直渲注入数据，不再走 HotGoodsBlock/RecommendGoodsBlock */

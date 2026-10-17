@@ -144,6 +144,20 @@ describe('resolveHomeSections · 跨端新楼层（video/pointsGoods/flash）', 
     expect(extra[0]!.section).toMatchObject({ type: 'flash', layout: 'grid2', limit: 6 });
     expect(out.filter((r) => r.auto).length).toBe(6);
   });
+  it('limitGoods/hotGoods（usemall 签名楼层）→ 末尾追加，配置原样保留', () => {
+    const out = resolveHomeSections({
+      version: 1,
+      sections: [
+        { type: 'limitGoods', collectionSlug: 'limited', limit: 8 },
+        { type: 'hotGoods', collectionSlug: 'hot-list', pageSize: 12 },
+      ],
+    });
+    const extra = out.filter((r) => r.slotKey === null);
+    expect(extra.map((r) => r.section.type)).toEqual(['limitGoods', 'hotGoods']);
+    expect(extra[0]!.section).toMatchObject({ type: 'limitGoods', collectionSlug: 'limited', limit: 8 });
+    expect(extra[1]!.section).toMatchObject({ type: 'hotGoods', collectionSlug: 'hot-list', pageSize: 12 });
+    expect(out.filter((r) => r.auto).length).toBe(6);
+  });
   it('与新楼层混排：既有槽位覆盖与末尾追加互不干扰', () => {
     const out = resolveHomeSections({
       version: 1,
