@@ -136,6 +136,14 @@ onMounted(async () => {
           {{ t("messages.account.coupons") }}
         </UButton>
         <UButton
+          icon="i-lucide-store"
+          :to="localePath('/coupon-mall')"
+          variant="soft"
+          class="px-7"
+        >
+          {{ t("messages.couponMall.navTitle") }}
+        </UButton>
+        <UButton
           :to="localePath('/messages')"
           variant="soft"
           class="relative px-7"
