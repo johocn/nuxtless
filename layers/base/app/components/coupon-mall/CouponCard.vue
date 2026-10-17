@@ -25,7 +25,7 @@ const detailable = computed(() => hasDetail(props.tpl.description, locale.value)
   <div class="mall-card" :class="{ soldout: progress.soldOut }" @click="detailable && emit('detail')">
     <div class="left">
       <span class="amount">{{ couponYuan(tpl.discountValue) }}</span>
-      <span class="cond">{{ tpl.minSpend > 0 ? `满${couponYuan(tpl.minSpend)}可用` : "无门槛" }}</span>
+      <span class="cond">{{ tpl.minSpend > 0 ? t("messages.coupon.minSpend", { n: couponYuan(tpl.minSpend) }) : t("messages.coupon.noThreshold") }}</span>
     </div>
     <div class="right">
       <div class="row1">
