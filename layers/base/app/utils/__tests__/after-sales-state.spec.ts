@@ -89,10 +89,12 @@ describe("after-sales-state", () => {
     expect(afterSalesPrimaryAction("Closed")).toBe("none");
   });
 
-  it("申请入口白名单与类型标签", () => {
-    expect(canApplyAfterSales("Shipped")).toBe(true);
-    expect(canApplyAfterSales("Cancelled")).toBe(true);
-    expect(canApplyAfterSales("PaymentSettled")).toBe(false);
+  it("申请入口白名单与类型标签（对齐后端 allowedOrderStates）", () => {
+    expect(canApplyAfterSales("PaymentSettled")).toBe(true);
+    expect(canApplyAfterSales("Delivered")).toBe(true);
+    expect(canApplyAfterSales("Shipped")).toBe(false);
+    expect(canApplyAfterSales("Cancelled")).toBe(false);
+    expect(canApplyAfterSales("ArrangingPayment")).toBe(false);
     expect(afterSalesTypeLabelKey("exchange")).toBe("messages.afterSales.typeExchange");
     expect(afterSalesTypeLabelKey("nope")).toBe("messages.afterSales.typeUnknown");
   });

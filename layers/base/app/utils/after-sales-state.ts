@@ -238,12 +238,13 @@ export function canConfirmExchange(state: string): boolean {
   return state === "ExchangeShipped";
 }
 
-export const AFTER_SALES_ELIGIBLE_ORDER_STATES = new Set([
-  "Shipped",
-  "Delivered",
-  "PartiallyDelivered",
-  "Cancelled",
-]);
+/**
+ * 可申请售后的订单状态白名单——与后端 AfterSalesPlugin.init({ allowedOrderStates }) 对齐
+ * （vendure dev-config.ts：['PaymentSettled', 'Delivered']，外卖单全程 PaymentSettled、确认收货后 Delivered）。
+ * 注意后端另有 requireOrderCustomField（deliveryStatus='delivered'，骑手送达）与金额/时间窗校验，
+ * 白名单仅为前端展示门槛，最终以后端校验为准。
+ */
+export const AFTER_SALES_ELIGIBLE_ORDER_STATES = new Set(["PaymentSettled", "Delivered"]);
 
 export function canApplyAfterSales(orderState: string): boolean {
   return AFTER_SALES_ELIGIBLE_ORDER_STATES.has(orderState);
