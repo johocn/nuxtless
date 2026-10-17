@@ -396,7 +396,7 @@ onMounted(loadCentre);
     <!-- ② 到店券：IN_STORE 场景，领后到店出示券码核销 -->
     <section v-else-if="tab === 'store'">
       <p class="mb-4 flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2 text-sm text-primary">
-        <span class="inline-flex size-5 shrink-0 items-center justify-center rounded bg-primary text-[10px] font-bold text-inverted">{{ t("messages.coupon.storeBadge") }}</span>
+        <span class="inline-flex size-5 shrink-0 items-center justify-center rounded bg-primary text-[0.625rem] font-bold text-inverted">{{ t("messages.coupon.storeBadge") }}</span>
         {{ t("messages.coupon.storeHint") }}
       </p>
       <BaseLoader v-if="loadingStore" width="sm:w-xs md:w-sm" />

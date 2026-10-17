@@ -34,7 +34,7 @@ watchEffect(() => {
       <div class="px-4 pb-4 pt-3">
         <div v-if="visible('price')" class="flex items-end justify-between gap-3">
           <ProductDetailPriceBlock />
-          <span v-if="skuLabel" class="text-[11px] text-gray-400">
+          <span v-if="skuLabel" class="text-[0.6875rem] text-gray-400">
             <template v-if="skuLabel.type === 'sku'">
               {{ t('messages.detail.sku', { code: skuLabel.text }) }}
             </template>

@@ -117,7 +117,7 @@ const remove = async () => {
           class="flex h-7 w-7 items-center justify-center rounded border border-neutral-200 text-neutral-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700"
           @click="onAdjust(line.quantity - 1)"
         >−</button>
-        <b class="min-w-8 px-1 shrink-0 text-center text-[15px] font-bold tabular-nums text-neutral-900 dark:text-neutral-100">{{ line.quantity }}</b>
+        <b class="min-w-8 px-1 shrink-0 text-center text-[0.9375rem] font-bold tabular-nums text-neutral-900 dark:text-neutral-100">{{ line.quantity }}</b>
         <button
           type="button"
           aria-label="增加数量"

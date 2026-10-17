@@ -50,17 +50,17 @@ function guide() {
       <button
         v-for="g in items"
         :key="g.id"
-        class="w-[120px] shrink-0 overflow-hidden rounded-lg border border-gray-100 text-left"
+        class="w-[7.5rem] shrink-0 overflow-hidden rounded-lg border border-gray-100 text-left"
         @click="guide"
       >
         <img
           v-if="g.image"
           :src="g.image"
           :alt="g.name"
-          class="h-[110px] w-full bg-gray-50 object-cover"
+          class="h-[6.875rem] w-full bg-gray-50 object-cover"
           loading="lazy"
         />
-        <div v-else class="h-[110px] w-full bg-gray-50"></div>
+        <div v-else class="h-[6.875rem] w-full bg-gray-50"></div>
         <p class="line-clamp-2 h-10 px-2 pt-1.5 text-xs leading-5 text-gray-800">{{ g.name }}</p>
         <p class="px-2 pb-2 pt-0.5 text-sm font-bold text-primary">{{ pointsText(g) }}</p>
       </button>

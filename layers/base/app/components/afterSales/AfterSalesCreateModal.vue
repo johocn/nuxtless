@@ -230,7 +230,7 @@ async function onSubmit() {
             @click="selectedType = opt.value"
           >
             <span class="block text-sm font-medium">{{ t(opt.labelKey) }}</span>
-            <span class="mt-0.5 block text-[11px] text-neutral-500">{{ t(opt.descKey) }}</span>
+            <span class="mt-0.5 block text-[0.6875rem] text-neutral-500">{{ t(opt.descKey) }}</span>
           </button>
         </div>
         <p class="mb-4 text-xs text-neutral-500">

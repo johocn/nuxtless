@@ -33,7 +33,7 @@ function linkFor(slug: string) {
         v-for="cat in cats"
         :key="cat.slug + cat.name"
         :to="linkFor(cat.slug)"
-        class="flex w-[76px] shrink-0 flex-col items-center gap-1.5"
+        class="flex w-[4.75rem] shrink-0 flex-col items-center gap-1.5"
       >
         <span class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-gray-50">
           <NuxtImg

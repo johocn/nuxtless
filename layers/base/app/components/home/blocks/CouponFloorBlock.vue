@@ -103,7 +103,7 @@ await load();
       <div
         v-for="c in visible"
         :key="c.id"
-        class="flex w-[220px] shrink-0 items-stretch gap-2 rounded-lg border border-gray-100 p-2"
+        class="flex w-[13.75rem] shrink-0 items-stretch gap-2 rounded-lg border border-gray-100 p-2"
       >
         <div class="flex w-16 shrink-0 flex-col items-center justify-center rounded bg-primary text-white">
           <span class="text-lg font-bold">
@@ -114,9 +114,9 @@ await load();
         </div>
         <div class="flex min-w-0 flex-1 flex-col">
           <p class="truncate text-xs font-semibold text-gray-800">{{ c.name }}</p>
-          <p class="mt-0.5 truncate text-[11px] text-gray-400">{{ condition(c) }}</p>
+          <p class="mt-0.5 truncate text-[0.6875rem] text-gray-400">{{ condition(c) }}</p>
           <button
-            class="mt-auto rounded bg-primary py-1 text-[11px] text-white disabled:opacity-60"
+            class="mt-auto rounded bg-primary py-1 text-[0.6875rem] text-white disabled:opacity-60"
             :disabled="claimingId === c.id"
             @click="claim(c)"
           >

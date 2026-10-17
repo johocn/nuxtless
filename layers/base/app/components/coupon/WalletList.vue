@@ -90,7 +90,7 @@ function sceneLabel(s: CouponSceneKey): string {
             <p class="font-semibold">{{ mc.template?.name || t("messages.coupon.voucher") }}</p>
             <span
               v-if="couponIsStoreScene(mc.template?.usageScene)"
-              class="rounded bg-primary/10 px-1 py-px text-[10px] font-semibold text-primary"
+              class="rounded bg-primary/10 px-1 py-px text-[0.625rem] font-semibold text-primary"
             >{{ t("messages.coupon.storeUsable") }}</span>
           </div>
           <p class="mt-1 text-sm text-(--ui-text-muted)">

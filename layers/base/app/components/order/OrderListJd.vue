@@ -117,7 +117,7 @@ const groups = computed(() => {
                 <span class="font-mono text-[#6b7280]">#{{ o.code }}</span>
               </span>
               <span
-                class="text-[12px] font-semibold"
+                class="text-[0.75rem] font-semibold"
                 :class="stateTextOf(o)"
               >
                 {{ t(stateBadge(o.state, o).labelKey) }}
@@ -136,7 +136,7 @@ const groups = computed(() => {
                   loading="lazy"
                 />
                 <div class="min-w-0 flex-1">
-                  <p class="truncate text-[13px]">
+                  <p class="truncate text-[0.8125rem]">
                     {{ line.productVariant?.name }}
                   </p>
                 </div>
@@ -146,11 +146,11 @@ const groups = computed(() => {
                 </p>
               </li>
             </ul>
-            <div class="flex items-center justify-between px-3 py-2 text-[12px] text-[#6b7280]">
+            <div class="flex items-center justify-between px-3 py-2 text-[0.75rem] text-[#6b7280]">
               <span>{{ t("messages.order.totalItems", { n: o.totalQuantity }) }}</span>
               <span>
                 {{ t("messages.order.actualPaid") }}
-                <b class="text-[14px] text-[#e1251b]">{{ fmt(o.totalWithTax, o.currencyCode) }}</b>
+                <b class="text-[0.875rem] text-[#e1251b]">{{ fmt(o.totalWithTax, o.currencyCode) }}</b>
               </span>
             </div>
           </NuxtLink>
@@ -169,7 +169,7 @@ const groups = computed(() => {
         class="mx-3 mb-[30px] mt-3.5 text-center"
       >
         <button
-          class="rounded border border-[#ddd] bg-white px-[26px] py-2 text-[13px] text-[#666]"
+          class="rounded border border-[#ddd] bg-white px-[26px] py-2 text-[0.8125rem] text-[#666]"
           @click="loadMore"
         >
           {{ t("messages.order.loadMore") }}

@@ -28,7 +28,7 @@ const fmt = (amount: number, currency?: string | null) =>
       <button
         v-for="it in tabs"
         :key="it.key"
-        class="shrink-0 whitespace-nowrap rounded-full px-[13px] py-[5px] text-[13px]"
+        class="shrink-0 whitespace-nowrap rounded-full px-[13px] py-[5px] text-[0.8125rem]"
         :class="
           activeTab === it.key
             ? 'bg-[#e1251b] font-semibold text-white'
@@ -73,7 +73,7 @@ const fmt = (amount: number, currency?: string | null) =>
           class="block"
         >
           <div class="flex items-center justify-between px-[13px] pb-2 pt-[11px]">
-            <div class="flex items-center gap-1.5 text-[13px] font-semibold">
+            <div class="flex items-center gap-1.5 text-[0.8125rem] font-semibold">
               <span class="i-lucide-store text-[#e1251b]" />
               {{
                 o.customFields?.deliveryType === "pickup"
@@ -100,9 +100,9 @@ const fmt = (amount: number, currency?: string | null) =>
                   {{ line.productVariant?.name }}
                 </p>
               </div>
-              <p class="whitespace-nowrap text-[13px] font-semibold">
+              <p class="whitespace-nowrap text-[0.8125rem] font-semibold">
                 {{ fmt(line.linePriceWithTax, o.currencyCode) }}
-                <span class="ml-1 text-[12px] font-normal text-[#9ca3af]">×{{ line.quantity }}</span>
+                <span class="ml-1 text-[0.75rem] font-normal text-[#9ca3af]">×{{ line.quantity }}</span>
               </p>
             </li>
           </ul>
@@ -112,7 +112,7 @@ const fmt = (amount: number, currency?: string | null) =>
             <span>{{ t("messages.order.totalItems", { n: o.totalQuantity }) }}</span>
             <span>
               {{ t("messages.order.actualPaid") }}
-              <b class="text-[14px] text-[#111827]">{{ fmt(o.totalWithTax, o.currencyCode) }}</b>
+              <b class="text-[0.875rem] text-[#111827]">{{ fmt(o.totalWithTax, o.currencyCode) }}</b>
             </span>
           </div>
         </NuxtLink>
@@ -131,7 +131,7 @@ const fmt = (amount: number, currency?: string | null) =>
       class="mx-3 mb-[30px] mt-1.5 text-center"
     >
       <button
-        class="rounded-full bg-white px-[26px] py-2 text-[13px] text-[#6b7280] shadow-[0_1px_3px_#0000000f]"
+        class="rounded-full bg-white px-[26px] py-2 text-[0.8125rem] text-[#6b7280] shadow-[0_1px_3px_#0000000f]"
         @click="loadMore"
       >
         {{ t("messages.order.loadMore") }}

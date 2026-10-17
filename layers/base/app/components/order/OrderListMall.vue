@@ -35,7 +35,7 @@ const pillOf = (o: any) =>
       <button
         v-for="it in tabs"
         :key="it.key"
-        class="shrink-0 whitespace-nowrap rounded-full px-[15px] py-1.5 text-[13px]"
+        class="shrink-0 whitespace-nowrap rounded-full px-[15px] py-1.5 text-[0.8125rem]"
         :class="
           activeTab === it.key
             ? 'bg-gradient-to-r from-[#e0433f] to-[#ff6a6c] font-bold text-white'
@@ -89,7 +89,7 @@ const pillOf = (o: any) =>
               }}
             </div>
             <span
-              class="rounded-full px-2.5 py-[3px] text-[11px] font-semibold"
+              class="rounded-full px-2.5 py-[3px] text-[0.6875rem] font-semibold"
               :class="pillOf(o)"
             >
               {{ t(stateBadge(o.state, o).labelKey) }}
@@ -112,7 +112,7 @@ const pillOf = (o: any) =>
                   {{ line.productVariant?.name }}
                 </p>
               </div>
-              <p class="whitespace-nowrap text-[13px] font-bold">
+              <p class="whitespace-nowrap text-[0.8125rem] font-bold">
                 {{ fmt(line.linePriceWithTax, o.currencyCode) }}
                 <span class="ml-[3px] text-[11.5px] font-normal text-[#9ca3af]">×{{ line.quantity }}</span>
               </p>
@@ -124,7 +124,7 @@ const pillOf = (o: any) =>
             <span>{{ t("messages.order.totalItems", { n: o.totalQuantity }) }}</span>
             <span>
               {{ t("messages.order.actualPaid") }}
-              <b class="text-[15px] text-[#e0433f]">{{ fmt(o.totalWithTax, o.currencyCode) }}</b>
+              <b class="text-[0.9375rem] text-[#e0433f]">{{ fmt(o.totalWithTax, o.currencyCode) }}</b>
             </span>
           </div>
         </NuxtLink>
@@ -143,7 +143,7 @@ const pillOf = (o: any) =>
       class="mx-3.5 mt-4 text-center"
     >
       <button
-        class="rounded-full bg-white px-[30px] py-[9px] text-[13px] text-[#6b7280] shadow-[0_2px_8px_#0000000d]"
+        class="rounded-full bg-white px-[30px] py-[9px] text-[0.8125rem] text-[#6b7280] shadow-[0_2px_8px_#0000000d]"
         @click="loadMore"
       >
         {{ t("messages.order.loadMore") }}

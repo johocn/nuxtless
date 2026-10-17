@@ -13,14 +13,15 @@ const { t } = useI18n();
 </template>
 
 <style scoped>
+/* 大字版（R1）：内容文字/间距一律 rem（100% 档与原 px 等价，125%+ 随根字号放大） */
 .jdB {
-  display: inline-flex; align-items: center; gap: 12px;
-  background: var(--color-price, #E1251B); color: #fff; border-radius: 6px; padding: 8px 14px;
+  display: inline-flex; align-items: center; gap: 0.75rem;
+  background: var(--color-price, #E1251B); color: #fff; border-radius: 0.375rem; padding: 0.5rem 0.875rem;
 }
 .jdB-mark {
-  font-size: 12px; color: #fff; background: rgba(255, 255, 255, 0.24);
-  border-radius: 3px; padding: 1px 7px; line-height: 1.6; white-space: nowrap;
+  font-size: 0.75rem; color: #fff; background: rgba(255, 255, 255, 0.24);
+  border-radius: 0.1875rem; padding: 0.0625rem 0.4375rem; line-height: 1.6; white-space: nowrap;
 }
-.jdB-now { font-weight: 800; font-size: 24px; line-height: 1.1; color: #fff; }
-.jdB-orig { color: rgba(255, 255, 255, 0.78); font-size: 14px; text-decoration: line-through; }
+.jdB-now { font-weight: 800; font-size: 1.5rem; line-height: 1.1; color: #fff; }
+.jdB-orig { color: rgba(255, 255, 255, 0.78); font-size: 0.875rem; text-decoration: line-through; }
 </style>

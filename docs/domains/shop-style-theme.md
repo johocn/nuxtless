@@ -173,3 +173,32 @@ vshop 五级积木体系重写（版式注册表 + sections 优先仲裁 + `page
 2. **psql `-c` 多语句是单事务**：一条失败整段回滚（含前面已打 UPDATE 1 的语句），分步验证时每条单独跑。
 3. **Playwright `route.continue({url})` 不允许跨协议改写**（http→https 报 "New URL must have same protocol"）；dev 下商品图动态 origin 指向 localhost、静态资源只有线上有 → 截图脚本内用 `fetch(生产URL)` + `route.fulfill({body})` 代理（仅脚本内，业务代码零改动）。
 4. **首页 sticky 遮挡楼层标题**：AppHeader（`sticky top-0`）+ 红色分类栏 JdCategoryNav（`sticky top-[52px]`）会盖住楼层截图顶部；截图脚本 addStyleTag 将二者 `position:static`（保留文档流，不破坏页面高度）。
+
+## 10. 大字版适配规范（2026-10-17 全站收口）
+
+**机制**：全站 Tailwind 类为 rem 单位，项目不设 html/root font-size（nuxt.config/main.css/theme.css 均无覆盖）→ 浏览器/系统根字号直接生效。大字版（用户调大系统字体，根字号 16px→20px+）下 rem 尺寸全放大而视口宽度固定，**混用 px 的地方产生失配**：内容 px 字号相对变小（价格块比例失调）、px 容器装 rem 文字（溢出/截断加剧）、rem 图标按钮放大挤压 logo。已有先例：6c33eeb 详情页券楼层+底栏「方案 A」。
+
+**适配规范（R1-R6，新组件必须遵守）**：
+- **R1 内容文字一律 rem**：禁止内容性 px 字号；Tailwind `text-[Npx]` 写法换算 `N/16 rem`（如 `text-[13px]`→`text-[0.8125rem]`），**100% 档字节级等价、仅 125%+ 放大，零回归风险**。内联 style 同理。
+- **R2 结构元素锁 px**：图标按钮（`h-[36px]! w-[36px]! min-w-0!`）、券面额块（`w-[72px]`）等锁 px 防吃横向空间，flex 子项配 `min-w-0`。
+- **R3 px 容器装 rem 内容 → 容器转 rem**：如积分卡 `w-[120px]`→`w-[7.5rem]`（整卡随档位放大，与秒杀楼 `w-28` 同体系）。
+- **R4 flex 多元素行**：文本子项 `min-w-0` + `truncate`/`line-clamp-2`；短标签（价格/有效期）`whitespace-nowrap`。
+- **R5 固定列 grid**：单元格文字 clamp、图标锁 px。
+- **R6 底部固定条**：延续 ProductDetailBottomBar 先例（min-w-0 + 文字锁 px + 高度随内容自适应）；DetailFloor/DetailMall 内联底栏仅 `lg:flex` PC 显示，移动端一律由统一吸底栏接管。
+
+**px 白名单（装饰/叠图/SSR 图，保持 px 合理）**：① satori OG 图组件（非浏览器渲染）；② 绝对定位叠图角标 badge（flashBadge/NEW/购物车角标等，不参与排版挤压）；③ 面额块内部小字（锁块锁字）；④ ProductDetailBottomBar 按钮文字 `text-[15px]`（6c33eeb 定稿）；⑤ 图片高度（无文字溢出问题）；⑥ JdPcHeader（PC 端）。
+
+**本次修复清单（2026-10-17，27 组件文件）**：PriceBlockJdA/JdB 全量 px→rem（mockup 定稿方案 A）；PointsGoodsFloorBlock 卡 120/110px→rem（方案 A）；CouponFloorBlock 券卡 `w-[220px]`→`w-[13.75rem]`；JdBrandFloor `w-[76px]`→`w-[4.75rem]`；流内内容小字 px→rem：BoxLines/BoxDeliveryBlock/BoxPickupBlock/CheckoutCnSummaryBar/CartItem/AfterSalesCreateModal/category 页/JdPlazaGrid/DetailFloor/DetailClassic/DetailMall（skuLabel）/GoodsMasonryGrid/GoodsSingleList/ProductCouponBlock/CouponFloorBlock（条件+按钮）/OrderListCn/OrderListMall/OrderListJd/FlashFloorBlock（倒计时/划线价/已售，badge 保持 px）/coupon 页与 CentreList/WalletList/SsoAwaitOverlay。header 5 组件（AppHeader/SearchModal/AccountMenu/CartTrigger/CitySelector）锁 36px 收口同批提交。
+
+**验证矩阵与验收标准**：
+- 档位：100%（回归基线）/125%（html 20px）/150%（html 24px）；模拟口径 = Playwright `addStyleTag html{font-size:Npx!important}`（等价系统大字号对根字号的作用）。
+- 视口 390×844 dpr=2 iPhone UA；引擎 Chromium + WebKit；页面矩阵 P0 = 首页/详情×2/分类/搜索/券中心/结算/登录 + P1 抽查 faq（账户/订单/售后匿名落登录墙，登录态页面靠静态审计兜底）。
+- 验收：125%/150% 无文字溢出丢字（line-clamp 省略号可接受）、无重叠、无布局错乱、交互区可点；100% 与基线对照无劣化；vitest 全过；内容性 px 字号 grep 清零或命中白名单。
+- 截图归档：`docs/manual/shots/2026-10-17-bigfont-audit/`（修复前后全矩阵 ×2 引擎）。
+
+**真机抽查清单（手册兜底，模拟口径之外）**：微信 webview（Android 系统字体最大档）、iOS Safari（设置→辅助功能→更大字体）、Chrome Android（无障碍→文字大小）；重点看首页楼层卡、详情价格块与底栏、结算底栏。
+
+**坑（跨项目可复用）**：
+1. **Playwright ESM 不认 NODE_PATH**：`.mjs` 里直接 `import ... from 'file:///C:/nvm4w/nodejs/node_modules/playwright/index.mjs'`。
+2. **addStyleTag 与客户端导航竞态**（"Execution context was destroyed"）：goto 后先 waitForTimeout 再注入，try/catch 重试 3 次。
+3. **dev server 端口看启动日志**（本项目 8080 非 3000）；`pageerror` 收集进 audit-log JSON 便于回溯。

@@ -1,0 +1,218 @@
+[
+  {
+    "name": "home",
+    "scale": "100",
+    "finalUrl": "http://localhost:8080/",
+    "errors": []
+  },
+  {
+    "name": "search",
+    "scale": "100",
+    "finalUrl": "http://localhost:8080/search",
+    "errors": []
+  },
+  {
+    "name": "coupon",
+    "scale": "100",
+    "finalUrl": "http://localhost:8080/coupon",
+    "errors": []
+  },
+  {
+    "name": "faq",
+    "scale": "100",
+    "finalUrl": "http://localhost:8080/faq",
+    "errors": []
+  },
+  {
+    "name": "login",
+    "scale": "100",
+    "finalUrl": "http://localhost:8080/account/login",
+    "errors": []
+  },
+  {
+    "name": "account",
+    "scale": "100",
+    "finalUrl": "http://localhost:8080/account/login",
+    "errors": []
+  },
+  {
+    "name": "orders",
+    "scale": "100",
+    "finalUrl": "http://localhost:8080/account/login",
+    "errors": []
+  },
+  {
+    "name": "aftersales",
+    "scale": "100",
+    "finalUrl": "http://localhost:8080/account/login",
+    "errors": []
+  },
+  {
+    "name": "checkout",
+    "scale": "100",
+    "finalUrl": "http://localhost:8080/checkout",
+    "errors": []
+  },
+  {
+    "name": "category",
+    "scale": "100",
+    "finalUrl": "http://localhost:8080/category/hot-spring",
+    "errors": []
+  },
+  {
+    "name": "product-1",
+    "scale": "100",
+    "finalUrl": "http://localhost:8080/product/guoxin-nanshan-ticket",
+    "errors": []
+  },
+  {
+    "name": "product-2",
+    "scale": "100",
+    "finalUrl": "http://localhost:8080/product/hotel-suite-test",
+    "errors": []
+  },
+  {
+    "name": "home",
+    "scale": "125",
+    "finalUrl": "http://localhost:8080/",
+    "errors": []
+  },
+  {
+    "name": "search",
+    "scale": "125",
+    "finalUrl": "http://localhost:8080/search",
+    "errors": []
+  },
+  {
+    "name": "coupon",
+    "scale": "125",
+    "finalUrl": "http://localhost:8080/coupon",
+    "errors": []
+  },
+  {
+    "name": "faq",
+    "scale": "125",
+    "finalUrl": "http://localhost:8080/faq",
+    "errors": []
+  },
+  {
+    "name": "login",
+    "scale": "125",
+    "finalUrl": "http://localhost:8080/account/login",
+    "errors": []
+  },
+  {
+    "name": "account",
+    "scale": "125",
+    "finalUrl": "http://localhost:8080/account/login",
+    "errors": []
+  },
+  {
+    "name": "orders",
+    "scale": "125",
+    "finalUrl": "http://localhost:8080/account/login",
+    "errors": []
+  },
+  {
+    "name": "aftersales",
+    "scale": "125",
+    "finalUrl": "http://localhost:8080/account/login",
+    "errors": []
+  },
+  {
+    "name": "checkout",
+    "scale": "125",
+    "finalUrl": "http://localhost:8080/checkout",
+    "errors": []
+  },
+  {
+    "name": "category",
+    "scale": "125",
+    "finalUrl": "http://localhost:8080/category/hot-spring",
+    "errors": []
+  },
+  {
+    "name": "product-1",
+    "scale": "125",
+    "finalUrl": "http://localhost:8080/product/guoxin-nanshan-ticket",
+    "errors": []
+  },
+  {
+    "name": "product-2",
+    "scale": "125",
+    "finalUrl": "http://localhost:8080/product/hotel-suite-test",
+    "errors": []
+  },
+  {
+    "name": "home",
+    "scale": "150",
+    "finalUrl": "http://localhost:8080/",
+    "errors": []
+  },
+  {
+    "name": "search",
+    "scale": "150",
+    "finalUrl": "http://localhost:8080/search",
+    "errors": []
+  },
+  {
+    "name": "coupon",
+    "scale": "150",
+    "finalUrl": "http://localhost:8080/coupon",
+    "errors": []
+  },
+  {
+    "name": "faq",
+    "scale": "150",
+    "finalUrl": "http://localhost:8080/faq",
+    "errors": []
+  },
+  {
+    "name": "login",
+    "scale": "150",
+    "finalUrl": "http://localhost:8080/account/login",
+    "errors": []
+  },
+  {
+    "name": "account",
+    "scale": "150",
+    "finalUrl": "http://localhost:8080/account/login",
+    "errors": []
+  },
+  {
+    "name": "orders",
+    "scale": "150",
+    "finalUrl": "http://localhost:8080/account/login",
+    "errors": []
+  },
+  {
+    "name": "aftersales",
+    "scale": "150",
+    "finalUrl": "http://localhost:8080/account/login",
+    "errors": []
+  },
+  {
+    "name": "checkout",
+    "scale": "150",
+    "finalUrl": "http://localhost:8080/checkout",
+    "errors": []
+  },
+  {
+    "name": "category",
+    "scale": "150",
+    "finalUrl": "http://localhost:8080/category/hot-spring",
+    "errors": []
+  },
+  {
+    "name": "product-1",
+    "scale": "150",
+    "finalUrl": "http://localhost:8080/product/guoxin-nanshan-ticket",
+    "errors": []
+  },
+  {
+    "name": "product-2",
+    "scale": "150",
+    "finalUrl": "http://localhost:8080/product/hotel-suite-test",
+    "errors": []
+  }
+]
