@@ -23,7 +23,7 @@ const pickupName = computed(() => {
 
 // jd：小圆角白卡（无描边）+ 轻投影；标题带 3px 红竖条
 const box = "rounded-md bg-white p-3 shadow-[0_1px_2px_#0000000d]";
-const titleCls = "mb-2.5 flex items-center text-[13.5px] font-bold";
+const titleCls = "mb-2.5 flex items-center text-[0.84375rem] font-bold";
 const bar = "mr-1.5 h-[13px] w-[3px] rounded-sm bg-[#e1251b]";
 </script>
 

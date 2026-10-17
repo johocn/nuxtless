@@ -80,7 +80,7 @@ const pillOf = (o: any) =>
           class="block"
         >
           <div class="mb-1 flex items-center justify-between">
-            <div class="flex items-center gap-[7px] text-[13.5px] font-bold">
+            <div class="flex items-center gap-[7px] text-[0.84375rem] font-bold">
               <span class="i-lucide-store text-[#e0433f]" />
               {{
                 o.customFields?.deliveryType === "pickup"
@@ -108,18 +108,18 @@ const pillOf = (o: any) =>
                 loading="lazy"
               />
               <div class="min-w-0 flex-1">
-                <p class="truncate text-[13.5px] font-semibold">
+                <p class="truncate text-[0.84375rem] font-semibold">
                   {{ line.productVariant?.name }}
                 </p>
               </div>
               <p class="whitespace-nowrap text-[0.8125rem] font-bold">
                 {{ fmt(line.linePriceWithTax, o.currencyCode) }}
-                <span class="ml-[3px] text-[11.5px] font-normal text-[#9ca3af]">×{{ line.quantity }}</span>
+                <span class="ml-[3px] text-[0.71875rem] font-normal text-[#9ca3af]">×{{ line.quantity }}</span>
               </p>
             </li>
           </ul>
           <div
-            class="mt-2 flex items-center justify-between border-t border-dashed border-[#eef0f2] pt-2.5 text-[12.5px] text-[#6b7280]"
+            class="mt-2 flex items-center justify-between border-t border-dashed border-[#eef0f2] pt-2.5 text-[0.78125rem] text-[#6b7280]"
           >
             <span>{{ t("messages.order.totalItems", { n: o.totalQuantity }) }}</span>
             <span>
