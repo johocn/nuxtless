@@ -123,6 +123,11 @@ export default defineI18nLocale(() =>
       pointsGoodsFloor: "منتخب امتیازها",
       pointsGuide: "لطفاً این کالا را در مرکز امتیاز دریافت کنید",
       videoLoadFail: "بارگذاری ویدیو ناموفق بود",
+      flashFloor: "حراج لحظه‌ای",
+      flashEndsIn: "پایان تا",
+      flashBadge: "حراج",
+      flashSold: "{n}% فروخته شده",
+      flashFallbackName: "کالا",
       news: [
         "ارسال رایگان برای تمام کالاهای اختصاصی بالای ۹۹ یوان",
         "۲۰ یوان تخفیف برای اولین سفارش کاربران جدید",

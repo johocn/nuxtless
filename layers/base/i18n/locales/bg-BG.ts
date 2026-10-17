@@ -123,6 +123,11 @@ export default defineI18nLocale(() =>
       pointsGoodsFloor: "Стоки за точки",
       pointsGuide: "Обменете този продукт в секцията за точки",
       videoLoadFail: "Видеото не зареди",
+      flashFloor: "Промоция на часа",
+      flashEndsIn: "Край след",
+      flashBadge: "Промо",
+      flashSold: "Продадено {n}%",
+      flashFallbackName: "Артикул",
       news: [
         "Безплатна доставка за всички собствени продукти над 99 ¥",
         "20 ¥ отстъпка за първата поръчка на нови клиенти",

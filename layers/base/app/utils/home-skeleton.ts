@@ -67,7 +67,7 @@ export interface ResolvedSection {
 const KNOWN_TYPES = new Set<string>([
   'banner', 'notice', 'nav', 'goods', 'richText',
   'hot', 'recommend', 'brandFloor', 'plaza', 'coupon', 'latest',
-  'video', 'pointsGoods',
+  'video', 'pointsGoods', 'flash',
 ]);
 
 /**

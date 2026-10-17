@@ -71,6 +71,17 @@ export interface LatestSection {
 export interface VideoSection { type: 'video'; title?: LocalizedText; poster?: string; videoUrl: string; }
 /** 积分商品楼层：数据自共享 shop-api 的 pointsProducts 查询（points-mall-plugin），无兜底 */
 export interface PointsGoodsSection { type: 'pointsGoods'; title?: LocalizedText; limit?: number; }
+/** 限时秒杀楼层：数据自共享 shop-api 的 activeFlashSaleActivities 查询（flash-sale plugin），无兜底 */
+export interface FlashSection {
+  type: 'flash';
+  title?: LocalizedText;
+  /** 预留来源扩展（当前仅 flashSale） */
+  source?: 'flashSale';
+  /** row 横滑 | grid2 双列（与 vshop/后台 schema 对齐） */
+  layout?: 'row' | 'grid2';
+  /** 展示条数 1-20，缺省 4 */
+  limit?: number;
+}
 
 export type CuratedGoodsSection = HotGoodsSection | RecommendGoodsSection;
 
@@ -87,7 +98,8 @@ export type ShopSection =
   | CouponSection
   | LatestSection
   | VideoSection
-  | PointsGoodsSection;
+  | PointsGoodsSection
+  | FlashSection;
 
 export interface ShopContent {
   version: 1;

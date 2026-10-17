@@ -123,6 +123,11 @@ export default defineI18nLocale(() =>
       pointsGoodsFloor: "Selección de puntos",
       pointsGuide: "Canjea este artículo en el Centro de Puntos",
       videoLoadFail: "Error al cargar el vídeo",
+      flashFloor: "Ofertas flash",
+      flashEndsIn: "Termina en",
+      flashBadge: "Flash",
+      flashSold: "{n}% vendido",
+      flashFallbackName: "Artículo",
       news: [
         "Envío gratuito en todos los artículos propios a partir de 99 ¥",
         "20 ¥ de descuento en su primer pedido para nuevos clientes",

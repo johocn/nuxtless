@@ -126,7 +126,7 @@ L0 代码内建默认 → L1 全局配置(shop_global_config) → L2 风格模�
 
 ---
 
-## 9. 跨端积木新楼层 video/pointsGoods（2026-10-17）
+## 9. 跨端积木新楼层 video/pointsGoods/flash（2026-10-17）
 
 vshop 五级积木体系重写（版式注册表 + sections 优先仲裁 + `pages.home.layout`）后，后台装修编辑器成为**跨端类型超集**（16 种楼层），`channel.customFields.shopContent` 为 nshop/vshop **共用**。nshop 按白名单静默丢弃不认识的类型 → 后台新增的 `video`/`pointsGoods` 楼层在 nshop 首页消失。本次优化（方案 A）：
 
@@ -140,3 +140,19 @@ vshop 五级积木体系重写（版式注册表 + sections 优先仲裁 + `page
 验证（生产库 ch1 备份→追加两楼层→还原，字节级校验一致；nuxt dev 同源代理线上 API）：
 单测 18/18（新增跨端新楼层 2 用例）；390×844 dpr=2 手机视口截图 `docs/manual/shots/2026-10-17-home-video-points-floors/`（视频楼层含海报+控件、积分楼层横滑卡片+积分价、点击引导 toast、整页序）。
 坑：改库后 dev SSR 首帧可能命中旧 payload（疑似首编译期取数缓存），重取即新；`devProxy` 仅 dev 生效，生产 .output 的 /shop-api 靠 Nginx 反代。
+
+### 9.1 flash 限时秒杀楼层（同日补齐）
+
+后台 schema 的 `flash`（FlashSection：`source:'flashSale'`、`layout:'row'|'grid2'`、`limit` 1-20 缺省 4）此前同样被 nshop 白名单丢弃。本次补齐（A+B 双版式 + 隐藏更多——nshop 无秒杀专区页，不做假引导，卡片直接进商品详情）：
+
+- **类型**：`shop-content.ts` 新增 `FlashSection`；`home-skeleton.ts` `KNOWN_TYPES` 加入 `flash`（末尾追加，同 video/pointsGoods 机制）。
+- **数据链路**：`composables/useFlashSale.ts` → shop-api `activeFlashSaleActivities`（flash-sale plugin，价格单位分）→ `utils/flash-sale.ts` 纯函数（`normalizeFlashActivities` 过滤非 active/已结束/售罄/脏数据，与 vshop flash-normalize 同口径；`earliestEndAt`/`formatCountdown`/`soldPercent`）→ `getFlashSaleItems(limit)` 按 productId 批量查 products 补 name/slug/featuredAsset/变体 priceWithTax（划线价），补不到商品信息的活动剔除。
+- **组件**：`FlashFloorBlock.vue` 白卡楼层；头部标题 + 黑底倒计时胶囊（全场最早 endAt，每秒 tick，到点自动重取）；row 横滑（w-28 卡）与 grid2 双列（h-36 大图）随后台 `layout` 切换；卡片 = 「秒杀」badge + 名称 2 行 + 秒杀价（formatCents）+ 划线原价（仅当高于秒杀价）+ 已售进度条；`onMounted` 拉数，失败/为空整层隐藏。
+- **i18n**：`messages.home.flashFloor/flashEndsIn/flashBadge/flashSold/flashFallbackName` 12 语言包全量同步。
+
+验证：单测 22 个文件 190 用例全过（新增 `flash-sale.spec.ts` 14 用例 + home-skeleton flash 用例）；生产库造 3 条渠道 1 测试活动（关联温泉商品，秒杀价 ¥99/¥699/¥159 + 划线价 + 已售 34%/30%/75%），row/grid2 双版式 390×844 dpr=2 截图 `docs/manual/shots/2026-10-17-home-flash-floor/`（倒计时胶囊正确取最早 endAt）；验证后测试活动删除、shopContent 字节级还原。
+
+**坑（重要，跨项目可复用）**：
+1. **Vendure 秒杀活动时间时区语义**：`flash_sale_activity` 的 `startAt/endAt` 列为 `timestamp without time zone`，**应用侧按 Asia/Shanghai（+08）解读**（node-pg 会话时区跟随服务端）。用 `docker exec psql`（容器会话 UTC）写 `NOW()+6h` 造测试数据，会被应用当成「+08 的 09:02」= 01:02Z → **已经结束**，API 返回空。造数须显式写北京时间字符串（如 `'2026-10-17 18:00:00'`）或拉宽窗口验证。
+2. **排查手段**：API 返回与 DB 不符时，用 `ALTER SYSTEM SET log_min_duration_statement=0` + `log_parameter_max_length=0` + `pg_reload_conf()` 抓 app 实际执行的 SQL 与参数（用完即还原）；本次靠它确认 SQL 与手写模拟完全一致，最终定位到时区参数差异。
+3. **低内存服务器 OOM 崩溃循环**：1.8G 内存机上 vendure（400MB+）被 OOM 杀后 pm2 反复拉起会陷入崩溃循环（502）。处置：临时 `pm2 stop` 内存大户（nshop/strapi）让 vendure 站稳，验证后恢复；strapi 本就崩溃循环 5116 次处于 waiting 状态，本次保持 stopped（需另行修复）。

@@ -157,6 +157,11 @@ export default defineI18nLocale(() =>
       pointsGoodsFloor: "포인트 추천",
       pointsGuide: "포인트몰에서 교환해 주세요",
       videoLoadFail: "동영상 로드 실패",
+      flashFloor: "특가 세일",
+      flashEndsIn: "종료까지",
+      flashBadge: "특가",
+      flashSold: "{n}% 판매",
+      flashFallbackName: "상품",
       news: [
         "전체 자체브랜드 상품 99,000원 이상 무료 배송",
         "신규 회원 첫 주문 시 20,000원 할인",
