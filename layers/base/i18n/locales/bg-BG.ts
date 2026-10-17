@@ -22,6 +22,7 @@ export default defineI18nLocale(() =>
       searchPlaceholder: "Какво търсите?…",
       loading: "Зареждане…",
       selectCity: "Изберете град",
+      cityShort: "Град",
       locating: "Определяне на местоположението…",
       hotCities: "Популярни градове",
       availableCities: "Налични градове",
