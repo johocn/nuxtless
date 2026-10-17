@@ -1,3 +1,21 @@
+/**
+ * 订单列表可见性过滤（useOrderList / 四版式列表共用口径）：
+ * - 商户子单（type=Seller）不上榜：cross-channel 下单产生的商户子单仅面向商户结算/履约，
+ *   客户视角只展示自己的聚合单（type=Aggregate/Regular），否则会「一单变两单」；
+ * - 幽灵单（未取消的 0 件空单）不上榜：加购物车自动新建的空单 / 取消失败遗留空单；
+ * - 取消单放行：Vendure cancelOrder 取消后会把行数量清零（qty=0 是取消单常态而非幽灵单），
+ *   若按数量连坐拦截，取消单会从列表与「已取消」页签整体消失（2026-10-17 线上修复）。
+ */
+export function isOrderVisible(o: {
+  state: string;
+  type?: string | null;
+  totalQuantity?: number | null;
+}): boolean {
+  if (o.type === "Seller") return false;
+  if (o.state === "Cancelled") return true;
+  return Number(o.totalQuantity ?? 0) > 0;
+}
+
 export type OrderTabKey =
   | "ALL"
   | "PAYMENT_PENDING"
