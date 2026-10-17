@@ -38,6 +38,11 @@
 |---|---|
 | 领券中心 / 我的券 / 领取 / 兑换码 / applyCoupon / 清除 | `useCoupon()`、`couponErrorMessage()` |
 
+### C 端详情页券楼层 `nshop/layers/base/app/components/product-detail/ProductCouponBlock.vue`
+| 职责 | 关键符号 |
+|---|---|
+| 详情页「商品专属券」楼层：SSR 预取 `productCoupons(productId)`、`claimableViaProduct` 渠道判定、到店角标、加价购（saleable）排除到店券、游客领取跳登录 | `getProductCoupons`、`claimProductCoupon`、`requireLogin`（2026-10-17 接入，四版式 DetailClassic/Floor/DualBuy/Mall 共用） |
+
 ### 后台 `vshop/web-admin/src/`
 | 文件 | 职责 | 关键符号 |
 |---|---|---|
@@ -61,12 +66,19 @@
 4. **会员限制未拦截**（P2）：claim/grant/apply 均无 `memberLevel` 校验。→ 已修（`assertCouponMemberLevel`/`couponMeetsMemberLevel` 三处接入；grant 单结果 reason=MEMBER_LEVEL_BLOCKED）。
 5. **折扣净价/含税口径差 13%**（P4）：非 bug。抵扣实数正确；前端用 `amountWithTax` 与含税合计同域；净价差是正确税额重算。
 6. **本渠道结算配送不可达**（P6）：channel92 无可用配送方法 → 订单无法推进；且默认商城(youshop)存在「券←→商品同店」硬规则（`isDefaultMallChannel` 只算 `lineHasShopId` 本店行），在库可加购变体均属其它店、与可领券不匹配 → `applyCouponToOrder` 抛 `COUPON_SCOPE_MISMATCH` 无法真实挂券。→ 此前按「环境/数据限制（非券 bug）」判定；**2026-09-19 已用「平台券（shopId=null）」绕过同店限制，在默认商城实测走通 USED→RETURNED 闭环**（见下），推翻「不可闭环」结论：**USED/RETURNED 事件监听本身可用**，仅「店券挂他店商品」受限属业务语义。复测 harness 在 `scripts/_p6_flow.mjs`。<br>**横向限制**：channel92 无可用配送方法（订单无法推进到可勾选券的结算环节）仍属环境/数据层面未布好的坑，非 coupon-plugin 代码问题。
+7. **组件 script 裸用 `localePath` 抛 `localePath is not defined`**（2026-10-17）：模板表达式可走 i18n 全局属性，但 **script 内必须显式声明** `const localePath = useTenantLocalePath();`——ProductCouponBlock 补 requireLogin 时漏声明，游客点「领取」异步函数抛错，表现为**无导航、无 toast、无 console error**（pageerror 才可见），极难排查。Playwright 探针 `pg.on('pageerror')` 一击定位。
+8. **生产部署 coupon-plugin 必须传编译产物**：vendure 生产跑 `prod-start.js` → `require('./dist/index')`（编译产物），`git pull + pm2 restart` 只更新源码不生效。→ 本地 `npm run build` 后 `scp -r packages/coupon-plugin/lib/src` 到服务器对应目录再 restart。
+9. **`FOR UPDATE` 行锁是 PostgreSQL 专用语法**：e2e 用 SQLite 直接 `near "FOR": syntax error`。→ 服务层按 `connection.rawConnection.options.type === 'postgres'` 分支（见 `claimCoupon` 领券防并发行锁）。
 
 ## 5. 问题速查（Bug 知识库）
 
 ### 已修复
 | 现象 | 根因 | 代码点 | 回归脚本 |
 |---|---|---|---|
+| 详情页绑定到店券（IN_STORE）不显示领取入口 | `visibleEntryBinding` 入口可见性硬编码只认 ONLINE 场景 | `coupon-binding.service.ts`（`sceneVisible` 改为 `matchesScene(...,'ONLINE') || matchesScene(...,'IN_STORE')`；到店券绑定商品即可详情页领取、到店核销，加价购排除由 C 端 saleable 承担） | 手机视口（390×844 dpr=2）详情页截图：到店券楼层含「到店可用」角标 |
+| 绑定到店券后点领取报「该券暂不可领取」 | `claimProductCoupon` 场景校验只放行 ONLINE | `coupon.service.ts` L653-661（领取动作与使用场景无关：线上券领取后线上结算、到店券领取后到店核销 → 接纳 IN_STORE） | `coupon.service.spec.ts`（IN_STORE 可领 / 未知场景拒领两用例）；e2e 164/164 |
+| 领券高并发重复领取（P7 前置） | 领券无行锁，并发可双写 | `coupon.service.ts` L603-612（postgres 下 `SELECT id FROM customer WHERE id=$1 FOR UPDATE` 方言分支） | e2e 全量回归（SQLite 分支不执行行锁） |
+| 游客详情页点「领取」无任何反应（不跳登录/无 toast） | ProductCouponBlock `requireLogin` 内裸用 `localePath` 未声明 → handler 异步抛 `localePath is not defined` | `ProductCouponBlock.vue` L17（补 `const localePath = useTenantLocalePath();`，与券页同口径） | Playwright 探针：游客点领取 → 跳转 `/t2/account/login`，无 pageerror |
 | 后台新建/编辑券保存永远失败 | `$input: JSON!` + name 传对象，后端 `String!` 拒对象 | `vshop/web-admin/src/apis/coupon.ts`（create/updateCouponTemplate）、`pages/coupon/edit/index.vue` `buildInput()` | 后台建券→保存→回显 |
 | 会员券未按 memberLevel 拦截（P2） | claim/grant/apply 均无校验 | `coupon.service.ts`：`couponMeetsMemberLevel`/`assertCouponMemberLevel`/`resolveRequiredMemberLevel`；claimCoupon、grantCouponIssue(reason=MEMBER_LEVEL_BLOCKED)、applyCouponToOrder 三处调用 | 设 memberLevel=GOLD/金卡，普通用户领应被 UserInputError 拦截 |
 | 凭码券/非自助券混入领券中心（P3） | `couponCentre` 未过滤 claimable=false | `coupon.service.ts` `couponCentre`（own 与默认商城 extra 两分支均加 `tpl.claimable = true`） | 设 claimable=false 券不再出现在领券中心 |
