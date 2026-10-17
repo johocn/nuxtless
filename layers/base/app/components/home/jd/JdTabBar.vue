@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 // JD 风格移动端底部固定导航（首页/分类/购物车/我的）
 // 全部复用 nshop 既有能力，未动底层：
 //   - 首页 → /
@@ -60,7 +60,7 @@ const active = computed(() => {
         <UIcon name="i-lucide-shopping-cart" class="h-6 w-6" />
         <span
           v-if="cartCount > 0"
-          class="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white"
+          class="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[0.625rem] text-white"
         >
           {{ cartCount }}
         </span>

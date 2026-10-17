@@ -120,7 +120,7 @@ function listText(item?: SearchItem, currencyCode?: string | null) {
             loading="lazy"
             class="aspect-square w-full bg-gray-100 object-cover"
           />
-          <span class="absolute bottom-1 left-1 rounded bg-primary px-1 py-0.5 text-[9px] text-white">
+          <span class="absolute bottom-1 left-1 rounded bg-primary px-1 py-0.5 text-[0.5625rem] text-white">
             {{ t("messages.shop.popularProducts") }}
           </span>
         </div>

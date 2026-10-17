@@ -135,7 +135,7 @@ function progressOf(it: FlashItem): number {
             loading="lazy"
           />
           <div v-else class="h-28 w-full bg-gray-50"></div>
-          <span class="absolute left-0 top-1.5 rounded-tr-md bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-white">{{ t("messages.home.flashBadge") }}</span>
+          <span class="absolute left-0 top-1.5 rounded-tr-md bg-primary px-1.5 py-0.5 text-[0.625rem] font-semibold text-white">{{ t("messages.home.flashBadge") }}</span>
         </div>
         <p class="line-clamp-2 h-10 px-2 pt-1.5 text-xs leading-5 text-gray-800">{{ nameOf(it) }}</p>
         <div class="flex items-baseline gap-1.5 px-2 pt-0.5">
@@ -169,7 +169,7 @@ function progressOf(it: FlashItem): number {
             loading="lazy"
           />
           <div v-else class="h-36 w-full bg-gray-50"></div>
-          <span class="absolute left-0 top-1.5 rounded-tr-md bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-white">{{ t("messages.home.flashBadge") }}</span>
+          <span class="absolute left-0 top-1.5 rounded-tr-md bg-primary px-1.5 py-0.5 text-[0.625rem] font-semibold text-white">{{ t("messages.home.flashBadge") }}</span>
         </div>
         <p class="line-clamp-2 h-10 px-2 pt-1.5 text-xs leading-5 text-gray-800">{{ nameOf(it) }}</p>
         <div class="flex items-baseline gap-1.5 px-2 pt-0.5">

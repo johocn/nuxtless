@@ -101,7 +101,7 @@ const { openPhotoSwipe } = useProductLightbox({ select });
           preload="metadata"
         />
         <span
-          class="absolute bottom-0 right-0 cursor-pointer rounded bg-black/60 px-0.5 text-[9px] text-white"
+          class="absolute bottom-0 right-0 cursor-pointer rounded bg-black/60 px-0.5 text-[0.5625rem] text-white"
           title="回到视频"
           @click="scrollVideoTop"
           >▶</span

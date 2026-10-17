@@ -43,7 +43,7 @@ function submit() {
         :to="localePath('/')"
         class="shrink-0 text-xl font-bold italic text-[#e6162d]"
       >
-        youShop<sup class="align-super text-[10px] text-[#e6162d]/80">.cn</sup>
+        youShop<sup class="align-super text-[0.625rem] text-[#e6162d]/80">.cn</sup>
       </NuxtLink>
 
       <!-- 搜索区 -->
