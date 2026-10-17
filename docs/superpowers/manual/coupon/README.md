@@ -258,6 +258,21 @@ USED ──退单──> RETURNED
 - 裸 i18n key 检查 = `[]`（`messages.coupon.*` 无遗漏，zh-CN 与 en-US 同步）。
 - API 正确性以后端 e2e（计划2）为准；本轮前端以手机视口截图回归为主。
 
+### 8.11 商品绑券「详情页券楼层」全链路实测（生产 t2，2026-10-17）
+
+> 手机视口 390×844（dpr=2，Playwright mobile）。验证脚本：`tmp/shot_coupon_chain.py`（登录 → 详情页券楼层 → 领取 → 券包 → 出示券码）。
+
+- **环境**：生产 `www.youshop.cn/t2`（二月兰会员，渠道 token `66ruvnhh34svhckaa2i`）；测试账号 `qa-vshop-manual@local.dev`（生产 id=139）；券 82「单点买单8折优惠券」绑定商品「他老婶铁锅炖」。
+- **步骤与截图**：
+  1. 详情页券楼层：商品专属券 / 8折 / 到店可用 / 无门槛 / 有效期 / 领取按钮——[chain_01 详情页](shots/chain_01_detail_coupon.png)、[chain_02 券楼层特写](shots/chain_02_claimed.png)；游客视角楼层见 [pbind_01](shots/pbind_01_detail_floor.png)。
+  2. 游客点「领取」→ 跳登录页（`requireLogin` 与券页同口径）：[pbind_02](shots/pbind_02_login_redirect.png)。
+  3. 登录态领取：toast「领取成功」，会话内按钮置灰「已领取」。
+  4. 券包「我的券 → 未使用」出现新券 `C-K374-YF9C`（有效期 2026-10-16 至 2026-10-29，与模板一致）：[chain_03 券包列表](shots/chain_03_coupon_list.png)。
+  5. 出示券码页：二维码 + 大字码 `C-K374-YF9C` + 有效期 + 核销提示（服务端按「我的券包」匹配回填权威字段）：[chain_04 券码页](shots/chain_04_coupon_code.png)。
+- **防重复领取**：后端按账号去重——同账号重复调 `claimProductCoupon` 不产生第二张（实测复点「领取」券包仍仅 1 张）；C 端 `claimedIds` 仅会话内置灰，刷新后按钮复原为「领取」属预期。
+- **结果**：全链路无 `pageerror`；未定位城市按钮为「选城市」短词条（大字版适配见 [coupon.md 已修复表](../../domains/coupon.md)）。
+
+
 ---
 
 ## 9. 到店核销「租户归属 + 销售员配送档案范围」收口
