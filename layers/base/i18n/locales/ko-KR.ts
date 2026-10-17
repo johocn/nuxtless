@@ -22,6 +22,7 @@ export default defineI18nLocale(() =>
       searchPlaceholder: "무엇을 검색할까요?…",
       loading: "불러오는 중…",
       selectCity: "도시 선택",
+      cityShort: "도시",
       locating: "위치 확인 중…",
       hotCities: "인기 도시",
       availableCities: "이용 가능한 도시",

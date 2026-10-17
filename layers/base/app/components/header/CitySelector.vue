@@ -138,10 +138,10 @@ async function reLocate() {
     <UButton
       variant="ghost"
       color="neutral"
-      class="h-[36px]! max-w-[92px] shrink-0 overflow-hidden"
+      class="h-[36px]! max-w-[92px] shrink-0 overflow-hidden px-[6px]!"
       :icon="locating || locationStore.locating ? 'i-lucide-loader-circle' : 'i-lucide-map-pin'"
       :ui="{ leadingIcon: locating || locationStore.locating ? ['size-[18px]!', 'animate-spin'] : 'size-[18px]!' }"
-      :label="locationStore.cityName || (locationStore.locating ? t('messages.nav.locating') : t('messages.nav.selectCity'))"
+      :label="locationStore.cityName || (locationStore.locating ? t('messages.nav.locating') : t('messages.nav.cityShort'))"
       @click="openPanel"
     />
 

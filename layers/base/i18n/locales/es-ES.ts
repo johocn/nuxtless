@@ -22,6 +22,7 @@ export default defineI18nLocale(() =>
       searchPlaceholder: "¿Qué busca?…",
       loading: "Cargando…",
       selectCity: "Seleccionar ciudad",
+      cityShort: "Ciudad",
       locating: "Localizando…",
       hotCities: "Ciudades populares",
       availableCities: "Ciudades disponibles",

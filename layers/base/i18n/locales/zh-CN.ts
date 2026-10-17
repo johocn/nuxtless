@@ -42,6 +42,7 @@ export const zhMessages = {
       searchPlaceholder: '搜点什么…',
       loading: '加载中…',
       selectCity: '选择城市',
+      cityShort: '选城市',
       locating: '定位中…',
       hotCities: '热门城市',
       availableCities: '可用城市',

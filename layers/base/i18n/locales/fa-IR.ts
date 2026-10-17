@@ -22,6 +22,7 @@ export default defineI18nLocale(() =>
       searchPlaceholder: "دنبال چه هستید؟...",
       loading: "در حال بارگذاری...",
       selectCity: "انتخاب شهر",
+      cityShort: "شهر",
       locating: "در حال مکان‌یابی...",
       hotCities: "شهرهای محبوب",
       availableCities: "شهرهای در دسترس",

@@ -23,6 +23,7 @@ export default defineI18nLocale(() =>
       searchPlaceholder: "何をお探しですか？…",
       loading: "読み込み中…",
       selectCity: "都市を選択",
+      cityShort: "都市",
       locating: "位置情報を取得中…",
       hotCities: "人気の都市",
       availableCities: "ご利用可能な都市",
