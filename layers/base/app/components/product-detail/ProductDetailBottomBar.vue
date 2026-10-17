@@ -45,10 +45,10 @@ function goBack() {
         </NuxtLink>
       </div>
 
-      <!-- 大字版弹性：min-w-0 允许收缩、文字锁 15px（防 rem 放大后溢出裁切） -->
+      <!-- 大字版弹性：min-w-0 允许收缩、文字随根字号缩放（0.9375rem，125%≈18.75px 两按钮合计约 210px 仍放下） -->
       <div class="flex flex-1 items-center gap-2 px-2 py-2.5">
         <UButton
-          class="min-w-0 flex-1 justify-center text-[15px] whitespace-nowrap"
+          class="min-w-0 flex-1 justify-center text-[0.9375rem] whitespace-nowrap"
           color="secondary"
           size="lg"
           :loading="loading"
@@ -56,7 +56,7 @@ function goBack() {
           @click="addToCartHandler"
         >{{ t("messages.detail.addToCart") }}</UButton>
         <UButton
-          class="min-w-0 flex-1 justify-center text-[15px] whitespace-nowrap"
+          class="min-w-0 flex-1 justify-center text-[0.9375rem] whitespace-nowrap"
           color="primary"
           size="lg"
           :loading="loading"
