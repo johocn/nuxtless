@@ -196,11 +196,14 @@ USED ──退单──> RETURNED
 
 > `distributionChannels` 未显式配置时按老字段推导：`claimable`→CENTRE、`pointsPrice>0`→POINTS、`claimCode`→CODE、有商品绑定→PRODUCT。`usageScene=ALL` 同时匹配线上与到店；`null` 按 ONLINE 处理。
 
-### 8.2 券页 5 Tab（B 图标 tab 栏）
+### 8.2 券页 6 Tab（B 图标 tab 栏）
 
-- 领券中心 / 券商城 / 积分商城 / 兑换码 / 我的券，5 项等分固定，图标在上文字在下，窄屏不挤压；选中态 `text-primary`。
-- 注意：领券中心**不做**线上/到店分组（后端 `couponCentre` 只返回 ONLINE 场景）；场景切换落在券商城与我的券。
-- 截图：[券页 5 Tab（领券中心）](shots/plan4-01-tabs.png)
+- 领券中心 / **到店券** / 券商城 / 积分商城 / 兑换码 / 我的券，6 项等分固定，图标在上文字在下；选中态 `text-primary`。
+- **到店券 tab（2026-10-17 新增）**：IN_STORE 场景券的自助领取入口。后端 `couponCentre(scene: CouponUsageScene)` 已支持 scene 口径（缺省 ONLINE 保持历史行为；`IN_STORE` 返回 IN_STORE/ALL 场景券；ALL 场景券在两个口径下均出现）。tab 内顶部提示「到店买单时出示券码，由门店扫码核销」，列表复用 `CouponCentreList`（自动带「到店可用」角标），领取复用 `claimCoupon`；领后到「我的券 → 出示券码」到店核销。
+  - 截图：[券页 6 Tab（到店券）](shots/cstore_01_tabs.png)、[到店券 tab · 券 82 实例](shots/cstore_02_store_tab.png)
+  - 注意：领券中心 tab 仍只返回 ONLINE 口径；`usageScene=IN_STORE` 的券此前无任何自助入口（这是「他老婶铁锅炖券 82 看不到领取入口」的根因），现统一走「到店券」tab。vshop C 端领券中心同版式已同步落地。
+- 券商城/我的券的场景切换不变（`couponSaleCatalogue(scene)` / `walletScene`）。
+- 历史：原 5 Tab 版式截图 [券页 5 Tab（领券中心）](shots/plan4-01-tabs.png)
 
 ### 8.3 券商城（A 券包大卡版式）
 
