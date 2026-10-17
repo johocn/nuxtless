@@ -14,6 +14,7 @@ import {
 import { useProductDetailView } from "../../composables/useProductDetailView";
 
 const { t } = useI18n();
+const localePath = useTenantLocalePath();
 const toast = useToast();
 const { product } = useProductDetailView();
 const orderStore = useOrderStore();
@@ -140,6 +141,14 @@ function isClaimed(id: string): boolean {
   return claimedIds.value.has(id);
 }
 
+// 领取需登录（券挂在 customer 上）：未登录跳登录页，与券页领券中心 requireLogin 同口径
+const { isAuthenticated } = storeToRefs(useAuthStore());
+async function requireLogin(): Promise<boolean> {
+  if (isAuthenticated.value) return true;
+  await navigateTo(localePath("/account/login"));
+  return false;
+}
+
 // ── 面额 / 使用门槛 / 有效期 ──
 function formatAmount(b: ProductCouponBinding): string {
   const tpl = b.template;
@@ -172,6 +181,7 @@ function formatValidity(b: ProductCouponBinding): string {
 
 // ── 领取 ──
 async function claim(b: ProductCouponBinding) {
+  if (!(await requireLogin())) return;
   if (claimingId.value || isClaimed(b.id)) return;
   claimingId.value = b.id;
   try {
