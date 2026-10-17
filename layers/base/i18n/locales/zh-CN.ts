@@ -182,6 +182,8 @@ export const zhMessages = {
       flashBadge: '秒杀',
       flashSold: '已售 {n}%',
       flashFallbackName: '商品',
+      limitFloor: '限时精选',
+      hotPicksFloor: '热门推荐',
       news: [
         '全场自营商品满 99 元包邮',
         '新用户首单立减 20 元',

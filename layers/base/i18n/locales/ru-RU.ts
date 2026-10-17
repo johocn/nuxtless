@@ -128,6 +128,8 @@ export default defineI18nLocale(() =>
       flashBadge: "Флеш",
       flashSold: "Продано {n}%",
       flashFallbackName: "Товар",
+      limitFloor: "Ограниченная серия",
+      hotPicksFloor: "Популярное",
       news: [
         "Бесплатная доставка при заказе от 99 юаней",
         "Скидка 20 юаней на первый заказ для новичков",

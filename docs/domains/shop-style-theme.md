@@ -156,3 +156,18 @@ vshop 五级积木体系重写（版式注册表 + sections 优先仲裁 + `page
 1. **Vendure 秒杀活动时间时区语义**：`flash_sale_activity` 的 `startAt/endAt` 列为 `timestamp without time zone`，**应用侧按 Asia/Shanghai（+08）解读**（node-pg 会话时区跟随服务端）。用 `docker exec psql`（容器会话 UTC）写 `NOW()+6h` 造测试数据，会被应用当成「+08 的 09:02」= 01:02Z → **已经结束**，API 返回空。造数须显式写北京时间字符串（如 `'2026-10-17 18:00:00'`）或拉宽窗口验证。
 2. **排查手段**：API 返回与 DB 不符时，用 `ALTER SYSTEM SET log_min_duration_statement=0` + `log_parameter_max_length=0` + `pg_reload_conf()` 抓 app 实际执行的 SQL 与参数（用完即还原）；本次靠它确认 SQL 与手写模拟完全一致，最终定位到时区参数差异。
 3. **低内存服务器 OOM 崩溃循环**：1.8G 内存机上 vendure（400MB+）被 OOM 杀后 pm2 反复拉起会陷入崩溃循环（502）。处置：临时 `pm2 stop` 内存大户（nshop/strapi）让 vendure 站稳，验证后恢复；strapi 本就崩溃循环 5116 次处于 waiting 状态，本次保持 stopped（需另行修复）。
+
+### 9.2 limitGoods/hotGoods 楼层（同日补齐）
+
+后台 schema 的 `limitGoods`（`collectionSlug`+`limit` 1-20 缺省 6）与 `hotGoods`（`collectionSlug`+`pageSize` 1-20 缺省 10）——两个「按集合取商品」楼层，此前同样被 nshop 白名单丢弃。本次补齐（mockup 定稿：limitGoods=sliding 大卡横滑、hotGoods=compact 京东双列网格，与 vshop 同版式）：
+
+- **类型**：`shop-content.ts` 新增 `LimitGoodsSection`/`HotPicksSection` + `floorCount(n, fallback)` 纯函数（正整数原样、越界截 20、非法回缺省，与后台校验 1-20 对齐）；`KNOWN_TYPES` 加入两类型（末尾追加，同 video/pointsGoods 机制）。
+- **组件**：`LimitGoodsFloorBlock.vue`/`HotPicksFloorBlock.vue` 均**薄壳归一化**——把 section 转成 `{type:'recommend', source: collectionSlug?'collection':'auto', collectionId: slug, limit: floorCount(...), layout:'sliding'|'compact', dedupe:false}` 复用既有 `useCuratedGoods`（零新增取数逻辑；`dedupe:false` 使独立楼层不参与同页去重，useAsyncData key 含 slug+limit 天然隔离）。标题走 LocalizedText 回退链 → i18n `messages.home.limitFloor/hotPicksFloor` 12 语言包全量同步。
+
+验证：单测 22 个文件 194 用例全过（新增 `floorCount` 3 用例 + home-skeleton limitGoods/hotGoods 用例）；生产库 ch1 shopContent 追加两楼层（limitGoods→hot-spring 集合、hotGoods 走 auto），390×844 dpr=2 截图 `docs/manual/shots/2026-10-17-home-limit-hot-floors/`（横滑大卡/双列网格、邮寄自提过滤条、热门商品 badge、整页序）；验证后 shopContent 字节级还原（md5 一致）。
+
+**坑（重要，跨项目可复用）**：
+1. **SearchItem 的 productAsset 来自 search_index_item，不回查 product 表**：DefaultSearchPlugin `search-strategy-utils` 直接用索引行 `si_productAssetId`/`si_productPreview` 组 productAsset（preview 还靠索引列，格式 `preview/xx/xxx__preview.png`，序列化时补 asset-server origin）。**直接 SQL 改 `product.featuredAssetId` 绕过 TypeORM 订阅器不会重算索引** → API 依旧返回 null；造/还原测试数据须同步改 `search_index_item`（productAssetId + productPreview，后者 NOT NULL、无图商品原值为空串 `''`）。
+2. **psql `-c` 多语句是单事务**：一条失败整段回滚（含前面已打 UPDATE 1 的语句），分步验证时每条单独跑。
+3. **Playwright `route.continue({url})` 不允许跨协议改写**（http→https 报 "New URL must have same protocol"）；dev 下商品图动态 origin 指向 localhost、静态资源只有线上有 → 截图脚本内用 `fetch(生产URL)` + `route.fulfill({body})` 代理（仅脚本内，业务代码零改动）。
+4. **首页 sticky 遮挡楼层标题**：AppHeader（`sticky top-0`）+ 红色分类栏 JdCategoryNav（`sticky top-[52px]`）会盖住楼层截图顶部；截图脚本 addStyleTag 将二者 `position:static`（保留文档流，不破坏页面高度）。
