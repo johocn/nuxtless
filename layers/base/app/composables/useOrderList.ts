@@ -1,10 +1,11 @@
 import { SortOrder } from "~~/types/default";
 import type { OrderTabKey } from "../utils/order-state";
-import { tabOfState } from "../utils/order-state";
+import { isOrderVisible, tabOfState } from "../utils/order-state";
 
 /**
  * 订单列表取数（card / cn / jd / mall 四版式共用）。
- * 过滤口径：幽灵单（0 件 0 元）与商户子单（type=Seller）不上榜。
+ * 过滤口径见 isOrderVisible：幽灵单（未取消的 0 件空单）与商户子单（type=Seller）不上榜，
+ * 取消单（Vendure cancelOrder 会清零行数量）必须放行，否则「已取消」页签永远为空。
  *
  * 必须保持「同步调用」（调用方不要 await 本函数）：`<script setup>` 顶层 await 会让
  * setup 变成 async setup，Vue 在 setup 返回 Promise 后立即清空 `currentInstance`，
@@ -28,16 +29,7 @@ export function useOrderList(activeTab: Ref<OrderTabKey>) {
   const loading = computed(() => !error.value && (pending.value || !data.value));
 
   const rawItems = computed(() => data.value?.activeCustomer?.orders?.items ?? []);
-  const orders = computed(() =>
-    // 幽灵单（0 件 0 元）过滤：加购物车自动新建的空单 / 取消失败遗留空单不上榜
-    // 商户子单过滤：cross-channel 下单产生的 type=Seller 子订单仅面向商户结算/履约，
-    // 客户视角只展示自己的聚合单（type=Aggregate/Regular），否则会"一单变两单"
-    rawItems.value.filter(
-      (o) =>
-        Number((o as any).totalQuantity ?? 0) > 0 &&
-        (o as any).type !== "Seller",
-    ),
-  );
+  const orders = computed(() => rawItems.value.filter(isOrderVisible));
   const total = computed(
     () => data.value?.activeCustomer?.orders?.totalItems ?? 0,
   );
