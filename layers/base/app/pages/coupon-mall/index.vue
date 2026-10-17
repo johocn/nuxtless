@@ -23,6 +23,7 @@ const toast = useToast();
 const { isAuthenticated } = storeToRefs(useAuthStore());
 
 const loadError = ref(false);
+const needLogin = ref(false);
 const templates = ref<any[]>([]);
 const bundles = ref<any[]>([]);
 const pointsTemplates = ref<any[]>([]);
@@ -38,6 +39,7 @@ const floors = computed(() => [
 async function load() {
   loading.value = true;
   loadError.value = false;
+  needLogin.value = false;
   try {
     const [sale, points] = await Promise.all([
       getCouponSaleCatalogue("ALL"),
@@ -47,12 +49,22 @@ async function load() {
     bundles.value = sale?.bundles ?? [];
     pointsTemplates.value = points ?? [];
   } catch {
-    loadError.value = true;
+    // catalogue 匿名访问被后端 FORBIDDEN 拒绝属预期：未登录时展示登录引导而非报错
+    if (!isAuthenticated.value) {
+      needLogin.value = true;
+    } else {
+      loadError.value = true;
+    }
   } finally {
     loading.value = false;
   }
 }
 onMounted(load);
+
+/** 登录引导跳转（与 requireLogin 同口径：租户 localePath 到登录页） */
+function goLogin() {
+  navigateTo(localePath("/account/login"));
+}
 
 function goTo(key: string) {
   activeFloor.value = key;
@@ -211,7 +223,14 @@ async function exchange(c: Record<string, any>) {
       >{{ f.label }}</UButton>
     </nav>
 
-    <UAlert v-if="loadError" color="error" variant="soft" :title="t('messages.couponMall.loadFailed')">
+    <!-- 未登录引导（catalogue 匿名 FORBIDDEN 是后端预期行为，优先于报错展示） -->
+    <UCard v-if="needLogin" class="text-center">
+      <p class="text-(--ui-text-muted)">{{ t("messages.couponMall.heroSub") }}</p>
+      <UButton class="mt-4" @click="goLogin">
+        {{ t("messages.coupon.goLogin") }}
+      </UButton>
+    </UCard>
+    <UAlert v-else-if="loadError" color="error" variant="soft" :title="t('messages.couponMall.loadFailed')">
       <UButton size="xs" variant="link" @click="load">{{ t("messages.couponMall.retry") }}</UButton>
     </UAlert>
     <UCard v-else-if="!loading && !floors.length" class="text-center text-(--ui-text-muted)">
