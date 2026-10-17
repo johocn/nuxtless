@@ -18,13 +18,15 @@ const TABS: { key: CouponPageTab; label: string; paths: string[] }[] = [
 </script>
 
 <template>
-  <!-- 六个 Tab（图标 + 文字，等分） -->
-  <nav class="mb-6 grid grid-cols-6 border-b border-(--ui-border)">
+  <!-- 六个 Tab（图标 + 文字）：min-content 兜底保证大字版不挤压，超宽时整条横向滚动 -->
+  <nav
+    class="mb-6 grid grid-cols-[repeat(6,minmax(min-content,1fr))] overflow-x-auto border-b border-(--ui-border) [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+  >
     <button
       v-for="tb in TABS"
       :key="tb.key"
       type="button"
-      class="flex flex-col items-center gap-1 pb-3 text-xs font-medium transition-colors"
+      class="flex flex-col items-center gap-1 px-1 pb-3 text-xs font-medium transition-colors"
       :class="modelValue === tb.key ? 'text-primary' : 'text-(--ui-text-muted)'"
       @click="emit('update:modelValue', tb.key)"
     >
