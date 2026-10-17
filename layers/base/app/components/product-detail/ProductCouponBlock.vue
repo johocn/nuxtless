@@ -179,6 +179,13 @@ function formatValidity(b: ProductCouponBinding): string {
   return "";
 }
 
+// 有效期行分段：末个空格前为标签（可换行）、其后整体 nowrap——125% 大字下日期永不拆行
+function validityParts(b: ProductCouponBinding): { head: string; tail: string } {
+  const s = formatValidity(b);
+  const i = s.lastIndexOf(" ");
+  return i === -1 ? { head: "", tail: s } : { head: s.slice(0, i + 1), tail: s.slice(i + 1) };
+}
+
 // ── 领取 ──
 async function claim(b: ProductCouponBinding) {
   if (!(await requireLogin())) return;
@@ -227,23 +234,26 @@ async function claim(b: ProductCouponBinding) {
           <div class="flex flex-wrap items-center gap-1">
             <span
               v-if="b.badgeText"
-              class="rounded bg-primary/10 px-1 py-px text-[10px] font-semibold text-primary"
+              class="rounded bg-primary/10 px-1 py-px text-[0.625rem] font-semibold text-primary"
             >{{ b.badgeText }}</span>
             <span
               v-if="b.template?.newCustomerOnly"
-              class="rounded bg-orange-100 px-1 py-px text-[10px] font-semibold text-orange-600"
+              class="rounded bg-orange-100 px-1 py-px text-[0.625rem] font-semibold text-orange-600"
             >{{ t("messages.detail.couponNewCustomer") }}</span>
             <span
               v-if="isStore(b)"
-              class="rounded bg-primary/10 px-1 py-px text-[10px] font-semibold text-primary"
+              class="rounded bg-primary/10 px-1 py-px text-[0.625rem] font-semibold text-primary"
             >{{ t("messages.coupon.storeUsable") }}</span>
           </div>
           <!-- 大字版弹性：券名两行内完整展示（正常字号单行不触发），有效期整行不折 -->
           <p class="mt-0.5 line-clamp-2 text-xs font-semibold text-gray-800">
             {{ b.promoTitle || b.template?.name }}
           </p>
-          <p class="mt-0.5 text-[11px] text-gray-500">{{ formatCondition(b) }}</p>
-          <p v-if="formatValidity(b)" class="mt-0.5 whitespace-nowrap text-[11px] text-gray-400">{{ formatValidity(b) }}</p>
+          <p class="mt-0.5 text-[0.6875rem] text-gray-500">{{ formatCondition(b) }}</p>
+          <p v-if="formatValidity(b)" class="mt-0.5 flex flex-wrap gap-x-1 text-[0.6875rem] text-gray-400">
+            <span v-if="validityParts(b).head">{{ validityParts(b).head.trim() }}</span>
+            <span class="whitespace-nowrap">{{ validityParts(b).tail }}</span>
+          </p>
         </div>
         <!-- 领取 -->
         <UButton
@@ -280,7 +290,7 @@ async function claim(b: ProductCouponBinding) {
             <p class="mt-0.5 line-clamp-2 text-xs font-semibold text-gray-800">
               {{ b.promoTitle || b.template?.name }}
             </p>
-            <p class="mt-0.5 text-[11px] text-gray-500">
+            <p class="mt-0.5 text-[0.6875rem] text-gray-500">
               {{ t("messages.coupon.surchargePrice", { n: ((b.template?.salePrice ?? 0) / 100).toString() }) }}
             </p>
           </div>
