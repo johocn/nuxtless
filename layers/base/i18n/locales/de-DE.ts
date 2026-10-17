@@ -137,6 +137,10 @@ export default defineI18nLocale(() =>
       recommendGoods: "Für dich empfohlen",
       couponFloor: "Gutscheine",
       latestGoods: "Neuheiten",
+      videoFloor: "Videos",
+      pointsGoodsFloor: "Punkte-Highlights",
+      pointsGuide: "Bitte im Punkte-Shop einlösen",
+      videoLoadFail: "Video konnte nicht geladen werden",
       news: [
         "Kostenloser Versand ab 99 ¥ für alle Eigenmarken-Artikel",
         "20 ¥ Rabatt auf die erste Bestellung für Neukunden",

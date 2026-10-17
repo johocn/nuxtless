@@ -70,6 +70,10 @@ export default defineI18nLocale(() =>
       recommendGoods: "Recommended for You",
       couponFloor: "Coupons",
       latestGoods: "New Arrivals",
+      videoFloor: "Videos",
+      pointsGoodsFloor: "Points Picks",
+      pointsGuide: "Please redeem this item in the Points Mall",
+      videoLoadFail: "Video failed to load",
       news: [
         "Free shipping on all self-operated items over ¥99",
         "¥20 off your first order for new customers",
@@ -268,6 +272,10 @@ export default defineI18nLocale(() =>
       discountFixed: '¥{n} off',
       // —— Multi-channel distribution: tabs / scene grouping ——
       tabCentre: 'Coupon Centre',
+      tabStore: 'In-Store',
+      storeBadge: 'Store',
+      storeHint: 'Show the coupon code when paying in store; staff scan to redeem',
+      emptyStore: 'No in-store coupons available to claim',
       tabSale: 'Coupon Mall',
       tabPoints: 'Points Mall',
       tabCode: 'Redeem Code',

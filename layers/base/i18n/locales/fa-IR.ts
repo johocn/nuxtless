@@ -119,6 +119,10 @@ export default defineI18nLocale(() =>
       recommendGoods: "پیشنهاد ویژه برای شما",
       couponFloor: "کوپنها",
       latestGoods: "تازهها",
+      videoFloor: "ویدیوها",
+      pointsGoodsFloor: "منتخب امتیازها",
+      pointsGuide: "لطفاً این کالا را در مرکز امتیاز دریافت کنید",
+      videoLoadFail: "بارگذاری ویدیو ناموفق بود",
       news: [
         "ارسال رایگان برای تمام کالاهای اختصاصی بالای ۹۹ یوان",
         "۲۰ یوان تخفیف برای اولین سفارش کاربران جدید",

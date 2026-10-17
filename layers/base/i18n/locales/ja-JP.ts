@@ -154,6 +154,10 @@ export default defineI18nLocale(() =>
       recommendGoods: "おすすめ商品",
       couponFloor: "クーポン",
       latestGoods: "新着商品",
+      videoFloor: "動画",
+      pointsGoodsFloor: "ポイント特選",
+      pointsGuide: "ポイントモールで交換してください",
+      videoLoadFail: "動画の読み込みに失敗しました",
       news: [
         "自社運営商品は99元以上で送料無料",
         "新規ユーザー初回注文で20元割引",

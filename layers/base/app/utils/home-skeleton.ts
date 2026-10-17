@@ -61,10 +61,13 @@ export interface ResolvedSection {
  * 合法 section type 白名单：未知 type 一律丢弃，避免渲染器拿到无法映射的区块。
  * 注意：含未纳入骨架的 `richText`（合法类型，未被任何槽位消费时按原序追加到末尾），
  * 与后台校验的 VALID_TYPES 对齐；不能仅取 HOME_SKELETON 的 match（会漏掉 richText）。
+ * 2026-10-17：跨端共用 shopContent，后台新增的 video/pointsGoods（vshop 五级积木新楼层）
+ * 纳入白名单，由 HomeBlockRenderer componentMap 映射渲染；不匹配任何槽位，追加到骨架末尾。
  */
 const KNOWN_TYPES = new Set<string>([
   'banner', 'notice', 'nav', 'goods', 'richText',
   'hot', 'recommend', 'brandFloor', 'plaza', 'coupon', 'latest',
+  'video', 'pointsGoods',
 ]);
 
 /**

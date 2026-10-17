@@ -173,6 +173,10 @@ export const zhMessages = {
       recommendGoods: '为你推荐',
       couponFloor: '领券中心',
       latestGoods: '新品首发',
+      videoFloor: '视频专场',
+      pointsGoodsFloor: '积分好物',
+      pointsGuide: '请前往积分商城兑换该商品',
+      videoLoadFail: '视频加载失败',
       news: [
         '全场自营商品满 99 元包邮',
         '新用户首单立减 20 元',
@@ -280,6 +284,10 @@ export const zhMessages = {
       discountFixed: '减 {n} 元',
       // —— 多渠道分发：Tab / 场景分组 ——
       tabCentre: '领券中心',
+      tabStore: '到店券',
+      storeBadge: '店',
+      storeHint: '到店买单时出示券码，由门店扫码核销',
+      emptyStore: '暂无可领取的到店券',
       tabSale: '券商城',
       tabPoints: '积分商城',
       tabCode: '兑换码',

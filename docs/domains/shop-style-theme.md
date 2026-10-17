@@ -123,3 +123,20 @@ L0 代码内建默认 → L1 全局配置(shop_global_config) → L2 风格模�
 - **vshop C 端（`e.joho.cn/` 根）**：本地 `cd d:\zhao\vshop && npm run build:h5`（`uni build`）→ 产物 `dist/build/h5` → `tar -C dist/build/h5 -cf _vshop_c.tar .` → `scp` 到 `joho:/tmp/` → 服务器 `sudo cp -r $SITE ${SITE}.bak_$(date +%s)`（保留最近 3 份）→ `sudo rm -rf $SITE/assets` → `sudo tar -xf /tmp/_vshop_c.tar -C $SITE` → `docker exec 1Panel-openresty-3I6S openresty -t && ... -s reload`。站点根 `SITE=/opt/1panel/apps/openresty/openresty/www/sites/e.joho.cn/index`（**静态替换即时生效**）。**vshop 仓库无 deploy.mjs**，web-admin 才有（`d:\zhao\vshop\web-admin && node scripts/deploy.mjs`，站点 `.../e.joho.cn/guanli`）。
 - 产物校验：`index.html` 存在、`assets` 非空、总大小 ≥ 100KB；上线后 `curl.exe -sk https://e.joho.cn/assets/<新hash>.js -o NUL -w "%{http_code} %{size_download}"` 与本地字节数对齐。
 - **PowerShell 调 ssh 的坑**：远程命令里的 `$(date +%s)` / `${SITE}` 会被 PowerShell 抢先解析 → 用**单引号**包住整条 ssh 参数（`ssh joho '...'`），让远端 shell 展开。
+
+---
+
+## 9. 跨端积木新楼层 video/pointsGoods（2026-10-17）
+
+vshop 五级积木体系重写（版式注册表 + sections 优先仲裁 + `pages.home.layout`）后，后台装修编辑器成为**跨端类型超集**（16 种楼层），`channel.customFields.shopContent` 为 nshop/vshop **共用**。nshop 按白名单静默丢弃不认识的类型 → 后台新增的 `video`/`pointsGoods` 楼层在 nshop 首页消失。本次优化（方案 A）：
+
+- **类型**：`shop-content.ts` 新增 `VideoSection`（`poster`+`videoUrl`，零数据依赖）与 `PointsGoodsSection`（`title`+`limit`，数据自共享 shop-api `pointsProducts` 查询，points-mall-plugin 按 `ctx.channelId` 过滤）。
+- **白名单**：`home-skeleton.ts` `KNOWN_TYPES` 加入两类型；二者不锚定骨架槽位，按原序**追加首页末尾**（与 richText 同机制），兜底槽位不受影响。
+- **组件**：`components/home/blocks/VideoFloorBlock.vue`（`<video controls playsinline>`，videoUrl 为空不渲染、onError toast 整层保留）、`PointsGoodsFloorBlock.vue`（onMounted 客户端拉数，`limit` clamp 1-20 默认 6，仅渲染 `inStock`，失败/为空整层隐藏；点击卡片/查看更多 → 引导 toast「请前往积分商城兑换该商品」，兑换闭环留在积分商城端）。
+- **后台**：`platform/templates` 首页版式下拉加 `app === 'vshop'` 条件——`layout` 字段仅被 vshop C 端消费，nshop 首页是 usemall 骨架不读该字段，对 nshop 模板开放会误导运营。
+- **onMounted 上下文安全性**：`resolveClient()` 在钩子同步段内完成 `useTenantChannel()`（`useRuntimeConfig`/`useState`），首个 `await` 之前，不会抛 nuxt instance unavailable；`readVendureTokenWithContext` 客户端直接读 `document.cookie`。
+- **i18n**：`messages.home.videoFloor/pointsGoodsFloor/pointsGuide/videoLoadFail` 12 语言包全量同步；积分价复用 `messages.coupon.pointsPrice`。
+
+验证（生产库 ch1 备份→追加两楼层→还原，字节级校验一致；nuxt dev 同源代理线上 API）：
+单测 18/18（新增跨端新楼层 2 用例）；390×844 dpr=2 手机视口截图 `docs/manual/shots/2026-10-17-home-video-points-floors/`（视频楼层含海报+控件、积分楼层横滑卡片+积分价、点击引导 toast、整页序）。
+坑：改库后 dev SSR 首帧可能命中旧 payload（疑似首编译期取数缓存），重取即新；`devProxy` 仅 dev 生效，生产 .output 的 /shop-api 靠 Nginx 反代。
