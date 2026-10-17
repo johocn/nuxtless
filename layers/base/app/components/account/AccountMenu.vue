@@ -197,6 +197,8 @@ onMounted(async () => {
       size="md"
       icon="i-lucide-user"
       variant="outline"
+      class="h-[36px]! w-[36px]! min-w-0! p-0! justify-center shrink-0"
+      :ui="{ leadingIcon: 'size-[18px]!' }"
       :loading="loading"
     />
   </UDropdownMenu>

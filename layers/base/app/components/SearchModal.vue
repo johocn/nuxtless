@@ -62,7 +62,7 @@ watch([products.error, knowledge.error], ([pe, ke]) => {
     :title="t('messages.search.modalTitle')"
     :ui="{ content: 'h-screen sm:h-[32rem]' }"
   >
-    <UButton variant="outline" icon="i-lucide-search" size="md" />
+    <UButton variant="outline" icon="i-lucide-search" size="md" class="h-[36px]! w-[36px]! min-w-0! p-0! justify-center shrink-0" :ui="{ leadingIcon: 'size-[18px]!' }" />
 
     <template #body>
       <UInput
