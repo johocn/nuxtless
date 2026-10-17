@@ -59,7 +59,7 @@ const groups = computed(() => {
       <button
         v-for="it in tabs"
         :key="it.key"
-        class="shrink-0 whitespace-nowrap border-b-2 border-b-transparent px-3 py-2.5 text-[13.5px] text-[#666]"
+        class="shrink-0 whitespace-nowrap border-b-2 border-b-transparent px-3 py-2.5 text-[0.84375rem] text-[#666]"
         :class="
           activeTab === it.key
             ? 'border-b-[#e1251b] font-bold text-[#e1251b]'
@@ -96,7 +96,7 @@ const groups = computed(() => {
         class="mt-2.5 border-t-2 border-t-[#e1251b] bg-white"
       >
         <div
-          class="flex items-center gap-1.5 border-b border-[#f2f2f2] px-3 py-2.5 text-[13.5px] font-bold"
+          class="flex items-center gap-1.5 border-b border-[#f2f2f2] px-3 py-2.5 text-[0.84375rem] font-bold"
         >
           <span class="h-3.5 w-[3px] rounded-[1px] bg-[#e1251b]" />
           {{ g.label }}
@@ -111,7 +111,7 @@ const groups = computed(() => {
             :to="localePath(`/account/orders/${o.code}`)"
             class="block"
           >
-            <div class="flex items-center justify-between px-3 pb-1 pt-[9px] text-[11.5px] text-[#9ca3af]">
+            <div class="flex items-center justify-between px-3 pb-1 pt-[9px] text-[0.71875rem] text-[#9ca3af]">
               <span>
                 {{ dateTime(o.orderPlacedAt) }}
                 <span class="font-mono text-[#6b7280]">#{{ o.code }}</span>
@@ -140,7 +140,7 @@ const groups = computed(() => {
                     {{ line.productVariant?.name }}
                   </p>
                 </div>
-                <p class="whitespace-nowrap text-[12.5px] font-semibold">
+                <p class="whitespace-nowrap text-[0.78125rem] font-semibold">
                   {{ fmt(line.linePriceWithTax, o.currencyCode) }}
                   <span class="ml-[3px] font-normal text-[#9ca3af]">×{{ line.quantity }}</span>
                 </p>

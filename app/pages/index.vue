@@ -211,7 +211,7 @@ const entries = computed(() =>
                 <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                 <span class="truncate">{{ n }}</span>
                 <template v-if="i === 1">
-                  <span class="ml-auto shrink-0 rounded bg-primary px-1 text-[10px] text-white">NEW</span>
+                  <span class="ml-auto shrink-0 rounded bg-primary px-1 text-[0.625rem] text-white">NEW</span>
                 </template>
               </li>
             </ul>

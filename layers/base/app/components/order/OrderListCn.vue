@@ -96,7 +96,7 @@ const fmt = (amount: number, currency?: string | null) =>
                 loading="lazy"
               />
               <div class="min-w-0 flex-1">
-                <p class="truncate text-[13.5px] font-medium">
+                <p class="truncate text-[0.84375rem] font-medium">
                   {{ line.productVariant?.name }}
                 </p>
               </div>
@@ -107,7 +107,7 @@ const fmt = (amount: number, currency?: string | null) =>
             </li>
           </ul>
           <div
-            class="mx-[13px] flex items-center justify-between border-t border-[#f1f1f2] py-[9px] text-[12.5px] text-[#6b7280]"
+            class="mx-[13px] flex items-center justify-between border-t border-[#f1f1f2] py-[9px] text-[0.78125rem] text-[#6b7280]"
           >
             <span>{{ t("messages.order.totalItems", { n: o.totalQuantity }) }}</span>
             <span>
