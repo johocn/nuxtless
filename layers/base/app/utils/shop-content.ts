@@ -67,6 +67,11 @@ export interface LatestSection {
   layout?: GoodsLayout;
 }
 
+/** 视频楼层：封面图 + mp4 地址，零数据依赖（与 vshop/后台 schema 对齐） */
+export interface VideoSection { type: 'video'; title?: LocalizedText; poster?: string; videoUrl: string; }
+/** 积分商品楼层：数据自共享 shop-api 的 pointsProducts 查询（points-mall-plugin），无兜底 */
+export interface PointsGoodsSection { type: 'pointsGoods'; title?: LocalizedText; limit?: number; }
+
 export type CuratedGoodsSection = HotGoodsSection | RecommendGoodsSection;
 
 export type ShopSection =
@@ -80,7 +85,9 @@ export type ShopSection =
   | BrandFloorSection
   | PlazaSection
   | CouponSection
-  | LatestSection;
+  | LatestSection
+  | VideoSection
+  | PointsGoodsSection;
 
 export interface ShopContent {
   version: 1;

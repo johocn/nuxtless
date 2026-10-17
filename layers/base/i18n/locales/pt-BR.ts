@@ -119,6 +119,10 @@ export default defineI18nLocale(() =>
       recommendGoods: "Recomendado para você",
       couponFloor: "Cupons",
       latestGoods: "Novidades",
+      videoFloor: "Vídeos",
+      pointsGoodsFloor: "Selecionados por pontos",
+      pointsGuide: "Resgate este item na Loja de Pontos",
+      videoLoadFail: "Falha ao carregar o vídeo",
       news: [
         "Frete grátis para pedidos acima de R$ 99",
         "R$ 20 de desconto no primeiro pedido",

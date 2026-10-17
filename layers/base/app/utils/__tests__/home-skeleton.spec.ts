@@ -121,6 +121,29 @@ describe('resolveHomeSections · 未知 type', () => {
   });
 });
 
+describe('resolveHomeSections · 跨端新楼层（video/pointsGoods）', () => {
+  it('不匹配任何槽位 → 按原序追加末尾，兜底槽位不受影响', () => {
+    const out = resolveHomeSections({
+      version: 1,
+      sections: [
+        { type: 'video', videoUrl: 'https://cdn.example.com/a.mp4' },
+        { type: 'pointsGoods', limit: 8 },
+      ],
+    });
+    const extra = out.filter((r) => r.slotKey === null);
+    expect(extra.map((r) => r.section.type)).toEqual(['video', 'pointsGoods']);
+    expect(out.filter((r) => r.auto).length).toBe(6);
+  });
+  it('与新楼层混排：既有槽位覆盖与末尾追加互不干扰', () => {
+    const out = resolveHomeSections({
+      version: 1,
+      sections: [{ type: 'pointsGoods', limit: 4 }, { type: 'hot', limit: 4 }],
+    });
+    expect(out.find((r) => r.slotKey === 'hot')!.section).toMatchObject({ limit: 4 });
+    expect(out[out.length - 1]!.section.type).toBe('pointsGoods');
+  });
+});
+
 describe('HOME_SKELETON 常量', () => {
   it('10 个槽位，6 兜底 + 4 可选，顺序即最终渲染顺序', () => {
     expect(HOME_SKELETON.map((s) => s.key)).toEqual([

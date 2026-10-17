@@ -119,6 +119,10 @@ export default defineI18nLocale(() =>
       recommendGoods: "Препоръчано за вас",
       couponFloor: "Купони",
       latestGoods: "Нови продукти",
+      videoFloor: "Видеа",
+      pointsGoodsFloor: "Стоки за точки",
+      pointsGuide: "Обменете този продукт в секцията за точки",
+      videoLoadFail: "Видеото не зареди",
       news: [
         "Безплатна доставка за всички собствени продукти над 99 ¥",
         "20 ¥ отстъпка за първата поръчка на нови клиенти",

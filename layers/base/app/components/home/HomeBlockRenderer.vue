@@ -17,6 +17,8 @@ import BrandFloorBlock from "./blocks/BrandFloorBlock.vue";
 import PlazaBlock from "./blocks/PlazaBlock.vue";
 import CouponFloorBlock from "./blocks/CouponFloorBlock.vue";
 import LatestGoodsBlock from "./blocks/LatestGoodsBlock.vue";
+import VideoFloorBlock from "./blocks/VideoFloorBlock.vue";
+import PointsGoodsFloorBlock from "./blocks/PointsGoodsFloorBlock.vue";
 import GoodsCardBlock from "./blocks/GoodsCardBlock.vue";
 import type { SearchResult } from "~~/types/product";
 import type { ResolvedSection } from "../../utils/home-skeleton";
@@ -41,6 +43,8 @@ const componentMap: Record<string, any> = {
   plaza: PlazaBlock,
   coupon: CouponFloorBlock,
   latest: LatestGoodsBlock,
+  video: VideoFloorBlock,
+  pointsGoods: PointsGoodsFloorBlock,
 };
 
 /** 自动补位的商品槽位：直渲注入数据，不再走 HotGoodsBlock/RecommendGoodsBlock */

@@ -119,6 +119,10 @@ export default defineI18nLocale(() =>
       recommendGoods: "Рекомендуем для вас",
       couponFloor: "Купоны",
       latestGoods: "Новинки",
+      videoFloor: "Видео",
+      pointsGoodsFloor: "Товары за баллы",
+      pointsGuide: "Обменяйте этот товар в разделе баллов",
+      videoLoadFail: "Не удалось загрузить видео",
       news: [
         "Бесплатная доставка при заказе от 99 юаней",
         "Скидка 20 юаней на первый заказ для новичков",
