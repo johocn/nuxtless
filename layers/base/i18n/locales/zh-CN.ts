@@ -177,6 +177,11 @@ export const zhMessages = {
       pointsGoodsFloor: '积分好物',
       pointsGuide: '请前往积分商城兑换该商品',
       videoLoadFail: '视频加载失败',
+      flashFloor: '限时秒杀',
+      flashEndsIn: '距结束',
+      flashBadge: '秒杀',
+      flashSold: '已售 {n}%',
+      flashFallbackName: '商品',
       news: [
         '全场自营商品满 99 元包邮',
         '新用户首单立减 20 元',

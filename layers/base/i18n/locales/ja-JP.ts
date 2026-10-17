@@ -158,6 +158,11 @@ export default defineI18nLocale(() =>
       pointsGoodsFloor: "ポイント特選",
       pointsGuide: "ポイントモールで交換してください",
       videoLoadFail: "動画の読み込みに失敗しました",
+      flashFloor: "タイムセール",
+      flashEndsIn: "終了まで",
+      flashBadge: "セール",
+      flashSold: "{n}% 販売済み",
+      flashFallbackName: "商品",
       news: [
         "自社運営商品は99元以上で送料無料",
         "新規ユーザー初回注文で20元割引",

@@ -121,7 +121,7 @@ describe('resolveHomeSections · 未知 type', () => {
   });
 });
 
-describe('resolveHomeSections · 跨端新楼层（video/pointsGoods）', () => {
+describe('resolveHomeSections · 跨端新楼层（video/pointsGoods/flash）', () => {
   it('不匹配任何槽位 → 按原序追加末尾，兜底槽位不受影响', () => {
     const out = resolveHomeSections({
       version: 1,
@@ -134,13 +134,23 @@ describe('resolveHomeSections · 跨端新楼层（video/pointsGoods）', () => 
     expect(extra.map((r) => r.section.type)).toEqual(['video', 'pointsGoods']);
     expect(out.filter((r) => r.auto).length).toBe(6);
   });
+  it('flash 秒杀楼层 → 末尾追加，配置原样保留', () => {
+    const out = resolveHomeSections({
+      version: 1,
+      sections: [{ type: 'flash', layout: 'grid2', limit: 6 }],
+    });
+    const extra = out.filter((r) => r.slotKey === null);
+    expect(extra.map((r) => r.section.type)).toEqual(['flash']);
+    expect(extra[0]!.section).toMatchObject({ type: 'flash', layout: 'grid2', limit: 6 });
+    expect(out.filter((r) => r.auto).length).toBe(6);
+  });
   it('与新楼层混排：既有槽位覆盖与末尾追加互不干扰', () => {
     const out = resolveHomeSections({
       version: 1,
-      sections: [{ type: 'pointsGoods', limit: 4 }, { type: 'hot', limit: 4 }],
+      sections: [{ type: 'pointsGoods', limit: 4 }, { type: 'hot', limit: 4 }, { type: 'flash' }],
     });
     expect(out.find((r) => r.slotKey === 'hot')!.section).toMatchObject({ limit: 4 });
-    expect(out[out.length - 1]!.section.type).toBe('pointsGoods');
+    expect(out[out.length - 1]!.section.type).toBe('flash');
   });
 });
 

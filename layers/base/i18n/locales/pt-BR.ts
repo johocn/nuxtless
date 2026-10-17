@@ -123,6 +123,11 @@ export default defineI18nLocale(() =>
       pointsGoodsFloor: "Selecionados por pontos",
       pointsGuide: "Resgate este item na Loja de Pontos",
       videoLoadFail: "Falha ao carregar o vídeo",
+      flashFloor: "Ofertas relâmpago",
+      flashEndsIn: "Termina em",
+      flashBadge: "Flash",
+      flashSold: "{n}% vendido",
+      flashFallbackName: "Item",
       news: [
         "Frete grátis para pedidos acima de R$ 99",
         "R$ 20 de desconto no primeiro pedido",

@@ -19,6 +19,7 @@ import CouponFloorBlock from "./blocks/CouponFloorBlock.vue";
 import LatestGoodsBlock from "./blocks/LatestGoodsBlock.vue";
 import VideoFloorBlock from "./blocks/VideoFloorBlock.vue";
 import PointsGoodsFloorBlock from "./blocks/PointsGoodsFloorBlock.vue";
+import FlashFloorBlock from "./blocks/FlashFloorBlock.vue";
 import GoodsCardBlock from "./blocks/GoodsCardBlock.vue";
 import type { SearchResult } from "~~/types/product";
 import type { ResolvedSection } from "../../utils/home-skeleton";
@@ -45,6 +46,7 @@ const componentMap: Record<string, any> = {
   latest: LatestGoodsBlock,
   video: VideoFloorBlock,
   pointsGoods: PointsGoodsFloorBlock,
+  flash: FlashFloorBlock,
 };
 
 /** 自动补位的商品槽位：直渲注入数据，不再走 HotGoodsBlock/RecommendGoodsBlock */

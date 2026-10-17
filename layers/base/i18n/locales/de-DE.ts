@@ -141,6 +141,11 @@ export default defineI18nLocale(() =>
       pointsGoodsFloor: "Punkte-Highlights",
       pointsGuide: "Bitte im Punkte-Shop einlösen",
       videoLoadFail: "Video konnte nicht geladen werden",
+      flashFloor: "Blitzangebote",
+      flashEndsIn: "Endet in",
+      flashBadge: "Blitz",
+      flashSold: "{n}% verkauft",
+      flashFallbackName: "Artikel",
       news: [
         "Kostenloser Versand ab 99 ¥ für alle Eigenmarken-Artikel",
         "20 ¥ Rabatt auf die erste Bestellung für Neukunden",

@@ -74,6 +74,11 @@ export default defineI18nLocale(() =>
       pointsGoodsFloor: "Points Picks",
       pointsGuide: "Please redeem this item in the Points Mall",
       videoLoadFail: "Video failed to load",
+      flashFloor: "Flash Sale",
+      flashEndsIn: "Ends in",
+      flashBadge: "Flash",
+      flashSold: "{n}% sold",
+      flashFallbackName: "Item",
       news: [
         "Free shipping on all self-operated items over ¥99",
         "¥20 off your first order for new customers",
