@@ -1,0 +1,27 @@
+[
+  {
+    "step": "01-home",
+    "checks": {
+      "labelTop": true,
+      "labelHot": true,
+      "anchor99": true,
+      "bundle": true,
+      "soldHidden": true,
+      "discount80": true
+    }
+  },
+  {
+    "step": "02-detail-sheet",
+    "checks": {
+      "sheetOpen": true,
+      "labelInSheet": true,
+      "anchorInSheet": true,
+      "calcLine": true,
+      "flowSteps": true
+    }
+  },
+  {
+    "step": "03-bundle-floor",
+    "ok": true
+  }
+]

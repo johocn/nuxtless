@@ -73,6 +73,23 @@
 
 > 2026-10-18 生产验收：手机视口（390×844 dpr=2）截图确认 C10/C11 全部通过（两张券卡「8折」可抢购、弹层算账条/三步流程/正向须知齐备）；SSR 探针 `hero-trust` 确认新版上线。注意：浏览器端验证若遇旧页，先清 Service Worker/Cache Storage 再硬刷新（部署切换窗口的残留缓存会导致误判）。
 
+## 6.1 营销数据升级（2026-10-18 · P2：真实已售数 + 划线价 + 营销标签 + 券包）
+
+| 升级点 | 说明 | 位置 |
+| --- | --- | --- |
+| 真实已售数 | `couponSaleCatalogue` 按渠道聚合**已支付（PAID）出售单**计数，单券/券包均下发 `soldCount`；退款（REFUNDED）/取消单不计入。**C 端仅 soldCount>0 才展示「已售N」**——无真实成交不显示（营销噱头红线） | coupon-plugin `coupon-sale.service.ts` |
+| 划线锚定价 `anchorPrice` | coupon_template 新列（分）。web-admin 券表单「划线原价」可选填；C 端**仅当 anchorPrice > salePrice 才展示划线价**（`couponAnchorYuan` 防误导），划线价禁写死 | 实体/迁移 `add-coupon-marketing-fields` |
+| 营销标签 `label` | coupon_template 新列（≤30 字）。web-admin「营销标签」可选填（建议 6 字内如「热卖TOP」）；C 端券卡头图左上红色角标 + 详情弹层头部标签，空不展示 | 同上 |
+| 券包真实已售数 | CouponBundle 下发 `soldCount`，券包卡名称旁展示（同样 >0 才显示） | coupon-plugin |
+| t1 首批配置 | 券 83 anchorPrice=990/label=热卖TOP；券 84 anchorPrice=990/label=人气爆款；券包 id=2「超值2张券包」（餐饮1张+台球1张，包价 ¥9，挂渠道 7） | admin-api |
+| 券包条目折扣语义 | BundleCard 条目 PERCENT 券显示「8折 ×1」而非「¥0.80 ×1」（discountValue 是折扣值不是面额） | `BundleCard.vue` |
+
+**运营配置路径**：web-admin → 优惠券模块 → 编辑券模板 → 「券商城」渠道下填**出售价 + 划线原价（可选）+ 营销标签（可选）**；券包在券包管理创建（选券 + 数量 + 包价）。
+
+验收截图（手机视口 390×844 dpr=2）：[2026-10-18-t1-marketing-upgrade/](../../../manual/shots/2026-10-18-t1-marketing-upgrade/)（01 首页营销标签/划线价/8折；02 详情弹层标签+划线价+算账条+三步流程；03 券包楼层）。DOM 断言见 `verify-log.json`（soldCount=0 时「已售」正确隐藏）。验证脚本 `scripts/_shot_coupon_marketing.mjs`。
+
+> 首购立减 / 学生价 / 倒计时活动位：**挂起**，待运营定活动政策（门槛/力度/时段）后再实施。
+
 ## 7. 测试用例清单
 
 ### 7.1 后端（shop-api，curl 匿名/带渠道 token）
@@ -100,6 +117,9 @@
 | C10 | floors 版式券卡（转化升级后） | 场景插画头图 +「到店可用」角标 +「8折」大字 + 算账 caption + 有效期/信任行；付费券按钮可点（不误显已抢罄） | 11（[2026-10-18-t1-coupon-redesign/11-home-floors-redesign.png](../../../manual/shots/2026-10-18-t1-coupon-redesign/11-home-floors-redesign.png)） |
 | C11 | 点券卡开详情弹层 | 算账条「按8折立省¥20」+ 三步流程条 + 须知正向文案 | 12（[2026-10-18-t1-coupon-redesign/12-detail-sheet-redesign.png](../../../manual/shots/2026-10-18-t1-coupon-redesign/12-detail-sheet-redesign.png)） |
 | C12 | 切 en-US 语言 | 折扣「Save 20%」、算账/流程/信任行英文正常（语言包双语同步） | — |
+| C13 | 营销标签/划线价（P2） | 券卡头图红色角标（热卖TOP/人气爆款）+ ¥9.9 划线价 + ¥5 现价；详情弹层同步；后台未配置则不显示 | 01/02（[2026-10-18-t1-marketing-upgrade/](../../../manual/shots/2026-10-18-t1-marketing-upgrade/)） |
+| C14 | 真实已售数（P2） | soldCount=0 全程不显示「已售」；产生真实 PAID 出售单后「已售N」出现（单券/券包同口径） | verify-log.json 断言 |
+| C15 | 券包楼层（P2） | 「超值2张券包」入超值券包楼层，条目「餐饮买单优惠券 8折 ×1」语义正确，包价 ¥9 | 03 |
 
 ## 8. 已知边界
 
