@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { hasDetail } from "../../utils/coupon-mall";
+import { hasDetail, formatCouponDiscount } from "../../utils/coupon-mall";
 import { couponYuan, couponTemplateMap, couponBundleItems } from "../../utils/coupon";
 
 /**
@@ -17,6 +17,14 @@ const detailable = computed(() => hasDetail(props.bundle.description, locale.val
 const items = computed(() => couponBundleItems(props.bundle as never, couponTemplateMap(props.templates as never)));
 /** 券包真实已售数（PAID 出售单聚合）；>0 才展示 */
 const soldCount = computed(() => Math.max(0, Number(props.bundle.soldCount ?? 0)));
+/** 条目面额文案：PERCENT 券显示折扣（8折/Save 20%），FIXED/FULL 显示面额 ¥X */
+function itemFace(tpl: Record<string, any> | null | undefined): string {
+  if (!tpl) return "—";
+  const d = formatCouponDiscount(tpl);
+  return d.kind === "percent"
+    ? t("messages.couponStore.percentOff", { v: d.percent, s: Math.max(0, 100 - Number(tpl.discountValue ?? 0)) })
+    : `¥${d.amount}`;
+}
 </script>
 
 <template>
@@ -30,7 +38,7 @@ const soldCount = computed(() => Math.max(0, Number(props.bundle.soldCount ?? 0)
     </div>
     <div class="chips">
       <span v-for="it in items" :key="it.id" class="chip">
-        {{ it.template ? `${localizeText(it.template.name, locale)} ¥${couponYuan(it.template.discountValue)}` : "—" }} ×{{ it.quantity }}
+        {{ it.template ? `${localizeText(it.template.name, locale)} ${itemFace(it.template)}` : "—" }} ×{{ it.quantity }}
       </span>
     </div>
     <div class="foot">
