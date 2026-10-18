@@ -1,0 +1,21 @@
+[
+  {
+    "step": "01-campaign-card",
+    "checks": {
+      "cardVisible": true,
+      "title": true,
+      "subtitle": true,
+      "miniCards": true,
+      "rules": true,
+      "countdownTicking": false,
+      "cdText1": "距结束165:57:32",
+      "cdText2": "距结束165:57:30"
+    }
+  },
+  {
+    "step": "02-mini-to-detail",
+    "checks": {
+      "detailOpened": true
+    }
+  }
+]

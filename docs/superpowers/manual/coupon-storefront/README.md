@@ -112,6 +112,27 @@
 
 验收截图（手机视口 390×844 dpr=2）：[2026-10-18-coupon-firstbuy-student/](../../../manual/shots/2026-10-18-coupon-firstbuy-student/)（01 首页首购红标+¥5 划线+¥3 到手；02 详情明细三行；02b 台球券学生认证引导；03 认证页登录门）。DOM 断言见 `verify-log.json`。验证脚本 `scripts/_shot_coupon_firstbuy.mjs`。
 
+## 6.3 倒计时活动位（2026-10-18 · P4）
+
+券店首页店招下的限时活动大卡（版式 B）：活动标题/副标题 + `hh:mm:ss` 数字块走秒（超 100 小时直接累计小时位）+ 关联券 mini 卡直达详情弹层 + 规则文案行；走秒到点自动摘除。**不改券价格**——mini 卡现价沿用首购/学生价既有展示逻辑，活动只做高亮引流。
+
+**政策规则**（方案：[2026-10-18-coupon-countdown.md](../../../plans/2026-10-18-coupon-countdown.md)）：
+
+- **单场承载**：Channel customFields `couponCampaign`（JSON 字符串，**列宽 varchar(4096)**——customFields string 默认 255 装不下活动 JSON，本次踩坑）。到点自动上/下线：后端按**服务端时钟**判时间窗（不信任前端），窗口外/未配置/禁用/坏 JSON/关联券全不命中 → 下发 `campaign=null` 前端不渲染。
+- **关联券**：配置 `templateIds` 有序列表（web-admin 按勾选顺序展示），命中本店**可售**券（他店/下架自动过滤）；文案 `name/subtitle/rules` 为 LocalizedText（中/英，兜底链：当前 lang → 去地区码 → 首个非空）。
+- **前端走秒**：SSR 首渲染 `--:--:--` 占位（避免 hydration mismatch），挂载后秒级刷新，到 0 emit `expired` 由页面移除。
+
+| 实现点 | 说明 | 位置 |
+| --- | --- | --- |
+| 配置解析/下发 | `parseCouponCampaignConfig`（坏 JSON 返 null）/ `localizeCampaignText` / `resolveActiveCampaign`（纯函数，单测覆盖）；`saleCatalogue` 返回 `campaign` | coupon-plugin `coupon-sale.ts` / `coupon-sale.service.ts` |
+| 迁移 | `channel.customFieldsCouponcampaign` varchar(4096)，已建窄列幂等 ALTER 放宽 | coupon-plugin `migrations/add-coupon-promo-fields` |
+| 后台入口 | `updateTenant` input 增 `couponCampaign`（并补上此前 `firstBuyDiscount` 未声明的缺口）；租户详情「倒计时活动位」配置卡：开关/中英文案/日期+时间 picker 时间窗/关联券多选弹层 | cjk-plugin `tenant-member.service.ts` + vshop web-admin 租户详情 |
+| C 端活动卡 | 标题+副标题+数字块+mini 卡（现价/划线价/抢购→`openDetail` 详情弹层）+规则行；floors/grid 两版式通用 | `CouponStoreCampaignCard` + `CouponStoreHome` |
+
+**t1 上线配置**（SQL 直配，运营后续在 web-admin 自改）：Channel 7 `customFieldsCouponcampaign` = 周末限时特惠（窗口 2026-10-18 00:00 → 10-25 22:00，关联券 83/84）。
+
+验收截图（手机视口 390×844 dpr=2）：[2026-10-18-coupon-countdown/](../../../manual/shots/2026-10-18-coupon-countdown/)（01 活动大卡：标题+165:57:30 走秒数字块+餐饮/台球 mini 卡+规则行；02 mini 卡点击直达详情弹层，首购明细联动）。DOM 断言见 `verify-log.json`（含走秒前后对比）。验证脚本 `scripts/_shot_coupon_countdown.mjs`。
+
 ## 7. 测试用例清单
 
 ### 7.1 后端（shop-api，curl 匿名/带渠道 token）
@@ -147,6 +168,9 @@
 | C18 | 学生认证引导（P3） | 含学生价的券（台球券）弹层显示绿色「认证学生享学生价，去认证」链接 → 跳 `/coupon/student-verify`；无学生价的券不显示 | 02b |
 | C19 | 学生认证页登录门（P3） | 匿名访问 `/t1/coupon/student-verify` 跳转登录页；登录后显示状态卡/表单（驳回可改重提） | 03 |
 | C20 | 同价优先学生价（P3） | 学生认证通过 + 首购资格都在时：台球券两路径同价 ¥3，下单记 discountType=STUDENT；服务器端 resolvePromoPrice 单测覆盖 | 单测 |
+| C21 | 倒计时活动位展示（P4） | 店招下红色活动大卡：标题/副标题 + 数字块秒级走秒（超 100h 累计小时位）+ 关联券 mini 卡（现价/划线价）+ 规则行；窗口外/未配置自动消失 | 01（[2026-10-18-coupon-countdown/](../../../manual/shots/2026-10-18-coupon-countdown/)） |
+| C22 | 活动 mini 卡直达详情（P4） | 点 mini 卡开详情弹层，价格明细（首购立减等）与日常链路一致 | 02 |
+| C23 | 活动配置边界（P4） | 坏 JSON/未配置/禁用/窗口外/关联券全不命中 → catalogue campaign=null 不渲染不报错；他店券自动过滤；单测覆盖 parse/resolve/localize | 单测 + verify-log.json |
 
 ## 8. 已知边界
 
