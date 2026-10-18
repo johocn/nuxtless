@@ -23,12 +23,14 @@ import HomeBlockRenderer from "../../layers/base/app/components/home/HomeBlockRe
 // 券店首页（storefrontMode=coupon）：显式 import 规避目录前缀自动注册名歧义（coupon-store/CouponStoreHome
 // 的自动注册名是 CouponStoreCouponStoreHome），与上方 Jd 组件显式 import 先例一致
 import CouponStoreHome from "../../layers/base/app/components/coupon-store/CouponStoreHome.vue";
+// 代买单首页（storefrontMode=billpay，t3 租户）：同样显式 import 规避自动注册名歧义
+import BillPayHome from "../../layers/base/app/components/bill-pay/BillPayHome.vue";
 
 const { t, tm } = useI18n();
 const localePath = useTenantLocalePath();
 
-// 租户店面模式：coupon=券店（整店只卖买单券），首页渲染券店版式并跳过商品/分类数据加载
-const { isCouponStore, homeLayout } = useStorefrontMode();
+// 租户店面模式：coupon=券店（整店只卖买单券），billpay=代买单服务店（t3），首页按模式渲染并跳过商品/分类数据加载
+const { isCouponStore, isBillPayStore, homeLayout } = useStorefrontMode();
 
 // 1) 顶部分类：SSR 预取菜单集合（useMenuCollections 内置 800ms 护栏，超时/失败由 app.vue
 //    的客户端兜底加载填充）——不再依赖 app.vue 的仅客户端加载，首帧即可渲染分类导航
@@ -99,8 +101,8 @@ async function loadChannelFacet(): Promise<{ dual: boolean; ids: Record<string, 
 const { data: fallbackSearch } = await useAsyncData(
   "home-fallback-search",
   async () => {
-    // 券店模式不发兜底商品搜索（首页无商品楼层），避免无谓的 SSR 请求
-    if (isCouponStore.value) return { hot: [], more: [] };
+    // 券店/代买单模式不发兜底商品搜索（首页无商品楼层），避免无谓的 SSR 请求
+    if (isCouponStore.value || isBillPayStore.value) return { hot: [], more: [] };
     // 运营已覆盖 hot/recommend 时不发兜底搜索（沿用各自 useCuratedGoods）；骨架自动补位时复用这一次结果
     if (!needFallbackGoods.value) return { hot: [], more: [] };
     // 仅双能力渠道走服务端 facet：单能力渠道筛选值恒不变（筛选条也不渲染），
@@ -189,6 +191,9 @@ const entries = computed(() =>
 
   <!-- ═══ 券店模式：整店只卖买单券，首页渲染券店版式（楼层导购/券卡宫格）═══ -->
   <CouponStoreHome v-if="isCouponStore" :layout="homeLayout" />
+
+  <!-- ═══ 代买单模式：委托单提交页（商家/金额/备注/报价卡/协议），t3 租户 ═══ -->
+  <BillPayHome v-else-if="isBillPayStore" />
 
   <!-- ═══ 普通商城：京东风格（PC 全屏 + 窄屏自动降级为移动单列布局）═══ -->
   <template v-else>
