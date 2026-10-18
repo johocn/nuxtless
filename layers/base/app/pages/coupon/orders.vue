@@ -10,7 +10,9 @@ import { invokeWechatPay, isWechatBrowser } from "~~/layers/base/app/utils/coupo
 definePageMeta({ title: "messages.couponSaleOrders.title" });
 
 const { t } = useI18n();
+const localePath = useTenantLocalePath();
 const toast = useToast();
+const { isAuthenticated } = storeToRefs(useAuthStore());
 const loading = ref(true);
 const orders = ref<CouponSaleOrder[]>([]);
 
@@ -22,6 +24,12 @@ const pendingOrder = ref<CouponSaleOrder | null>(null);
 async function load() {
   loading.value = true;
   try {
+    // 未登录：API 必然 FORBIDDEN，直接引导登录而不是报错 toast
+    if (!isAuthenticated.value) {
+      orders.value = [];
+      navigateTo(localePath("/account/login"));
+      return;
+    }
     orders.value = (await getMyCouponSaleOrders()) ?? [];
   } catch (e) {
     toast.add({ title: t("messages.couponSaleOrders.loadFailed"), description: couponErrorMessage(e), color: "error" });
