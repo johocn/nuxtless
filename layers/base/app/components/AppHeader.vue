@@ -8,6 +8,8 @@ const route = useRoute();
 const localePath = useTenantLocalePath();
 
 const menuCollections = useState<MenuCollections>("menuCollections");
+// 券店模式：头部精简（无分类导航/搜索/购物车），保留 Logo、城市/租户选择器、AccountMenu
+const { isCouponStore } = useStorefrontMode();
 
 const items = computed<NavigationMenuItem[]>(
   () =>
@@ -55,6 +57,7 @@ const items = computed<NavigationMenuItem[]>(
     </template>
 
     <UNavigationMenu
+      v-if="!isCouponStore"
       :items="items"
       variant="link"
       content-orientation="vertical"
@@ -68,13 +71,14 @@ const items = computed<NavigationMenuItem[]>(
         <HeaderTenantSelector />
       </div>
       <HeaderCitySelector />
-      <SearchModal />
+      <SearchModal v-if="!isCouponStore" />
       <AccountMenu />
-      <CartTrigger />
+      <CartTrigger v-if="!isCouponStore" />
     </template>
 
     <template #body>
       <UNavigationMenu
+        v-if="!isCouponStore"
         :items="items"
         variant="pill"
         orientation="vertical"
@@ -85,5 +89,5 @@ const items = computed<NavigationMenuItem[]>(
       </div>
     </template>
   </UHeader>
-  <CartPanel />
+  <CartPanel v-if="!isCouponStore" />
 </template>
