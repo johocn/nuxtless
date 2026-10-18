@@ -28,6 +28,8 @@ query GetChannelTheme {
       shareImageUrl
       shopName
       shopIntro
+      storefrontMode
+      storefrontHomeLayout
     }
     pricesIncludeTax
   }
