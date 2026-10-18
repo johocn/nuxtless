@@ -375,6 +375,7 @@ export default defineI18nLocale(() =>
       trustLine: "Show coupon code in store · valid storewide",
       asLowAs: "From ¥{price}",
       calcExample: "e.g. {off} in store: spend ¥{spend}, save ¥{save}",
+      soldCount: "{n} sold",
       flowStep1: "Buy online",
       flowStep2: "Order in store",
       flowStep3: "Show code to settle",

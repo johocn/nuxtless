@@ -69,6 +69,20 @@ export function couponSavingsExample(
   return { spend, save, after: spend - save };
 }
 
+/**
+ * 划线锚定价（元字符串）：后台可配 anchorPrice（分），仅当为正数且高于售价时返回展示值，
+ * 防止误配低于售价的划线价造成误导；未配置 / 误配返回 null 不展示。
+ */
+export function couponAnchorYuan(tpl: {
+  anchorPrice?: number | null;
+  salePrice?: number | null;
+}): string | null {
+  const ap = Number(tpl?.anchorPrice ?? 0);
+  const sp = Number(tpl?.salePrice ?? 0);
+  if (!(ap > 0) || ap <= sp) return null;
+  return couponYuan(ap);
+}
+
 /** 券名 → 场景插画类型（纯函数，按关键词映射） */
 export type CouponSceneArt = "billiards" | "dining" | "drink" | "generic";
 

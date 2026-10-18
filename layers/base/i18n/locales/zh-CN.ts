@@ -387,6 +387,7 @@ export const zhMessages = {
       trustLine: '到店出示券码 · 全场通用',
       asLowAs: '低至¥{price}',
       calcExample: '例：到店消费¥{spend}，按{off}立省¥{save}',
+      soldCount: '已售{n}',
       flowStep1: '在线购券',
       flowStep2: '到店消费',
       flowStep3: '出示券码结算',

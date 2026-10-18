@@ -73,6 +73,12 @@ export interface CouponTemplate {
   distributionChannels?: string | null;
   /** 出售价（分）；0=不可售 */
   salePrice: number;
+  /** 营销划线锚定价（分）；null/0=不展示 */
+  anchorPrice?: number | null;
+  /** 营销标签（如「热卖TOP」）；空=不展示 */
+  label?: string | null;
+  /** 真实已售数（coupon_sale_order PAID 聚合，仅 couponSaleCatalogue 下发；其他查询为 null） */
+  soldCount?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -93,6 +99,8 @@ export interface CouponBundle {
   salePrice: number;
   enabled: boolean;
   channelId: string;
+  /** 券包真实已售数（PAID 出售单聚合，仅 couponSaleCatalogue 下发） */
+  soldCount?: number | null;
   items: CouponBundleItem[];
 }
 
@@ -248,11 +256,11 @@ const COUPON_TEMPLATE_FIELDS = `
   startsAt endsAt totalCount claimedCount pointsPrice perUserLimit
   scope categoryId variantId enabled shopId usageScene createdAt updatedAt
   claimable claimCode validDays newCustomerOnly memberLevel
-  distributionChannels salePrice
+  distributionChannels salePrice anchorPrice label soldCount
 `;
 
 const BUNDLE_FIELDS = `
-  id name description salePrice enabled channelId
+  id name description salePrice enabled channelId soldCount
   items { id bundleId templateId quantity }
 `;
 

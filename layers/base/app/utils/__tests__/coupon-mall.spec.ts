@@ -4,6 +4,7 @@ import {
   saleCardProgress,
   formatCouponDiscount,
   couponSavingsExample,
+  couponAnchorYuan,
   couponSceneArt,
   hasDetail,
   parseDetailParagraphs,
@@ -115,6 +116,21 @@ describe("couponSavingsExample", () => {
     expect(couponSavingsExample({ type: "FIXED", discountValue: 500 })).toBeNull();
     expect(couponSavingsExample({ type: "PERCENT", discountValue: 0 })).toBeNull();
     expect(couponSavingsExample({ type: "PERCENT", discountValue: 80 }, 0)).toBeNull();
+  });
+});
+
+describe("couponAnchorYuan", () => {
+  it("anchorPrice 高于售价：分→元字符串", () => {
+    expect(couponAnchorYuan({ anchorPrice: 3000, salePrice: 500 })).toBe("30");
+  });
+  it("anchorPrice 低于/等于售价：防误导不展示", () => {
+    expect(couponAnchorYuan({ anchorPrice: 500, salePrice: 500 })).toBeNull();
+    expect(couponAnchorYuan({ anchorPrice: 300, salePrice: 500 })).toBeNull();
+  });
+  it("未配置 / 脏数据返回 null", () => {
+    expect(couponAnchorYuan({})).toBeNull();
+    expect(couponAnchorYuan({ anchorPrice: null, salePrice: 500 })).toBeNull();
+    expect(couponAnchorYuan({ anchorPrice: 0, salePrice: 500 })).toBeNull();
   });
 });
 
