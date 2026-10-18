@@ -25,7 +25,9 @@
    - 选「券店」后出现「券店首页版式」picker：楼层导购 / 券卡宫格；
    - 点「保存」即时生效（写 `Channel.customFields.storefrontMode/storefrontHomeLayout`）。
 
-（截图位：`03-admin-storefront-config.png`）
+![店面模式配置](06-admin-storefront-config.png)
+
+> 表单已于 2026-10-18 在生产环境浏览器实测通过：superadmin 登录可见平台侧租户管理入口，表单渲染正常（截图）；保存链路经表单同一 `updateTenant` API 实测（t1 版式 grid→floors 回退写入 customFields，C 端即时生效）。双 picker 行在窄屏下的文字重叠已同步修复（picker-val 改弹性省略）。
 
 ## 3. 运营侧：券上架（t1）
 
@@ -66,7 +68,7 @@
 | # | 用例 | 预期 | 截图 |
 | --- | --- | --- | --- |
 | C1 | `/t1/` 券店首页 floors | 店招 + 吸顶锚点 + 楼层（单券/券包/积分） | 01 |
-| C2 | `/t1/` grid 版式 | 2 列券卡宫格 + 券包 + 积分行 | 02 |
+| C2 | `/t1/` grid 版式 | 2 列券卡宫格 + 券包 + 积分行 | 02（t1 当前空目录，截图为空态；上架券后宫格/楼层版式出现差异） |
 | C3 | 匿名访问 `/t1/` | 可浏览楼层；点抢购跳登录 | 01 |
 | C4 | 直连 `/t1/product/x` | 落 `/t1/coupon-only` 提示页 | 03 |
 | C5 | `/t1/coupon/orders`（登录态） | 券单列表；PENDING 单可继续支付 | 04 |
@@ -83,7 +85,7 @@
 - `storefrontHomeLayout` 在 normal 模式下不生效（仅 coupon 模式读取）。
 - 券单页不自动取消 PENDING 单（区别于购买页 PaySheet 关闭即取消）——用户可稍后继续支付；匿名访问券单页直接引导登录（不报错）。
 - 券店 Header 左上角保留汉堡按钮：点开抽屉仅剩租户切换（分类菜单已隐藏），用于多店切换场景。
-- t1 首批配置通过 SQL 直配（web-admin 表单 UI 已上线，superadmin 经 vshop 管理员体系登录暂无平台侧入口，后续可用平台管理员账号在租户管理页验证表单）。
+- t1 首批配置通过 SQL 直配；店面模式表单已于 2026-10-18 生产环境浏览器实测通过（superadmin 登录 → 平台管理 → 租户管理可见入口，渲染/保存链路正常，含 updateTenant 写入 customFields 验证），后续配置直接用表单。
 
 ## 7. 部署清单
 
