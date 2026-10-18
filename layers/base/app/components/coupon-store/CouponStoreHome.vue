@@ -28,6 +28,8 @@ const templates = ref<any[]>([]);
 const bundles = ref<any[]>([]);
 const pointsTemplates = ref<any[]>([]);
 const loading = ref(true);
+/** 倒计时活动位（单场，后端时间窗内才下发；到点/无活动为 null 不渲染） */
+const campaign = ref<any | null>(null);
 /** 首购立减/学生价展示上下文（传给券卡与详情弹层） */
 const promo = ref<{ firstBuyDiscount: number; firstBuyEligible: boolean | null; studentApproved: boolean | null }>({
   firstBuyDiscount: 0,
@@ -52,6 +54,8 @@ async function load() {
     ]);
     templates.value = sale?.templates ?? [];
     bundles.value = sale?.bundles ?? [];
+    // 倒计时活动位（单场）：窗口内下发，前端到点自动摘除
+    campaign.value = sale?.campaign ?? null;
     // 首购立减/学生价资格信息（后端按登录态计算；匿名 firstBuyEligible=null 按新客展示引导）
     promo.value = {
       firstBuyDiscount: sale?.firstBuyDiscount ?? 0,
@@ -101,6 +105,16 @@ const asLowPrice = computed<number | null>(() => {
         </NuxtLink>
       </div>
     </header>
+
+    <!-- 倒计时活动位（版式 B 大倒计时卡片；走秒到点自动摘除） -->
+    <CouponStoreCampaignCard
+      v-if="campaign"
+      class="mb-3"
+      :campaign="campaign"
+      :promo="promo"
+      @buy="openDetail"
+      @expired="campaign = null"
+    />
 
     <!-- 版式 A：吸顶锚点 -->
     <nav v-if="layout === 'floors' && floors.length" class="sticky top-0 z-10 -mx-3 mb-3 flex gap-2 bg-(--ui-bg)/90 px-3 py-2 backdrop-blur">

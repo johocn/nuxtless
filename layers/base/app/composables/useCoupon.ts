@@ -106,7 +106,7 @@ export interface CouponBundle {
   items: CouponBundleItem[];
 }
 
-/** 券商城目录：可售单券模板 + 启用券包 + 首购/学生价资格信息 */
+/** 券商城目录：可售单券模板 + 启用券包 + 首购/学生价资格信息 + 倒计时活动位 */
 export interface CouponSaleCatalogue {
   templates: CouponTemplate[];
   bundles: CouponBundle[];
@@ -116,6 +116,18 @@ export interface CouponSaleCatalogue {
   firstBuyEligible?: boolean | null;
   /** 当前用户学生认证已通过；匿名=null */
   studentApproved?: boolean | null;
+  /** 倒计时活动位（单场，时间窗内才下发；null=无活动）；templates 为关联券（已过滤本店可售） */
+  campaign?: CouponCampaignView | null;
+}
+
+/** 倒计时活动位视图（文案已按语言本地化，后端服务端时钟判定时间窗） */
+export interface CouponCampaignView {
+  name: string;
+  subtitle?: string | null;
+  rules?: string | null;
+  startsAt?: string | null;
+  endsAt: string;
+  templates: CouponTemplate[];
 }
 
 /** 出售单（独立单据，不生成 Vendure Order） */
@@ -485,6 +497,7 @@ export async function getCouponSaleCatalogue(
         firstBuyDiscount
         firstBuyEligible
         studentApproved
+        campaign { name subtitle rules startsAt endsAt templates { ${COUPON_TEMPLATE_FIELDS} } }
       }
     }`,
     { scene: scene ?? null },
