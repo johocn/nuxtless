@@ -77,6 +77,8 @@ export interface CouponTemplate {
   anchorPrice?: number | null;
   /** 营销标签（如「热卖TOP」）；空=不展示 */
   label?: string | null;
+  /** 学生价（分）；null/0=无学生价 */
+  studentPrice?: number | null;
   /** 真实已售数（coupon_sale_order PAID 聚合，仅 couponSaleCatalogue 下发；其他查询为 null） */
   soldCount?: number | null;
   createdAt: string;
@@ -104,10 +106,16 @@ export interface CouponBundle {
   items: CouponBundleItem[];
 }
 
-/** 券商城目录：可售单券模板 + 启用券包 */
+/** 券商城目录：可售单券模板 + 启用券包 + 首购/学生价资格信息 */
 export interface CouponSaleCatalogue {
   templates: CouponTemplate[];
   bundles: CouponBundle[];
+  /** 首购立减（分）；0/null=关闭 */
+  firstBuyDiscount?: number | null;
+  /** 当前用户首购资格（本店无 PAID 券单）；匿名=null */
+  firstBuyEligible?: boolean | null;
+  /** 当前用户学生认证已通过；匿名=null */
+  studentApproved?: boolean | null;
 }
 
 /** 出售单（独立单据，不生成 Vendure Order） */
@@ -256,7 +264,7 @@ const COUPON_TEMPLATE_FIELDS = `
   startsAt endsAt totalCount claimedCount pointsPrice perUserLimit
   scope categoryId variantId enabled shopId usageScene createdAt updatedAt
   claimable claimCode validDays newCustomerOnly memberLevel
-  distributionChannels salePrice anchorPrice label soldCount
+  distributionChannels salePrice anchorPrice label studentPrice soldCount
 `;
 
 const BUNDLE_FIELDS = `
@@ -474,6 +482,9 @@ export async function getCouponSaleCatalogue(
       couponSaleCatalogue(scene: $scene) {
         templates { ${COUPON_TEMPLATE_FIELDS} }
         bundles { ${BUNDLE_FIELDS} }
+        firstBuyDiscount
+        firstBuyEligible
+        studentApproved
       }
     }`,
     { scene: scene ?? null },
@@ -698,8 +709,50 @@ export function useCoupon() {
     // 商品页加价购
     attachCouponToOrder,
     detachCouponFromOrder,
+    // 学生认证（人工审核流）
+    getMyStudentVerification,
+    applyStudentVerification,
     // 工具
     templateHasChannel,
     couponErrorMessage,
   };
+}
+
+/** 学生认证状态（Customer.customFields.student*） */
+export interface StudentVerification {
+  customerId: string;
+  customerName: string;
+  customerEmail?: string | null;
+  status: "none" | "pending" | "approved" | "rejected";
+  school?: string | null;
+  studentNo?: string | null;
+  idImg?: string | null;
+  reviewedAt?: string | null;
+}
+
+const STUDENT_FIELDS = `customerId customerName customerEmail status school studentNo idImg reviewedAt`;
+
+/** 查本人学生认证状态（需登录） */
+export async function getMyStudentVerification(): Promise<StudentVerification> {
+  const client = resolveClient();
+  const data = await client.request<{ myStudentVerification: StudentVerification }>(
+    `query { myStudentVerification { ${STUDENT_FIELDS} } }`,
+  );
+  return data.myStudentVerification;
+}
+
+/** 提交/重新提交学生认证申请（approved 后不可重复提交） */
+export async function applyStudentVerification(input: {
+  school: string;
+  studentNo: string;
+  idImg?: string | null;
+}): Promise<StudentVerification> {
+  const client = resolveClient();
+  const data = await client.request<{ applyStudentVerification: StudentVerification }>(
+    `mutation ApplyStudent($school: String!, $studentNo: String!, $idImg: String) {
+      applyStudentVerification(school: $school, studentNo: $studentNo, idImg: $idImg) { ${STUDENT_FIELDS} }
+    }`,
+    { school: input.school, studentNo: input.studentNo, idImg: input.idImg ?? null },
+  );
+  return data.applyStudentVerification;
 }

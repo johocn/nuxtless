@@ -5,17 +5,19 @@ import {
   couponSavingsExample,
   couponSceneArt,
   couponAnchorYuan,
+  couponPromoPrice,
 } from "../../utils/coupon-mall";
 import { couponYuan } from "../../utils/coupon";
 
 /**
  * 券店首页：单券大图沉浸卡（场景插画头图 + 折扣大字 + 算账 caption + 抢购 CTA）。
  * 售罄口径用 saleCardProgress（忽略 claimable，付费出售券 claimable=false 属正常）。
- * 购买动作 emit 给页面执行。
+ * 购买动作 emit 给页面执行。promo = 首购立减/学生价展示上下文（有资格才显示优惠价）。
  */
 const props = defineProps<{
   tpl: Record<string, any>;
   buying?: boolean;
+  promo?: { firstBuyDiscount?: number | null; firstBuyEligible?: boolean | null; studentApproved?: boolean | null };
 }>();
 const emit = defineEmits<{ (e: "buy", tpl: Record<string, any>): void }>();
 const { t, locale } = useI18n();
@@ -51,6 +53,14 @@ const marketingLabel = computed(() => String(props.tpl.label ?? "").trim());
 const soldCount = computed(() => Math.max(0, Number(props.tpl.soldCount ?? 0)));
 /** 划线锚定价（仅当高于售价时返回元字符串） */
 const anchor = computed(() => couponAnchorYuan(props.tpl));
+/** 首购立减/学生价优惠（取低不叠加；null=展示原价） */
+const promo = computed(() =>
+  props.promo
+    ? couponPromoPrice(props.tpl, props.promo)
+    : null,
+);
+/** 展示价：优惠价 > 原价 */
+const displayPrice = computed(() => promo.value?.yuan ?? couponYuan(props.tpl.salePrice));
 </script>
 
 <template>
@@ -125,11 +135,14 @@ const anchor = computed(() => couponAnchorYuan(props.tpl));
 
     <div class="divider" />
 
-    <!-- 价格 + CTA：划线锚定价（后台配置且高于售价才展示） -->
+    <!-- 价格 + CTA：优惠价（首购/学生）+ 划线锚定价 + 原价 -->
     <div class="price-row">
       <span class="price-wrap">
-        <s v-if="anchor" class="anchor">¥{{ anchor }}</s>
-        <span class="price">¥{{ couponYuan(tpl.salePrice) }}</span>
+        <span v-if="promo" class="promo-tag" :class="promo.kind">
+          {{ promo.kind === "student" ? t("messages.couponStore.studentTag") : t("messages.couponStore.firstBuyTag") }}
+        </span>
+        <s v-if="anchor || promo" class="anchor">¥{{ promo ? couponYuan(tpl.salePrice) : anchor }}</s>
+        <span class="price">¥{{ displayPrice }}</span>
       </span>
       <UButton
         size="xs"
@@ -170,8 +183,11 @@ const anchor = computed(() => couponAnchorYuan(props.tpl));
 .deal-note { font-size: 11px; color: var(--ui-text-muted); white-space: nowrap; }
 .divider { border-top: 1px dashed var(--ui-border); }
 .price-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.price-wrap { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.price-wrap { display: flex; align-items: baseline; gap: 6px; min-width: 0; flex-wrap: wrap; }
 .anchor { font-size: 12px; color: var(--ui-text-dimmed); }
+.promo-tag { border-radius: 2px 999px 999px 2px; font-size: 11px; font-weight: 500; padding: 0 6px; white-space: nowrap; }
+.promo-tag.firstBuy { background: #dc2626; color: #fff; }
+.promo-tag.student { background: var(--ui-bg-elevated); color: #0f766e; border: 1px solid #14b8a6; }
 .price { font-size: 20px; font-weight: 700; color: var(--ui-text); }
 .meta-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .meta { font-size: 11px; color: var(--ui-text-muted); white-space: nowrap; }

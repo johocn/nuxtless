@@ -21,6 +21,8 @@ const props = defineProps<{
   /** 目录模板列表（用于解析券包明细的 templateId） */
   templates?: Record<string, any>[];
   buying?: boolean;
+  /** 首购立减/学生价展示上下文 */
+  promo?: { firstBuyDiscount?: number | null; firstBuyEligible?: boolean | null; studentApproved?: boolean | null };
 }>();
 const emit = defineEmits<{ (e: "close"): void; (e: "buy"): void }>();
 const { t, locale } = useI18n();
@@ -73,6 +75,25 @@ const marketingLabel = computed(() => String(props.tpl?.label ?? "").trim());
 const soldCount = computed(() => Math.max(0, Number(props.tpl?.soldCount ?? 0)));
 /** 划线锚定价（仅当高于售价时返回元字符串） */
 const anchor = computed(() => couponAnchorYuan(props.tpl ?? {}));
+/** 首购/学生优惠：单券含学生价路径，券包仅首购路径；null=原价 */
+const promo = computed(() => {
+  if (!props.promo || !props.tpl) return null;
+  return props.bundle
+    ? couponPromoPrice({ salePrice: props.bundle.salePrice }, props.promo)
+    : couponPromoPrice(props.tpl, props.promo);
+});
+/** 明细基准价（分）：单券=券售价，券包=包价 */
+const baseFen = computed(() => Number(props.bundle?.salePrice ?? props.tpl?.salePrice ?? 0));
+/** 明细优惠行文案：到手价与标签 */
+const promoLabel = computed(() =>
+  promo.value ? (promo.value.kind === "student" ? t("messages.couponStore.studentTag") : t("messages.couponStore.firstBuyTag")) : "",
+);
+/** 展示价：优惠价 > 原价 */
+const displayPrice = computed(() => promo.value?.yuan ?? couponYuan(baseFen.value));
+/** 未认证学生引导：券有学生价且当前非认证通过 → 显示认证入口 */
+const studentGuide = computed(
+  () => Number(props.tpl?.studentPrice ?? 0) > 0 && props.promo?.studentApproved !== true,
+);
 </script>
 
 <template>
@@ -92,8 +113,9 @@ const anchor = computed(() => couponAnchorYuan(props.tpl ?? {}));
             </span>
           </div>
           <span class="price-line">
-            <s v-if="anchor" class="anchor">¥{{ anchor }}</s>
-            <span class="price">¥{{ couponYuan(tpl.salePrice) }}</span>
+            <span v-if="promo" class="promo-tag" :class="promo.kind">{{ promoLabel }}</span>
+            <s v-if="anchor || promo" class="anchor">¥{{ promo ? couponYuan(baseFen) : anchor }}</s>
+            <span class="price">¥{{ displayPrice }}</span>
             <span v-if="soldCount > 0" class="sold">{{ t("messages.couponStore.soldCount", { n: soldCount }) }}</span>
           </span>
         </div>
@@ -103,6 +125,17 @@ const anchor = computed(() => couponAnchorYuan(props.tpl ?? {}));
       <div v-if="calcBar" class="calc">
         {{ t("messages.couponStore.calcExample", { spend: calcBar.spend, save: calcBar.save, off: calcOff }) }}
       </div>
+
+      <!-- 价格明细（有首购/学生优惠时展示：券价 → 优惠 → 到手） -->
+      <div v-if="promo" class="breakdown">
+        <div class="brow"><span class="bl">{{ t("messages.couponStore.basePrice") }}</span><s class="bv">¥{{ couponYuan(baseFen) }}</s></div>
+        <div class="brow"><span class="bl">{{ promoLabel }}</span><span class="bv off">−¥{{ couponYuan(baseFen - Math.round(Number(promo.yuan) * 100)) }}</span></div>
+        <div class="brow total"><span class="bl">{{ t("messages.couponStore.finalPrice") }}</span><span class="bv final">¥{{ displayPrice }}</span></div>
+      </div>
+      <!-- 学生认证引导：券有学生价且未认证 -->
+      <NuxtLink v-if="studentGuide" to="/coupon/student-verify" class="stu-guide" @click="emit('close')">
+        {{ t("messages.couponStore.studentGuide") }} <span class="arr">→</span>
+      </NuxtLink>
 
       <template v-if="paragraphs.length">
         <span class="sec">{{ t("messages.couponMall.secIntro") }}</span>
@@ -155,8 +188,9 @@ const anchor = computed(() => couponAnchorYuan(props.tpl ?? {}));
 
       <div class="cta">
         <span class="cta-price">
-          <s v-if="anchor" class="anchor">¥{{ anchor }}</s>
-          <span class="big">¥{{ couponYuan(tpl.salePrice) }}</span>
+          <span v-if="promo" class="promo-tag" :class="promo.kind">{{ promoLabel }}</span>
+          <s v-if="promo" class="anchor">¥{{ couponYuan(baseFen) }}</s>
+          <span class="big">¥{{ displayPrice }}</span>
         </span>
         <UButton :disabled="buying" :loading="buying" @click="emit('buy')">{{ t("messages.couponMall.buyNow") }}</UButton>
       </div>
@@ -181,6 +215,18 @@ const anchor = computed(() => couponAnchorYuan(props.tpl ?? {}));
 .anchor { font-size: 12px; color: var(--ui-text-dimmed); }
 .sold { font-size: 11px; color: var(--ui-text-muted); margin-left: auto; }
 .price { font-size: 14px; font-weight: 700; color: var(--ui-primary); }
+.promo-tag { border-radius: 2px 999px 999px 2px; font-size: 10px; font-weight: 500; padding: 0 6px; white-space: nowrap; align-self: center; }
+.promo-tag.firstBuy { background: #dc2626; color: #fff; }
+.promo-tag.student { background: var(--ui-bg-elevated); color: #0f766e; border: 1px solid #14b8a6; }
+.breakdown { display: flex; flex-direction: column; gap: 6px; background: var(--ui-bg-elevated); border-radius: 10px; padding: 10px 12px; }
+.brow { display: flex; justify-content: space-between; align-items: baseline; }
+.bl { font-size: 12px; color: var(--ui-text-muted); }
+.bv { font-size: 12px; color: var(--ui-text); }
+.bv.off { color: #dc2626; }
+.brow.total .bl { color: var(--ui-text); font-weight: 600; }
+.bv.final { font-size: 15px; font-weight: 700; color: var(--ui-primary); }
+.stu-guide { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #0f766e; background: var(--ui-bg-elevated); border: 1px dashed #14b8a6; border-radius: 10px; padding: 8px 12px; }
+.stu-guide .arr { color: #0f766e; }
 .sec { font-size: 13px; font-weight: 600; margin-top: 6px; border-left: 3px solid var(--ui-primary); padding-left: 6px; }
 .intro { display: flex; flex-direction: column; gap: 6px; }
 .para { font-size: 13px; color: var(--ui-text-muted); line-height: 1.6; }

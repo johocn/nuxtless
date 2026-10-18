@@ -83,6 +83,39 @@ export function couponAnchorYuan(tpl: {
   return couponYuan(ap);
 }
 
+/**
+ * 首购立减/学生价展示价（镜像后端 resolvePromoPrice：两路径各自从原价取低不叠加，最低 1 分）。
+ * 返回 null = 无可用优惠（展示原价）；
+ * 有优惠返回终价（元字符串）与标签类型（同价时优先学生价，与后端一致）。
+ * 展示口径：首购资格 eligible !== false 即展示（匿名按新客引导转化，后端下单重算兜底）；
+ * 学生价仅 approved === true 展示价格。
+ */
+export function couponPromoPrice(
+  base: { salePrice?: number | null; studentPrice?: number | null },
+  opts: {
+    firstBuyDiscount?: number | null;
+    firstBuyEligible?: boolean | null;
+    studentApproved?: boolean | null;
+  },
+): { yuan: string; kind: "firstBuy" | "student" } | null {
+  const baseFen = Math.floor(Number(base?.salePrice ?? 0));
+  if (!(baseFen > 0)) return null;
+  const candidates: Array<{ fen: number; kind: "firstBuy" | "student" }> = [];
+  const studentPrice = Math.floor(Number(base?.studentPrice ?? 0));
+  if (studentPrice > 0 && opts.studentApproved === true && studentPrice < baseFen) {
+    candidates.push({ fen: studentPrice, kind: "student" });
+  }
+  const fbd = Math.floor(Number(opts?.firstBuyDiscount ?? 0));
+  if (fbd > 0 && opts.firstBuyEligible !== false) {
+    const v = Math.max(1, baseFen - fbd);
+    if (v < baseFen) candidates.push({ fen: v, kind: "firstBuy" });
+  }
+  if (!candidates.length) return null;
+  // reduce 保序：同价时先入者胜（学生价先入 → 优先学生价，与后端一致）
+  const best = candidates.reduce((a, b) => (b.fen < a.fen ? b : a));
+  return { yuan: couponYuan(best.fen), kind: best.kind };
+}
+
 /** 券名 → 场景插画类型（纯函数，按关键词映射） */
 export type CouponSceneArt = "billiards" | "dining" | "drink" | "generic";
 

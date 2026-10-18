@@ -28,6 +28,12 @@ const templates = ref<any[]>([]);
 const bundles = ref<any[]>([]);
 const pointsTemplates = ref<any[]>([]);
 const loading = ref(true);
+/** 首购立减/学生价展示上下文（传给券卡与详情弹层） */
+const promo = ref<{ firstBuyDiscount: number; firstBuyEligible: boolean | null; studentApproved: boolean | null }>({
+  firstBuyDiscount: 0,
+  firstBuyEligible: null,
+  studentApproved: null,
+});
 
 const activeFloor = ref("sale");
 const floors = computed(() => [
@@ -46,6 +52,12 @@ async function load() {
     ]);
     templates.value = sale?.templates ?? [];
     bundles.value = sale?.bundles ?? [];
+    // 首购立减/学生价资格信息（后端按登录态计算；匿名 firstBuyEligible=null 按新客展示引导）
+    promo.value = {
+      firstBuyDiscount: sale?.firstBuyDiscount ?? 0,
+      firstBuyEligible: sale?.firstBuyEligible ?? null,
+      studentApproved: sale?.studentApproved ?? null,
+    };
     pointsTemplates.value = points ?? [];
   } catch {
     loadError.value = true;
@@ -113,7 +125,7 @@ const asLowPrice = computed<number | null>(() => {
         <div class="flex flex-col gap-2">
           <CouponStoreCouponCard
             v-for="tpl in templates" :key="tpl.id"
-            :tpl="tpl" :buying="buyingId === tpl.id"
+            :tpl="tpl" :buying="buyingId === tpl.id" :promo="promo"
             @buy="openDetail(tpl)"
           />
         </div>
@@ -123,7 +135,7 @@ const asLowPrice = computed<number | null>(() => {
         <div class="flex flex-col gap-2">
           <CouponMallBundleCard
             v-for="b in bundles" :key="b.id"
-            :bundle="b" :templates="templates" :buying="buyingId === b.id"
+            :bundle="b" :templates="templates" :buying="buyingId === b.id" :promo="promo"
             @buy="startBuy(b, 'bundle')"
             @detail="openDetail(b, b)"
           />
@@ -147,7 +159,7 @@ const asLowPrice = computed<number | null>(() => {
         <div class="grid grid-cols-2 gap-2">
           <CouponStoreCouponGridCard
             v-for="tpl in templates" :key="tpl.id"
-            :tpl="tpl" :buying="buyingId === tpl.id"
+            :tpl="tpl" :buying="buyingId === tpl.id" :promo="promo"
             @buy="openDetail(tpl)"
           />
         </div>
@@ -156,7 +168,7 @@ const asLowPrice = computed<number | null>(() => {
         <div class="flex flex-col gap-2">
           <CouponMallBundleCard
             v-for="b in bundles" :key="b.id"
-            :bundle="b" :templates="templates" :buying="buyingId === b.id"
+            :bundle="b" :templates="templates" :buying="buyingId === b.id" :promo="promo"
             @buy="startBuy(b, 'bundle')"
             @detail="openDetail(b, b)"
           />
@@ -178,6 +190,7 @@ const asLowPrice = computed<number | null>(() => {
       :tpl="sheetTarget"
       :bundle="sheetBundle"
       :templates="templates"
+      :promo="promo"
       @close="closeDetail"
       @buy="buyFromSheet"
     />
