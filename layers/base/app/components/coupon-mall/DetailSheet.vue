@@ -5,6 +5,7 @@ import {
   detailAssetUrl,
   couponSavingsExample,
   formatCouponDiscount,
+  couponAnchorYuan,
 } from "../../utils/coupon-mall";
 import { couponYuan, couponTemplateMap, couponBundleItems } from "../../utils/coupon";
 
@@ -66,6 +67,12 @@ const flowSteps = computed(() =>
       ]
     : [],
 );
+/** 营销标签（后台可配）；空不展示 */
+const marketingLabel = computed(() => String(props.tpl?.label ?? "").trim());
+/** 真实已售数（PAID 出售单聚合，单券/券包均由后端下发）；>0 才展示 */
+const soldCount = computed(() => Math.max(0, Number(props.tpl?.soldCount ?? 0)));
+/** 划线锚定价（仅当高于售价时返回元字符串） */
+const anchor = computed(() => couponAnchorYuan(props.tpl ?? {}));
 </script>
 
 <template>
@@ -79,9 +86,16 @@ const flowSteps = computed(() =>
         <div class="head-info">
           <div class="row">
             <span class="name">{{ localizeText(tpl.name, locale) }}</span>
-            <span class="scene">{{ tpl.usageScene === "IN_STORE" ? t("messages.coupon.sceneStore") : t("messages.coupon.sceneOnline") }}</span>
+            <span class="row-tags">
+              <span v-if="marketingLabel" class="mk">{{ marketingLabel }}</span>
+              <span class="scene">{{ tpl.usageScene === "IN_STORE" ? t("messages.coupon.sceneStore") : t("messages.coupon.sceneOnline") }}</span>
+            </span>
           </div>
-          <span class="price">¥{{ couponYuan(tpl.salePrice) }}</span>
+          <span class="price-line">
+            <s v-if="anchor" class="anchor">¥{{ anchor }}</s>
+            <span class="price">¥{{ couponYuan(tpl.salePrice) }}</span>
+            <span v-if="soldCount > 0" class="sold">{{ t("messages.couponStore.soldCount", { n: soldCount }) }}</span>
+          </span>
         </div>
       </div>
 
@@ -140,7 +154,10 @@ const flowSteps = computed(() =>
       </div>
 
       <div class="cta">
-        <span class="big">¥{{ couponYuan(tpl.salePrice) }}</span>
+        <span class="cta-price">
+          <s v-if="anchor" class="anchor">¥{{ anchor }}</s>
+          <span class="big">¥{{ couponYuan(tpl.salePrice) }}</span>
+        </span>
         <UButton :disabled="buying" :loading="buying" @click="emit('buy')">{{ t("messages.couponMall.buyNow") }}</UButton>
       </div>
     </div>
@@ -155,9 +172,14 @@ const flowSteps = computed(() =>
 .amount { font-size: 22px; font-weight: 700; color: var(--ui-primary); }
 .cond { font-size: 11px; color: var(--ui-text-muted); }
 .head-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.row { display: flex; justify-content: space-between; align-items: center; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .name { font-size: 16px; font-weight: 600; }
+.row-tags { display: flex; align-items: center; gap: 4px; flex: none; }
+.mk { font-size: 10px; font-weight: 600; color: #fff; background: #dc2626; border-radius: 999px 999px 999px 2px; padding: 1px 8px; white-space: nowrap; }
 .scene { font-size: 10px; color: var(--ui-primary); background: var(--ui-bg-elevated); border-radius: 999px; padding: 1px 8px; }
+.price-line { display: flex; align-items: baseline; gap: 6px; }
+.anchor { font-size: 12px; color: var(--ui-text-dimmed); }
+.sold { font-size: 11px; color: var(--ui-text-muted); margin-left: auto; }
 .price { font-size: 14px; font-weight: 700; color: var(--ui-primary); }
 .sec { font-size: 13px; font-weight: 600; margin-top: 6px; border-left: 3px solid var(--ui-primary); padding-left: 6px; }
 .intro { display: flex; flex-direction: column; gap: 6px; }
@@ -179,5 +201,7 @@ const flowSteps = computed(() =>
 .notice-b { font-size: 12px; font-weight: 600; }
 .notice-t { font-size: 12px; color: var(--ui-text-muted); line-height: 1.6; }
 .cta { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+.cta-price { display: flex; align-items: baseline; gap: 6px; }
+.cta .anchor { font-size: 13px; }
 .big { font-size: 18px; font-weight: 700; color: var(--ui-primary); }
 </style>

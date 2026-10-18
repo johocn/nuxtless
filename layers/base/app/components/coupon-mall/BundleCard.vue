@@ -15,13 +15,18 @@ const emit = defineEmits<{ (e: "buy"): void; (e: "detail"): void }>();
 const { t, locale } = useI18n();
 const detailable = computed(() => hasDetail(props.bundle.description, locale.value));
 const items = computed(() => couponBundleItems(props.bundle as never, couponTemplateMap(props.templates as never)));
+/** 券包真实已售数（PAID 出售单聚合）；>0 才展示 */
+const soldCount = computed(() => Math.max(0, Number(props.bundle.soldCount ?? 0)));
 </script>
 
 <template>
   <div class="bundle-card" @click="detailable && emit('detail')">
     <div class="head">
       <span class="name">{{ localizeText(bundle.name, locale) }}</span>
-      <span v-if="detailable" class="detail" @click.stop="emit('detail')">{{ t("messages.couponMall.viewDetail") }}</span>
+      <span class="head-right">
+        <span v-if="soldCount > 0" class="sold">{{ t("messages.couponStore.soldCount", { n: soldCount }) }}</span>
+        <span v-if="detailable" class="detail" @click.stop="emit('detail')">{{ t("messages.couponMall.viewDetail") }}</span>
+      </span>
     </div>
     <div class="chips">
       <span v-for="it in items" :key="it.id" class="chip">
@@ -41,6 +46,8 @@ const items = computed(() => couponBundleItems(props.bundle as never, couponTemp
 .bundle-card { background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .head { display: flex; justify-content: space-between; align-items: center; }
 .name { font-size: 15px; font-weight: 700; }
+.head-right { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sold { flex: none; font-size: 11px; color: var(--ui-text-muted); white-space: nowrap; }
 .detail { font-size: 12px; color: var(--ui-text-muted); }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .chip { font-size: 11px; color: var(--ui-text-muted); background: var(--ui-bg-elevated); border-radius: 999px; padding: 2px 8px; }

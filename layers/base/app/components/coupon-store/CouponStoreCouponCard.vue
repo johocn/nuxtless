@@ -4,6 +4,7 @@ import {
   formatCouponDiscount,
   couponSavingsExample,
   couponSceneArt,
+  couponAnchorYuan,
 } from "../../utils/coupon-mall";
 import { couponYuan } from "../../utils/coupon";
 
@@ -43,6 +44,13 @@ const remain = computed(() => {
   if (!(total > 0)) return null;
   return Math.max(0, total - Number(props.tpl.claimedCount ?? 0));
 });
+
+/** 营销标签（后台可配，如「热卖TOP」）；空不展示 */
+const marketingLabel = computed(() => String(props.tpl.label ?? "").trim());
+/** 真实已售数（coupon_sale_order PAID 聚合，后端下发）；>0 才展示 */
+const soldCount = computed(() => Math.max(0, Number(props.tpl.soldCount ?? 0)));
+/** 划线锚定价（仅当高于售价时返回元字符串） */
+const anchor = computed(() => couponAnchorYuan(props.tpl));
 </script>
 
 <template>
@@ -97,12 +105,14 @@ const remain = computed(() => {
         <rect x="102" y="39" width="22" height="3" rx="1.5" fill="var(--ui-primary)" opacity=".5" />
         <rect x="172" y="30" width="26" height="3" rx="1.5" fill="var(--ui-primary)" opacity=".5" />
       </svg>
+      <span v-if="marketingLabel" class="art-tag">{{ marketingLabel }}</span>
       <span class="art-pill">{{ t("messages.coupon.storeUsable") }}</span>
     </div>
 
-    <!-- 名称行 -->
+    <!-- 名称行：券名 + 已售数（有真实成交才展示） -->
     <div class="name-row">
       <span class="name">{{ localizeText(tpl.name, locale) }}</span>
+      <span v-if="soldCount > 0" class="sold">{{ t("messages.couponStore.soldCount", { n: soldCount }) }}</span>
     </div>
 
     <!-- 优惠行：大字折扣 + 算账 caption（仅 PERCENT） -->
@@ -115,9 +125,12 @@ const remain = computed(() => {
 
     <div class="divider" />
 
-    <!-- 价格 + CTA -->
+    <!-- 价格 + CTA：划线锚定价（后台配置且高于售价才展示） -->
     <div class="price-row">
-      <span class="price">¥{{ couponYuan(tpl.salePrice) }}</span>
+      <span class="price-wrap">
+        <s v-if="anchor" class="anchor">¥{{ anchor }}</s>
+        <span class="price">¥{{ couponYuan(tpl.salePrice) }}</span>
+      </span>
       <UButton
         size="xs"
         :disabled="soldOut || buying"
@@ -148,13 +161,17 @@ const remain = computed(() => {
 .art { position: relative; height: 72px; border-radius: 10px; overflow: hidden; flex: none; }
 .art-svg { width: 100%; height: 100%; display: block; }
 .art-pill { position: absolute; top: 6px; right: 6px; border-radius: 999px; background: rgb(255 255 255 / .92); color: #9a3412; font-size: 10px; font-weight: 500; padding: 1px 8px; white-space: nowrap; }
-.name-row { min-width: 0; }
+.name-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
 .name { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sold { flex: none; font-size: 11px; color: var(--ui-text-muted); white-space: nowrap; }
+.art-tag { position: absolute; top: 6px; left: 6px; border-radius: 999px 999px 999px 2px; background: #dc2626; color: #fff; font-size: 10px; font-weight: 600; padding: 2px 8px; white-space: nowrap; }
 .deal-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .deal { font-size: 22px; font-weight: 800; line-height: 1.1; color: var(--ui-primary); }
 .deal-note { font-size: 11px; color: var(--ui-text-muted); white-space: nowrap; }
 .divider { border-top: 1px dashed var(--ui-border); }
 .price-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.price-wrap { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.anchor { font-size: 12px; color: var(--ui-text-dimmed); }
 .price { font-size: 20px; font-weight: 700; color: var(--ui-text); }
 .meta-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .meta { font-size: 11px; color: var(--ui-text-muted); white-space: nowrap; }
