@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { saleProgress, hasDetail } from "../../utils/coupon-mall";
+import { saleCardProgress, hasDetail } from "../../utils/coupon-mall";
 import { couponYuan } from "../../utils/coupon";
 
 /**
  * 券商城：单券抢购卡（进度/售罄置灰/详情入口）。购买与详情动作 emit 给页面执行。
+ * 售卖场景用 saleCardProgress：忽略 claimable（false 仅表示不开放免费领取，非售罄）。
  */
 const props = defineProps<{
   tpl: Record<string, any>;
@@ -11,13 +12,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ (e: "buy"): void; (e: "detail"): void }>();
 const { t, locale } = useI18n();
-const progress = computed(() =>
-  saleProgress({
-    claimedCount: props.tpl.claimedCount,
-    totalCount: props.tpl.totalCount,
-    claimable: props.tpl.claimable ?? null,
-  }),
-);
+const progress = computed(() => saleCardProgress(props.tpl));
 const detailable = computed(() => hasDetail(props.tpl.description, locale.value));
 </script>
 

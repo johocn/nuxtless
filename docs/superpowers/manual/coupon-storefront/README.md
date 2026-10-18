@@ -36,7 +36,7 @@
 1. web-admin / 运营后台 → **优惠券模块** → 创建券模板：`usageScene=IN_STORE`、设定 `salePrice`（售价，分）、分发渠道含 **SALE**（可售）。
 2. 券包（Bundle）同理：打包多张券 + 包价。
 3. 积分兑换楼层（仅 floors 版式展示）：积分商城券模板自动进入「积分兑换」楼层。
-4. 售罄判定：`claimedCount/totalCount` 或 `claimable=false`；全部售罄/空目录显示空态文案「买单券即将上架，敬请期待」。
+4. 售罄判定（2026-10-18 修正）：售卖场景口径 = `totalCount>0 && claimedCount>=totalCount`（前端 `saleCardProgress`）；`claimable=false` 仅表示「不开放免费领取」，**不再误判为售罄**（免费领券场景仍用 `saleProgress` 原口径）。全部售罄/空目录显示空态文案「买单券即将上架，敬请期待」。
 
 ## 4. C 端动线（nshop）
 
@@ -52,9 +52,30 @@
 - Header 精简：无分类导航/搜索/购物车，保留 Logo、城市/租户选择器、账号菜单。
 - 直连商品 URL（`/t1/product/x`、`/t1/search`、`/t1/checkout`、`/t1/category/...`）被全局中间件拦截到 `/t1/coupon-only` 提示页「本店仅售买单券」。
 
-## 5. 测试用例清单
+## 6. 售卖页转化升级（2026-10-18 · 版式 A 大图沉浸卡）
 
-### 5.1 后端（shop-api，curl 匿名/带渠道 token）
+针对「券内容单调、无购买欲」的改造（调研对标美团团购详情七要素 / 抖音信任标签）：
+
+| 升级点 | 说明 | 位置 |
+| --- | --- | --- |
+| 大图沉浸券卡 | 券名关键词自动映射场景插画（台球/餐饮/饮品/通用四类内联 SVG），头图 +「到店可用」角标 + 折扣大字（「0.80」→「8折」，en 为 Save 20%）+ 算账 caption（消费¥100 立省¥20） | `CouponStoreCouponCard.vue`（新） |
+| 折扣语义化 | 纯函数 `formatCouponDiscount`（PERCENT 80→8折/85→8.5折），券店卡与详情弹层统一 | `utils/coupon-mall.ts` |
+| 详情弹层算账条 | PERCENT 付费券显示「例：到店消费¥100，按8折立省¥20」 | `DetailSheet.vue`（条件渲染） |
+| 详情弹层三步流程 | IN_STORE 券显示「在线购券 → 到店消费 → 出示券码结算」 | 同上 |
+| 信任行 | 「到店出示券码 · 全场通用」（券卡+店招，诚实文案：无虚构销量/退款承诺） | 券卡/店招 |
+| 店招 hero 升级 | 新增信任小字 +「低至¥X」（取可售券最低价，动态计算非写死） | `CouponStoreHome.vue` |
+| 购买须知改写 | 「售出后不支持退款」→「请在有效期内到店核销，未使用可联系客服处理」（双语） | i18n `couponMall.noticeText` |
+| P0 修复 | `saleCardProgress`：售卖场景忽略 claimable，付费券不再误显示「已抢罄」 | `utils/coupon-mall.ts` |
+
+> 文案红线（对齐抖音营销噱头规范）：「已售N份」「随时退」等标签在真实销量/退款政策落地前**禁止展示**；销量数据接入见后端 P2（`coupon_sale_order` 支付单聚合），退款政策落地后再补「随时退/过期自动退」标签。
+
+新增 i18n 词条（zh-CN/en-US 同步）：`couponStore.savingsLine / validAfterDays / remaining / trustLine / asLowAs / calcExample / flowStep1-3`。
+
+> 2026-10-18 生产验收：手机视口（390×844 dpr=2）截图确认 C10/C11 全部通过（两张券卡「8折」可抢购、弹层算账条/三步流程/正向须知齐备）；SSR 探针 `hero-trust` 确认新版上线。注意：浏览器端验证若遇旧页，先清 Service Worker/Cache Storage 再硬刷新（部署切换窗口的残留缓存会导致误判）。
+
+## 7. 测试用例清单
+
+### 7.1 后端（shop-api，curl 匿名/带渠道 token）
 
 | # | 用例 | 预期 |
 | --- | --- | --- |
@@ -63,7 +84,7 @@
 | B3 | 匿名调 `createCouponSaleOrder` | 未授权错误（购买仍需登录） |
 | B4 | `UpdateChannel`（admin）写 `storefrontMode=coupon` | customFields 落库，shop-api `GetChannelTheme` 可读 |
 
-### 5.2 C 端（手机视口 390×844 dpr=2）
+### 7.2 C 端（手机视口 390×844 dpr=2）
 
 | # | 用例 | 预期 | 截图 |
 | --- | --- | --- | --- |
@@ -76,8 +97,11 @@
 | C7 | Header | 无搜索/购物车/分类菜单 | 01 |
 | C8 | 对照：默认渠道 `/` | normal 京东布局无变化 | 05 |
 | C9 | 切回 normal 后同路径 | 直达商品页（拦截失效） | — |
+| C10 | floors 版式券卡（转化升级后） | 场景插画头图 +「到店可用」角标 +「8折」大字 + 算账 caption + 有效期/信任行；付费券按钮可点（不误显已抢罄） | 11（[2026-10-18-t1-coupon-redesign/11-home-floors-redesign.png](../../../manual/shots/2026-10-18-t1-coupon-redesign/11-home-floors-redesign.png)） |
+| C11 | 点券卡开详情弹层 | 算账条「按8折立省¥20」+ 三步流程条 + 须知正向文案 | 12（[2026-10-18-t1-coupon-redesign/12-detail-sheet-redesign.png](../../../manual/shots/2026-10-18-t1-coupon-redesign/12-detail-sheet-redesign.png)） |
+| C12 | 切 en-US 语言 | 折扣「Save 20%」、算账/流程/信任行英文正常（语言包双语同步） | — |
 
-## 6. 已知边界
+## 8. 已知边界
 
 - 切回 `normal`：立即恢复普通商城；券店期间已购券不受影响（券在「我的券包」）。
 - 存量商品：券店模式只是入口拦截，商品数据仍在——运营需自行下架或保留（恢复 normal 即回）。
@@ -87,7 +111,7 @@
 - 券店 Header 左上角保留汉堡按钮：点开抽屉仅剩租户切换（分类菜单已隐藏），用于多店切换场景。
 - t1 首批配置通过 SQL 直配；店面模式表单已于 2026-10-18 生产环境浏览器实测通过（superadmin 登录 → 平台管理 → 租户管理可见入口，渲染/保存链路正常，含 updateTenant 写入 customFields 验证），后续配置直接用表单。
 
-## 7. 部署清单
+## 9. 部署清单
 
 1. vendure：本地 `pnpm build` → push → 服务器 `git pull` + `pm2 restart`（cjk/coupon plugin lib 已随提交入库）。
 2. web-admin（vshop 仓库）：本地 `build:h5` → 提交 dist → push → 服务器拉取（平台侧表单）。

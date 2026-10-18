@@ -1,21 +1,15 @@
 <script setup lang="ts">
-import { saleProgress } from "../../utils/coupon-mall";
+import { saleCardProgress } from "../../utils/coupon-mall";
 import { couponYuan } from "../../utils/coupon";
 
-/** 券店首页版式 B：面额大字宫格卡（对齐 mockup 版式 B）。购买动作 emit。 */
+/** 券店首页版式 B：面额大字宫格卡（对齐 mockup 版式 B）。购买动作 emit。售卖场景用 saleCardProgress（忽略 claimable）。 */
 const props = defineProps<{
   tpl: Record<string, any>;
   buying?: boolean;
 }>();
 const emit = defineEmits<{ (e: "buy"): void }>();
 const { t } = useI18n();
-const progress = computed(() =>
-  saleProgress({
-    claimedCount: props.tpl.claimedCount,
-    totalCount: props.tpl.totalCount,
-    claimable: props.tpl.claimable ?? null,
-  }),
-);
+const progress = computed(() => saleCardProgress(props.tpl));
 /** PERCENT 类型 discountValue=85 表示 8.5 折：discountValue/10 展示 */
 const percentOff = computed(() => {
   if (!props.tpl.discountValue || props.tpl.type !== "PERCENT") return null;
@@ -28,7 +22,7 @@ const percentOff = computed(() => {
     <span class="face">¥{{ couponYuan(tpl.discountValue) }}</span>
     <span class="cond">
       {{ tpl.minSpend > 0 ? t("messages.coupon.minSpend", { n: couponYuan(tpl.minSpend) }) : t("messages.coupon.noThreshold") }}
-      · {{ percentOff ? t("messages.couponStore.percentOff", { v: percentOff }) : t("messages.couponStore.floorIntro") }}
+      · {{ percentOff ? t("messages.couponStore.percentOff", { v: percentOff, s: Math.max(0, 100 - (tpl.discountValue ?? 0)) }) : t("messages.couponStore.floorIntro") }}
     </span>
     <div class="foot">
       <span class="price">¥{{ couponYuan(tpl.salePrice) }}</span>

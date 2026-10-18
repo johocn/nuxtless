@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   saleProgress,
+  saleCardProgress,
+  formatCouponDiscount,
+  couponSavingsExample,
+  couponSceneArt,
   hasDetail,
   parseDetailParagraphs,
   detailAssetUrl,
@@ -34,6 +38,98 @@ describe("saleProgress", () => {
       percent: null,
       soldOut: false,
     });
+  });
+});
+
+describe("saleCardProgress", () => {
+  it("claimable=false 且不限量：付费出售不视为售罄（P0：忽略 claimable）", () => {
+    expect(saleCardProgress({ claimedCount: 5, totalCount: 0 })).toEqual({
+      percent: null,
+      soldOut: false,
+    });
+    expect(saleCardProgress({ claimedCount: 5, totalCount: undefined })).toEqual({
+      percent: null,
+      soldOut: false,
+    });
+  });
+  it("限量券：已抢满即售罄", () => {
+    expect(saleCardProgress({ claimedCount: 100, totalCount: 100 })).toEqual({
+      percent: 100,
+      soldOut: true,
+    });
+    expect(saleCardProgress({ claimedCount: 120, totalCount: 100 }).soldOut).toBe(true);
+  });
+  it("限量未抢满：进度口径同 saleProgress", () => {
+    expect(saleCardProgress({ claimedCount: 82, totalCount: 100 })).toEqual({
+      percent: 82,
+      soldOut: false,
+    });
+  });
+  it("脏数据不抛错", () => {
+    expect(saleCardProgress({})).toEqual({ percent: null, soldOut: false });
+  });
+});
+
+describe("formatCouponDiscount", () => {
+  it("PERCENT：80→8 折，85→8.5 折", () => {
+    expect(formatCouponDiscount({ type: "PERCENT", discountValue: 80 })).toEqual({
+      kind: "percent",
+      percent: 8,
+    });
+    expect(formatCouponDiscount({ type: "PERCENT", discountValue: 85 })).toEqual({
+      kind: "percent",
+      percent: 8.5,
+    });
+  });
+  it("FIXED/FULL：金额分→元字符串", () => {
+    expect(formatCouponDiscount({ type: "FIXED", discountValue: 500 })).toEqual({
+      kind: "fixed",
+      amount: "5",
+    });
+    expect(formatCouponDiscount({ type: "FULL", discountValue: 505 })).toEqual({
+      kind: "full",
+      amount: "5.05",
+    });
+  });
+  it("缺字段不抛错", () => {
+    expect(formatCouponDiscount({})).toEqual({ kind: "fixed", amount: "0" });
+  });
+});
+
+describe("couponSavingsExample", () => {
+  it("8 折：消费 100 省 20 余 80", () => {
+    expect(couponSavingsExample({ type: "PERCENT", discountValue: 80 })).toEqual({
+      spend: 100,
+      save: 20,
+      after: 80,
+    });
+  });
+  it("8.5 折：消费 100 省 15 余 85", () => {
+    expect(couponSavingsExample({ type: "PERCENT", discountValue: 85 }, 100)).toEqual({
+      spend: 100,
+      save: 15,
+      after: 85,
+    });
+  });
+  it("非 PERCENT / 非法入参返回 null", () => {
+    expect(couponSavingsExample({ type: "FIXED", discountValue: 500 })).toBeNull();
+    expect(couponSavingsExample({ type: "PERCENT", discountValue: 0 })).toBeNull();
+    expect(couponSavingsExample({ type: "PERCENT", discountValue: 80 }, 0)).toBeNull();
+  });
+});
+
+describe("couponSceneArt", () => {
+  it("关键词映射：台球/餐/饮", () => {
+    expect(couponSceneArt("台球畅打2小时券")).toBe("billiards");
+    expect(couponSceneArt("桌球八折券")).toBe("billiards");
+    expect(couponSceneArt("西餐双人餐券")).toBe("dining");
+    expect(couponSceneArt("快餐立减券")).toBe("dining");
+    expect(couponSceneArt("拿铁咖啡券")).toBe("drink");
+    expect(couponSceneArt("珍珠奶茶券")).toBe("drink");
+  });
+  it("默认 generic", () => {
+    expect(couponSceneArt("全场买单券")).toBe("generic");
+    expect(couponSceneArt("")).toBe("generic");
   });
 });
 
