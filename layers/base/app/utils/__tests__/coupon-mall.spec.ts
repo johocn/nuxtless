@@ -5,6 +5,7 @@ import {
   formatCouponDiscount,
   couponSavingsExample,
   couponAnchorYuan,
+  couponPromoPrice,
   couponSceneArt,
   hasDetail,
   parseDetailParagraphs,
@@ -131,6 +132,30 @@ describe("couponAnchorYuan", () => {
     expect(couponAnchorYuan({})).toBeNull();
     expect(couponAnchorYuan({ anchorPrice: null, salePrice: 500 })).toBeNull();
     expect(couponAnchorYuan({ anchorPrice: 0, salePrice: 500 })).toBeNull();
+  });
+});
+
+describe("couponPromoPrice", () => {
+  const base = { salePrice: 500 };
+  it("首购立减 ¥2：¥5→¥3（匿名按新客展示）", () => {
+    expect(couponPromoPrice(base, { firstBuyDiscount: 200, firstBuyEligible: null })).toEqual({ yuan: "3", kind: "firstBuy" });
+    expect(couponPromoPrice(base, { firstBuyDiscount: 200, firstBuyEligible: true })).toEqual({ yuan: "3", kind: "firstBuy" });
+  });
+  it("老客不展示首购价", () => {
+    expect(couponPromoPrice(base, { firstBuyDiscount: 200, firstBuyEligible: false })).toBeNull();
+  });
+  it("认证学生+学生价 ¥3：与学生价取低不叠加", () => {
+    const t = { salePrice: 500, studentPrice: 300 };
+    expect(couponPromoPrice(t, { firstBuyDiscount: 200, firstBuyEligible: true, studentApproved: true })).toEqual({ yuan: "3", kind: "student" });
+    expect(couponPromoPrice(t, { firstBuyDiscount: 200, firstBuyEligible: false, studentApproved: true })).toEqual({ yuan: "3", kind: "student" });
+  });
+  it("学生价更低取学生价；首购更低取首购", () => {
+    expect(couponPromoPrice({ salePrice: 500, studentPrice: 100 }, { firstBuyDiscount: 200, firstBuyEligible: true, studentApproved: true })).toEqual({ yuan: "1", kind: "student" });
+    expect(couponPromoPrice({ salePrice: 500, studentPrice: 450 }, { firstBuyDiscount: 200, firstBuyEligible: true, studentApproved: true })).toEqual({ yuan: "3", kind: "firstBuy" });
+  });
+  it("未认证不展示学生价；无配置返回 null", () => {
+    expect(couponPromoPrice({ salePrice: 500, studentPrice: 300 }, { firstBuyDiscount: 0, studentApproved: false })).toBeNull();
+    expect(couponPromoPrice(base, {})).toBeNull();
   });
 });
 
