@@ -8,6 +8,8 @@ const siteName = useSiteName();
 const head = useLocaleHead();
 // 租户渠道配置（shopIntro 分享描述等），由 app.vue 的 loadTheme 填充共享 state
 const { customFields } = useChannelTheme();
+// 券店模式：全部分类抽屉随券店隐藏（分类功能未开放）
+const { isCouponStore } = useStorefrontMode();
 const metaTitle = route.meta.title as string | undefined;
 const metaDescription = route.meta.description as string | undefined;
 const title = computed(() =>
@@ -95,7 +97,7 @@ useSeoMeta({
           </div>
           <AppFooter />
           <JdTabBar v-if="showJdTabBar" />
-          <JdAllCategoryDrawer />
+          <JdAllCategoryDrawer v-if="!isCouponStore" />
         </div>
       </Body>
     </Html>
