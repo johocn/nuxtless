@@ -1,0 +1,32 @@
+[
+  {
+    "step": "01-home",
+    "checks": {
+      "firstBuyTag": true,
+      "promoTagCount": 3,
+      "anchorCount": 2
+    }
+  },
+  {
+    "step": "02-detail-sheet",
+    "checks": {
+      "breakdown": true,
+      "firstBuyRow": true,
+      "studentGuide": false
+    }
+  },
+  {
+    "step": "02b-student-guide",
+    "checks": {
+      "studentTagOrGuide": true,
+      "breakdown2": true
+    }
+  },
+  {
+    "step": "03-student-verify-gate",
+    "checks": {
+      "redirectedToLogin": true,
+      "url": "https://www.youshop.cn/t1/account/login"
+    }
+  }
+]
