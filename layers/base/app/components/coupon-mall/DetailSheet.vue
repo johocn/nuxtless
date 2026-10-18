@@ -27,6 +27,7 @@ const props = defineProps<{
 const emit = defineEmits<{ (e: "close"): void; (e: "buy"): void }>();
 const { t, locale } = useI18n();
 const requestURL = useRequestURL();
+const localePath = useTenantLocalePath();
 
 const paragraphs = computed(() => {
   const desc = props.tpl?.description;
@@ -133,7 +134,7 @@ const studentGuide = computed(
         <div class="brow total"><span class="bl">{{ t("messages.couponStore.finalPrice") }}</span><span class="bv final">¥{{ displayPrice }}</span></div>
       </div>
       <!-- 学生认证引导：券有学生价且未认证 -->
-      <NuxtLink v-if="studentGuide" to="/coupon/student-verify" class="stu-guide" @click="emit('close')">
+      <NuxtLink v-if="studentGuide" :to="localePath('/coupon/student-verify')" class="stu-guide" @click="emit('close')">
         {{ t("messages.couponStore.studentGuide") }} <span class="arr">→</span>
       </NuxtLink>
 
