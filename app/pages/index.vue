@@ -20,9 +20,15 @@ import JdProductGrid from "../../layers/base/app/components/home/jd/JdProductGri
 import JdPcHeader from "../../layers/base/app/components/home/jd/JdPcHeader.vue";
 import JdPcCategorySidebar from "../../layers/base/app/components/home/jd/JdPcCategorySidebar.vue";
 import HomeBlockRenderer from "../../layers/base/app/components/home/HomeBlockRenderer.vue";
+// 券店首页（storefrontMode=coupon）：显式 import 规避目录前缀自动注册名歧义（coupon-store/CouponStoreHome
+// 的自动注册名是 CouponStoreCouponStoreHome），与上方 Jd 组件显式 import 先例一致
+import CouponStoreHome from "../../layers/base/app/components/coupon-store/CouponStoreHome.vue";
 
 const { t, tm } = useI18n();
 const localePath = useTenantLocalePath();
+
+// 租户店面模式：coupon=券店（整店只卖买单券），首页渲染券店版式并跳过商品/分类数据加载
+const { isCouponStore, homeLayout } = useStorefrontMode();
 
 // 1) 顶部分类：SSR 预取菜单集合（useMenuCollections 内置 800ms 护栏，超时/失败由 app.vue
 //    的客户端兜底加载填充）——不再依赖 app.vue 的仅客户端加载，首帧即可渲染分类导航
@@ -93,6 +99,8 @@ async function loadChannelFacet(): Promise<{ dual: boolean; ids: Record<string, 
 const { data: fallbackSearch } = await useAsyncData(
   "home-fallback-search",
   async () => {
+    // 券店模式不发兜底商品搜索（首页无商品楼层），避免无谓的 SSR 请求
+    if (isCouponStore.value) return { hot: [], more: [] };
     // 运营已覆盖 hot/recommend 时不发兜底搜索（沿用各自 useCuratedGoods）；骨架自动补位时复用这一次结果
     if (!needFallbackGoods.value) return { hot: [], more: [] };
     // 仅双能力渠道走服务端 facet：单能力渠道筛选值恒不变（筛选条也不渲染），
@@ -179,7 +187,11 @@ const entries = computed(() =>
 <template>
   <h1 class="sr-only">{{ t("messages.site.tagline") }}</h1>
 
-  <!-- ═══ PC 京东全屏版（≥1024px 显示）═══ -->
+  <!-- ═══ 券店模式：整店只卖买单券，首页渲染券店版式（楼层导购/券卡宫格）═══ -->
+  <CouponStoreHome v-if="isCouponStore" :layout="homeLayout" />
+
+  <!-- ═══ 普通商城：京东风格（PC 全屏 + 窄屏自动降级为移动单列布局）═══ -->
+  <template v-else>
   <main class="hidden bg-[#f5f5f5] lg:block" data-layout="pc">
     <JdPcHeader :categories="topCategories" />
 
@@ -274,6 +286,7 @@ const entries = computed(() =>
     <JdCategoryNav v-if="topCategories.length" :categories="topCategories" />
     <HomeBlockRenderer :sections="resolvedSections" :auto-goods="autoGoods" />
   </main>
+  </template>
 
   <!-- 微信分享 + 邀请登录引导（固定定位，PC/移动统一生效） -->
   <WechatInviteLoginBar />
