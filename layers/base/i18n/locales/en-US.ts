@@ -384,6 +384,8 @@ export default defineI18nLocale(() =>
       basePrice: "Coupon price",
       finalPrice: "Final price",
       studentGuide: "Verify as a student for student price",
+      campaignEndsIn: "Ends in",
+      campaignGrab: "Grab",
     },
     studentVerify: {
       title: "Student Verification",

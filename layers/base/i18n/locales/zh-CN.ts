@@ -396,6 +396,8 @@ export const zhMessages = {
       basePrice: '券售价',
       finalPrice: '到手价',
       studentGuide: '认证学生享学生价，去认证',
+      campaignEndsIn: '距结束',
+      campaignGrab: '抢购',
     },
     studentVerify: {
       title: '学生认证',
