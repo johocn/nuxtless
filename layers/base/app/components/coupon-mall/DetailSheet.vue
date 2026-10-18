@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { hasDetail, parseDetailParagraphs, detailAssetUrl } from "../../utils/coupon-mall";
+import {
+  hasDetail,
+  parseDetailParagraphs,
+  detailAssetUrl,
+  couponSavingsExample,
+  formatCouponDiscount,
+} from "../../utils/coupon-mall";
 import { couponYuan, couponTemplateMap, couponBundleItems } from "../../utils/coupon";
 
 /**
@@ -33,6 +39,33 @@ const bundleItems = computed(() =>
 );
 const introImageFailed = ref(false);
 watch(() => props.open, () => { introImageFailed.value = false; });
+
+// ── 券店 PERCENT 付费券增强（条件化，不影响其他租户普通券展示）──
+/** PERCENT 且 salePrice>0 才显示算账条 */
+const calcBar = computed(() => {
+  if (!props.tpl || props.tpl.type !== "PERCENT" || !(props.tpl.salePrice > 0)) return null;
+  return couponSavingsExample(props.tpl);
+});
+/** 算账条折扣措辞：zh「8折」/ en「Save 20%」 */
+const calcOff = computed(() => {
+  if (!calcBar.value) return "";
+  const d = formatCouponDiscount(props.tpl!);
+  if (d.kind !== "percent") return "";
+  return t("messages.couponStore.percentOff", {
+    v: d.percent,
+    s: Math.max(0, 100 - Number(props.tpl!.discountValue ?? 0)),
+  });
+});
+/** 仅 IN_STORE 券显示三步流程条 */
+const flowSteps = computed(() =>
+  props.tpl?.usageScene === "IN_STORE"
+    ? [
+        t("messages.couponStore.flowStep1"),
+        t("messages.couponStore.flowStep2"),
+        t("messages.couponStore.flowStep3"),
+      ]
+    : [],
+);
 </script>
 
 <template>
@@ -50,6 +83,11 @@ watch(() => props.open, () => { introImageFailed.value = false; });
           </div>
           <span class="price">¥{{ couponYuan(tpl.salePrice) }}</span>
         </div>
+      </div>
+
+      <!-- 算账条（仅 PERCENT + 付费券） -->
+      <div v-if="calcBar" class="calc">
+        {{ t("messages.couponStore.calcExample", { spend: calcBar.spend, save: calcBar.save, off: calcOff }) }}
       </div>
 
       <template v-if="paragraphs.length">
@@ -88,6 +126,14 @@ watch(() => props.open, () => { introImageFailed.value = false; });
         </span>
       </div>
 
+      <!-- 三步流程条（仅 IN_STORE 券） -->
+      <div v-if="flowSteps.length" class="flow">
+        <template v-for="(s, i) in flowSteps" :key="s">
+          <span v-if="i" class="flow-arrow">→</span>
+          <span class="flow-step"><b>{{ i + 1 }}</b><span class="flow-txt">{{ s }}</span></span>
+        </template>
+      </div>
+
       <div class="notice">
         <span class="notice-b">{{ t("messages.couponMall.secNotice") }}：</span>
         <span class="notice-t">{{ t("messages.couponMall.noticeText") }}</span>
@@ -124,6 +170,12 @@ watch(() => props.open, () => { introImageFailed.value = false; });
 .urow { display: flex; justify-content: space-between; font-size: 12px; }
 .v { font-weight: 500; }
 .notice { background: var(--ui-bg-elevated); border-radius: 8px; padding: 8px 12px; }
+.calc { border: 1px dashed var(--ui-border); background: var(--ui-bg-elevated); border-radius: 8px; padding: 6px 10px; font-size: 12px; color: var(--ui-text-muted); }
+.flow { display: flex; align-items: center; gap: 6px; }
+.flow-step { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 12px; background: var(--ui-bg-elevated); border-radius: 8px; padding: 6px 8px; }
+.flow-step b { flex: none; width: 16px; height: 16px; border-radius: 999px; background: var(--ui-primary); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; }
+.flow-txt { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.flow-arrow { flex: none; font-size: 12px; color: var(--ui-text-muted); }
 .notice-b { font-size: 12px; font-weight: 600; }
 .notice-t { font-size: 12px; color: var(--ui-text-muted); line-height: 1.6; }
 .cta { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }

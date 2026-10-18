@@ -1,4 +1,5 @@
 import { localizeText } from "./detail-config";
+import { couponYuan } from "./coupon";
 
 /** 券商城目录卡片的库存进度与售罄判定（纯函数，SSR 友好） */
 export interface SaleProgress {
@@ -21,6 +22,62 @@ export function saleProgress(input: {
     return { percent, soldOut: percent >= 100 };
   }
   return { percent: null, soldOut: false };
+}
+
+/**
+ * 券店售卖卡（付费出售场景）的进度与售罄判定：
+ * 忽略 claimable——claimable=false 仅表示「不开放免费领取」，对付费出售券完全正常；
+ * 售罄口径 = totalCount>0 && claimedCount>=totalCount（免费领券场景仍用 saleProgress）。
+ */
+export function saleCardProgress(tpl: {
+  claimedCount?: number | null;
+  totalCount?: number | null;
+}): SaleProgress {
+  return saleProgress({
+    claimedCount: tpl.claimedCount,
+    totalCount: tpl.totalCount,
+    claimable: true,
+  });
+}
+
+/** 券折扣展示的结构化结果（组件层按 kind + i18n 渲染，避免裸数字 0.80） */
+export type CouponDiscountInfo =
+  | { kind: "percent"; percent: number }
+  | { kind: "fixed"; amount: string }
+  | { kind: "full"; amount: string };
+
+/** 券模板折扣格式化：PERCENT discountValue=80 → 8 折（percent=8）、85 → 8.5；FIXED/FULL → 分→元金额 */
+export function formatCouponDiscount(tpl: {
+  type?: string | null;
+  discountValue?: number | null;
+}): CouponDiscountInfo {
+  const v = Number(tpl?.discountValue ?? 0);
+  if (tpl?.type === "PERCENT") {
+    return { kind: "percent", percent: v / 10 };
+  }
+  const amount = couponYuan(v);
+  return tpl?.type === "FULL" ? { kind: "full", amount } : { kind: "fixed", amount };
+}
+
+/** 算账示例（供算账条/优惠行 caption）：spend 元按折扣可省多少；仅 PERCENT 有意义，其余返回 null */
+export function couponSavingsExample(
+  tpl: { type?: string | null; discountValue?: number | null },
+  spend = 100,
+): { spend: number; save: number; after: number } | null {
+  if (tpl?.type !== "PERCENT" || !(tpl.discountValue > 0) || !(spend > 0)) return null;
+  const save = Math.round(spend * (1 - tpl.discountValue / 100));
+  return { spend, save, after: spend - save };
+}
+
+/** 券名 → 场景插画类型（纯函数，按关键词映射） */
+export type CouponSceneArt = "billiards" | "dining" | "drink" | "generic";
+
+export function couponSceneArt(name: string): CouponSceneArt {
+  const n = (name ?? "").toLowerCase();
+  if (/台球|桌球|斯诺克|黑八|billiard|snooker/.test(n)) return "billiards";
+  if (/餐|饭|食|菜|烤|火锅|dining|food|restaurant|grill|hotpot/.test(n)) return "dining";
+  if (/咖啡|奶茶|茶|饮|咖|coffee|milk.?tea|tea|drink|juice|bubble/.test(n)) return "drink";
+  return "generic";
 }
 
 /** 券详情可选增强：description 本地化后非空白才有详情入口 */

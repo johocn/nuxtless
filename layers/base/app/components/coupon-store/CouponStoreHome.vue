@@ -3,6 +3,7 @@ import {
   getCouponSaleCatalogue,
   getPointsMallTemplates,
 } from "~~/layers/base/app/composables/useCoupon";
+import { couponYuan } from "../../utils/coupon";
 
 /**
  * 券店首页（Channel.customFields.storefrontMode=coupon）：
@@ -61,19 +62,32 @@ function goTo(key: string) {
 
 const shopName = computed(() => customFields.value?.shopName || "");
 const slogan = computed(() => t("messages.couponStore.heroSlogan"));
+/** sale 楼层最低售价（元，展示用）；无数据为 null 不显示 */
+const asLowPrice = computed<number | null>(() => {
+  const prices = templates.value
+    .map((tpl) => Number(tpl?.salePrice ?? 0))
+    .filter((p) => p > 0);
+  return prices.length ? Math.min(...prices) : null;
+});
 </script>
 
 <template>
   <main class="mx-auto w-full max-w-3xl px-3 pb-24">
     <!-- 店招 hero -->
     <header class="hero">
-      <div>
+      <div class="min-w-0">
         <div class="hero-name">{{ shopName }}</div>
         <div class="hero-slogan">{{ slogan }}</div>
+        <div class="hero-trust">{{ t("messages.couponStore.trustLine") }}</div>
       </div>
-      <NuxtLink v-if="isAuthenticated" :to="localePath('/coupon')" class="pts-pill">
-        {{ t("messages.couponMall.pointsBalance") }}
-      </NuxtLink>
+      <div class="hero-side">
+        <span v-if="asLowPrice !== null" class="low-pill">
+          {{ t("messages.couponStore.asLowAs", { price: couponYuan(asLowPrice) }) }}
+        </span>
+        <NuxtLink v-if="isAuthenticated" :to="localePath('/coupon')" class="pts-pill">
+          {{ t("messages.couponMall.pointsBalance") }}
+        </NuxtLink>
+      </div>
     </header>
 
     <!-- 版式 A：吸顶锚点 -->
@@ -97,11 +111,10 @@ const slogan = computed(() => t("messages.couponStore.heroSlogan"));
       <section v-if="templates.length" id="floor-sale" class="mb-6">
         <h2 class="mb-2 text-sm font-semibold">{{ t("messages.couponMall.floorSale") }}</h2>
         <div class="flex flex-col gap-2">
-          <CouponMallCouponCard
+          <CouponStoreCouponCard
             v-for="tpl in templates" :key="tpl.id"
             :tpl="tpl" :buying="buyingId === tpl.id"
             @buy="openDetail(tpl)"
-            @detail="openDetail(tpl)"
           />
         </div>
       </section>
@@ -185,5 +198,8 @@ const slogan = computed(() => t("messages.couponStore.heroSlogan"));
 .hero { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; border-radius: 12px; background: var(--ui-primary); color: #fff; padding: 16px; }
 .hero-name { font-size: 17px; font-weight: 700; }
 .hero-slogan { margin-top: 2px; font-size: 12px; opacity: .85; }
-.pts-pill { border-radius: 999px; background: rgba(255, 255, 255, .18); padding: 4px 10px; font-size: 12px; color: #fff; }
+.hero-trust { margin-top: 4px; font-size: 11px; opacity: .75; }
+.hero-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+.low-pill { border-radius: 999px; background: rgb(255 255 255 / .92); color: var(--ui-primary); padding: 4px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pts-pill { border-radius: 999px; background: rgba(255, 255, 255, .18); padding: 4px 10px; font-size: 12px; color: #fff; white-space: nowrap; }
 </style>
