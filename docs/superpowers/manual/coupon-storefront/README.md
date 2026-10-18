@@ -88,7 +88,29 @@
 
 验收截图（手机视口 390×844 dpr=2）：[2026-10-18-t1-marketing-upgrade/](../../../manual/shots/2026-10-18-t1-marketing-upgrade/)（01 首页营销标签/划线价/8折；02 详情弹层标签+划线价+算账条+三步流程；03 券包楼层）。DOM 断言见 `verify-log.json`（soldCount=0 时「已售」正确隐藏）。验证脚本 `scripts/_shot_coupon_marketing.mjs`。
 
-> 首购立减 / 学生价 / 倒计时活动位：**挂起**，待运营定活动政策（门槛/力度/时段）后再实施。
+> 倒计时活动位：**挂起**，待运营定活动政策（门槛/力度/时段）后再实施。首购立减 / 学生价已于同日实施（见 6.2）。
+
+## 6.2 首购立减 + 学生价（2026-10-18 · P3）
+
+**政策规则**（方案：[2026-10-18-coupon-firstbuy-student-price.md](../../../plans/2026-10-18-coupon-firstbuy-student-price.md)）：
+
+- **首购立减**：渠道级配置（Channel customFields `firstBuyDiscount`，分）。资格 = 本店**无 PAID 券单**（每用户 1 次；退款/取消不占资格）。匿名按新客展示首购价引导转化。
+- **学生价**：券模板级配置（coupon_template `studentPrice`，分）。仅**学生认证通过**（Customer customFields `studentStatus=approved`）后展示并按学生价结算；未认证只在详情弹层显示「认证学生享学生价，去认证」引导。
+- **计算口径**：两路径**各自从券原价独立计算、取低不叠加**；同价优先记学生价；到手价最低 ¥0.01。后端 `resolvePromoPrice` 下单重算，不信任前端价格；让利记入出售单 `discountType/discountAmount`。
+
+| 实现点 | 说明 | 位置 |
+| --- | --- | --- |
+| 后端迁移 | 7 个新列幂等迁移；**列名须与 TypeORM metadata 一致**（customFields 嵌入列带 `customFields` 前缀，如 `customFieldsFirstbuydiscount`），裸名列会被 synchronize 每次启动 DROP 且读值恒空（本次踩坑） | coupon-plugin `migrations/add-coupon-promo-fields` |
+| 目录下发 | `couponSaleCatalogue` 增 `firstBuyDiscount / firstBuyEligible / studentApproved`（按登录态计算） | coupon-plugin `coupon-sale.service.ts` |
+| 下单重算 | `createSaleOrder` 调 `resolvePromoPrice`（纯函数，21 单测覆盖：取低不叠加/同价优先学生/最低 1 分/资格边界） | 同上 |
+| 学生认证流 | shop：`myStudentVerification` / `applyStudentVerification`（学校+学号+学生证照片，approved 不可重提，驳回可改重提）；admin：`studentVerifications(status)` / `reviewStudentVerification`（@Allow UpdateCustomer） | coupon-plugin `student.service.ts` / `student.resolvers.ts` |
+| C 端展示 | 券卡/详情弹层 promo 标签（首购红/学生青）+ 划线原价 + 到手价 + 价格明细三行（券售价→优惠→到手） | `CouponStoreCouponCard/CouponGridCard/BundleCard/DetailSheet` + `couponPromoPrice` |
+| C 端认证页 | `/coupon/student-verify`：状态卡（审核中/通过/驳回重提）+ 表单（照片上传复用 AfterSalesEvidenceUploader）；匿名访问跳登录 | `pages/coupon/student-verify.vue` |
+| web-admin | 券编辑「学生价（元）」字段；租户详情「首购立减（元）」；营销菜单「学生认证审核」页（pending/approved/rejected 三 tab + 照片预览 + 通过/驳回） | vshop web-admin |
+
+**t1 上线配置**（SQL 直配）：Channel 7 `customFieldsFirstbuydiscount=200`（首购立减 ¥2）；券 84（台球买单券 ¥5）`studentPrice=300`（学生 ¥3，与首购价同价 → 验证「同价优先学生价」）。券 83 未配学生价。
+
+验收截图（手机视口 390×844 dpr=2）：[2026-10-18-coupon-firstbuy-student/](../../../manual/shots/2026-10-18-coupon-firstbuy-student/)（01 首页首购红标+¥5 划线+¥3 到手；02 详情明细三行；02b 台球券学生认证引导；03 认证页登录门）。DOM 断言见 `verify-log.json`。验证脚本 `scripts/_shot_coupon_firstbuy.mjs`。
 
 ## 7. 测试用例清单
 
@@ -120,6 +142,11 @@
 | C13 | 营销标签/划线价（P2） | 券卡头图红色角标（热卖TOP/人气爆款）+ ¥9.9 划线价 + ¥5 现价；详情弹层同步；后台未配置则不显示 | 01/02（[2026-10-18-t1-marketing-upgrade/](../../../manual/shots/2026-10-18-t1-marketing-upgrade/)） |
 | C14 | 真实已售数（P2） | soldCount=0 全程不显示「已售」；产生真实 PAID 出售单后「已售N」出现（单券/券包同口径） | verify-log.json 断言 |
 | C15 | 券包楼层（P2） | 「超值2张券包」入超值券包楼层，条目「餐饮买单优惠券 8折 ×1」语义正确，包价 ¥9 | 03 |
+| C16 | 首购立减展示（P3） | 匿名/新客券卡显示红色「首购立减」标签 + ¥5 划线 + ¥3 到手价；老客（有 PAID 券单）不显示 | 01（[2026-10-18-coupon-firstbuy-student/](../../../manual/shots/2026-10-18-coupon-firstbuy-student/)） |
+| C17 | 详情弹层价格明细（P3） | 三行明细：券售价 ¥5 / 首购立减 −¥2 / 到手价 ¥3；CTA 与头部同步到手价 | 02 |
+| C18 | 学生认证引导（P3） | 含学生价的券（台球券）弹层显示绿色「认证学生享学生价，去认证」链接 → 跳 `/coupon/student-verify`；无学生价的券不显示 | 02b |
+| C19 | 学生认证页登录门（P3） | 匿名访问 `/t1/coupon/student-verify` 跳转登录页；登录后显示状态卡/表单（驳回可改重提） | 03 |
+| C20 | 同价优先学生价（P3） | 学生认证通过 + 首购资格都在时：台球券两路径同价 ¥3，下单记 discountType=STUDENT；服务器端 resolvePromoPrice 单测覆盖 | 单测 |
 
 ## 8. 已知边界
 
