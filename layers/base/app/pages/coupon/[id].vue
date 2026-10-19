@@ -189,6 +189,48 @@ function buy() {
   startBuy(item, isBundle.value ? "bundle" : "template");
 }
 
+// ── 立即使用（FR-A1）：已登录且持该模板未用券 → 券码页到店动线 ──
+const ownedCoupon = ref<{ code: string; expiredAt?: string | null } | null>(null);
+let ownedLoaded = false;
+/** 登录态就绪时机不定（me 异步初始化）：watch 立即 + 变化，就绪后拉一次持券列表 */
+async function loadOwned() {
+  if (ownedLoaded || !isAuthenticated.value || isBundle.value) return;
+  ownedLoaded = true;
+  try {
+    const { getMyCoupons } = await import("~~/layers/base/app/composables/useCoupon");
+    const mine = await getMyCoupons();
+    const hit = mine.find((c) => String(c.templateId) === targetId.value && c.status.toUpperCase() === "UNUSED");
+    ownedCoupon.value = hit ? { code: hit.code, expiredAt: hit.expiredAt } : null;
+  } catch {
+    ownedCoupon.value = null;
+  }
+}
+onMounted(() => watch(isAuthenticated, loadOwned, { immediate: true }));
+/** 券详情页折扣文案（与券包 goCode 同口径） */
+const ownedDiscount = computed(() => {
+  if (!tpl.value) return "";
+  return tpl.value.type === "PERCENT"
+    ? t("messages.coupon.discountPercent", { n: (tpl.value.discountValue ?? 0) / 10 })
+    : tpl.value.type === "FIXED"
+      ? t("messages.coupon.discountFixed", { n: (tpl.value.discountValue ?? 0) / 100 })
+      : "";
+});
+const showUseNow = computed(() =>
+  !!ownedCoupon.value && ["IN_STORE", "ALL"].includes(String(tpl.value?.usageScene ?? "")),
+);
+function useNow() {
+  if (!ownedCoupon.value) return;
+  navigateTo({
+    path: localePath("/coupon/code"),
+    query: {
+      code: ownedCoupon.value.code,
+      name: name.value,
+      expiresAt: ownedCoupon.value.expiredAt || tpl.value?.endsAt || "",
+      discount: ownedDiscount.value,
+    },
+  });
+}
+
 // ── 分享/SEO：券无实图 → og:image 走渠道分享图 → 域名 logo 兜底（与商品页兜底链一致） ──
 const { i18NBaseUrl } = useRuntimeConfig().public;
 const { customFields, loadTheme } = useChannelTheme();
@@ -376,16 +418,21 @@ if (import.meta.server && shareCardSrc.value) {
         </div>
       </div>
 
-      <!-- 吸底 CTA：价格 + 抢购（bottom 对齐 TabBar 预留 pb-18=72px，lg 以上无 TabBar 仍成立） -->
+      <!-- 吸底 CTA：价格 + 立即使用（持未用券）/ 抢购（bottom 对齐 TabBar 预留 pb-18=72px，lg 以上无 TabBar 仍成立） -->
       <div class="cta-bar">
         <div class="flex min-w-0 items-baseline gap-1.5">
           <span v-if="promo" class="promo-tag" :class="promo.kind">{{ promoLabel }}</span>
           <s v-if="promo" class="text-xs text-(--ui-text-dimmed)">¥{{ couponYuan(baseFen) }}</s>
           <span class="text-lg font-extrabold text-(--ui-primary)">¥{{ displayPrice }}</span>
         </div>
-        <UButton size="md" :disabled="soldOut" :loading="buying" class="rounded-full px-6" @click="buy">
-          {{ soldOut ? t("messages.couponMall.soldOut") : t("messages.couponMall.buyNow") }}
-        </UButton>
+        <div class="flex flex-none items-center gap-2">
+          <UButton v-if="showUseNow" size="md" class="rounded-full px-5" @click="useNow">
+            {{ t("messages.coupon.useNow") }}
+          </UButton>
+          <UButton size="md" :disabled="soldOut" :loading="buying" class="rounded-full px-6" variant="soft" :class="showUseNow && 'px-4'" @click="buy">
+            {{ soldOut ? t("messages.couponMall.soldOut") : t("messages.couponMall.buyNow") }}
+          </UButton>
+        </div>
       </div>
 
       <CouponPaySheet
