@@ -189,20 +189,33 @@ function buy() {
   startBuy(item, isBundle.value ? "bundle" : "template");
 }
 
-// ── 分享/SEO：券无实图 → og:image 走渠道分享图 → 域名 logo 兜底（与 app.vue 全局兜底链一致） ──
+// ── 分享/SEO：券无实图 → og:image 走渠道分享图 → 域名 logo 兜底（与商品页兜底链一致） ──
 const { i18NBaseUrl } = useRuntimeConfig().public;
 const { customFields, loadTheme } = useChannelTheme();
 await loadTheme();
+// og 卡用渠道分享图原图；JS-SDK 转发卡用压缩图（微信缩略图 iOS≈128KB 上限，
+// 渠道原图可能超限，按商品页口径压到 ?w=240&q=50；logo 兜底保持原样）
 const shareImage = computed(() => {
   const raw = customFields.value?.shareImageUrl ?? "";
   return raw ? new URL(raw, i18NBaseUrl).toString() : `${i18NBaseUrl}/share-logo.jpg`;
+});
+const shareCardSrc = computed(() => {
+  const raw = customFields.value?.shareImageUrl ?? "";
+  if (!raw) return `${i18NBaseUrl}/share-logo.jpg`;
+  const u = new URL(raw, i18NBaseUrl);
+  u.searchParams.set("w", "240");
+  u.searchParams.set("q", "50");
+  return u.toString();
 });
 const shareDesc = computed(() => {
   const first = paragraphs.value.find((p) => p.type === "text")?.content ?? "";
   return String(first).slice(0, 80) || t("messages.couponMall.heroSub");
 });
-// 页面 <title> 由 layout 依 definePageMeta.title 输出（券详情固定标题），此处只覆盖 og/twitter
+// 浏览器标签/微信默认抓取用券名（definePageMeta 静态标题仅作 layout 兜底），
+// og/twitter 卡券名 + 券介绍；share:image SSR 烘焙压缩图（WechatShare docShareImage 直读静态 HTML）
 useSeoMeta({
+  title: name.value,
+  description: shareDesc.value,
   ogTitle: name.value,
   ogDescription: shareDesc.value,
   ogImage: shareImage.value,
@@ -211,8 +224,8 @@ useSeoMeta({
   twitterImage: shareImage.value,
 });
 // JS-SDK 分享图 meta（WechatShare 组件读取）：SSR 烘焙静态值（券分享图按渠道固定）
-if (import.meta.server && shareImage.value) {
-  useHead({ meta: [{ name: "share:image", content: shareImage.value }] });
+if (import.meta.server && shareCardSrc.value) {
+  useHead({ meta: [{ name: "share:image", content: shareCardSrc.value }] });
 }
 </script>
 
@@ -384,6 +397,9 @@ if (import.meta.server && shareImage.value) {
         @confirm="confirmPay"
         @close="closePaySheet"
       />
+
+      <!-- 微信 JS-SDK 分享卡：券名 + 券介绍 + 压缩分享图（props 直传，卡片标题不落通用兜底） -->
+      <WechatShare :title="name" :description="shareDesc" :image-url="shareCardSrc" />
     </template>
   </main>
 </template>
