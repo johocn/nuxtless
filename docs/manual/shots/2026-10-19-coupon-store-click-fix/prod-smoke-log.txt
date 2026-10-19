@@ -1,0 +1,4 @@
+PASS 热销卡存在
+PASS 卡面额=8折 | 8折
+PASS 点击跳详情页 | https://www.youshop.cn/t1/coupon/83
+PASS 详情页=8折
