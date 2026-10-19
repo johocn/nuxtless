@@ -23,6 +23,7 @@ const emit = defineEmits<{ created: [order: BillPayOrder] }>();
 
 const { t } = useI18n();
 const toast = useToast();
+const localePath = useTenantLocalePath();
 const { isAuthenticated } = storeToRefs(useAuthStore());
 
 const merchantName = ref("");
@@ -31,6 +32,12 @@ const remark = ref("");
 const agreed = ref(false);
 const submitting = ref(false);
 const paying = ref(false);
+
+// 协议页（同 tab 跳转带 from=submit，「同意并返回」后回填勾选）
+const agreementTo = computed(() => `${localePath("/billpay/agreement")}?from=submit`);
+onMounted(() => {
+  agreed.value = useState("billpay-agreed", () => false).value;
+});
 
 // 报价预估（前端同规则；最终以后端为准）
 const amountCents = computed(() => {
@@ -88,7 +95,12 @@ async function submit() {
     payMode.value = isWechatBrowser() ? "WECHAT" : "BALANCE";
     paySheetOpen.value = true;
   } catch (e) {
-    toast.add({ title: t("messages.billpay.submitFailed"), description: billpayErrorMessage(e), color: "error" });
+    const raw = billpayErrorMessage(e);
+    // 单日累计限额超限：后端 UserInputError('Daily bill pay limit exceeded') 映射为友好文案
+    const description = /Daily bill pay limit exceeded/i.test(raw)
+      ? t("messages.billpay.dailyLimitExceeded")
+      : raw;
+    toast.add({ title: t("messages.billpay.submitFailed"), description, color: "error" });
   } finally {
     submitting.value = false;
   }
@@ -227,7 +239,7 @@ function closePaySheet() {
       <UCheckbox v-model="agreed" />
       <span>
         {{ t("messages.billpay.agreePrefix") }}
-        <NuxtLink to="/agreement" target="_blank" class="agree-link">{{ t("messages.billpay.agreementName") }}</NuxtLink>
+        <NuxtLink :to="agreementTo" class="agree-link">{{ t("messages.billpay.agreementName") }}</NuxtLink>
       </span>
     </label>
 

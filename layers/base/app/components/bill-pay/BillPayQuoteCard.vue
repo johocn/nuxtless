@@ -25,9 +25,15 @@ const ruleText = (label: unknown, fallback: string): string => {
 
 <template>
   <div class="quote-card" :class="{ muted: !!hint }">
-    <div v-if="!preview || preview.payable == null" class="q-row q-empty">
-      <span>{{ hint || t("messages.billpay.quotePending") }}</span>
-    </div>
+    <template v-if="!preview || preview.payable == null">
+      <div class="q-row q-empty">
+        <span>{{ hint || t("messages.billpay.quotePending") }}</span>
+      </div>
+      <!-- 单日累计限额警告（非阻断：最终以后端当日累计校验为准） -->
+      <div v-if="preview?.overDaily && config?.dailyLimitAmount" class="q-warn">
+        {{ t("messages.billpay.dailyLimitHint", { amount: billpayYuan(config.dailyLimitAmount) }) }}
+      </div>
+    </template>
     <template v-else>
       <div class="q-row">
         <span class="q-label">{{ t("messages.billpay.expectedAmount") }}</span>
@@ -43,6 +49,10 @@ const ruleText = (label: unknown, fallback: string): string => {
       <div class="q-row q-total">
         <span class="q-label">{{ t("messages.billpay.payable") }}</span>
         <span class="q-amount"><i>¥</i>{{ billpayYuan(preview.payable) }}</span>
+      </div>
+      <!-- 单日累计限额警告（非阻断：最终以后端当日累计校验为准） -->
+      <div v-if="preview.overDaily && config?.dailyLimitAmount" class="q-warn">
+        {{ t("messages.billpay.dailyLimitHint", { amount: billpayYuan(config.dailyLimitAmount) }) }}
       </div>
       <div v-if="config?.quoteExpireMinutes" class="q-note">
         {{ t("messages.billpay.quoteExpireNote", { minutes: config.quoteExpireMinutes }) }}
@@ -64,4 +74,5 @@ const ruleText = (label: unknown, fallback: string): string => {
 .q-amount { color: var(--ui-primary); font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; }
 .q-amount i { font-style: normal; font-size: 14px; margin-right: 2px; }
 .q-note { margin-top: 8px; font-size: 12px; color: var(--ui-text-muted); }
+.q-warn { margin-top: 8px; font-size: 12px; line-height: 1.6; color: var(--ui-warning); }
 </style>
