@@ -403,6 +403,7 @@ export const zhMessages = {
       studentGuide: '认证学生享学生价，去认证',
       campaignEndsIn: '距结束',
       campaignGrab: '抢购',
+      floorMore: '更多',
     },
     studentVerify: {
       title: '学生认证',

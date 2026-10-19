@@ -150,6 +150,25 @@
 
 验收截图（手机视口 390×844 dpr=2）：[2026-10-19-coupon-detail-page/](../../../manual/shots/2026-10-19-coupon-detail-page/)。验证脚本 `scripts/_shot_coupon_detail_page.mjs`。
 
+## 6.5 分类楼层（2026-10-19 · 自适应阈值分组）
+
+券多起来后（>20 张）单券楼层一拉到底，升级为**自适应分类楼层**（A 版式配置化方案 mockup 定稿）：
+
+- **阈值策略（前端纯函数，后端零逻辑）**：`templates.length ≤ 20` 或券模板全未配 `category` → 按**券类型**自动分组（代金→折扣→满减→免邮，零配置，空组剔除，复用既有 `messages.coupon.type*` 词条）；`> 20` 且存在已配 `category` → 按**业态**分组。
+- **业态配置**：渠道 customFields `couponFloorGroups`（JSON 数组，web-admin 平台侧可配）形如 `[{"key":"food","title":{"zh-CN":"美食","en":"Food"}}]`；楼层顺序=配置顺序，未命中配置/未配 category 的券归「更多」兜底楼层（末尾）。
+- **数据链**：`coupon_template.category` 新列（varchar 可空，AddCouponCategoryFieldMigration 幂等补列）；admin create/updateCouponTemplate 输入透出（trim/30 字上限/空归 null），SDL 共享 couponTemplateType → shop-api `couponSaleCatalogue` 自动带出；nshop 目录 GQL 字段清单 + GetChannelTheme 同步补字段（graphql.schema.json 经 `scripts/update-schema.cjs` 从生产刷新）。
+- **交互**：吸顶分类 chips 与锚点条融合（多组才渲染，横向滚动隐藏滚动条）；点 chip `scrollIntoView` 平滑滚动 + 高亮；scroll spy（passive scroll 监听）滚动自动高亮；加载完成 `nextTick(onScroll)` 初始高亮首楼层；券包/积分楼层保持末尾不受影响。
+
+| 实现点 | 说明 | 位置 |
+| --- | --- | --- |
+| 分组纯函数 | `groupSaleTemplates`（阈值判定/类型序/业态配置序/「更多」兜底/多语言标题 localizeText 回退）+ `parseFloorGroups`（坏 JSON/非数组→null 回退类型分组），SSR 友好 | `utils/coupon-mall.ts` |
+| 楼层渲染 | 单券楼层改为 `v-for saleGroups`（key=`sale-${g.key}`），chips=type 组+业态组+券包/积分；删旧固定 sale 楼层 | `components/coupon-store/CouponStoreHome.vue` |
+| 后端字段 | `category` 列 + 迁移 + admin 输入/SDL + cjk 渠道 customFields `couponFloorGroups`（public，仅 coupon 模式生效）+ updateTenant 输入链 | vendure coupon-plugin / cjk-plugin |
+| admin 表单 | 券模板编辑（SALE 渠道）新增「业态分类」输入 + 提示文案；平台租户详情可配 couponFloorGroups | vshop web-admin |
+| i18n | `couponStore.floorMore`（更多/More）zh-CN/en-US 同步（其余语言走 zhFallbackLocale 兜底，与本模块既有词条口径一致） | `i18n/locales/*.ts` |
+
+验收截图（手机视口 390×844 dpr=2）：[2026-10-19-coupon-floor-groups/](../../../manual/shots/2026-10-19-coupon-floor-groups/)（type-mode-home / category-mode-home / category-mode-chip-click）。验证脚本 `%TEMP%\_shot_coupon_floor_groups.mjs`（Playwright mock couponSaleCatalogue 21 张带 category 券 + route.fulfill 中转生产 API）。
+
 ## 7. 测试用例清单
 
 ### 7.1 后端（shop-api，curl 匿名/带渠道 token）
@@ -193,6 +212,10 @@
 | C26 | 详情页分享 meta（6.4） | og:title=券名、og:image=渠道分享图/logo、share:image 存在；匿名抢购跳登录 | verify-log.txt 断言 |
 | C27 | 热销卡整卡点击直达详情（6.4） | 点热销单券卡非按钮区跳 `/t1/coupon/[id]`（场景插画/头图/标题区均可点）；「抢购」按钮仍开弹层快捷购买（stopPropagation）；宫格版式 GridCard 同口径 | 02（[2026-10-19-coupon-store-click-fix/](../../../manual/shots/2026-10-19-coupon-store-click-fix/)） |
 | C28 | 面额语义化回归（6.4） | PERCENT 券头图面额槽与详情弹层面额=「8折」（原直渲染 discountValue=80 成 ¥0.80 的 bug 修复）；券包弹层面额=「共N张」（原 NaN 修复）；券包条目/算账条保持「8折」语义 | 01/03/04 |
+| C29 | 分类楼层·type 自动分组（6.5） | 单券 ≤20 张或未配 category：按券类型自动分组（代金→折扣→满减→免邮，空组剔除）；标题走 i18n；真实目录单类型时不渲染多余 chips | 01 |
+| C30 | 分类楼层·category 业态分组（6.5） | >20 张且券模板已配 category：按渠道 `couponFloorGroups` 配置顺序分组（美食/游乐…），未命中配置/未分类归「更多」兜底楼层；组标题多语言回退（locale→default→首值） | 02 |
+| C31 | 分类 chips 交互（6.5） | 多组才显示吸顶 chips（单组隐藏）；点 chip 平滑滚动到对应楼层 + 高亮切换；滚动 scroll spy 自动高亮当前楼层；加载完成初始高亮首楼层 | 02/03 |
+| C32 | 阈值自适应回归（6.5） | 21 张券但全部 category 未命中配置 → 全部落「更多」单组；分组逻辑纯函数 groupSaleTemplates 单测覆盖（顺序/兜底/多语言/空目录） | 单测 |
 
 ## 8. 已知边界
 

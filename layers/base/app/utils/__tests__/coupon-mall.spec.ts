@@ -10,7 +10,77 @@ import {
   hasDetail,
   parseDetailParagraphs,
   detailAssetUrl,
+  parseFloorGroups,
+  groupSaleTemplates,
 } from "../coupon-mall";
+
+describe("parseFloorGroups", () => {
+  it("合法 JSON 数组 → 配置数组", () => {
+    expect(
+      parseFloorGroups('[{"key":"food","title":{"zh-CN":"美食","en":"Food"}},{"key":"more"}]'),
+    ).toEqual([
+      { key: "food", title: { "zh-CN": "美食", en: "Food" } },
+      { key: "more", title: null },
+    ]);
+  });
+  it("对象/坏 JSON/空数组 → null 回退类型分组", () => {
+    expect(parseFloorGroups('{"key":"food"}')).toBeNull();
+    expect(parseFloorGroups("not json")).toBeNull();
+    expect(parseFloorGroups("[]")).toBeNull();
+    expect(parseFloorGroups(null)).toBeNull();
+    expect(parseFloorGroups(undefined)).toBeNull();
+  });
+  it("无 key 的项剔除", () => {
+    expect(parseFloorGroups('[{"title":"x"},{"key":"food"}]')).toEqual([{ key: "food", title: null }]);
+  });
+});
+
+describe("groupSaleTemplates", () => {
+  const mk = (id: number, type: string, category?: string | null) => ({ id, type, category });
+
+  it("≤阈值或无 category：按券类型自动分组（固定顺序，空组剔除）", () => {
+    const tpls = [mk(1, "PERCENT"), mk(2, "FIXED"), mk(3, "PERCENT"), mk(4, "FULL")];
+    const groups = groupSaleTemplates(tpls, null, { lang: "zh-CN" });
+    expect(groups.map((g) => [g.typeKey, g.items.length])).toEqual([
+      ["FIXED", 1],
+      ["PERCENT", 2],
+      ["FULL", 1],
+    ]);
+    expect(groups[0].title).toBeNull();
+  });
+
+  it("超阈值且已配 category：按配置顺序分组，未命中/未分类落「更多」", () => {
+    const tpls = Array.from({ length: 21 }, (_, i) =>
+      mk(i + 1, "FIXED", i < 15 ? (i < 8 ? "food" : "play") : i === 20 ? "misc" : null),
+    );
+    const config = parseFloorGroups('[{"key":"play","title":"游乐"},{"key":"food","title":"美食"}]');
+    const groups = groupSaleTemplates(tpls, config, { lang: "zh-CN", moreTitle: "更多" });
+    expect(groups.map((g) => [g.key, g.title, g.items.length])).toEqual([
+      ["play", "游乐", 7],
+      ["food", "美食", 8],
+      ["more", "更多", 6],
+    ]);
+  });
+
+  it("超阈值但 category 未命中任何配置：全部落「更多」单组", () => {
+    const tpls = Array.from({ length: 21 }, (_, i) => mk(i + 1, "FIXED", "food"));
+    const groups = groupSaleTemplates(tpls, null, { lang: "zh-CN", moreTitle: "更多" });
+    expect(groups.length).toBe(1);
+    expect(groups[0].key).toBe("more");
+    expect(groups[0].items.length).toBe(21);
+  });
+
+  it("多语言标题：locale 缺失回退默认语言 → 首值", () => {
+    const tpls = Array.from({ length: 21 }, (_, i) => mk(i + 1, "FIXED", "food"));
+    const config = parseFloorGroups('[{"key":"food","title":{"zh-CN":"美食","en":"Food"}}]');
+    expect(groupSaleTemplates(tpls, config, { lang: "en", moreTitle: "More" })[0].title).toBe("Food");
+    expect(groupSaleTemplates(tpls, config, { lang: "ja", moreTitle: "More" })[0].title).toBe("美食");
+  });
+
+  it("空目录返回空数组", () => {
+    expect(groupSaleTemplates([], null, { lang: "zh-CN" })).toEqual([]);
+  });
+});
 
 describe("saleProgress", () => {
   it("限量券：按已抢/总量算百分比", () => {
