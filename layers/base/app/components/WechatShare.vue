@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { isWechatBrowser, useSso } from "../composables/useSso";
+import { fissionInviteCodeOf } from "../composables/useCoupon";
 
 // 通用分享组件：页内按钮 + 复制链接/话术 + 微信内 JS-SDK 自定义分享卡片（静默降级）。
 // shareUrl 始终拼接 ?invite=<当前用户邀请码|页面已带邀请码>，保证转发带码。
@@ -22,9 +23,9 @@ const open = ref(false);
 const copied = ref(false);
 const copyLabel = computed(() => t(copied.value ? "messages.share.copied" : "messages.share.copyLink"));
 
-// 邀请码优先级：显式 props（页面传入登录用户码）> 会话用户邀请码 > 当前 URL 已带 invite
+// 邀请码优先级：显式 props（页面传入登录用户码）> 会话用户可逆码 F<base36(id)>（FR-C，后端解码定位）> 当前 URL 已带 invite
 const inviteCode = computed(
-  () => props.inviteCode || authStore.session?.user?.inviteCode || (route.query.invite as string) || "",
+  () => props.inviteCode || fissionInviteCodeOf(authStore.session?.user) || (route.query.invite as string) || "",
 );
 
 // 微信按分享「链接 URL」在服务端/客户端缓存整张分享卡（标题+描述+图一体，TTL 很长），
