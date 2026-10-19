@@ -94,6 +94,7 @@ e.joho.cn 与 www.youshop.cn **共用同一 Vendure 实例、同一 `customer` �
 | e.joho.cn 登录失败 | C 端 H5 未部署新版本（旧授权码流） | 部署 | 线上登录验证 |
 | 老用户 up_users 数据过时 | 登录链路未同步字段 | SSO 登录链路 | 数据对比（sso_id / invite_code / nickname） |
 | 微信登录成功后地址变 `/account/https://www.youshop.cn/`（404） | 回跳目标为完整 URL，`router.replace` 被 Vue Router `resolveRelativePath` 按相对路径基于 `/account/sso-callback` 目录拼接 | `useSso.ts readSsoReturnUrl` → `utils/sso-return-url.ts`（读时归一化） | 手机微信进任意页 → 登录 → 断言落点为原页相对路径（`tmp/verify-sso-returnurl.py`） |
+| 手机注册用户无法表单登录（填手机号报 Invalid email，2026-10-19 修复） | 表单 valibot `email()` 硬校验拦截手机号；而 phone-auth-plugin 手机注册用户 `User.identifier` 即裸手机号，后端原生 `login(username)` 字符串匹配本可通行 | `validators/loginForm.ts`（email→identifier，邮箱/大陆手机号双格式）+ `LoginForm.vue`（字段/词条 `account.identifier`，12 语言同步） | 生产 E2E：13800001234 + 密码 → `/account` + session cookie（截图 `docs/manual/shots/2026-10-19-login-phone-fix/`；测试号保留供冒烟） |
 
 ## 6. 验证脚本/流程清单
 
