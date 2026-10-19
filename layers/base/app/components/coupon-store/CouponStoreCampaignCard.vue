@@ -64,7 +64,10 @@ const nameOf = (tpl: Record<string, any>) => String(localizeText(tpl.name, local
   <div class="camp">
     <div class="head">
       <div class="head-txt">
-        <div class="title">{{ campaign.name }}</div>
+        <div class="title">
+          {{ campaign.name }}
+          <span v-if="campaign.newCustomerOnly" class="nc-badge">{{ t("messages.couponStore.newCustomerBadge") }}</span>
+        </div>
         <div v-if="campaign.subtitle" class="subtitle">{{ campaign.subtitle }}</div>
       </div>
       <div class="cd">
@@ -92,6 +95,7 @@ const nameOf = (tpl: Record<string, any>) => String(localizeText(tpl.name, local
 
 <style scoped>
 .camp { border-radius: 12px; background: #dc2626; color: #fff; padding: 14px; }
+.nc-badge { display: inline-block; vertical-align: 1px; margin-left: 6px; border-radius: 999px; background: rgb(255 255 255 / .95); color: #dc2626; font-size: 10px; font-weight: 700; padding: 1px 7px; }
 .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .head-txt { min-width: 0; }
 .title { font-size: 16px; font-weight: 700; line-height: 1.4; }

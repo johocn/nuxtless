@@ -169,6 +169,26 @@
 
 验收截图（手机视口 390×844 dpr=2）：[2026-10-19-coupon-floor-groups/](../../../manual/shots/2026-10-19-coupon-floor-groups/)（type-mode-home / category-mode-home / category-mode-chip-click）。验证脚本 `%TEMP%\_shot_coupon_floor_groups.mjs`（Playwright mock couponSaleCatalogue 21 张带 category 券 + route.fulfill 中转生产 API）。
 
+## 6.8 P1 营销玩法（2026-10-19 · FR-C 分享裂变 / FR-D 新客 1 元购 / FR-E 召回与等级券）
+
+### FR-C 分享裂变领券
+
+- **配置**（web-admin「优惠券 → 营销活动」弹窗 · 分享裂变 Tab）：启用 + 活动名称 + 副标题/规则 + 起止日期 + 被分享者奖励券（必选）+ 分享者奖励券（可选）+ 分享者获奖上限（0=不限）+ 仅新客可参与。落 `Channel.customFields.couponFission`（JSON，多语言文案可后台二次编辑保留 zh_Hans 键）。
+- **C 端动线**：券店首页店招下渲染紫色渐变裂变条（活动名 + 双方奖励摘要 + 规则 +「分享得券」按钮）。微信内点分享 → 引导右上角「···」转发（分享卡由 WechatShare 自动带 `?invite=我的邀请码`）；非微信 → 复制带 invite 的链接。
+- **领奖闭环**：好友经分享链接进店 → 未登录底部弹微信一键登录（WechatInviteLoginBar，returnUrl 保留 invite 穿透登录）→ 登录后裂变条自动领奖 → 双方各得 1 张（issuedBy=**FISSION** 渠道留痕）→ 结果状态行内展示（成功/已领过/自分享/仅新客/已领完）。
+- **后端规则**：`coupon_fission_record` 实体（渠道+被分享者唯一索引=同人同活动仅 1 次=幂等原子保障）；发奖事务化（withTransaction：扣量→建券→落记录，任一步失败整体回滚）；计入模板限量（R2）；四例外齐备（未登录/下线仅展示/自分享不发奖/限新客）；管理端 `couponFissionRecords` 查询可核对留痕（R1）。
+
+### FR-D 新客 1 元购
+
+- **配置**：同一「营销活动」弹窗 · 新客 1 元购 Tab：启用 + 名称 + 结束日期 + 关联券（SALE 在售候选）+「仅新客可见」开关。落 `couponCampaign`（复用倒计时活动位，`newCustomerOnly: true`）。
+- **可见性**（服务端下发侧过滤）：非新客（本租户有历史有效订单 **或** 已持新客券）登录后不下发该活动位；关联券全售罄整位摘除；券卡标题加「新人专享」徽标。
+- **硬拦**：`createCouponSaleOrder` / 加价购对新客券双重校验——综合新客判定 + 每人限购 1 张（含 PENDING 单占位，防重复下单绕过）；不达标抛「new customers only / limit reached」。1 元为运营定价（改券模板出售价即可），机制不依赖具体价格。
+
+### FR-E 沉睡召回与会员等级券
+
+- **E1 批量召回**：web-admin「优惠券 → 召回发放」弹窗：选召回券（GRANT 渠道候选）+ N 天未消费（默认 90）+ 站内信通知开关 → 「预览圈中人数」（只数不发）→「批量发放」。逐人走 RECALL 渠道留痕 + R4 防骚扰（同渠道同模板 RECALL 券 7 天内不重发）+ 会员门槛单人不达标跳过（MEMBER_LEVEL_BLOCKED）；`coupon_grant_batch` 批次留痕（圈中/成功/拦截数 + 逐人明细 JSON），弹窗内批次列表点开看摘要（前 10 行），管理端 `couponGrantBatches` 可查。
+- **E2 等级券**：券模板 `memberLevel` 字段激活（编辑页已有输入：数字 1-5 或 银/金/白金/钻石 别名）。三路拦截：券店目录/中心券列表/积分商城按登录人等级过滤（匿名按 1 档非会员）；领取（claimCoupon）与兑换（points exchange）、购买三处硬拦。全部无门槛时零额外等级查询（fail-open：会员插件未注册不阻塞）。
+
 ## 7. 测试用例清单
 
 ### 7.1 后端（shop-api，curl 匿名/带渠道 token）
@@ -221,6 +241,29 @@
 | C35 | 详情页「立即使用」入口（6.6 A1） | 登录且持该模板 UNUSED 券、usageScene∈(IN_STORE,ALL) 时：详情页吸底 CTA 出现「立即使用」→ 携券码跳用券页；未持券/线上券/过期券不显示（线上券走下单自动抵扣不变） | 线上冒烟（登录态） |
 | C36 | 券过期提醒·站内信（6.6 A2） | 定时扫描 UNUSED/RETURNED 且临期（≤3 天→3d 档、≤1 天→1d 档）→ notification-plugin 触达站内信（标题「优惠券 3 天后过期/明天过期」+ 券名/券码/到期日）；同用户同券同阶段 7 天去重（重复扫描/重启不重发）；公众号模板消息为增强通道（生产配置完成后自动启用，未配置仅站内信不阻塞） | 定时任务数据核验 + 单测（expireStage 边界/扫描条件下推/事件发布） |
 | C37 | FR-B 货架运营补齐（6.7） | t1 在架 10 张（83-92）全配 category（7 业态）；三档满减（满50减10/满100减30/满200减60）在架「立减」楼层，详情页门槛/首购立减/使用说明正确；couponFloorGroups 楼层配置下发渠道 customFields（title 单语言中文，列宽 255）；业态分组 >20 张激活，10 张走类型分组（设计行为） | 13-15（[2026-10-19-coupon-redemption-flow/](../../../manual/shots/2026-10-19-coupon-redemption-flow/)）+ catalogue 数据核验 |
+| C38 | FR-C 活动条渲染 | 未配置/窗口外/禁用 → 裂变条不渲染；配置生效 → 店招下紫色渐变条（名称+双方奖励摘要+分享按钮+规则） | 16（[2026-10-19-coupon-p1-marketing/](../../../manual/shots/2026-10-19-coupon-p1-marketing/)） |
+| C39 | FR-C 分享链 | 微信内点「分享得券」提示右上角转发；分享卡链接带 `?invite=<分享者邀请码>`；非微信复制链接 toast | 线上冒烟 |
+| C40 | FR-C 领奖闭环 | 被分享者带 `?invite=` 登录后自动领奖：双方各得 1 张 FISSION 券；状态行「领取成功，奖励已放入券包」；重复进入显示「已领取过」（幂等，券数不增） | 17 + DB 核验 coupon_fission_record |
+| C41 | FR-C 例外 | 自分享（本人邀请码）→「不能领取自己分享的奖励」不发券；限新客活动非新客 → BLOCKED 记档不再发；售罄 → SOLD_OUT；下线 → 裂变条消失仅展示券店 | 单测 + e2e |
+| C42 | FR-D 活动位 | 新客登录可见「新人专享」活动位（1 元价）；非新客登录同页活动位不出现；匿名保留展示 | 18 + catalogue 数据核验 |
+| C43 | FR-D 硬拦 | 非新客直调 createCouponSaleOrder 买新客券 → 「new customers only」错误；同人第二单 → 「limit reached」；限量耗尽活动位整位摘除 | e2e |
+| C44 | E1 召回发放 | 预览人数与圈人口径一致；发放后批次留痕（成功/拦截数+明细）；同人 7 天内二次发放被 RECENTLY_GRANTED 拦截；站内信落 notification | web-admin 实测 + DB 核验 |
+| C45 | E2 等级券 | 无门槛券全员可见；配「金卡」门槛券：普通会员/匿名/无等级不进目录且领取被拦，金卡及以上正常可见可领 | e2e 双角色 |
+
+**P1 用例结果（2026-10-20 生产核验，全部通过；证据详情见 PRD §6.3）：**
+
+| 用例 | 结果 | 生产证据 |
+| --- | --- | --- |
+| C38 | ✅ | mock 截图 16；上线后运营已配正式活动（tpl85 双方满50减10），生产首页裂变条实拍 [20-prod-home-smoke](../../../manual/shots/2026-10-19-coupon-p1-marketing/) |
+| C39 | ✅ | WechatShare 分享链自动带 `?invite=<邀请码>`（组件层核验）；非微信复制链接 toast |
+| C40 | ✅ | 生产 e2e：claim→OK 双方得券（168/169，DB issuedBy=FISSION + coupon_fission_record） |
+| C41 | ✅ | 重复领 ALREADY_REWARDED（唯一索引幂等）；自分享 SELF_SHARE；BLOCKED/SOLD_OUT 单测覆盖 |
+| C42 | ✅ | 新客 A 见活动位并完成 1 元购（sale_order 17 amount=1 → PAID → 券 172）；非新客 B 活动位不下发 |
+| C43 | ✅ | B 直购 "Coupon is for new customers only"；A 第二单 "Per-user purchase limit reached" |
+| C44 | ✅ | preview(7天)=7 与 DB 推导一致；批次 1：7/7 发放（DB 174-180 issuedBy=RECALL）；批次 2：全员 RECENTLY_GRANTED（R4）；couponGrantBatches 可查。notify=true 复用既有站内信通道（生产冒烟用静默发放避免扰客） |
+| C45 | ✅ | tpl83 配 memberLevel=2：匿名/1 档目录不可见；银卡 A（growthValue=1000）可见可领（券 173）；1 档 B 领取硬拦 "Coupon requires a higher member level" |
+
+> 说明：E1/E2/Fission 测试数据（双测试账号、测试券、批次、裂变记录、渠道测试配置）已全部清理还原；其中 FR-C 活动随后由运营配置为正式活动并上线（C38 生产截图即活动上线实拍）。生产首页 hydration mismatch 警告为站点既有现象（无 P1 改动的普通商城首页同样出现），非本迭代回归。
 
 ## 8. 已知边界
 

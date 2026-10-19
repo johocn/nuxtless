@@ -27,7 +27,13 @@ export type CouponStatus =
   | "RETURNED"
   | "EXPIRED"
   | "INVALID";
-export type CouponIssuedBy = "CENTRE" | "ADMIN" | "EXCHANGE" | "SALE";
+export type CouponIssuedBy =
+  | "CENTRE"
+  | "ADMIN"
+  | "EXCHANGE"
+  | "SALE"
+  | "FISSION"
+  | "RECALL";
 export type CouponChannel =
   | "CENTRE"
   | "SALE"
@@ -130,6 +136,34 @@ export interface CouponCampaignView {
   startsAt?: string | null;
   endsAt: string;
   templates: CouponTemplate[];
+  /** FR-D 新客 1 元购位：true=仅新客可见（后端已按登录态过滤；展示「新人专享」徽标用） */
+  newCustomerOnly?: boolean;
+}
+
+/** 分享裂变活动视图（匿名可查；无生效活动为 null） */
+export interface CouponFissionActivityView {
+  name: string;
+  subtitle?: string | null;
+  rules?: string | null;
+  startsAt?: string | null;
+  endsAt: string;
+  /** 被分享者奖励券（必有；无则后端视为无活动） */
+  inviteeTemplate: CouponTemplate;
+  /** 分享者奖励券（可空=仅被分享者得券） */
+  inviterTemplate?: CouponTemplate | null;
+}
+
+/** 裂变领奖结果（status 见 coupon-fission.service：OK/ALREADY_REWARDED/SELF_SHARE/BLOCKED_NEW_CUSTOMER/SOLD_OUT/NOT_LOGGED_IN/NO_INVITER/INACTIVE） */
+export interface CouponFissionClaimResult {
+  status: string;
+  inviteeCoupon?: CouponSaleOrderRef | null;
+  inviterCoupon?: CouponSaleOrderRef | null;
+}
+/** 领奖返回的券摘要（CustomerCoupon 子集） */
+export interface CouponSaleOrderRef {
+  id: string;
+  code?: string | null;
+  status?: string | null;
 }
 
 /** 出售单（独立单据，不生成 Vendure Order） */
@@ -499,12 +533,52 @@ export async function getCouponSaleCatalogue(
         firstBuyDiscount
         firstBuyEligible
         studentApproved
-        campaign { name subtitle rules startsAt endsAt templates { ${COUPON_TEMPLATE_FIELDS} } }
+        campaign { name subtitle rules startsAt endsAt newCustomerOnly templates { ${COUPON_TEMPLATE_FIELDS} } }
       }
     }`,
     { scene: scene ?? null },
   );
   return data.couponSaleCatalogue;
+}
+
+/** 分享裂变活动视图（FR-C）：匿名可查；无生效活动返回 null（前端不渲染） */
+export async function getCouponFissionActivity(): Promise<CouponFissionActivityView | null> {
+  const client = resolveClient();
+  const data = await client.request<{ couponFissionActivity: CouponFissionActivityView | null }>(
+    `query CouponFissionActivity {
+      couponFissionActivity {
+        name subtitle rules startsAt endsAt
+        inviteeTemplate { ${COUPON_TEMPLATE_FIELDS} }
+        inviterTemplate { ${COUPON_TEMPLATE_FIELDS} }
+      }
+    }`,
+  );
+  return data.couponFissionActivity ?? null;
+}
+
+/**
+ * FR-C 分享链个人邀请码（可逆码）：F<base36(customerId)>。
+ * 每人固定、可解码直定位分享者；后端优先按此解码，非 F 码回退 customFields.inviteCode 快照反查（兼容旧链路）。
+ */
+export function fissionInviteCodeOf(user: { id?: string | number } | null | undefined): string {
+  const id = Number(user?.id);
+  return Number.isFinite(id) && id > 0 ? `F${Math.floor(id).toString(36).toUpperCase()}` : "";
+}
+
+/** 裂变领奖（FR-C）：登录后携带分享者邀请码领取；未登录返回 status=NOT_LOGGED_IN 由前端引导 */
+export async function claimFissionReward(inviteCode: string): Promise<CouponFissionClaimResult> {
+  const client = resolveClient();
+  const data = await client.request<{ claimFissionReward: CouponFissionClaimResult }>(
+    `mutation ClaimFissionReward($inviteCode: String!) {
+      claimFissionReward(inviteCode: $inviteCode) {
+        status
+        inviteeCoupon { id code status }
+        inviterCoupon { id code status }
+      }
+    }`,
+    { inviteCode },
+  );
+  return data.claimFissionReward;
 }
 
 /** 创建出售单（templateId / bundleId 二选一），返回 PENDING 单 */
