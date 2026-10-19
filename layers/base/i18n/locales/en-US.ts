@@ -391,6 +391,7 @@ export default defineI18nLocale(() =>
       studentGuide: "Verify as a student for student price",
       campaignEndsIn: "Ends in",
       campaignGrab: "Grab",
+      floorMore: "More",
     },
     studentVerify: {
       title: "Student Verification",

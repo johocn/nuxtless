@@ -158,3 +158,114 @@ export function detailAssetUrl(url: string, origin: string): string {
   if (/^https?:\/\//.test(url)) return url;
   return `${origin}${url.startsWith("/") ? "" : "/"}${url}`;
 }
+
+/* ------------------------- 券店首页分类楼层（自适应阈值） ------------------------- */
+
+/** 分类楼层阈值：模板数超过该值且已配 category 时切业态分组，否则按券类型自动分组 */
+export const COUPON_FLOOR_GROUP_THRESHOLD = 20;
+
+/** 楼层分组配置项（渠道 customFields.couponFloorGroups JSON 数组）：key=业态键，title=多语言标题 */
+export interface CouponFloorGroupConfig {
+  key: string;
+  title?: string | Record<string, string> | null;
+}
+
+/**
+ * 解析 couponFloorGroups 配置：坏 JSON / 非数组 / 无有效项返回 null（SSR 友好，回退类型分组）。
+ * 形如 [{"key":"food","title":{"zh-CN":"美食","en":"Food"}}]。
+ */
+export function parseFloorGroups(raw: unknown): CouponFloorGroupConfig[] | null {
+  if (raw == null || raw === "") return null;
+  let obj: unknown = raw;
+  if (typeof raw === "string") {
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(obj)) return null;
+  const out: CouponFloorGroupConfig[] = [];
+  for (const item of obj) {
+    if (typeof item !== "object" || item === null) continue;
+    const key = typeof (item as any).key === "string" ? (item as any).key.trim() : "";
+    if (!key) continue;
+    const title = (item as any).title;
+    out.push({
+      key,
+      title: typeof title === "string" || (title && typeof title === "object") ? title : null,
+    });
+  }
+  return out.length ? out : null;
+}
+
+/** 分组后的单券楼层：key=楼层标识（锚点 id 用），title 为本地化后的标题（null=组件按 typeKey 走 i18n） */
+export interface CouponFloorGroup<T> {
+  key: string;
+  title: string | null;
+  /** 仅类型分组模式有值（FIXED/PERCENT/FULL/FREE_SHIPPING），组件映射 i18n 词条 */
+  typeKey: string | null;
+  items: T[];
+}
+
+/** 类型分组展示顺序：代金券 → 折扣券 → 满减券 → 免邮券 */
+const TYPE_GROUP_ORDER = ["FIXED", "PERCENT", "FULL", "FREE_SHIPPING"] as const;
+
+/**
+ * 券店单券自适应分组（纯函数，SSR 友好）：
+ * - 数量 ≤ 阈值或全部未配 category → 按券类型分组（零配置；单一类型返回单组，组件无需渲染 chips）；
+ * - 数量 > 阈值且存在已配 category → 按业态分组：楼层顺序以 couponFloorGroups 配置为准，
+ *   未命中配置的 category 与未分类券归「更多」组（key='more'）追加在末尾。
+ */
+export function groupSaleTemplates<T extends { type?: string | null; category?: string | null }>(
+  templates: ReadonlyArray<T>,
+  floorConfig: CouponFloorGroupConfig[] | null,
+  opts: { lang: string; defaultLang?: string; threshold?: number; moreTitle?: string | null },
+): CouponFloorGroup<T>[] {
+  if (!templates.length) return [];
+  const threshold = opts.threshold ?? COUPON_FLOOR_GROUP_THRESHOLD;
+  const hasCategory = templates.some(
+    (t) => typeof t.category === "string" && t.category.trim().length > 0,
+  );
+  if (!hasCategory || templates.length <= threshold) {
+    const byType = new Map<string, T[]>();
+    for (const t of templates) {
+      const key = String(t.type ?? "");
+      const list = byType.get(key) ?? [];
+      list.push(t);
+      byType.set(key, list);
+    }
+    return TYPE_GROUP_ORDER.filter((k) => byType.has(k)).map((k) => ({
+      key: k,
+      title: null,
+      typeKey: k,
+      items: byType.get(k)!,
+    }));
+  }
+  const config = floorConfig ?? [];
+  const configured = new Map(config.map((c) => [c.key, c]));
+  const byKey = new Map<string, T[]>();
+  const more: T[] = [];
+  for (const t of templates) {
+    const key = typeof t.category === "string" ? t.category.trim() : "";
+    if (key && configured.has(key)) {
+      const list = byKey.get(key) ?? [];
+      list.push(t);
+      byKey.set(key, list);
+    } else {
+      more.push(t);
+    }
+  }
+  const groups: CouponFloorGroup<T>[] = config
+    .filter((c) => byKey.has(c.key))
+    .map((c) => ({
+      key: c.key,
+      title: localizeText(c.title ?? undefined, opts.lang, opts.defaultLang ?? "zh-CN") || c.key,
+      typeKey: null,
+      items: byKey.get(c.key)!,
+    }));
+  if (more.length) {
+    groups.push({ key: "more", title: opts.moreTitle || null, typeKey: null, items: more });
+  }
+  return groups;
+}

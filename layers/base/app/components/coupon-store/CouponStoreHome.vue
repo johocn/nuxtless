@@ -3,6 +3,11 @@ import {
   getCouponSaleCatalogue,
   getPointsMallTemplates,
 } from "~~/layers/base/app/composables/useCoupon";
+import {
+  groupSaleTemplates,
+  parseFloorGroups,
+  type CouponFloorGroup,
+} from "../../utils/coupon-mall";
 import { couponYuan } from "../../utils/coupon";
 
 /**
@@ -13,7 +18,7 @@ import { couponYuan } from "../../utils/coupon";
 const props = defineProps<{ layout?: "floors" | "grid" }>();
 const layout = computed(() => props.layout ?? "floors");
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { customFields } = useChannelTheme();
 const localePath = useTenantLocalePath();
 const { isAuthenticated } = storeToRefs(useAuthStore());
@@ -38,11 +43,49 @@ const promo = ref<{ firstBuyDiscount: number; firstBuyEligible: boolean | null; 
 });
 
 const activeFloor = ref("sale");
+
+/** 单券自适应分组：≤20 张或未配 category 按券类型自动分组；>20 且已配 category 按业态分组（配置在渠道 customFields.couponFloorGroups） */
+const saleGroups = computed<CouponFloorGroup<any>[]>(() =>
+  groupSaleTemplates(templates.value, parseFloorGroups(customFields.value?.couponFloorGroups), {
+    lang: locale.value,
+    moreTitle: t("messages.couponStore.floorMore"),
+  }),
+);
+
+/** 类型分组标题（type 模式标题复用 messages.coupon.type* 既有词条） */
+function typeFloorLabel(typeKey: string | null): string {
+  switch (typeKey) {
+    case "FIXED":
+      return t("messages.coupon.typeFixed");
+    case "PERCENT":
+      return t("messages.coupon.typePercent");
+    case "FULL":
+      return t("messages.coupon.typeFull");
+    case "FREE_SHIPPING":
+      return t("messages.coupon.typeFreeShipping");
+    default:
+      return t("messages.couponStore.floorMore");
+  }
+}
+
 const floors = computed(() => [
-  { key: "sale", label: t("messages.couponMall.floorSale"), show: templates.value.length > 0 },
+  ...saleGroups.value.map((g) => ({
+    key: `sale-${g.key}`,
+    label: g.title ?? typeFloorLabel(g.typeKey),
+  })),
   { key: "bundle", label: t("messages.couponMall.floorBundle"), show: bundles.value.length > 0 },
   { key: "points", label: t("messages.couponMall.floorPoints"), show: layout.value === "floors" && pointsTemplates.value.length > 0 },
-].filter((f) => f.show));
+].filter((f: any) => f.show !== false));
+
+/** scroll spy：吸顶条下方最近被划过的楼层高亮（rAF 节流，楼层少时开销可忽略） */
+function onScroll() {
+  let current = floors.value[0]?.key ?? "";
+  for (const f of floors.value) {
+    const el = document.getElementById(`floor-${f.key}`);
+    if (el && el.getBoundingClientRect().top <= 96) current = f.key;
+  }
+  activeFloor.value = current;
+}
 
 async function load() {
   loading.value = true;
@@ -67,9 +110,14 @@ async function load() {
     loadError.value = true;
   } finally {
     loading.value = false;
+    nextTick(onScroll); // 初始高亮首个可见楼层（floor key 已随分组生成）
   }
 }
-onMounted(load);
+onMounted(() => {
+  load();
+  window.addEventListener("scroll", onScroll, { passive: true });
+});
+onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
 
 function goTo(key: string) {
   activeFloor.value = key;
@@ -116,8 +164,8 @@ const asLowPrice = computed<number | null>(() => {
       @expired="campaign = null"
     />
 
-    <!-- 版式 A：吸顶锚点 -->
-    <nav v-if="layout === 'floors' && floors.length" class="sticky top-0 z-10 -mx-3 mb-3 flex gap-2 bg-(--ui-bg)/90 px-3 py-2 backdrop-blur">
+    <!-- 版式 A：吸顶分类 chips（多组才显示导航；type 自动分组 / category 业态分组共用） -->
+    <nav v-if="layout === 'floors' && floors.length > 1" class="sticky top-0 z-10 -mx-3 mb-3 flex gap-2 overflow-x-auto bg-(--ui-bg)/90 px-3 py-2 backdrop-blur chips-bar">
       <UButton v-for="f in floors" :key="f.key" size="xs" :variant="activeFloor === f.key ? 'solid' : 'soft'" @click="goTo(f.key)">
         {{ f.label }}
       </UButton>
@@ -132,13 +180,13 @@ const asLowPrice = computed<number | null>(() => {
 
     <BaseLoader v-if="loading" width="sm:w-xs md:w-sm" />
 
-    <!-- 版式 A：楼层 -->
+    <!-- 版式 A：楼层（单券按自适应分组渲染楼层） -->
     <template v-if="layout === 'floors'">
-      <section v-if="templates.length" id="floor-sale" class="mb-6">
-        <h2 class="mb-2 text-sm font-semibold">{{ t("messages.couponMall.floorSale") }}</h2>
+      <section v-for="g in saleGroups" :key="g.key" :id="`floor-sale-${g.key}`" class="mb-6">
+        <h2 class="mb-2 text-sm font-semibold">{{ g.title ?? typeFloorLabel(g.typeKey) }}</h2>
         <div class="flex flex-col gap-2">
           <CouponStoreCouponCard
-            v-for="tpl in templates" :key="tpl.id"
+            v-for="tpl in g.items" :key="tpl.id"
             :tpl="tpl" :buying="buyingId === tpl.id" :promo="promo"
             @buy="openDetail(tpl)"
           />
@@ -222,6 +270,9 @@ const asLowPrice = computed<number | null>(() => {
 </template>
 
 <style scoped>
+/* 吸顶分类 chips 横向滚动（隐藏滚动条，保留可滑动） */
+.chips-bar { scrollbar-width: none; }
+.chips-bar::-webkit-scrollbar { display: none; }
 .hero { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; border-radius: 12px; background: var(--ui-primary); color: #fff; padding: 16px; }
 .hero-name { font-size: 17px; font-weight: 700; }
 .hero-slogan { margin-top: 2px; font-size: 12px; opacity: .85; }

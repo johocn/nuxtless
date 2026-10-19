@@ -79,6 +79,8 @@ export interface CouponTemplate {
   label?: string | null;
   /** 学生价（分）；null/0=无学生价 */
   studentPrice?: number | null;
+  /** 业态分类键（券店首页分组楼层用）；空=未分类 */
+  category?: string | null;
   /** 真实已售数（coupon_sale_order PAID 聚合，仅 couponSaleCatalogue 下发；其他查询为 null） */
   soldCount?: number | null;
   createdAt: string;
@@ -276,7 +278,7 @@ const COUPON_TEMPLATE_FIELDS = `
   startsAt endsAt totalCount claimedCount pointsPrice perUserLimit
   scope categoryId variantId enabled shopId usageScene createdAt updatedAt
   claimable claimCode validDays newCustomerOnly memberLevel
-  distributionChannels salePrice anchorPrice label studentPrice soldCount
+  distributionChannels salePrice anchorPrice label studentPrice soldCount category
 `;
 
 const BUNDLE_FIELDS = `

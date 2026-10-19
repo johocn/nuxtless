@@ -30,6 +30,7 @@ query GetChannelTheme {
       shopIntro
       storefrontMode
       storefrontHomeLayout
+      couponFloorGroups
     }
     pricesIncludeTax
   }
