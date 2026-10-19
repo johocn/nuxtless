@@ -1,26 +1,34 @@
 <script setup lang="ts">
 import { getBillPayConfig, getMyBillPayOrders, distinctMerchants, type BillPayConfig } from "~~/layers/base/app/composables/useBillPay";
 import BillPaySubmitForm from "./BillPaySubmitForm.vue";
+import BillPayLimitsStrip from "./BillPayLimitsStrip.vue";
 
 /**
  * 代买单首页（Channel.customFields.storefrontMode=billpay，t3 租户）：
- * 店招（含「代买代办」身份声明）+ 提交委托表单 + 我的委托单入口。
- * 数据：billPayConfig（匿名可读）+ 历史委托单（登录后用于商家联想）。
+ * 店招（含「代买代办」身份声明）+ 权益边界条（限额/优惠前置公示）+ 提交委托表单 + 我的委托单入口。
+ * 数据：billPayConfig（匿名可读，SSR 预取用于权益条前置公示）+ 历史委托单（登录后用于商家联想）。
  */
 const { t } = useI18n();
 const { customFields } = useChannelTheme();
 const localePath = useTenantLocalePath();
 const { isAuthenticated } = storeToRefs(useAuthStore());
 
-const config = ref<BillPayConfig | null>(null);
+// SSR 预取：限额/优惠数值须出现在首屏 HTML（前置公示）；失败降级 null（报价卡占位，提交时后端仍会校验）
+const { data: config } = useAsyncData<BillPayConfig | null>(
+  "billpay-config",
+  async () => {
+    try {
+      return await getBillPayConfig();
+    } catch {
+      return null;
+    }
+  },
+  { default: () => null },
+);
+
 const historyMerchants = ref<string[]>([]);
 
 onMounted(async () => {
-  try {
-    config.value = await getBillPayConfig();
-  } catch {
-    config.value = null; // 配置拉取失败：报价卡显示占位，提交时后端仍会校验
-  }
   if (isAuthenticated.value) {
     try {
       const orders = await getMyBillPayOrders();
@@ -47,6 +55,9 @@ const shopName = computed(() => customFields.value?.shopName || t("messages.bill
         {{ t("messages.billpay.myOrders") }}
       </NuxtLink>
     </header>
+
+    <!-- 权益边界条（限额/优惠前置公示） -->
+    <BillPayLimitsStrip :config="config" />
 
     <!-- 提交委托表单 -->
     <BillPaySubmitForm :config="config" :history-merchants="historyMerchants" />

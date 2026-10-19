@@ -77,7 +77,9 @@ export interface BillPayWechatPayResult {
   };
 }
 
-/** LocalizedText 解析：当前 locale → 语言主码 → 首个值 → 空串（与后端 LocalizedLabel 兜底链对齐） */
+/** LocalizedText 解析：当前 locale → 语言主码 → 首个值 → 空串（与后端 LocalizedLabel 兜底链对齐）。
+ * 注意 i18n locale 用短码（en/ja/…）而后端 label 键多为全码（en-US/ja-JP/…），
+ * 主码匹配按 `key.split("-")[0]` 归一，en 即可命中 en-US 键。 */
 export function billpayLabel(
   label: string | Record<string, string> | null | undefined,
   locale: string,
@@ -85,8 +87,14 @@ export function billpayLabel(
   if (!label) return "";
   if (typeof label === "string") return label;
   const rec = label as Record<string, string>;
-  const main = locale.split("-")[0] || locale;
-  return rec[locale] ?? rec[main] ?? Object.values(rec)[0] ?? "";
+  const lower = (s: string) => s.toLowerCase().replace(/_/g, "-");
+  const want = lower(locale);
+  const main = want.split("-")[0];
+  const keys = Object.keys(rec);
+  const hit =
+    keys.find((k) => lower(k) === want) ??
+    keys.find((k) => lower(k).split("-")[0] === main);
+  return (hit && rec[hit]) || Object.values(rec)[0] || "";
 }
 
 /** 分 → 元字符串（整元免小数，对齐 couponYuan） */

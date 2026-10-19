@@ -507,6 +507,11 @@ export default defineI18nLocale(() =>
       flowDesc: "① Submit & pay → ② Concierge pays the merchant → ③ Proof attached to your request → ④ Settlement. The store settles with merchants independently — no need to be present.",
       dailyLimitHint: "Above the daily cumulative limit ¥{amount} — today's request may not be accepted (estimate; subject to the actual daily total)",
       dailyLimitExceeded: "Daily cumulative limit exceeded. Please try again tomorrow or contact the concierge",
+      limitMember: "Members pay {percent}%",
+      limitThreshold: "¥{reduce} off over ¥{spend}",
+      limitMin: "From ¥{amount}",
+      limitMax: "≤¥{amount}/order",
+      limitDaily: "≤¥{amount}/day",
     },
     billpayAgreement: {
       title: "Entrusted Service Agreement",
