@@ -154,6 +154,9 @@ const asLowPrice = computed<number | null>(() => {
       </div>
     </header>
 
+    <!-- 分享裂变活动条（FR-C：活动横幅 + 带 ?invite= 自动领奖 + 分享入口；无生效活动不渲染） -->
+    <CouponStoreFissionBar />
+
     <!-- 倒计时活动位（版式 B 大倒计时卡片；走秒到点自动摘除） -->
     <CouponStoreCampaignCard
       v-if="campaign"
