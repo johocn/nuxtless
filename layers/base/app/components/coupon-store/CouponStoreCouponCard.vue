@@ -61,10 +61,16 @@ const promo = computed(() =>
 );
 /** 展示价：优惠价 > 原价 */
 const displayPrice = computed(() => promo.value?.yuan ?? couponYuan(props.tpl.salePrice));
+
+/** 整卡点击 → 独立券详情页（/coupon/[id]，分享/物料二维码同源落地页）；抢购按钮 stopPropagation 保留弹层快捷购买 */
+const localePath = useTenantLocalePath();
+function goDetail() {
+  navigateTo(localePath(`/coupon/${props.tpl.id}`));
+}
 </script>
 
 <template>
-  <div class="sale-card" :class="{ soldout }">
+  <div class="sale-card" :class="{ soldout }" @click="goDetail">
     <!-- 头图区：场景插画 + 到店可用 pill（插画抽取为 CouponStoreSceneArt，与详情页共用） -->
     <div class="art">
       <CouponStoreSceneArt :scene="scene" />
@@ -101,7 +107,7 @@ const displayPrice = computed(() => promo.value?.yuan ?? couponYuan(props.tpl.sa
         size="xs"
         :disabled="soldOut || buying"
         :loading="buying"
-        @click="emit('buy', tpl)"
+        @click.stop="emit('buy', tpl)"
       >
         {{ soldOut ? t("messages.couponMall.soldOut") : t("messages.couponMall.buyNow") }}
       </UButton>
@@ -122,7 +128,7 @@ const displayPrice = computed(() => promo.value?.yuan ?? couponYuan(props.tpl.sa
 </template>
 
 <style scoped>
-.sale-card { display: flex; flex-direction: column; gap: 8px; background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 12px; padding: 10px; }
+.sale-card { display: flex; flex-direction: column; gap: 8px; background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 12px; padding: 10px; cursor: pointer; }
 .sale-card.soldout { opacity: 0.55; }
 .art { position: relative; height: 72px; border-radius: 10px; overflow: hidden; flex: none; }
 .art-pill { position: absolute; top: 6px; right: 6px; border-radius: 999px; background: rgb(255 255 255 / .92); color: #9a3412; font-size: 10px; font-weight: 500; padding: 1px 8px; white-space: nowrap; }

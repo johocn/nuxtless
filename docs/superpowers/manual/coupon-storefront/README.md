@@ -191,6 +191,8 @@
 | C24 | 独立详情页 SSR（6.4） | `/t1/coupon/83` 首帧含券名/首购立减明细/算账条/三步流程/吸底 CTA；`/t1/coupon/b2` 券包态（无折扣大字、条目 pill） | 01/01b/03 |
 | C25 | 详情页直达/空态（6.4） | 首页券卡详情链接直达；`/t1/coupon/999` 显示「此券已下架或不存在」+ 回首页；直连不被 coupon-only 拦截 | 04 |
 | C26 | 详情页分享 meta（6.4） | og:title=券名、og:image=渠道分享图/logo、share:image 存在；匿名抢购跳登录 | verify-log.txt 断言 |
+| C27 | 热销卡整卡点击直达详情（6.4） | 点热销单券卡非按钮区跳 `/t1/coupon/[id]`（场景插画/头图/标题区均可点）；「抢购」按钮仍开弹层快捷购买（stopPropagation）；宫格版式 GridCard 同口径 | 02（[2026-10-19-coupon-store-click-fix/](../../../manual/shots/2026-10-19-coupon-store-click-fix/)） |
+| C28 | 面额语义化回归（6.4） | PERCENT 券头图面额槽与详情弹层面额=「8折」（原直渲染 discountValue=80 成 ¥0.80 的 bug 修复）；券包弹层面额=「共N张」（原 NaN 修复）；券包条目/算账条保持「8折」语义 | 01/03/04 |
 
 ## 8. 已知边界
 
