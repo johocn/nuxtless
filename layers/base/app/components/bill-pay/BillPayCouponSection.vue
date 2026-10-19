@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getCouponSaleCatalogue } from "~~/layers/base/app/composables/useCoupon";
-import { formatCouponDiscount, saleCardProgress } from "~~/layers/base/app/utils/coupon-mall";
+import { formatCouponDiscount, saleCardProgress, couponPromoPrice } from "~~/layers/base/app/utils/coupon-mall";
 import { couponYuan } from "~~/layers/base/app/utils/coupon";
 import { localizeText } from "~~/layers/base/app/utils/detail-config";
 
@@ -52,6 +52,14 @@ function soldOut(tpl: any): boolean {
 function price(tpl: any): string {
   return couponYuan(Number(tpl.salePrice ?? 0));
 }
+/** 卡面优惠口径与 t1 券店一致（couponPromoPrice）：学生价仅认证后展示，首购资格非 false 即展示 */
+function cardPromo(tpl: any): { yuan: string; kind: "firstBuy" | "student" } | null {
+  return couponPromoPrice(tpl, {
+    firstBuyDiscount: promo.value.firstBuyDiscount,
+    firstBuyEligible: promo.value.firstBuyEligible,
+    studentApproved: promo.value.studentApproved,
+  });
+}
 </script>
 
 <template>
@@ -78,7 +86,16 @@ function price(tpl: any): string {
       >
         <div class="deal">{{ dealText(tpl) }}</div>
         <div class="nm">{{ tplName(tpl) }}</div>
-        <div class="price">¥{{ price(tpl) }}<span class="unit">{{ t("messages.billpay.selfPerCard") }}</span></div>
+        <div class="price">
+          <template v-if="cardPromo(tpl)">
+            <span class="tag" :class="cardPromo(tpl)!.kind">{{ cardPromo(tpl)!.kind === "student" ? t("messages.couponStore.studentTag") : t("messages.couponStore.firstBuyTag") }}</span>
+            <span class="pval">¥{{ cardPromo(tpl)!.yuan }}<span class="unit">{{ t("messages.billpay.selfPerCard") }}</span></span>
+            <span class="orig">¥{{ price(tpl) }}</span>
+          </template>
+          <template v-else>
+            ¥{{ price(tpl) }}<span class="unit">{{ t("messages.billpay.selfPerCard") }}</span>
+          </template>
+        </div>
         <div class="grab">{{ soldOut(tpl) ? t("messages.couponMall.soldOut") : t("messages.couponStore.gridBuy") }}</div>
       </button>
     </div>
@@ -122,7 +139,12 @@ function price(tpl: any): string {
 .ccard.soldout { opacity: .55; }
 .deal { font-size: 15px; font-weight: 800; color: var(--ui-primary); white-space: nowrap; }
 .nm { margin-top: 2px; font-size: 12px; color: var(--ui-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.price { margin-top: 3px; font-size: 12px; font-weight: 600; color: var(--ui-text); }
+.price { margin-top: 3px; font-size: 12px; font-weight: 600; color: var(--ui-text); display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
+.tag { font-size: 10px; font-weight: 700; border-radius: 4px; padding: 0 4px; line-height: 1.6; }
+.tag.student { background: var(--ui-bg-elevated, #f0fdfa); color: #0f766e; border: 1px solid #14b8a6; }
+.tag.firstBuy { background: var(--ui-bg-elevated, #fffbeb); color: #b45309; border: 1px solid #f59e0b; }
+.pval { color: var(--ui-primary); font-weight: 800; }
+.orig { font-size: 10px; font-weight: 400; color: var(--ui-text-muted); text-decoration: line-through; }
 .unit { font-size: 11px; font-weight: 400; color: var(--ui-text-muted); }
 .grab { margin-top: 6px; border-radius: 999px; background: var(--ui-primary); color: var(--ui-bg); font-size: 11px; font-weight: 700; text-align: center; padding: 3px 0; }
 .empty { margin-top: 10px; }
