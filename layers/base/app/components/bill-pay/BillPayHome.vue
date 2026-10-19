@@ -62,6 +62,9 @@ const shopName = computed(() => customFields.value?.shopName || t("messages.bill
     <!-- 提交委托表单 -->
     <BillPaySubmitForm :config="config" :history-merchants="historyMerchants" />
 
+    <!-- 「自己到店」买单券推荐位（券板块断点修复） -->
+    <BillPayCouponSection class="mt-5" />
+
     <!-- 服务说明 -->
     <section class="mt-5 rounded-xl bg-(--ui-bg-muted) p-4 text-xs leading-relaxed text-(--ui-text-muted)">
       <p class="mb-1 font-semibold text-(--ui-text)">{{ t("messages.billpay.flowTitle") }}</p>
