@@ -519,6 +519,11 @@ export const zhMessages = {
       flowDesc: '① 提交委托并支付 → ② 管家按约定到商家代付 → ③ 凭证回传至订单 → ④ 台账结算。本店与商家独立结算，您无需到店。',
       dailyLimitHint: '已超出单日累计限额 ¥{amount}，今日可能无法接单（预估，最终以当日累计为准）',
       dailyLimitExceeded: '已超出单日累计限额，请明日再试或联系管家',
+      limitMember: '会员{percent}折',
+      limitThreshold: '满{spend}减{reduce}',
+      limitMin: '¥{amount}起',
+      limitMax: '单笔≤¥{amount}',
+      limitDaily: '单日≤¥{amount}',
     },
     billpayAgreement: {
       title: '委托服务协议',
