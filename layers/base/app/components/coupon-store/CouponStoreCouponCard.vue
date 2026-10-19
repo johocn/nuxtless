@@ -65,56 +65,9 @@ const displayPrice = computed(() => promo.value?.yuan ?? couponYuan(props.tpl.sa
 
 <template>
   <div class="sale-card" :class="{ soldout }">
-    <!-- 头图区：场景插画 + 到店可用 pill -->
+    <!-- 头图区：场景插画 + 到店可用 pill（插画抽取为 CouponStoreSceneArt，与详情页共用） -->
     <div class="art">
-      <svg v-if="scene === 'billiards'" class="art-svg" viewBox="0 0 320 72" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect width="320" height="72" fill="#14532d" />
-        <ellipse cx="160" cy="86" rx="210" ry="44" fill="#166534" />
-        <circle cx="310" cy="6" r="14" fill="#0f3d22" />
-        <circle cx="10" cy="66" r="14" fill="#0f3d22" />
-        <circle cx="88" cy="30" r="14" fill="#facc15" />
-        <circle cx="83" cy="25" r="4.5" fill="#fff" opacity=".8" />
-        <circle cx="126" cy="44" r="14" fill="#ef4444" />
-        <circle cx="121" cy="39" r="4.5" fill="#fff" opacity=".8" />
-        <circle cx="166" cy="26" r="14" fill="#2563eb" />
-        <circle cx="161" cy="21" r="4.5" fill="#fff" opacity=".8" />
-        <circle cx="52" cy="50" r="7" fill="#f8fafc" />
-        <rect x="196" y="30" width="120" height="4" rx="2" fill="#b45309" transform="rotate(-12 196 32)" />
-        <rect x="196" y="30" width="16" height="4" rx="2" fill="#38bdf8" transform="rotate(-12 196 32)" />
-      </svg>
-      <svg v-else-if="scene === 'dining'" class="art-svg" viewBox="0 0 320 72" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect width="320" height="72" fill="#ea580c" />
-        <ellipse cx="160" cy="88" rx="210" ry="44" fill="#f97316" />
-        <circle cx="96" cy="40" r="26" fill="#fff7ed" />
-        <circle cx="96" cy="40" r="17" fill="#fed7aa" />
-        <circle cx="96" cy="40" r="8" fill="#fff7ed" />
-        <rect x="150" y="22" width="26" height="30" rx="5" fill="#fff7ed" />
-        <path d="M176 28h6a8 8 0 0 1 0 16h-6" fill="none" stroke="#fff7ed" stroke-width="4" />
-        <rect x="204" y="16" width="4" height="42" rx="2" fill="#fff7ed" />
-        <rect x="216" y="16" width="4" height="42" rx="2" fill="#fff7ed" />
-        <circle cx="266" cy="46" r="12" fill="#fff7ed" />
-      </svg>
-      <svg v-else-if="scene === 'drink'" class="art-svg" viewBox="0 0 320 72" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect width="320" height="72" fill="#c8a27a" />
-        <ellipse cx="160" cy="88" rx="210" ry="44" fill="#d9b990" />
-        <rect x="122" y="16" width="64" height="7" rx="3.5" fill="#fff7ed" />
-        <path d="M128 23h52l-6 35a8 8 0 0 1-8 7h-24a8 8 0 0 1-8-7z" fill="#fff7ed" />
-        <path d="M133 34h42l-4 22a8 8 0 0 1-8 7h-18a8 8 0 0 1-8-7z" fill="#a16207" opacity=".55" />
-        <rect x="148" y="2" width="5" height="20" rx="2.5" fill="#ef4444" transform="rotate(8 150 12)" />
-        <circle cx="226" cy="40" r="10" fill="#fff7ed" opacity=".9" />
-        <circle cx="250" cy="30" r="7" fill="#fff7ed" opacity=".7" />
-      </svg>
-      <svg v-else class="art-svg" viewBox="0 0 320 72" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect width="320" height="72" fill="var(--ui-primary)" />
-        <ellipse cx="160" cy="88" rx="210" ry="44" fill="#fff" opacity=".12" />
-        <rect x="86" y="20" width="128" height="32" rx="8" fill="#fff" opacity=".95" />
-        <circle cx="214" cy="36" r="7" fill="var(--ui-primary)" />
-        <circle cx="86" cy="36" r="7" fill="var(--ui-primary)" />
-        <line x1="160" y1="22" x2="160" y2="50" stroke="var(--ui-primary)" stroke-width="2" stroke-dasharray="4 4" />
-        <rect x="102" y="30" width="32" height="4" rx="2" fill="var(--ui-primary)" opacity=".8" />
-        <rect x="102" y="39" width="22" height="3" rx="1.5" fill="var(--ui-primary)" opacity=".5" />
-        <rect x="172" y="30" width="26" height="3" rx="1.5" fill="var(--ui-primary)" opacity=".5" />
-      </svg>
+      <CouponStoreSceneArt :scene="scene" />
       <span v-if="marketingLabel" class="art-tag">{{ marketingLabel }}</span>
       <span class="art-pill">{{ t("messages.coupon.storeUsable") }}</span>
     </div>
@@ -172,7 +125,6 @@ const displayPrice = computed(() => promo.value?.yuan ?? couponYuan(props.tpl.sa
 .sale-card { display: flex; flex-direction: column; gap: 8px; background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 12px; padding: 10px; }
 .sale-card.soldout { opacity: 0.55; }
 .art { position: relative; height: 72px; border-radius: 10px; overflow: hidden; flex: none; }
-.art-svg { width: 100%; height: 100%; display: block; }
 .art-pill { position: absolute; top: 6px; right: 6px; border-radius: 999px; background: rgb(255 255 255 / .92); color: #9a3412; font-size: 10px; font-weight: 500; padding: 1px 8px; white-space: nowrap; }
 .name-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
 .name { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
