@@ -270,13 +270,18 @@ export interface QuotePreview {
   payable: number | null;
   discountDetail: { rule: string; label?: string | Record<string, string> | null; amount: number }[];
   reason?: "BELOW_MIN" | "ABOVE_MAX" | "INVALID_AMOUNT";
+  /** 单笔金额超单日累计限额（非阻断警告，独立于报价路径；最终以后端创建时当日累计校验为准） */
+  overDaily?: boolean;
 }
 
 export function quoteBillPreview(expectedAmount: number, config: BillPayConfig): QuotePreview {
   const amount = Math.round(Number(expectedAmount));
   if (!Number.isFinite(amount) || amount <= 0) return { payable: null, discountDetail: [], reason: "INVALID_AMOUNT" };
+  // 单日累计限额预检（非阻断）：仅警告，最终以后端创建时的当日累计校验为准
+  const overDaily = config.dailyLimitAmount > 0 && amount > config.dailyLimitAmount;
+  const dailyFlag = overDaily ? { overDaily } : {};
   if (amount < config.minAmount) return { payable: null, discountDetail: [], reason: "BELOW_MIN" };
-  if (amount > config.maxAmount) return { payable: null, discountDetail: [], reason: "ABOVE_MAX" };
+  if (amount > config.maxAmount) return { payable: null, discountDetail: [], reason: "ABOVE_MAX", ...dailyFlag };
 
   const discountDetail: QuotePreview["discountDetail"] = [];
   let payable = amount;
@@ -299,7 +304,7 @@ export function quoteBillPreview(expectedAmount: number, config: BillPayConfig):
     discountDetail.push({ rule: "threshold", label: best.label, amount: best.reduce });
     payable -= best.reduce;
   }
-  return { payable, discountDetail };
+  return { payable, discountDetail, ...dailyFlag };
 }
 
 /** 后端错误信息提取（对齐 couponErrorMessage） */
