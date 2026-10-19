@@ -1,0 +1,24 @@
+PASS 83 SSR h1 餐饮券
+PASS 83 首购立减标签
+PASS 83 价格明细三行(−¥2)
+PASS 83 算账条
+PASS 83 三步流程
+PASS 83 TabBar 存在
+PASS 83 吸底 CTA 存在
+PASS 83 CTA 避让 TabBar(bottom≈72px) | cta.y=719.015625 h=52.984375
+PASS 83 抢购按钮可点
+PASS og:image 渠道分享图/logo | https://www.youshop.cn/share-logo.jpg
+PASS share:image meta 存在
+PASS og:title=券名 | 餐饮买单优惠券
+PASS 匿名抢购跳登录 | http://localhost:4301/t1/account/login
+PASS 84 h1 台球券
+PASS 84 学生认证引导
+PASS b2 h1 券包
+PASS b2 无折扣大字(非单券)
+PASS b2 券包条目 pill
+PASS b2 条目折扣语义化(8折非¥0.80)
+PASS b2 无错误面额(¥0.80)
+PASS 999 空态文案
+PASS 首页存在券卡直达详情链接
+INFO 首页详情链接: /t1/coupon/orders
+PASS 直连 /t1/coupon/83 不被拦截 | http://localhost:4301/t1/coupon/83

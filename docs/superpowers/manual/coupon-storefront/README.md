@@ -133,6 +133,23 @@
 
 验收截图（手机视口 390×844 dpr=2）：[2026-10-18-coupon-countdown/](../../../manual/shots/2026-10-18-coupon-countdown/)（01 活动大卡：标题+165:57:30 走秒数字块+餐饮/台球 mini 卡+规则行；02 mini 卡点击直达详情弹层，首购明细联动）。DOM 断言见 `verify-log.json`（含走秒前后对比）。验证脚本 `scripts/_shot_coupon_countdown.mjs`。
 
+## 6.4 独立券详情页（2026-10-19）
+
+券详情从「仅弹层」升级为**独立可分享 URL 页面** `/t1/coupon/[id]`（数字 id = 单券，`b` 前缀如 `b2` = 券包），用于微信分享卡 / 到店物料二维码直达。版式 A 大图沉浸式（美团团购详情风，A/B mockup 用户定稿）：高构图场景插画头图（`CouponStoreSceneArt tall` 变体）+ 营销标签/到店可用角标 + 「8折」折扣大字 + 算账条 + 价格明细三行 + 图文介绍 + 适用范围 + 使用信息/三步流程 + 购买须知 + 限量进度 + 吸底 CTA（避让券店 TabBar）。
+
+| 实现点 | 说明 | 位置 |
+| --- | --- | --- |
+| 详情页 | 数据与弹层 DetailSheet 完全同源（同 util 纯函数）；目录用 **ONLINE+IN_STORE 双场景查询合并**——后端 scene 是过滤语义（券 usageScene 需命中查询场景，无「不过滤」选项），传 ALL 会导致单券全空（本次踩坑） | `pages/coupon/[id].vue` |
+| 场景插画组件抽取 | 券卡内联 SVG 抽为 `CouponStoreSceneArt`（strip 320×72 券卡 / tall 360×180 详情页两变体），券卡改引用组件，几何不变 | `components/coupon-store/SceneArt.vue` |
+| 路由放行 | `/coupon/` 前缀不在 tenant.global 拦截名单，直连天然可达；guard 拦截仅针对商品/分类/搜索/结算 | `middleware/tenant.global.ts` |
+| 状态兜底 | 匿名+加载失败 → 登录引导卡；其余失败 → 重试；目录成功但无此券 → 「此券已下架或不存在」+ 回首页 | 同上 |
+| 购买链路 | 复用 `useCouponSaleFlow`（与券店/券商城同款 PaySheet），匿名抢购跳登录 | 同上 |
+| SEO/分享 | og:title/og:description/og:image（渠道分享图 → 域名 logo 兜底）+ `share:image` meta（WechatShare JS-SDK 读）SSR 烘焙 | 同上 |
+| preview 调试基建 | `useGqlHostUrl` SSR 分支优先读运行时 `NUXT_PUBLIC_GQL_HOST`（生产烧录同源值等价，preview 免重建直连真实 API）——此前 SSR 固定用请求 origin + /shop-api，本地 preview 无 nginx 代理必然 404 | `composables/useGqlHostUrl.ts` |
+| i18n | `couponDetail.title/notFound/bundlePrice` zh-CN/en-US 同步（本模块词条口径与既有券店模块一致） | `i18n/locales/*.ts` |
+
+验收截图（手机视口 390×844 dpr=2）：[2026-10-19-coupon-detail-page/](../../../manual/shots/2026-10-19-coupon-detail-page/)。验证脚本 `scripts/_shot_coupon_detail_page.mjs`。
+
 ## 7. 测试用例清单
 
 ### 7.1 后端（shop-api，curl 匿名/带渠道 token）
@@ -171,6 +188,9 @@
 | C21 | 倒计时活动位展示（P4） | 店招下红色活动大卡：标题/副标题 + 数字块秒级走秒（超 100h 累计小时位）+ 关联券 mini 卡（现价/划线价）+ 规则行；窗口外/未配置自动消失 | 01（[2026-10-18-coupon-countdown/](../../../manual/shots/2026-10-18-coupon-countdown/)） |
 | C22 | 活动 mini 卡直达详情（P4） | 点 mini 卡开详情弹层，价格明细（首购立减等）与日常链路一致 | 02 |
 | C23 | 活动配置边界（P4） | 坏 JSON/未配置/禁用/窗口外/关联券全不命中 → catalogue campaign=null 不渲染不报错；他店券自动过滤；单测覆盖 parse/resolve/localize | 单测 + verify-log.json |
+| C24 | 独立详情页 SSR（6.4） | `/t1/coupon/83` 首帧含券名/首购立减明细/算账条/三步流程/吸底 CTA；`/t1/coupon/b2` 券包态（无折扣大字、条目 pill） | 01/01b/03 |
+| C25 | 详情页直达/空态（6.4） | 首页券卡详情链接直达；`/t1/coupon/999` 显示「此券已下架或不存在」+ 回首页；直连不被 coupon-only 拦截 | 04 |
+| C26 | 详情页分享 meta（6.4） | og:title=券名、og:image=渠道分享图/logo、share:image 存在；匿名抢购跳登录 | verify-log.txt 断言 |
 
 ## 8. 已知边界
 
