@@ -1,0 +1,17 @@
+PASS 首页热销单券卡存在
+PASS 卡片折扣大字=8折 | 8折
+PASS 页面无 ¥0.80/NaN 面额
+PASS 卡片点击跳转 /t1/coupon/83 | http://localhost:4301/t1/coupon/83
+PASS 详情页 h1 餐饮券
+PASS 详情页折扣=8折
+PASS DetailSheet 打开
+PASS Sheet 面额=8折（无门槛上方） | 8折
+PASS Sheet 条件=无门槛
+PASS Sheet 算账条含8折
+PASS 页面无 ¥0.80/NaN 面额
+PASS 券包 Sheet 面额=共N张 | 共 2 张
+PASS 券包条目语义化(含8折)
+PASS 页面无 ¥0.80/NaN 面额
+PASS 回归 /t1/coupon/83 折扣=8折
+PASS 回归 算账条=立省¥20
+PASS 回归 og:image 干净 | https://www.youshop.cn/share-coupon-store.jpg

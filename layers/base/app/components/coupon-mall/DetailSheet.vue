@@ -44,6 +44,33 @@ const bundleItems = computed(() =>
 const introImageFailed = ref(false);
 watch(() => props.open, () => { introImageFailed.value = false; });
 
+// ── 头部面额槽语义化（修复：PERCENT 折数 80 被直渲染成 ¥0.80、券包缺 discountValue 渲染成 NaN）──
+/** 券包→「共N张」；单券 PERCENT→「8折」；FIXED/FULL→面额元；免邮→免邮文案 */
+const faceText = computed(() => {
+  if (props.bundle) {
+    const n = bundleItems.value.reduce((s: number, it: any) => s + Number(it.quantity ?? 0), 0);
+    return t("messages.couponMall.bundleCount", { n });
+  }
+  if (!props.tpl) return "";
+  if (props.tpl.type === "FREE_SHIPPING") return t("messages.coupon.typeFreeShipping");
+  const d = formatCouponDiscount(props.tpl);
+  if (d.kind === "percent") {
+    return t("messages.couponStore.percentOff", {
+      v: d.percent,
+      s: Math.max(0, 100 - Number(props.tpl.discountValue ?? 0)),
+    });
+  }
+  return d.amount;
+});
+/** 券包条目面额文案：与 BundleCard.itemFace 同口径（PERCENT→折扣语义，禁止渲染成 ¥0.80） */
+function itemFace(tpl: Record<string, any> | null | undefined): string {
+  if (!tpl) return "—";
+  const d = formatCouponDiscount(tpl);
+  return d.kind === "percent"
+    ? t("messages.couponStore.percentOff", { v: d.percent, s: Math.max(0, 100 - Number(tpl.discountValue ?? 0)) })
+    : `¥${d.amount}`;
+}
+
 // ── 券店 PERCENT 付费券增强（条件化，不影响其他租户普通券展示）──
 /** PERCENT 且 salePrice>0 才显示算账条 */
 const calcBar = computed(() => {
@@ -102,8 +129,8 @@ const studentGuide = computed(
     <div class="sheet">
       <div class="head">
         <div class="head-left">
-          <span class="amount">{{ couponYuan(tpl.discountValue) }}</span>
-          <span class="cond">{{ tpl.minSpend > 0 ? t("messages.coupon.minSpend", { n: couponYuan(tpl.minSpend) }) : t("messages.coupon.noThreshold") }}</span>
+          <span class="amount">{{ faceText }}</span>
+          <span v-if="!bundle" class="cond">{{ tpl.minSpend > 0 ? t("messages.coupon.minSpend", { n: couponYuan(tpl.minSpend) }) : t("messages.coupon.noThreshold") }}</span>
         </div>
         <div class="head-info">
           <div class="row">
@@ -170,7 +197,7 @@ const studentGuide = computed(
 
       <div v-if="bundleItems.length" class="chips">
         <span v-for="it in bundleItems" :key="it.id" class="pill">
-          {{ it.template ? `${localizeText(it.template.name, locale)} ¥${couponYuan(it.template.discountValue)}` : "—" }} ×{{ it.quantity }}
+          {{ it.template ? `${localizeText(it.template.name, locale)} ${itemFace(it.template)}` : "—" }} ×{{ it.quantity }}
         </span>
       </div>
 

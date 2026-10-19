@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { saleCardProgress, couponAnchorYuan, couponPromoPrice } from "../../utils/coupon-mall";
+import { saleCardProgress, couponAnchorYuan, couponPromoPrice, formatCouponDiscount } from "../../utils/coupon-mall";
 import { couponYuan } from "../../utils/coupon";
 
 /** 券店首页版式 B：面额大字宫格卡（对齐 mockup 版式 B）。购买动作 emit。售卖场景用 saleCardProgress（忽略 claimable）。 */
@@ -23,11 +23,25 @@ const anchor = computed(() => couponAnchorYuan(props.tpl));
 /** 首购/学生优惠价（取低不叠加；null=原价） */
 const promo = computed(() => (props.promo ? couponPromoPrice(props.tpl, props.promo) : null));
 const displayPrice = computed(() => promo.value?.yuan ?? couponYuan(props.tpl.salePrice));
+/** 面额大字：PERCENT→「8折」语义化（修复原 couponYuan(80) 直渲染成 ¥0.80）；FIXED/FULL→¥面额；免邮→文案 */
+const faceText = computed(() => {
+  if (props.tpl.type === "FREE_SHIPPING") return t("messages.coupon.typeFreeShipping");
+  const d = formatCouponDiscount(props.tpl);
+  if (d.kind === "percent") {
+    return t("messages.couponStore.percentOff", { v: d.percent, s: Math.max(0, 100 - Number(props.tpl.discountValue ?? 0)) });
+  }
+  return `¥${d.amount}`;
+});
+/** 整卡点击 → 独立券详情页（/coupon/[id]）；抢购按钮 stopPropagation 保留弹层快捷购买 */
+const localePath = useTenantLocalePath();
+function goDetail() {
+  navigateTo(localePath(`/coupon/${props.tpl.id}`));
+}
 </script>
 
 <template>
-  <div class="grid-card" :class="{ soldout: progress.soldOut }">
-    <span class="face">¥{{ couponYuan(tpl.discountValue) }}</span>
+  <div class="grid-card" :class="{ soldout: progress.soldOut }" @click="goDetail">
+    <span class="face">{{ faceText }}</span>
     <span class="cond">
       {{ tpl.minSpend > 0 ? t("messages.coupon.minSpend", { n: couponYuan(tpl.minSpend) }) : t("messages.coupon.noThreshold") }}
       · {{ percentOff ? t("messages.couponStore.percentOff", { v: percentOff, s: Math.max(0, 100 - (tpl.discountValue ?? 0)) }) : t("messages.couponStore.floorIntro") }}
@@ -40,7 +54,7 @@ const displayPrice = computed(() => promo.value?.yuan ?? couponYuan(props.tpl.sa
         <s v-if="anchor || promo" class="anchor">¥{{ promo ? couponYuan(tpl.salePrice) : anchor }}</s>
         <span class="price">¥{{ displayPrice }}</span>
       </span>
-      <UButton size="xs" :disabled="progress.soldOut || buying" :loading="buying" @click="emit('buy')">
+      <UButton size="xs" :disabled="progress.soldOut || buying" :loading="buying" @click.stop="emit('buy')">
         {{ progress.soldOut ? t("messages.couponMall.soldOut") : t("messages.couponStore.gridBuy") }}
       </UButton>
     </div>
@@ -49,7 +63,7 @@ const displayPrice = computed(() => promo.value?.yuan ?? couponYuan(props.tpl.sa
 </template>
 
 <style scoped>
-.grid-card { display: flex; flex-direction: column; gap: 4px; background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 12px; padding: 12px; }
+.grid-card { display: flex; flex-direction: column; gap: 4px; background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 12px; padding: 12px; cursor: pointer; }
 .grid-card.soldout { opacity: .55; }
 .face { font-size: 20px; font-weight: 700; color: var(--ui-primary); }
 .cond { font-size: 12px; color: var(--ui-text-muted); }
