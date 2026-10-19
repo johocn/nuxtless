@@ -18,6 +18,9 @@ const fallbackDiscount = computed(() => String(route.query.discount || ""));
 const authName = ref("");
 const authDiscount = ref("");
 const authExpiresAt = ref("");
+/** 使用说明上下文（FR-A1：适用场景/门槛；verified 后由服务端权威回填） */
+const authUsageScene = ref<"ONLINE" | "IN_STORE" | "ALL" | "">("");
+const authMinSpend = ref(0);
 const verified = ref(false);
 
 const qrDataUrl = ref("");
@@ -29,6 +32,8 @@ onMounted(async () => {
     if (hit) {
       authName.value = hit.template?.name ?? "";
       authExpiresAt.value = hit.expiredAt ?? "";
+      authUsageScene.value = (hit.template?.usageScene as any) ?? "";
+      authMinSpend.value = Number(hit.template?.minSpend ?? 0);
       const type = hit.template?.type;
       const value = hit.template?.discountValue ?? 0;
       authDiscount.value =
@@ -54,6 +59,28 @@ const name = computed(() => (verified.value ? authName.value : fallbackName.valu
 const discount = computed(() => (verified.value ? authDiscount.value : fallbackDiscount.value));
 const expiresAt = computed(() => (verified.value ? authExpiresAt.value : fallbackExpiresAt.value));
 
+/** 过期态（FR-A1）：过期券码仅查看不可核销 */
+const isExpired = computed(() => {
+  if (!expiresAt.value) return false;
+  const d = new Date(expiresAt.value);
+  return !Number.isNaN(d.getTime()) && d.getTime() <= Date.now();
+});
+
+/** 使用说明：适用场景行（按 usageScene 分支；未验证时不展示） */
+const usageSceneText = computed(() => {
+  if (!verified.value) return "";
+  switch (authUsageScene.value) {
+    case "IN_STORE":
+      return t("messages.coupon.codeUsageStore");
+    case "ONLINE":
+      return t("messages.coupon.codeUsageOnline");
+    case "ALL":
+      return t("messages.coupon.codeUsageBoth");
+    default:
+      return "";
+  }
+});
+
 const expiresText = computed(() => {
   if (!expiresAt.value) return "";
   const d = new Date(expiresAt.value);
@@ -67,7 +94,16 @@ const expiresText = computed(() => {
   <main class="container my-14">
     <div
       class="mx-auto flex max-w-md flex-col items-center rounded-xl border border-(--ui-border) bg-(--ui-bg-elevated) p-8"
+      :class="isExpired && 'opacity-80'"
     >
+      <!-- 过期态横幅（FR-A1） -->
+      <div
+        v-if="isExpired"
+        class="mb-4 flex w-full items-center justify-center gap-2 rounded-lg bg-(--ui-error)/10 px-3 py-2 text-sm font-semibold text-(--ui-error)"
+      >
+        <UIcon name="i-lucide-timer-off" class="size-4" />
+        {{ t("messages.coupon.codeExpiredTitle") }}
+      </div>
       <p class="text-center text-xl font-bold">{{ name }}</p>
       <p v-if="discount" class="mt-2 text-lg font-bold text-(--ui-primary)">
         {{ discount }}
@@ -77,12 +113,30 @@ const expiresText = computed(() => {
         :src="qrDataUrl"
         alt="券码"
         class="my-8 h-72 w-72 rounded"
+        :class="isExpired && 'grayscale opacity-40'"
       />
       <p class="font-mono text-3xl font-extrabold tracking-[0.25em]">{{ code }}</p>
       <p v-if="expiresText" class="mt-4 text-sm text-(--ui-text-muted)">
         {{ t("messages.coupon.codeValidUntil") }} {{ expiresText }}
       </p>
-      <p class="mt-8 text-center text-sm leading-relaxed text-(--ui-text-muted)">
+      <p v-if="isExpired" class="mt-2 text-xs text-(--ui-text-muted)">
+        {{ t("messages.coupon.codeExpiredTip") }}
+      </p>
+
+      <!-- 使用说明（FR-A1：适用场景/结算方式 + 门槛；场景行 verified 后由服务端回填） -->
+      <div v-if="usageSceneText || verified" class="mt-6 w-full border-t border-(--ui-border) pt-4 text-left">
+        <p class="mb-1.5 text-sm font-semibold">{{ t("messages.coupon.codeUsageTitle") }}</p>
+        <p v-if="usageSceneText" class="text-[13px] leading-relaxed text-(--ui-text-muted)">
+          {{ usageSceneText }}
+        </p>
+        <p v-if="verified && authMinSpend > 0" class="mt-1 text-[13px] leading-relaxed text-(--ui-text-muted)">
+          {{ t("messages.coupon.minSpend", { n: authMinSpend / 100 }) }}
+        </p>
+        <p class="mt-1 text-[13px] leading-relaxed text-(--ui-text-muted)">
+          {{ t("messages.coupon.codeTip") }}
+        </p>
+      </div>
+      <p v-else class="mt-8 text-center text-sm leading-relaxed text-(--ui-text-muted)">
         {{ t("messages.coupon.codeTip") }}
       </p>
     </div>

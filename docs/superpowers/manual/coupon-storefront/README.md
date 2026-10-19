@@ -164,7 +164,7 @@
 | 分组纯函数 | `groupSaleTemplates`（阈值判定/类型序/业态配置序/「更多」兜底/多语言标题 localizeText 回退）+ `parseFloorGroups`（坏 JSON/非数组→null 回退类型分组），SSR 友好 | `utils/coupon-mall.ts` |
 | 楼层渲染 | 单券楼层改为 `v-for saleGroups`（key=`sale-${g.key}`），chips=type 组+业态组+券包/积分；删旧固定 sale 楼层 | `components/coupon-store/CouponStoreHome.vue` |
 | 后端字段 | `category` 列 + 迁移 + admin 输入/SDL + cjk 渠道 customFields `couponFloorGroups`（public，仅 coupon 模式生效）+ updateTenant 输入链 | vendure coupon-plugin / cjk-plugin |
-| admin 表单 | 券模板编辑（SALE 渠道）新增「业态分类」输入 + 提示文案；平台租户详情可配 couponFloorGroups | vshop web-admin |
+| admin 表单 | 券模板编辑（SALE 渠道）新增「业态分类」输入 + 提示文案；平台租户详情可配 couponFloorGroups（coupon 模式才显示的 JSON 文本域：校验数组/唯一 key，空=回退类型分组；生产实测回显/渲染正常，截图 docs/screenshots/2026-10-19-floor-groups-admin/） | vshop web-admin |
 | i18n | `couponStore.floorMore`（更多/More）zh-CN/en-US 同步（其余语言走 zhFallbackLocale 兜底，与本模块既有词条口径一致） | `i18n/locales/*.ts` |
 
 验收截图（手机视口 390×844 dpr=2）：[2026-10-19-coupon-floor-groups/](../../../manual/shots/2026-10-19-coupon-floor-groups/)（type-mode-home / category-mode-home / category-mode-chip-click）。验证脚本 `%TEMP%\_shot_coupon_floor_groups.mjs`（Playwright mock couponSaleCatalogue 21 张带 category 券 + route.fulfill 中转生产 API）。
@@ -216,6 +216,10 @@
 | C30 | 分类楼层·category 业态分组（6.5） | >20 张且券模板已配 category：按渠道 `couponFloorGroups` 配置顺序分组（美食/游乐…），未命中配置/未分类归「更多」兜底楼层；组标题多语言回退（locale→default→首值） | 02 |
 | C31 | 分类 chips 交互（6.5） | 多组才显示吸顶 chips（单组隐藏）；点 chip 平滑滚动到对应楼层 + 高亮切换；滚动 scroll spy 自动高亮当前楼层；加载完成初始高亮首楼层 | 02/03 |
 | C32 | 阈值自适应回归（6.5） | 21 张券但全部 category 未命中配置 → 全部落「更多」单组；分组逻辑纯函数 groupSaleTemplates 单测覆盖（顺序/兜底/多语言/空目录） | 单测 |
+| C33 | 用券码页·正常态（6.6 A1） | `/t1/coupon/code`：券名/折扣/彩色二维码/券码等宽大字/有效期；登录持券时服务端回填券名与使用说明（场景行按 usageScene：到店出示核销/线上自动抵扣/两可 + 门槛行）；未登录 query 占位仅显示通用提示 | 02（[2026-10-19-coupon-redemption-flow/](../../../manual/shots/2026-10-19-coupon-redemption-flow/)） |
+| C34 | 用券码页·过期态（6.6 A1） | 券过期（expiresAt≤now）：顶部「该券已过期」横幅 + 二维码灰化（grayscale+40% 透明）+「过期券码仅供查看，无法核销」提示 | 03（同上） |
+| C35 | 详情页「立即使用」入口（6.6 A1） | 登录且持该模板 UNUSED 券、usageScene∈(IN_STORE,ALL) 时：详情页吸底 CTA 出现「立即使用」→ 携券码跳用券页；未持券/线上券/过期券不显示（线上券走下单自动抵扣不变） | 线上冒烟（登录态） |
+| C36 | 券过期提醒·站内信（6.6 A2） | 定时扫描 UNUSED/RETURNED 且临期（≤3 天→3d 档、≤1 天→1d 档）→ notification-plugin 触达站内信（标题「优惠券 3 天后过期/明天过期」+ 券名/券码/到期日）；同用户同券同阶段 7 天去重（重复扫描/重启不重发）；公众号模板消息为增强通道（生产配置完成后自动启用，未配置仅站内信不阻塞） | 定时任务数据核验 + 单测（expireStage 边界/扫描条件下推/事件发布） |
 
 ## 8. 已知边界
 
@@ -232,3 +236,9 @@
 1. vendure：本地 `pnpm build` → push → 服务器 `git pull` + `pm2 restart`（cjk/coupon plugin lib 已随提交入库）。
 2. web-admin（vshop 仓库）：本地 `build:h5` → 提交 dist → push → 服务器拉取（平台侧表单）。
 3. nshop：本地 `pnpm build` → `node scripts/deploy.mjs`。
+
+### 9.1 FR-A 附加部署说明（2026-10-19）
+
+- **过期提醒开关**：vendure 环境变量 `COUPON_EXPIRE_REMIND_MS`（默认 21600000=6h 扫一次，启动 30s 后首跑；设 0 关闭）。生产默认即启用，无需配置。
+- **公众号模板消息（增强通道，暂未启用）**：需在 strapi zhao-sso msg-center 配置 strapiBaseUrl/strapiAdminToken/wechatEnabled + `templateSceneMap.coupon_expire` 模板；未配置时 WechatNotifierProvider 返回 false 自动降级仅站内信。
+- **web-admin 核销看板**：券管理页顶部 KPI 升级为四指标（发放/核销/核销率/过期率）+ 时间筛选（全部/今日/近7天/近30天，按领取时间口径）；卡内「已使用」列显示核销量（核销率）。数据来自 admin `couponRedemptionStats` 查询（仅领券记录状态聚合，无埋点）。
