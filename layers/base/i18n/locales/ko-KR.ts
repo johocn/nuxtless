@@ -322,6 +322,8 @@ export default defineI18nLocale(() =>
       confirmPassword: "비밀번호 확인",
       email: "이메일",
       emailPlaceholder: "이메일을 입력해주세요",
+      identifier: "이메일 / 전화번호",
+      identifierPlaceholder: "이메일 또는 전화번호를 입력해주세요",
       login: "로그인",
       logout: "로그아웃",
       backToLogin: "로그인으로 돌아가기",

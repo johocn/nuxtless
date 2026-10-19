@@ -307,6 +307,8 @@ export default defineI18nLocale(() =>
       confirmPassword: "Confirmar contraseña",
       email: "Correo electrónico",
       emailPlaceholder: "Ingrese su correo electrónico",
+      identifier: "Correo / Teléfono",
+      identifierPlaceholder: "Ingrese su correo o teléfono",
       login: "Iniciar sesión",
       logout: "Cerrar sesión",
       backToLogin: "Volver a iniciar sesión.",
