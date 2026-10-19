@@ -175,6 +175,7 @@
 
 - **配置**（web-admin「优惠券 → 营销活动」弹窗 · 分享裂变 Tab）：启用 + 活动名称 + 副标题/规则 + 起止日期 + 被分享者奖励券（必选）+ 分享者奖励券（可选）+ 分享者获奖上限（0=不限）+ 仅新客可参与。落 `Channel.customFields.couponFission`（JSON，多语言文案可后台二次编辑保留 zh_Hans 键）。
 - **C 端动线**：券店首页店招下渲染紫色渐变裂变条（活动名 + 双方奖励摘要 + 规则 +「分享得券」按钮）。微信内点分享 → 引导右上角「···」转发（分享卡由 WechatShare 自动带 `?invite=我的邀请码`）；非微信 → 复制带 invite 的链接。
+- **个人邀请码 = 可逆码 `F<base36(customerId)>`**（2026-10-20 定稿）：每人固定一人一码，后端 `parseReversibleInviteCode` 解码直定位分享者（校验本租户渠道归属）。⚠️ `Customer.customFields.inviteCode` 是「被谁邀请」的首次快照（bind 不覆盖、存量全空），**不是**个人码——仅作非 F 码（SSO 旧链路）的回退反查，勿再往分享链上接。前后端编解码同构：nshop `fissionInviteCodeOf` ↔ vendure `buildReversibleInviteCode`。
 - **领奖闭环**：好友经分享链接进店 → 未登录底部弹微信一键登录（WechatInviteLoginBar，returnUrl 保留 invite 穿透登录）→ 登录后裂变条自动领奖 → 双方各得 1 张（issuedBy=**FISSION** 渠道留痕）→ 结果状态行内展示（成功/已领过/自分享/仅新客/已领完）。
 - **后端规则**：`coupon_fission_record` 实体（渠道+被分享者唯一索引=同人同活动仅 1 次=幂等原子保障）；发奖事务化（withTransaction：扣量→建券→落记录，任一步失败整体回滚）；计入模板限量（R2）；四例外齐备（未登录/下线仅展示/自分享不发奖/限新客）；管理端 `couponFissionRecords` 查询可核对留痕（R1）。
 
