@@ -288,6 +288,8 @@ export default defineI18nLocale(() =>
       confirmPassword: "Потвърдете паролата",
       email: "Имейл",
       emailPlaceholder: "Въведете вашия имейл",
+      identifier: "Имейл / Телефон",
+      identifierPlaceholder: "Въведете вашия имейл или телефон",
       login: "Вход",
       logout: "Изход",
       backToLogin: "Обратно към вход.",

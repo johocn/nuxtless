@@ -323,6 +323,8 @@ export default defineI18nLocale(() =>
       confirmPassword: "パスワードを確認",
       email: "メールアドレス",
       emailPlaceholder: "メールアドレスを入力してください",
+      identifier: "メールアドレス / 電話番号",
+      identifierPlaceholder: "メールアドレスまたは電話番号を入力してください",
       login: "ログイン",
       logout: "ログアウト",
       backToLogin: "ログインに戻る。",

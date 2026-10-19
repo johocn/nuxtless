@@ -684,6 +684,8 @@ export const zhMessages = {
       confirmPassword: '确认您的密码',
       email: '邮箱',
       emailPlaceholder: '请输入邮箱',
+      identifier: '邮箱 / 手机号',
+      identifierPlaceholder: '请输入邮箱或手机号',
       login: '登录',
       logout: '退出登录',
       backToLogin: '返回登录。',

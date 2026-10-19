@@ -298,6 +298,8 @@ export default defineI18nLocale(() =>
       confirmPassword: "تأیید رمز عبور",
       email: "ایمیل",
       emailPlaceholder: "ایمیل خود را وارد کنید",
+      identifier: "ایمیل / تلفن",
+      identifierPlaceholder: "ایمیل یا شماره تلفن خود را وارد کنید",
       login: "ورود",
       logout: "خروج",
       backToLogin: "بازگشت به صفحه ورود",

@@ -291,6 +291,8 @@ export default defineI18nLocale(() =>
       confirmPassword: "Подтвердите пароль",
       email: "Электронная почта",
       emailPlaceholder: "Введите адрес электронной почты",
+      identifier: "Эл. почта / Телефон",
+      identifierPlaceholder: "Введите эл. почту или номер телефона",
       login: "Войти",
       logout: "Выйти",
       backToLogin: "Вернуться к входу.",

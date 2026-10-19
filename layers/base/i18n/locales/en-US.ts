@@ -663,6 +663,8 @@ export default defineI18nLocale(() =>
       confirmPassword: "Confirm your password",
       email: "Email",
       emailPlaceholder: "Enter your email",
+      identifier: "Email / Phone",
+      identifierPlaceholder: "Enter your email or phone number",
       login: "Log In",
       logout: "Log Out",
       backToLogin: "Back to login.",

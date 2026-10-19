@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { LoginForm } from "~~/layers/base/validators/loginForm";
 
 import type { FormSubmitEvent } from "@nuxt/ui";
@@ -23,7 +23,7 @@ const { setUser } = useAuthStore();
 const { customer } = storeToRefs(useCustomerStore());
 
 const state = reactive({
-  email: "",
+  identifier: "",
   password: "",
 });
 
@@ -34,7 +34,8 @@ async function onSubmit(event: FormSubmitEvent<LoginForm>) {
     channelToken.value,
     "login",
     {
-      emailAddress: event.data.email,
+      // 邮箱或手机号（手机号注册用户 identifier 即裸手机号，原生 login 字符串匹配可过）
+      emailAddress: event.data.identifier.trim(),
       password: event.data.password,
       rememberMe: true,
     },
@@ -83,11 +84,16 @@ async function onSubmit(event: FormSubmitEvent<LoginForm>) {
     class="space-y-4"
     @submit="onSubmit"
   >
-    <UFormField :label="t('messages.account.email')" name="email" size="xl">
+    <UFormField
+      :label="t('messages.account.identifier')"
+      name="identifier"
+      size="xl"
+    >
       <UInput
-        v-model="state.email"
-        type="email"
-        :placeholder="t('messages.account.emailPlaceholder')"
+        v-model="state.identifier"
+        type="text"
+        autocomplete="username"
+        :placeholder="t('messages.account.identifierPlaceholder')"
         class="w-full"
       />
     </UFormField>
