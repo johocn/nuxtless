@@ -35,9 +35,29 @@
 
 spec：`coupon-settlement.service.spec.ts` + `coupon-settlement.spec.ts` 共 **20 用例全过**（含并发抢占/失败重试/回执 FAILED 退回/唯一约束防重）。单测/e2e 走 sqljs 测不出 PG 方言问题已按铁律⑤ grep 排查。
 
+## 3.1 T5 三方对账（2026-10-20 交付）
+
+**对账口径**（结算单 ↔ 分账回单 ↔ 商户核销流水）：
+
+| 差异类型 | 严重度 | 判定 |
+|---|---|---|
+| AMOUNT_MISMATCH | HIGH | face ≠ commission + net（账内不平，资损级） |
+| MISSING_RECEIPT | HIGH | SETTLED/PAID_OUT 无回执号（单边缺失） |
+| RECEIPT_STATE_MISMATCH | HIGH | 本地 PAID_OUT 但回执非 FINISHED |
+| MISSING_BILL | HIGH | 结算单指向的核销流水不存在 |
+| SETTLE_STUCK | MEDIUM | PENDING 重试耗尽 / SETTLED 滞留超阈值（`COUPON_RECONCILE_STUCK_HOURS`，默认 24h） |
+| MISSING_SETTLEMENT | MEDIUM | 有核销流水无结算单（结算 job 兜底补登会自愈，持续存在说明补登失败） |
+| RECEIPT_QUERY_FAILED | LOW | 回执查询异常（网关侧排查，下轮重试） |
+
+**实现**：
+- `coupon-settlement-reconcile.ts` 纯函数（输入快照 → 差异列表，spec 16 用例）；`CouponSettlementReconcileDiff` 实体（settlement_reconcile_diff，幂等建表迁移 + 渠道/轮次索引）；`CouponSettlementReconcileService`（整渠道一轮对账，重跑覆盖未解决差异、resolved 留审计；单边缺失口径与 backfill 同查询）
+- admin schema：`couponReconcileDiffs` / `runCouponReconcile` / `resolveCouponReconcileDiff`
+- web-admin 台账页：优惠券模块 → **结算对账**（对账差异 + 结算单双 tab；手动对账/严重度筛选/标记已处理；截图 `vshop/docs/superpowers/manual/shots/2026-10-20-t5-reconcile/`）
+
+**生产验证**（2026-10-20）：空跑 0 差异 → 注入金额不平脏单 → 对账精确报 AMOUNT_MISMATCH HIGH（detail 含三金额）→ resolve → t3 渠道隔离正确（看不到 t1 差异）→ 清理残留 0 → 复跑归零。
+
 ## 4. 未决与后续（P1/P2）
 
-- **T5** 三方对账（结算单↔分账回单↔商户流水）+ 差异表 + web-admin 台账页
 - **T6** 发票凭证类型预留（601/消费/佣金）；**T7** 须知文案 12 语言（nshop i18n）；**T8** 退款联动（未分账取消登记/已分账 reversed 追偿，挂 refundCouponSaleOrder——适配器 refundSplit 已预留）
 - **T9** 进件状态页；**T10** 监管参数多租户 UI；**T11** 看板口径=结算单汇总；**T12** 三仓联测
 - **前置依赖**：微信实联前须完成商户进件（特约商户 + 分账接收方）+ 合规书面结论
