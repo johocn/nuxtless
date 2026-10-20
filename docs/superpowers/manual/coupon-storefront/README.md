@@ -190,6 +190,28 @@
 - **E1 批量召回**：web-admin「优惠券 → 召回发放」弹窗：选召回券（GRANT 渠道候选）+ N 天未消费（默认 90）+ 站内信通知开关 → 「预览圈中人数」（只数不发）→「批量发放」。逐人走 RECALL 渠道留痕 + R4 防骚扰（同渠道同模板 RECALL 券 7 天内不重发）+ 会员门槛单人不达标跳过（MEMBER_LEVEL_BLOCKED）；`coupon_grant_batch` 批次留痕（圈中/成功/拦截数 + 逐人明细 JSON），弹窗内批次列表点开看摘要（前 10 行），管理端 `couponGrantBatches` 可查。
 - **E2 等级券**：券模板 `memberLevel` 字段激活（编辑页已有输入：数字 1-5 或 银/金/白金/钻石 别名）。三路拦截：券店目录/中心券列表/积分商城按登录人等级过滤（匿名按 1 档非会员）；领取（claimCoupon）与兑换（points exchange）、购买三处硬拦。全部无门槛时零额外等级查询（fail-open：会员插件未注册不阻塞）。
 
+## 6.9 FR-F 营销玩法（2026-10-20 · FR-F1 每日领券 / FR-F2 神券日限量抢 / FR-F3 支付有礼）
+
+> PRD：[docs/coupon-frf-prd.md](../../../coupon-frf-prd.md)（v1.2，验收判据 A1-A6/B1-B5/C1-C6 + 共享规则 R1-R7 + 生产审计记录）。版式决策：方案 A（券店首页内嵌楼层，mockup 评审定稿）。
+
+**配置**（web-admin「优惠券 → 营销活动」弹窗新增三个 Tab，落 `Channel.customFields`，坏 JSON/缺字段整体不启用不炸页面 R6）：
+
+| Tab | 字段 | 落点 |
+| --- | --- | --- |
+| 每日领券 | 启用 + 名称/副标题/规则（中英双语）+ 起止日期 + 券模板组（1~5 张） | `couponDailyClaim` |
+| 神券日 | 启用 + 名称/副标题/规则 + 时间窗（精确到分钟）+ 关联券（**为每场单独建限量券模板**，限量靠 totalCount）+ 每人限抢（默认 1） | `couponFlashSale` |
+| 支付有礼 | 启用 + 奖励券（单张）+ 门槛实付金额（元，0=不限）+ 冷却天数（强制 ≥1） | `couponPayGift` |
+
+**C 端动线**（nshop 券店首页内嵌 + 订单完成页）：
+
+- **每日领券卡**：店招下橙色卡，每张券「可领 / 今日已领」两态一键逐张领取；**每人每券每天限领 1 张**（UTC+8 日界，跨天可再领）；未登录点领取引导登录；模板 totalCount/perUserLimit/会员等级门槛（E2）照常生效。新实体 `coupon_daily_claim_record`（渠道+用户+模板+日期唯一索引 = 幂等原子保障，发券与落记录同事务），`issuedBy='DAILY'`。
+- **神券日楼层**：倒计时走秒（开始前预告态 → 进行中「立即抢」→ 结束/售罄置灰），限量进度条「已抢 N/M」；服务端时钟判窗（NOT_STARTED/ENDED 双侧硬拦）；场次内每人限抢按 FLASH 发放记录计数（跨场次不限制）；DB 条件 UPDATE 原子扣减超发不可能；`issuedBy='FLASH'`。
+- **支付有礼**：订单支付成功（PaymentSettled 事件订阅）服务端**自动**发券无需用户操作；实付 ≥ 门槛 + 冷却期外才发（`issuedBy='PAYGIFT'`）；失败/售罄/冷却静默跳过（warn 留痕）不阻塞支付；支付完成页「已送你一张券」提示卡（sessionStorage 防重）。
+
+**管理端留痕**：`issuedBy` 枚举新增 DAILY/FLASH/PAYGIFT（R1），券列表/导出可按渠道追溯；配置/记录/校验/事件全链路按渠道隔离（R5）。
+
+验收截图（手机视口 390×844 dpr=2）：[2026-10-20-coupon-frf/](../../../manual/shots/2026-10-20-coupon-frf/)（01 券店首页整页：店招→裂变条→每日领券→神券日→楼层；02 每日领券卡双态——¥10 可领/¥5 今日已领完；03 神券日楼层——周五神券日 01:16:45 走秒 + 已抢 2/10 进度 + 立即抢）。截图脚本走 `scripts/_shot_*` 本地约定（gitignore 不入库，Playwright 390×844 dpr=2 + testid 元素截图）；冒烟脚本 `scripts/_smoke_a1_logged_in.mjs` 已入库。
+
 ## 7. 测试用例清单
 
 ### 7.1 后端（shop-api，curl 匿名/带渠道 token）
@@ -250,6 +272,13 @@
 | C43 | FR-D 硬拦 | 非新客直调 createCouponSaleOrder 买新客券 → 「new customers only」错误；同人第二单 → 「limit reached」；限量耗尽活动位整位摘除 | e2e |
 | C44 | E1 召回发放 | 预览人数与圈人口径一致；发放后批次留痕（成功/拦截数+明细）；同人 7 天内二次发放被 RECENTLY_GRANTED 拦截；站内信落 notification | web-admin 实测 + DB 核验 |
 | C45 | E2 等级券 | 无门槛券全员可见；配「金卡」门槛券：普通会员/匿名/无等级不进目录且领取被拦，金卡及以上正常可见可领 | e2e 双角色 |
+| C46 | 每日领券卡渲染（FR-F1） | 配置生效 → 店招下橙色卡（券组两态按钮 + 规则行）；未配置/窗口外/禁用/坏 JSON 不渲染 | 01/02（[2026-10-20-coupon-frf/](../../../manual/shots/2026-10-20-coupon-frf/)） |
+| C47 | 每日领券幂等（A1/A4） | 同券当日二次领取 ALREADY_CLAIMED（API 回带已领券）；UTC+8 日界跨天可再领；DB 唯一索引兜底并发 | e2e + DB 核验 |
+| C48 | 每日领券限量/门槛（A3/A6） | 售罄 SOLD_OUT 且 claimedCount 精确不超发；perUserLimit、会员等级 MEMBER_LEVEL_BLOCKED 照常生效 | e2e（gold 门槛拦截实测） |
+| C49 | 神券日楼层渲染（FR-F2） | 进行中：倒计时走秒 + 限量进度「已抢 N/M」+ 立即抢；开始前预告/结束售罄置灰；未配置不渲染 | 03 |
+| C50 | 神券日硬拦（B1/B3） | NOT_STARTED/ENDED 双侧服务端硬拦；场次内限抢 PER_USER_LIMIT（跨场次不限）；原子扣减不超发 | e2e + DB 核验 |
+| C51 | 支付有礼（FR-F3 · C1-C6） | 实付达标 PaymentSettled 自动发 PAYGIFT 券 + 完成页提示卡；未达标/冷却/售罄静默跳过；发放异常不影响支付；渠道隔离 | 单测（payGiftEligible/cooldown 16 例）+ 代码审计；**真实支付链路待真实订单后回填核验** |
+| C52 | FR-F 配置容错与多语言（R6/R7） | 坏 JSON/缺字段 → parse 返回 null 功能整体不启用不炸页面；文案 LocalizedText zh/en 兜底链；nshop i18n 双语同步 | 单测（纯函数 16 例） |
 
 **P1 用例结果（2026-10-20 生产核验，全部通过；证据详情见 PRD §6.3）：**
 
@@ -266,6 +295,20 @@
 
 > 说明：E1/E2/Fission 测试数据（双测试账号、测试券、批次、裂变记录、渠道测试配置）已全部清理还原；其中 FR-C 活动随后由运营配置为正式活动并上线（C38 生产截图即活动上线实拍）。生产首页 hydration mismatch 警告为站点既有现象（无 P1 改动的普通商城首页同样出现），非本迭代回归。
 
+**P2（FR-F）用例结果（2026-10-20 生产核验）：**
+
+| 用例 | 结果 | 生产证据 |
+| --- | --- | --- |
+| C46 | ✅ | 截图 01/02：每日领券卡生产实拍（¥10 领取态/¥5 今日已领完态） |
+| C47 | ✅ | 幂等二次领 ALREADY_CLAIMED 回带券 344；coupon_daily_claim_record 唯一索引 + 同事务落记录 |
+| C48 | ✅ | SOLD_OUT 拦截 + claimedCount 不超发；gold 门槛 MEMBER_LEVEL_BLOCKED 实测 |
+| C49 | ✅ | 截图 03：周五神券日 01:16:45 走秒 + 已抢 2/10 + 立即抢 |
+| C50 | ✅ | NOT_STARTED/ENDED 双侧硬拦；场次内第二抢 PER_USER_LIMIT；FLASH issuedBy 留痕核验 |
+| C51 | ⏸ | 单测覆盖（发放门槛/冷却/静默吞异常/渠道 ctx 隔离/售罄同路径）+ PaymentSettled 订阅代码审计通过；真实支付无法免费测试，待首笔真实订单回填 |
+| C52 | ✅ | 单测 214 全绿（FR-F 纯函数 16 例）、包内 e2e 249 全绿 |
+
+> FR-F 测试数据（模板 98-101「FRF-AUDIT-*」、测试账号券、渠道三项测试配置）审计完成后已清理还原；生产上线由运营经 web-admin「营销活动」三 Tab 正式配置。
+
 ## 8. 已知边界
 
 - 切回 `normal`：立即恢复普通商城；券店期间已购券不受影响（券在「我的券包」）。
@@ -281,6 +324,8 @@
 1. vendure：本地 `pnpm build` → push → 服务器 `git pull` + `pm2 restart`（cjk/coupon plugin lib 已随提交入库）。
 2. web-admin（vshop 仓库）：本地 `build:h5` → 提交 dist → push → 服务器拉取（平台侧表单）。
 3. nshop：本地 `pnpm build` → `node scripts/deploy.mjs`。
+
+> ⚠️ **构建 nshop 禁止设置 `GQL_HOST` 环境变量**（2026-10-20 FR-F 事故）：codegen 拉 schema 走本地 `graphql.schema.json`（schema 优先于 host），构建本不需要 GQL_HOST；若临时 `export GQL_HOST=http://localhost:3000/...` 会被 graphql-client runtimeConfig 烧进产物，导致线上 SSR 渠道主题拉取失败 → 券店模式判定失效、整店降级为普通商城。值以 `.env` 的 `GQL_HOST=https://www.youshop.cn/shop-api` 为准，构建后可用 `Select-String -Path .output/server/chunks/**/*.mjs -Pattern 'GQL_HOST":\s*"[^"]+"'` 验证烧录值。
 
 ### 9.1 FR-A 附加部署说明（2026-10-19）
 

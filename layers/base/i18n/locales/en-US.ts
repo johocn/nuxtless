@@ -414,6 +414,26 @@ export default defineI18nLocale(() =>
       fissionShareWechatHint: "Tap \"···\" at the top right and forward to a friend to earn the coupon",
       fissionLinkCopied: "Share link copied. Paste it to your friends",
       fissionLoginUnavailable: "No sign-in method configured yet",
+      // —— FR-F1 Daily coupons ——
+      dailyClaim: "Claim",
+      dailyClaimOk: "Claimed. Added to \"My Coupons\"",
+      dailyClaimedAlready: "Already claimed today. Come back tomorrow",
+      dailyClaimed: "Claimed today",
+      dailySoldOut: "Sold out for today",
+      // —— FR-F2 Flash day ——
+      flashGrab: "Grab now",
+      flashGrabOk: "Grabbed. Added to \"My Coupons\"",
+      flashGrabbed: "Grabbed",
+      flashPerUserLimit: "You have reached this session's grab limit",
+      flashSoldOut: "Sold out",
+      flashProgress: "{claimed}/{total} claimed",
+      // —— FR-F shared blocks ——
+      memberLevelBlocked: "This coupon requires a higher member level",
+      activityUnavailable: "The campaign is not running",
+      // —— FR-F3 Pay reward ——
+      payGiftTitle: "Payment successful. A reward coupon is yours",
+      payGiftDesc: "The reward coupon has been added to your coupon wallet for your next purchase",
+      payGiftGo: "View",
     },
     studentVerify: {
       title: "Student Verification",

@@ -157,6 +157,12 @@ const asLowPrice = computed<number | null>(() => {
     <!-- 分享裂变活动条（FR-C：活动横幅 + 带 ?invite= 自动领奖 + 分享入口；无生效活动不渲染） -->
     <CouponStoreFissionBar />
 
+    <!-- 每日领券卡（FR-F1：每人每券每天 1 张；无生效活动不渲染） -->
+    <CouponStoreDailyClaim />
+
+    <!-- 神券日限量抢楼层（FR-F2：倒计时走秒 + 限量进度；无进行中场次不渲染） -->
+    <CouponStoreFlashCard />
+
     <!-- 倒计时活动位（版式 B 大倒计时卡片；走秒到点自动摘除） -->
     <CouponStoreCampaignCard
       v-if="campaign"

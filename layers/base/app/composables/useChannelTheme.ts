@@ -18,6 +18,7 @@ const CHANNEL_THEME_SSR_QUERY = `query GetChannelThemeSsr {
       storefrontMode
       storefrontHomeLayout
       couponFloorGroups
+      couponPayGift
     }
   }
 }`;
