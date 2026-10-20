@@ -297,3 +297,17 @@
 - **佣金费率**：`COUPON_SPLIT_COMMISSION_BP`（万分比，默认 0 = 平台暂不分佣；出单时烧录进结算单，后续调整不影响已出单）。
 - **结算范围**：仅**出售券**（customer_coupon.saleOrderId 非空）的到店核销（in_store_bill）登记结算；免费领/发放券不涉及分账。线上订单核销折算与退款追偿（T8）为后续任务。
 - **admin 运维入口**（切渠道上下文后调用）：`runCouponSettlementCycle { submitted promoted failed }` 手动触发；`couponSettlementOrders(options)` / `couponSettlementOrder(id)` 查结算单流水（channelId 强制隔离）；微信实联前 PAID_OUT 仅代表 stub 闭环完成，不代表真实资金动作。
+
+### 9.3 结算对账台账（T5 · 2026-10-20）
+
+**入口**：web-admin → 优惠券模块 → **结算对账**。两个 tab：
+
+- **对账差异**：点「立即对账」跑一轮（结算单 ↔ 分账回单 ↔ 商户核销流水），差异按严重度着色（红=高危资损级 / 橙=卡单 / 紫=提示），卡片显示结算单号 + 对账轮次 + detail JSON；人工核实后「标记已处理」（留审计，默认列表隐藏）。口径表见 `docs/billpay-settlement-plan.md` §3.1。
+- **结算单**：状态分段筛（全部/待结算/已受理/已分账），卡片含面额/佣金（含费率）/净付/回执号/核销凭证/分账模式。
+
+- 对账参数：`COUPON_RECONCILE_STUCK_HOURS`（SETTLED 滞留阈值，默认 24h）；重试上限复用 `COUPON_SETTLE_MAX_ATTEMPTS`。
+- 差异处理语义：重跑对账 = 当前快照（覆盖上轮未解决差异）；「缺结算单」若持续出现说明结算 job 兜底补登失败，需查 vendure 日志。
+
+![T5 对账台账](../shots/2026-10-20-t5-reconcile/01-reconcile-diffs.png)
+
+![T5 结算单](../shots/2026-10-20-t5-reconcile/02-settlement-orders.png)
