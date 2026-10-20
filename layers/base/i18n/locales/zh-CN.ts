@@ -426,6 +426,26 @@ export const zhMessages = {
       fissionShareWechatHint: '点击右上角「···」转发给好友即可得券',
       fissionLinkCopied: '分享链接已复制，粘贴给好友即可',
       fissionLoginUnavailable: '暂未配置登录方式，无法领取',
+      // —— FR-F1 每日领券 ——
+      dailyClaim: '领取',
+      dailyClaimOk: '领取成功，已放入「我的券」',
+      dailyClaimedAlready: '今天已领过这张券，明天再来',
+      dailyClaimed: '今日已领',
+      dailySoldOut: '今日已领完',
+      // —— FR-F2 神券日限量抢 ——
+      flashGrab: '立即抢',
+      flashGrabOk: '抢券成功，已放入「我的券」',
+      flashGrabbed: '已抢到',
+      flashPerUserLimit: '本场次该券已达限抢上限',
+      flashSoldOut: '已抢完',
+      flashProgress: '已抢 {claimed}/{total} 张',
+      // —— FR-F 共用拦截 ——
+      memberLevelBlocked: '该券需达到会员等级才可领取',
+      activityUnavailable: '活动不在进行中',
+      // —— FR-F3 支付有礼 ——
+      payGiftTitle: '支付成功，已送你一张奖励券',
+      payGiftDesc: '奖励券已自动放入券包，下次消费可直接抵扣',
+      payGiftGo: '去查看',
     },
     studentVerify: {
       title: '学生认证',

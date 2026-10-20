@@ -166,6 +166,49 @@ export interface CouponSaleOrderRef {
   status?: string | null;
 }
 
+/* ------------------------- FR-F：每日领券 / 神券日 / 支付有礼 ------------------------- */
+
+/** 每日领券活动视图（匿名可查；无生效活动为 null） */
+export interface CouponDailyClaimActivityView {
+  name: string;
+  subtitle?: string | null;
+  rules?: string | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  items: CouponDailyClaimItemView[];
+}
+
+/** 每日领券条目：模板 + 今日是否已领 + 是否售罄 */
+export interface CouponDailyClaimItemView {
+  template: CouponTemplate;
+  claimedToday: boolean;
+  soldOut: boolean;
+}
+
+/** 神券日活动视图（匿名可查；无进行中场次为 null） */
+export interface CouponFlashSaleActivityView {
+  name: string;
+  subtitle?: string | null;
+  rules?: string | null;
+  startsAt: string;
+  endsAt: string;
+  perUserLimit: number;
+  items: CouponFlashSaleItemView[];
+}
+
+/** 神券日条目：模板 + 是否售罄 + 本场次我已抢张数 */
+export interface CouponFlashSaleItemView {
+  template: CouponTemplate;
+  soldOut: boolean;
+  myClaimed: number;
+}
+
+/** FR-F 领取/抢券结果（status 见 coupon-frf.service） */
+export interface CouponFrFClaimResult {
+  status: string;
+  coupon?: CouponSaleOrderRef | null;
+}
+
 /** 出售单（独立单据，不生成 Vendure Order） */
 export interface CouponSaleOrder {
   id: string;
@@ -579,6 +622,58 @@ export async function claimFissionReward(inviteCode: string): Promise<CouponFiss
     { inviteCode },
   );
   return data.claimFissionReward;
+}
+
+/** 每日领券活动视图（匿名可查；无生效活动返回 null，前端不渲染） */
+export async function getCouponDailyClaimActivity(): Promise<CouponDailyClaimActivityView | null> {
+  const client = resolveClient();
+  const data = await client.request<{ couponDailyClaimActivity: CouponDailyClaimActivityView | null }>(
+    `query CouponDailyClaimActivity {
+      couponDailyClaimActivity {
+        name subtitle rules startsAt endsAt
+        items { template { ${COUPON_TEMPLATE_FIELDS} } claimedToday soldOut }
+      }
+    }`,
+  );
+  return data.couponDailyClaimActivity ?? null;
+}
+
+/** 每日领券（登录）：每人每券每天 1 张；未登录返回 status=NOT_LOGGED_IN 由前端引导 */
+export async function claimDailyCoupon(templateId: string): Promise<CouponFrFClaimResult> {
+  const client = resolveClient();
+  const data = await client.request<{ claimDailyCoupon: CouponFrFClaimResult }>(
+    `mutation ClaimDailyCoupon($templateId: ID!) {
+      claimDailyCoupon(templateId: $templateId) { status coupon { id code status } }
+    }`,
+    { templateId },
+  );
+  return data.claimDailyCoupon;
+}
+
+/** 神券日活动视图（匿名可查；无进行中场次返回 null，前端不渲染） */
+export async function getCouponFlashSaleActivity(): Promise<CouponFlashSaleActivityView | null> {
+  const client = resolveClient();
+  const data = await client.request<{ couponFlashSaleActivity: CouponFlashSaleActivityView | null }>(
+    `query CouponFlashSaleActivity {
+      couponFlashSaleActivity {
+        name subtitle rules startsAt endsAt perUserLimit
+        items { template { ${COUPON_TEMPLATE_FIELDS} } soldOut myClaimed }
+      }
+    }`,
+  );
+  return data.couponFlashSaleActivity ?? null;
+}
+
+/** 神券日抢券（登录）：时间窗硬拦 + 场次内限抢 + 原子限量；未登录返回 status=NOT_LOGGED_IN */
+export async function claimFlashCoupon(templateId: string): Promise<CouponFrFClaimResult> {
+  const client = resolveClient();
+  const data = await client.request<{ claimFlashCoupon: CouponFrFClaimResult }>(
+    `mutation ClaimFlashCoupon($templateId: ID!) {
+      claimFlashCoupon(templateId: $templateId) { status coupon { id code status } }
+    }`,
+    { templateId },
+  );
+  return data.claimFlashCoupon;
 }
 
 /** 创建出售单（templateId / bundleId 二选一），返回 PENDING 单 */

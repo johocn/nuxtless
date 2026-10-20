@@ -83,6 +83,9 @@ onMounted(async () => {
       </template>
     </OrderDetailRenderer>
 
+    <!-- 支付有礼提示卡（FR-F3：支付成功后展示一次；本店未配置不渲染） -->
+    <CouponStorePayGiftCard :order-id="order.id" :order-state="order.state" />
+
     <ScheduleBar :order-id="order.id" :schedule="schedule" @pay="openScheduleDialog" @refresh="onScheduleChanged" />
 
     <ScheduleDialog v-model:open="scheduleDialogOpen" :order-id="order.id" :seq="scheduleSeq" @paid="onScheduleChanged" />
