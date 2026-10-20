@@ -287,3 +287,13 @@
 - **过期提醒开关**：vendure 环境变量 `COUPON_EXPIRE_REMIND_MS`（默认 21600000=6h 扫一次，启动 30s 后首跑；设 0 关闭）。生产默认即启用，无需配置。
 - **公众号模板消息（增强通道，暂未启用）**：需在 strapi zhao-sso msg-center 配置 strapiBaseUrl/strapiAdminToken/wechatEnabled + `templateSceneMap.coupon_expire` 模板；未配置时 WechatNotifierProvider 返回 false 自动降级仅站内信。
 - **web-admin 核销看板**：券管理页顶部 KPI 升级为四指标（发放/核销/核销率/过期率）+ 时间筛选（全部/今日/近7天/近30天，按领取时间口径）；卡内「已使用」列显示核销量（核销率）。数据来自 admin `couponRedemptionStats` 查询（仅领券记录状态聚合，无埋点）。
+
+### 9.2 资金流结算运维（T1-T4 · 2026-10-20）
+
+> 设计与验收详见 `docs/billpay-settlement-plan.md`。链路：核销（出售券·到店）→ 待结算登记 → T+1 汇总出单 → stub/微信分账 → PAID_OUT。
+
+- **定时器**：vendure 环境变量 `COUPON_SETTLE_JOB_MS`（生产已启用 21600000=6h；设 0 关闭）。每轮自动执行：兜底补登 → 提交到期 PENDING（T+1 界线 = 今天零点前核销）→ 回执推进。
+- **分账模式**：`COUPON_SPLIT_MODE` 默认 `stub`（本地闭环模拟，受理即 FINISHED，生产可开用于对账演练）；**wechat 实联需合规书面结论（Q3.1/Q3.2）**，未配置前设 wechat 会让结算 job 直接报错（宁留重试队列不做假分账）。
+- **佣金费率**：`COUPON_SPLIT_COMMISSION_BP`（万分比，默认 0 = 平台暂不分佣；出单时烧录进结算单，后续调整不影响已出单）。
+- **结算范围**：仅**出售券**（customer_coupon.saleOrderId 非空）的到店核销（in_store_bill）登记结算；免费领/发放券不涉及分账。线上订单核销折算与退款追偿（T8）为后续任务。
+- **admin 运维入口**（切渠道上下文后调用）：`runCouponSettlementCycle { submitted promoted failed }` 手动触发；`couponSettlementOrders(options)` / `couponSettlementOrder(id)` 查结算单流水（channelId 强制隔离）；微信实联前 PAID_OUT 仅代表 stub 闭环完成，不代表真实资金动作。
