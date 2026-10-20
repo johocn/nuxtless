@@ -1052,5 +1052,8 @@ export default defineI18nLocale(() =>
       notFound: "Content not found or no longer available",
       knowledgeBase: "Knowledge content",
     },
+    couponMall: {
+      noticeText: "有効期限内に店頭でご利用ください。未使用のクーポンについては、カスタマーサービスまでお問い合わせください。",
+    },
   }),
 );

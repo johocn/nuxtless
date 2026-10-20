@@ -1087,5 +1087,8 @@ export default defineI18nLocale(() =>
       notFound: "Content not found or no longer available",
       knowledgeBase: "Knowledge content",
     },
+    couponMall: {
+      noticeText: "Veuillez utiliser ce bon en magasin avant la date d'expiration. Pour les bons non utilisés, contactez le service client.",
+    },
   }),
 );

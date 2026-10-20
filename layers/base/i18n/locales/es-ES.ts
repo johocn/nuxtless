@@ -1091,5 +1091,8 @@ export default defineI18nLocale(() =>
       notFound: "Content not found or no longer available",
       knowledgeBase: "Knowledge content",
     },
+    couponMall: {
+      noticeText: "Canjea este cupón en la tienda antes de la fecha de caducidad. Para cupones sin usar, contacta con atención al cliente.",
+    },
   }),
 );

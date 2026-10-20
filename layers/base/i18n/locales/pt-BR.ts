@@ -1079,5 +1079,8 @@ export default defineI18nLocale(() =>
       notFound: "Content not found or no longer available",
       knowledgeBase: "Knowledge content",
     },
+    couponMall: {
+      noticeText: "Utilize o cupom na loja antes da data de validade. Para cupões não utilizados, entre em contato com o atendimento.",
+    },
   }),
 );
