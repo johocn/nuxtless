@@ -311,3 +311,39 @@
 ![T5 对账台账](../shots/2026-10-20-t5-reconcile/01-reconcile-diffs.png)
 
 ![T5 结算单](../shots/2026-10-20-t5-reconcile/02-settlement-orders.png)
+
+### 9.4 台账页增强与退款联动（T6/T8/T9/T11 · 2026-10-20）
+
+**入口**：web-admin → 优惠券模块 → **结算对账**（`#/pages/coupon/settlements/index`）与 **出售单流水**（`#/pages/coupon/sale-orders/index`）。
+
+#### 分账配置态条（T9 · 进件状态预留）
+
+「结算单」tab 顶部常驻一条配置态：**分账模式**（`模拟闭环（stub）` / `微信实联`）+ **进件状态**（`未启动` / 审核中 / `APPROVED`）。数据来自 `couponSplitConfig` query 实时反映后端配置；微信实联上线前置 = 商户进件 + Q3.1/Q3.2 合规书面结论（`SPLIT_MODE=wechat` 未持结论时服务启动即拒绝，宁留重试队列不假分账）。
+
+![分账配置态条 + KPI 汇总卡](../shots/2026-10-20-t68911-ledger/02b-settlements-kpi.png)
+
+#### KPI 汇总卡（T11 · 看板口径 = 结算单）
+
+配置态条下方五格：**结算单总数 / 待结算 / 已分账 / 累计净付（元）/ 累计佣金（元）**。口径统一为**结算单**（非出售单、非核销流水）：出售券到店核销才登记 PENDING → T+1 cycle 提交 SETTLED → 回执 FINISHED 记已分账；免费/发放券不进结算。
+
+#### 凭证类型列（T6 · 发票凭证预留）
+
+结算单卡片新增 `voucherType` 字段展示，为后续「601 发票 / 消费凭证 / 佣金凭证」类型预留；当前存量单为空，默认不显示。
+
+#### 退款联动（T8）
+
+在 **出售单流水** 页对「已支付」单执行**退款**（填原因）后，结算单自动联动，无需人工干预：
+
+| 结算单状态 | 联动结果 |
+|---|---|
+| PENDING（未分账） | 直接 **CANCELLED**（取消登记） |
+| SETTLED / PAID_OUT（已分账） | 触发分账追偿 → **REVERSED**（行内可见 `reversedAt` 与追偿回执备注，stub 模式格式 `refund receipt STUB-REV-<结算单号>`） |
+
+- **业务边界**：已核销（USED）券不可退——真实时序下「先核销后退款」的竞争窗口期内退款成功才会触发上述联动；
+- **金额**：按出售单实付退，余额支付原路返还余额；微信支付走微信退款（实联后）；
+- **容错**：联动失败只记日志不阻断退款主流程，漏网结算单由「对账差异」tab 兜底暴露；
+- **验证记录**：生产端到端 10 断言全 PASS（Case A `PENDING→CANCELLED` / Case B `PAID_OUT→REVERSED`），详见 vendure 仓 `doc/2026-10-20-T8退款链路验证报告.md`（`d7cf85a7e`）。
+
+![出售单流水（状态筛选）](../shots/2026-10-20-t68911-ledger/03-sale-orders-refund.png)
+
+![手机视口 · 结算对账](../shots/2026-10-20-t68911-ledger/04-settlements-mobile.png)
