@@ -1051,5 +1051,8 @@ export default defineI18nLocale(() =>
       notFound: "Content not found or no longer available",
       knowledgeBase: "Knowledge content",
     },
+    couponMall: {
+      noticeText: "유효기간 내에 매장에서 사용해 주세요. 미사용 쿠폰은 고객센터로 문의해 주세요.",
+    },
   }),
 );

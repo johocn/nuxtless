@@ -1077,5 +1077,8 @@ export default defineI18nLocale(() =>
       notFound: "Content not found or no longer available",
       knowledgeBase: "Knowledge content",
     },
+    couponMall: {
+      noticeText: "Используйте купон в магазине до истечения срока действия. По неиспользованным купонам обращайтесь в службу поддержки.",
+    },
   }),
 );

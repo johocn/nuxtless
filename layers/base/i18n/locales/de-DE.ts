@@ -1094,5 +1094,8 @@ export default defineI18nLocale(() =>
       notFound: "Content not found or no longer available",
       knowledgeBase: "Knowledge content",
     },
+    couponMall: {
+      noticeText: "Bitte lösen Sie den Gutschein vor Ablauf im Geschäft ein. Wenden Sie sich bei ungenutzten Gutscheinen an den Kundenservice.",
+    },
   }),
 );

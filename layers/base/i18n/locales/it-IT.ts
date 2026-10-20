@@ -1081,5 +1081,8 @@ export default defineI18nLocale(() =>
       notFound: "Content not found or no longer available",
       knowledgeBase: "Knowledge content",
     },
+    couponMall: {
+      noticeText: "Utilizza il buono in negozio prima della scadenza. Per buoni non utilizzati, contatta il servizio clienti.",
+    },
   }),
 );

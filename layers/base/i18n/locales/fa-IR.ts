@@ -1078,5 +1078,8 @@ export default defineI18nLocale(() =>
       notFound: "Content not found or no longer available",
       knowledgeBase: "Knowledge content",
     },
+    couponMall: {
+      noticeText: "لطفاً کوپن را قبل از تاریخ انقضا در فروشگاه استفاده کنید. برای کوپن‌های استفاده‌نشده با پشتیبانی تماس بگیرید.",
+    },
   }),
 );
