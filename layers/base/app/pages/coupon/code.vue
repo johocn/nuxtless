@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { getMyCoupons } from "~~/layers/base/app/composables/useCoupon";
+import {
+  useMerchantStores,
+  type MerchantStoreView,
+} from "~~/layers/base/app/composables/useMerchantStores";
 
 definePageMeta({
   title: "券码",
@@ -22,6 +26,23 @@ const authExpiresAt = ref("");
 const authUsageScene = ref<"ONLINE" | "IN_STORE" | "ALL" | "">("");
 const authMinSpend = ref(0);
 const verified = ref(false);
+
+// 适用门店（到店券）：门店档案取自 pickupLocations(type='store')
+const merchantStores = useMerchantStores();
+const stores = ref<MerchantStoreView[]>([]);
+const storesLoading = ref(false);
+const showStores = computed(
+  () => verified.value && ["IN_STORE", "ALL"].includes(authUsageScene.value),
+);
+async function loadStores() {
+  if (!showStores.value) return;
+  storesLoading.value = true;
+  try {
+    stores.value = await merchantStores.load();
+  } finally {
+    storesLoading.value = false;
+  }
+}
 
 const qrDataUrl = ref("");
 onMounted(async () => {
@@ -47,6 +68,8 @@ onMounted(async () => {
   } catch {
     // 未登录/网络失败：保留 query 占位展示（核销以后端为准）
   }
+  // 到店券：核销前先确认可核销门店（电话/营业时间/导航）
+  await loadStores();
   try {
     const QRCode = (await import("qrcode")).default;
     qrDataUrl.value = await QRCode.toDataURL(code.value, { width: 420, margin: 1 });
@@ -139,6 +162,15 @@ const expiresText = computed(() => {
       <p v-else class="mt-8 text-center text-sm leading-relaxed text-(--ui-text-muted)">
         {{ t("messages.coupon.codeTip") }}
       </p>
+
+      <!-- 适用门店（到店券）：含电话/营业时间，点击门店卡看商户详情与导航 -->
+      <div v-if="showStores" class="mt-6 w-full border-t border-(--ui-border) pt-4">
+        <MerchantStoreList
+          :stores="stores"
+          :loading="storesLoading"
+          :limit="2"
+        />
+      </div>
     </div>
   </main>
 </template>
