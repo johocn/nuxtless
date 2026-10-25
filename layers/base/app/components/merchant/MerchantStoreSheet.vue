@@ -41,7 +41,7 @@ function navigateToStore() {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="store?.name">
+  <UModal v-model:open="open" :title="store?.name" :ui="{ overlay: 'z-[80]' }">
     <template #body>
       <div v-if="store" class="space-y-4">
         <div class="flex flex-wrap items-center gap-2 text-[11px]">

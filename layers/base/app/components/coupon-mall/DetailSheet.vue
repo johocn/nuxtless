@@ -8,6 +8,10 @@ import {
   couponAnchorYuan,
 } from "../../utils/coupon-mall";
 import { couponYuan, couponTemplateMap, couponBundleItems } from "../../utils/coupon";
+import {
+  useMerchantStores,
+  type MerchantStoreView,
+} from "~~/layers/base/app/composables/useMerchantStores";
 
 /**
  * 券商城：券详情弹层（图文混排介绍/适用范围/使用信息/购买须知）。
@@ -122,6 +126,37 @@ const displayPrice = computed(() => promo.value?.yuan ?? couponYuan(baseFen.valu
 const studentGuide = computed(
   () => Number(props.tpl?.studentPrice ?? 0) > 0 && props.promo?.studentApproved !== true,
 );
+
+// ── 适用门店（到店券）：单券且到店/通用场景展示；弹层打开时按定位取 pickupLocations 门店档案 ──
+const merchantStores = useMerchantStores();
+const stores = ref<MerchantStoreView[]>([]);
+const storesLoading = ref(false);
+const showStores = computed(
+  () =>
+    !props.bundle &&
+    !!props.tpl &&
+    ["IN_STORE", "ALL"].includes(String(props.tpl.usageScene ?? "")),
+);
+watch(
+  () => [props.open, props.tpl?.id ?? "", props.bundle?.id ?? ""] as const,
+  ([open]) => {
+    if (!open) {
+      stores.value = [];
+      return;
+    }
+    if (!showStores.value) return;
+    storesLoading.value = true;
+    merchantStores
+      .load()
+      .then((list) => {
+        stores.value = list;
+      })
+      .finally(() => {
+        storesLoading.value = false;
+      });
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -188,6 +223,14 @@ const studentGuide = computed(
         <span class="pill">{{ scopeAll ? t("messages.couponMall.scopeAll") : t("messages.couponMall.scopeLimited") }}</span>
         <span class="pill">{{ tpl.usageScene === "IN_STORE" ? t("messages.coupon.sceneStore") : t("messages.coupon.sceneOnline") }}</span>
       </div>
+
+      <!-- 适用门店（到店券）：门店卡含电话/营业时间，点击查看商户详情与导航 -->
+      <MerchantStoreList
+        v-if="showStores"
+        :stores="stores"
+        :loading="storesLoading"
+        :limit="2"
+      />
 
       <span class="sec">{{ t("messages.couponMall.secUsage") }}</span>
       <div class="usage">
