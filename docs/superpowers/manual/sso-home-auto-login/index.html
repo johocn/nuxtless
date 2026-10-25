@@ -28,7 +28,7 @@
   <ul>
     <li>仅触发条件：客户端 + 微信内置浏览器（UA 含 <code>MicroMessenger</code>）+ 当前未登录。</li>
     <li>已登录、非微信、或桌面浏览器访问首页：不做任何自动跳转，正常浏览。</li>
-    <li>一次会话只自动跳一次（<code>youshop_sso_auto_jumped</code>），避免循环打断浏览；失败则停留首页，不无限重试。</li>
+    <li>一次会话只自动跳一次（<code>youshop_sso_auto_jumped</code>），避免循环打断浏览；<b>拉取提供商失败/超时</b>时会清除该标记并撤掉遮罩，停在首页可正常浏览，同一会话再次进入仍会重新尝试（见第八节）。</li>
   </ul>
 
   <h2>二、实现链路</h2>
@@ -88,5 +88,28 @@
     <figure style="margin:0;width:48%;"><img class="shot" style="width:100%;display:block;" src="shots/sso-fix-B-unified.png" alt="场景B 统一登录页" /><figcaption style="font-size:12px;color:#666;">场景 B：详情页带 invite 自动跳统一页</figcaption></figure>
     <figure style="margin:0;width:48%;"><img class="shot" style="width:100%;display:block;" src="shots/sso-fix-B-detail-final.png" alt="场景B 回跳详情页" /><figcaption style="font-size:12px;color:#666;">场景 B：登录后直达原详情页（invite 保留）</figcaption></figure>
   </div>
+
+  <h2>八、健壮性修复：接口故障时遮罩卡死 + 同会话可重试（2026-10-25 更新）</h2>
+  <div class="note"><b>故障现象（本次线上故障期间实测）：</b>微信内打开首页偶发长时间停在「星枢正在为您护航…」品牌遮罩，首页内容完全无法浏览，只能杀进程重进。根因是 <code>useAutoWechatSsoLogin.run()</code> 直接 <code>await getRedirectProvider()</code>，而底层 <code>fetchProviders()</code> 既无 try/catch 也无超时——接口 502/断网时 <code>run()</code> 抛错或永久挂起，<code>pending</code> 标志永不复位，<code>SsoAwaitOverlay</code> 就永久盖住首页；同时 <code>AUTO_JUMP_KEY</code> 在整个 session 内只允许跳一次，首次失败后同 session 不再重试。</div>
+  <p><b>修复（<code>layers/base/app/composables/useAutoWechatSsoLogin.ts</code>）：</b></p>
+  <ul>
+    <li><code>run()</code> 全程 <code>try/catch/finally</code>：只有<b>确实发起了跳转</b>才保持遮罩到页面离开，其余任何分支都在 <code>finally</code> 复位 <code>pending</code>；</li>
+    <li><code>getRedirectProvider()</code> 外包 <code>withTimeout(…, 10s)</code>：网络挂起时 10 秒后放弃本轮跳转并撤罩，不再永久遮挡；</li>
+    <li>拉取失败时 <code>sessionStorage.removeItem(AUTO_JUMP_KEY)</code>：同一会话下次进入仍会重试，等接口恢复即可自动登录；</li>
+    <li>启动预取加 <code>.catch()</code>：失败只 <code>console.warn</code>，不产生 unhandledRejection，也不影响后续实时拉取。</li>
+  </ul>
+  <p><b>验证方式：</b>Playwright 手机视口（390×844，dpr=2）+ 微信 UA（<code>MicroMessenger</code>），用路由拦截屏蔽所有 <code>shop-api</code> 请求，模拟两种线上故障：<code>fail</code>（请求立即中断，等价 502/断网）与 <code>hang</code>（请求永不返回，等价网络挂起）。</p>
+  <table>
+    <tr><th>场景</th><th>预期</th><th>实测结果</th></tr>
+    <tr><td>fail：接口全部中断</td><td>遮罩最多短暂出现，随即撤掉，首页正常展示</td><td><span class="ok">通过</span>：1.2s 时即无遮罩，13.2s 后仍无；日志 <code>[sso] 微信自动登录跳过（provider 拉取失败）</code> + <code>[sso] provider 预取失败</code>，无 unhandledRejection</td></tr>
+    <tr><td>hang：接口永不响应</td><td>遮罩出现 → 10s 超时后自动撤掉，首页可浏览</td><td><span class="ok">通过</span>：1.2s 遮罩在（overlay=1），13.2s 遮罩已撤（overlay=0）</td></tr>
+    <tr><td>同 session 二次进入（故障仍在）</td><td><code>AUTO_JUMP_KEY</code> 已被清除，重新尝试并重新显示遮罩，不会「一次失败即整场放弃」</td><td><span class="ok">通过</span>：重进页面 1.2s 时遮罩重新出现（overlay=1）</td></tr>
+  </table>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <figure style="margin:0;width:31%;"><img class="shot" style="width:100%;display:block;" src="shots/sso-overlay-hang-t1-early.png" alt="hang 模式 1.2s 遮罩在" /><figcaption style="font-size:12px;color:#666;">hang：1.2s 遮罩在（等待提供商）</figcaption></figure>
+    <figure style="margin:0;width:31%;"><img class="shot" style="width:100%;display:block;" src="shots/sso-overlay-hang-t2-after-timeout.png" alt="hang 模式超时后首页可见" /><figcaption style="font-size:12px;color:#666;">hang：13.2s 超时撤罩，首页可浏览</figcaption></figure>
+    <figure style="margin:0;width:31%;"><img class="shot" style="width:100%;display:block;" src="shots/sso-overlay-fail-t1-early.png" alt="fail 模式直接落首页" /><figcaption style="font-size:12px;color:#666;">fail：接口中断直接落首页（无卡死）</figcaption></figure>
+  </div>
+  <p><span class="ok">部署</span>：本地 <code>pnpm build</code> → <code>SKIP_BUILD=1 node scripts/deploy.mjs</code>（nshop <code>pm2 online</code>，首页 200，线上产物已含修复标记 <code>[sso] 微信自动登录跳过</code>）。</p>
 </body>
 </html>
