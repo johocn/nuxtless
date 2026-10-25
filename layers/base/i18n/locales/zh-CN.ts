@@ -20,15 +20,15 @@ export const zhMessages = {
     callbackProcessing: '正在完成登录并返回页面…',
   },
   site: {
-      // 品牌名与国际化 tagline 保留英文（非 UI 操作文案）
+      // 品牌名 You Shop，中文 slogan「为你而选」（非 UI 操作文案）
       title: "优商铺",
       // 微信转发兜底默认描述（租户未配置 shopIntro 时使用）
       shareDesc: "youshop.cn一站式专家购物，跨境优选，私人订制。",
-      tagline: "Nuxt Level Headless E-commerce",
+      tagline: "为你而选",
       shortDescription:
-        "A modern, fast, and secure foundation for building headless online stores with Nuxt and Vendure.",
+        "You Shop 为你而选 —— 粮油面粉食用油等家庭食材优选商城。",
       description:
-        "Nuxtless is a flexible and modular starter project for headless e-commerce, designed for high performance, excellent SEO, and clean architecture. It offers ready integrations with Vendure, Nuxt UI, and Payload, type-safe code, and professional security practices — a solid foundation for any professional online store.",
+        "You Shop 为你而选：精选面粉、食用油、大米等家庭食材，源头可溯、品质优选，支持邮寄配送，家庭常备一站买齐。",
     },
     nav: {
       back: '返回',

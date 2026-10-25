@@ -22,11 +22,11 @@ export default defineI18nLocale(() =>
     site: {
       title: "youshop.cn",
       shareDesc: "youshop.cn — one-stop expert shopping, curated cross-border picks, made to order.",
-      tagline: "Nuxt Level Headless E-commerce",
+      tagline: "Chosen for You",
       shortDescription:
-        "A modern, fast, and secure foundation for building headless online stores with Nuxt and Vendure.",
+        "You Shop — a curated store for flour, cooking oil, rice and everyday pantry staples.",
       description:
-        "Nuxtless is a flexible and modular starter project for headless e-commerce, designed for high performance, excellent SEO, and clean architecture. It offers ready integrations with Vendure, Nuxt UI, and Payload, type-safe code, and professional security practices — a solid foundation for any professional online store.",
+        "You Shop curates flour, cooking oil, rice and everyday pantry staples, sourced from trusted mills and delivered to your door.",
     },
     nav: {
       back: "Back",
