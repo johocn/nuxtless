@@ -13,7 +13,8 @@ const { content } = await useHomeContent();
 const slides = computed(() => {
   const configured = (props.section?.images ?? []).filter((im) => !!im?.image);
   if (configured.length) {
-    return configured.map((im, i) => ({ imageUrl: im.image, link: im.link, title: `slide-${i}` }));
+    // 装修图自带文案，不再注入 slide-N 占位标题（会渲染成遮挡画面的灰色胶囊）
+    return configured.map((im) => ({ imageUrl: im.image, link: im.link, title: "" }));
   }
   return (content.value ?? [])
     .map((b) => b.data ?? {})

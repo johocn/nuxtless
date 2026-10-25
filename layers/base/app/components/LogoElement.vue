@@ -3,10 +3,12 @@ const {
   logoLight = "/logo-full.svg",
   logoDark = "/logo-full.svg",
   wrapperClass = "w-full",
+  alt = "Site Logo",
 } = defineProps<{
   logoLight?: string;
   logoDark?: string;
   wrapperClass?: string;
+  alt?: string;
 }>();
 </script>
 
@@ -15,7 +17,7 @@ const {
     <UColorModeImage
       :light="logoLight"
       :dark="logoDark"
-      alt="Site Logo"
+      :alt="alt"
     />
   </div>
 </template>

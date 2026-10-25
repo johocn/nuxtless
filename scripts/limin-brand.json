@@ -1,0 +1,34 @@
+{
+  "tenant": {
+    "code": "limin",
+    "token": "official-20"
+  },
+  "store": {
+    "name": "东利民粮油店",
+    "logo": "/brands/limin/logo.svg",
+    "intro": "只做米、面、油 · 丰满区江南城区免费送货上门 · 货到付款",
+    "phone": "",
+    "address": "丰满区江南城区 · 兴隆街（门牌待补）",
+    "hours": "06:30 – 19:30 全年无休",
+    "delivery": "江南城区 6 个小区，免费送到家",
+    "settlement": "货到付款 · 验货再付钱"
+  },
+  "theme": {
+    "scheme": "limin-gold",
+    "name": "稻金",
+    "primaryColor": "#A87A2E",
+    "accentColor": "#C8A24A",
+    "radius": 6
+  },
+  "home": {
+    "promise": "12:00前下单当日达 · 江南城区免费送 · 货到付款",
+    "hero": "/brands/limin/hero.svg",
+    "report": "/brands/limin/report.svg",
+    "warehouse": "/brands/limin/warehouse.jpg",
+    "nav": [
+      { "label": "大米", "image": "/brands/limin/nav-rice.svg", "link": "/category/rice" },
+      { "label": "面粉", "image": "/brands/limin/nav-flour.svg", "link": "/category/flour" },
+      { "label": "食用油", "image": "/brands/limin/nav-oil.svg", "link": "/category/oil" }
+    ]
+  }
+}

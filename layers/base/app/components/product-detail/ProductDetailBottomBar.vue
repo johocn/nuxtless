@@ -49,7 +49,8 @@ function goBack() {
       <div class="flex flex-1 items-center gap-2 px-2 py-2.5">
         <UButton
           class="min-w-0 flex-1 justify-center text-[0.9375rem] whitespace-nowrap"
-          color="secondary"
+          color="primary"
+          variant="outline"
           size="lg"
           :loading="loading"
           :disabled="!productServiceable || !canBuy"

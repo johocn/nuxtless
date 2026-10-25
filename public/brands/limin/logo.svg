@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 208 80" width="208" height="80" role="img" aria-label="东利民粮油店">
+  <rect x="2" y="5" width="70" height="70" rx="5" fill="none" stroke="#A6402F" stroke-width="4"/>
+  <rect x="8" y="11" width="58" height="58" rx="2" fill="none" stroke="#A6402F" stroke-width="1" opacity=".45"/>
+  <text x="37" y="55" text-anchor="middle" font-family="Songti SC, SimSun, serif" font-size="38" font-weight="600" fill="#A6402F">粮</text>
+  <text x="82" y="40" font-family="Songti SC, SimSun, serif" font-size="34" font-weight="600" letter-spacing="1" fill="#2E2721">东利民</text>
+  <text x="84" y="65" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="16" letter-spacing="1" fill="#6C5E4C">粮油店 · 米面油</text>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" role="img" aria-label="大米">
+  <circle cx="48" cy="48" r="46" fill="#FBF7EE" stroke="#E2D6BE" stroke-width="2"/>
+  <g fill="none" stroke="#A87A2E" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 52h52c0 15-11 24-26 24S22 67 22 52Z"/>
+    <path d="M35 44c0-8 6-13 13-13s13 5 13 13"/>
+  </g>
+  <g fill="#A87A2E">
+    <circle cx="34" cy="60" r="2.4"/><circle cx="48" cy="65" r="2.4"/><circle cx="62" cy="60" r="2.4"/>
+  </g>
+</svg>

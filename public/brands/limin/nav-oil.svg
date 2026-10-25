@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" role="img" aria-label="食用油">
+  <circle cx="48" cy="48" r="46" fill="#FBF7EE" stroke="#E2D6BE" stroke-width="2"/>
+  <g fill="none" stroke="#A87A2E" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M40 22h16v10l8 10v30a4 4 0 0 1-4 4H36a4 4 0 0 1-4-4V42l8-10Z"/>
+    <path d="M34 52h28"/>
+    <path d="M44 22v-4h8v4"/>
+  </g>
+</svg>

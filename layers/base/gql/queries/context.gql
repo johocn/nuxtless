@@ -27,7 +27,9 @@ query GetChannelTheme {
       serviceSchemes
       shareImageUrl
       shopName
+      shopLogo
       shopIntro
+      servicePhone
       storefrontMode
       storefrontHomeLayout
       couponFloorGroups
