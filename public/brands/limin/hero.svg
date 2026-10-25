@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 420" width="750" height="420" role="img" aria-label="一袋米的事，交给我们">
+  <rect width="750" height="420" fill="#F5EFE2"/>
+  <rect x="14" y="14" width="722" height="392" fill="none" stroke="#E2D6BE" stroke-width="1.5"/>
+  <rect x="22" y="22" width="706" height="376" fill="none" stroke="#C8A24A" stroke-width="1" opacity=".55"/>
+
+  <text x="56" y="96" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="15" letter-spacing="3" fill="#A87A2E">吉林省吉林市 · 江南城区</text>
+  <text x="56" y="170" font-family="Songti SC, SimSun, serif" font-size="54" font-weight="600" letter-spacing="2" fill="#2E2721">一袋米的事，</text>
+  <text x="56" y="238" font-family="Songti SC, SimSun, serif" font-size="54" font-weight="600" letter-spacing="2" fill="#2E2721">交给我们</text>
+  <text x="58" y="286" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="18" letter-spacing="1" fill="#6C5E4C">不拼价格，只保证送得到、看得见、算得清</text>
+
+  <g font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="14">
+    <rect x="56" y="318" width="152" height="46" rx="4" fill="#FBF7EE" stroke="#E2D6BE"/>
+    <text x="132" y="347" text-anchor="middle" fill="#2E2721">12:00 前下单 当日达</text>
+    <rect x="220" y="318" width="168" height="46" rx="4" fill="#FBF7EE" stroke="#E2D6BE"/>
+    <text x="304" y="347" text-anchor="middle" fill="#2E2721">江南城区免费送上门</text>
+    <rect x="400" y="318" width="128" height="46" rx="4" fill="#FBF7EE" stroke="#E2D6BE"/>
+    <text x="464" y="347" text-anchor="middle" fill="#2E2721">货到付款</text>
+  </g>
+
+  <g stroke="#A87A2E" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M556 128h108c10 0 18 8 18 18v152c0 10-8 18-18 18H556c-10 0-18-8-18-18V146c0-10 8-18 18-18Z" fill="#FBF7EE"/>
+    <path d="M538 160c26 10 54 10 80 0 26-10 54-10 64 0"/>
+    <path d="M520 196c14-8 32-8 46 0"/>
+    <path d="M612 128l10-26 30 8-6 18"/>
+  </g>
+  <rect x="578" y="200" width="64" height="80" rx="4" fill="#F5EFE2" stroke="#A6402F" stroke-width="2.4"/>
+  <text x="610" y="252" text-anchor="middle" font-family="Songti SC, SimSun, serif" font-size="34" font-weight="600" fill="#A6402F">粮</text>
+  <g fill="#C8A24A">
+    <circle cx="556" cy="318" r="4"/><circle cx="578" cy="336" r="4"/><circle cx="600" cy="316" r="4"/>
+    <circle cx="622" cy="340" r="4"/><circle cx="644" cy="318" r="4"/><circle cx="666" cy="338" r="4"/>
+  </g>
+  <text x="616" y="378" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="13" letter-spacing="4" fill="#A87A2E">只卖米面油</text>
+</svg>

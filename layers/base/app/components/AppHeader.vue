@@ -7,6 +7,16 @@ const { logoTop } = useAppConfig();
 const route = useRoute();
 const localePath = useTenantLocalePath();
 
+// 店铺品牌：渠道装修字段优先（多租户店招不同），未配置回退全局 logo。
+// useThemeConfig 的 useAsyncData key 固定，与 app.vue 复用同一份 GetChannelTheme 数据。
+const { channelCfs } = useThemeConfig();
+const brandLogo = computed(
+  () => (channelCfs.value?.shopLogo as string | undefined) || logoTop.light,
+);
+const brandName = computed(
+  () => (channelCfs.value?.shopName as string | undefined) || "Home",
+);
+
 const menuCollections = useState<MenuCollections>("menuCollections");
 // 券店模式：头部精简（无分类导航/搜索/购物车），保留 Logo、城市/租户选择器、AccountMenu
 const { isCouponStore } = useStorefrontMode();
@@ -46,12 +56,13 @@ const items = computed<NavigationMenuItem[]>(
       <ULink
         :to="localePath('/')"
         class="transition-opacity hover:opacity-80"
-        aria-label="Home"
+        :aria-label="brandName"
       >
         <LogoElement
-          :logo-light="logoTop.light"
-          :logo-dark="logoTop.dark"
-          wrapper-class="w-[96px] shrink-0 h-[40px] md:w-[128px] md:h-[50px]"
+          :logo-light="brandLogo"
+          :logo-dark="brandLogo"
+          :alt="brandName"
+          wrapper-class="w-[104px] shrink-0 h-[40px] md:w-[136px] md:h-[52px]"
         />
       </ULink>
     </template>
