@@ -8,9 +8,14 @@ query GetPickupLocations($type: String, $lat: Float, $lng: Float) {
     province
     city
     district
+    street
+    contactPerson
     phoneNumber
     businessHours
     coordinates
+    partner
+    photos
+    remark
   }
 }
 

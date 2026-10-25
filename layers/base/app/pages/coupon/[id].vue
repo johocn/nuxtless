@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { getCouponSaleCatalogue } from "~~/layers/base/app/composables/useCoupon";
 import {
+  useMerchantStores,
+  type MerchantStoreView,
+} from "~~/layers/base/app/composables/useMerchantStores";
+import {
   saleCardProgress,
   formatCouponDiscount,
   couponSavingsExample,
@@ -176,6 +180,24 @@ const flowSteps = computed(() =>
       ]
     : [],
 );
+
+// ── 适用门店（到店消费）：只对到店券展示；门店数据由 useMerchantStores 统一取（pickupLocations store 档案） ──
+const merchantStores = useMerchantStores();
+const stores = ref<MerchantStoreView[]>([]);
+const storesLoading = ref(false);
+const showStores = computed(
+  () => !isBundle.value && ["IN_STORE", "ALL"].includes(String(tpl.value?.usageScene ?? "")),
+);
+async function loadStores() {
+  if (!showStores.value) return;
+  storesLoading.value = true;
+  try {
+    stores.value = await merchantStores.load();
+  } finally {
+    storesLoading.value = false;
+  }
+}
+onMounted(loadStores);
 
 // ── 购买链路（复用券店/券商城共享流程） ──
 const {
@@ -381,6 +403,14 @@ if (import.meta.server && shareCardSrc.value) {
           </span>
           <span v-else-if="!isBundle" class="scope-pill">{{ t("messages.coupon.noThreshold") }}</span>
         </div>
+
+        <!-- 适用门店（到店消费）：门店卡含电话/营业时间，点击看商户详情与导航 -->
+        <MerchantStoreList
+          v-if="showStores"
+          :stores="stores"
+          :loading="storesLoading"
+          :limit="3"
+        />
 
         <!-- 使用信息（有效期/限购/券包内容） + 三步流程，与 DetailSheet 同分区 -->
         <span class="sec">{{ t("messages.couponMall.secUsage") }}</span>
