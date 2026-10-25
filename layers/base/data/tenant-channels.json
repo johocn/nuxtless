@@ -1,6 +1,21 @@
 {
   "tenants": [
     {
+      "code": "canteen-a",
+      "token": "canteen-a-token",
+      "name": "canteen-a"
+    },
+    {
+      "code": "canteen-b",
+      "token": "canteen-b-token",
+      "name": "canteen-b"
+    },
+    {
+      "code": "limin",
+      "token": "official-20",
+      "name": "You Shop"
+    },
+    {
       "code": "official-01",
       "token": "official-1",
       "name": "官方自营01"
@@ -96,11 +111,6 @@
       "name": "官方自营19"
     },
     {
-      "code": "official-20",
-      "token": "official-20",
-      "name": "官方自营20"
-    },
-    {
       "code": "t1",
       "token": "a6fn474hhiqasmyiyrfl",
       "name": "新生"
@@ -113,7 +123,7 @@
     {
       "code": "t3",
       "token": "jmjobmq5lak9o50kevf",
-      "name": "陈记烘焙馆·手机版"
+      "name": "代买单服务店"
     },
     {
       "code": "test-marketplace-shop",
