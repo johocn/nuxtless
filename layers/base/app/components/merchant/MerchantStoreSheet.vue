@@ -19,8 +19,15 @@ const stateLabel = computed(() => {
   if (props.store?.isOpenNow == null) return "";
   return props.store.isOpenNow ? t("messages.merchantStore.openNow") : t("messages.merchantStore.closedNow");
 });
-const canNavigate = computed(() =>
-  !!props.store?.coords && nav.hasCoords({ name: props.store.name, coordinates: props.store.coords } as any),
+/** 有坐标或有地址都可导航（无坐标时高德按地址搜索） */
+const canNavigate = computed(
+  () =>
+    !!props.store &&
+    nav.buildNavigationUri({
+      name: props.store.name,
+      coordinates: props.store.coords,
+      address: props.store.address,
+    }) !== null,
 );
 
 function callStore() {
@@ -30,18 +37,22 @@ function callStore() {
 }
 
 function navigateToStore() {
-  if (!props.store || typeof window === "undefined") return;
-  const uri = nav.buildNavigationUri({ name: props.store.name, coordinates: props.store.coords } as any);
+  if (!props.store) return;
+  const uri = nav.buildNavigationUri({
+    name: props.store.name,
+    coordinates: props.store.coords,
+    address: props.store.address,
+  });
   if (!uri) {
     toast.add({ title: t("messages.merchantStore.noCoords"), color: "error" });
     return;
   }
-  window.open(uri, "_blank");
+  nav.openNavigation(uri);
 }
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="store?.name" :ui="{ overlay: 'z-[80]' }">
+  <UModal v-model:open="open" :title="store?.name">
     <template #body>
       <div v-if="store" class="space-y-4">
         <div class="flex flex-wrap items-center gap-2 text-[11px]">
@@ -51,10 +62,22 @@ function navigateToStore() {
         </div>
 
         <div class="flex flex-col gap-2 text-[13px] leading-relaxed">
-          <div class="row">
+          <!-- 地址整行可点：直接跳地图，不必先找底部按钮。
+               不能用 disabled（disabled 在 H5 下文字变灰且不发 click），无坐标时点击给 toast 提示 -->
+          <button
+            type="button"
+            class="row addr"
+            :class="{ 'addr-link': canNavigate }"
+            @click="navigateToStore"
+          >
             <UIcon name="i-lucide-map-pin" class="mt-0.5 size-4 flex-none text-(--ui-text-muted)" />
-            <span class="min-w-0">{{ store.address }}</span>
-          </div>
+            <span class="min-w-0 flex-1 text-left">{{ store.address }}</span>
+            <UIcon
+              v-if="canNavigate"
+              name="i-lucide-navigation"
+              class="mt-0.5 size-3.5 flex-none text-(--ui-primary)"
+            />
+          </button>
           <div v-if="store.businessHours" class="row">
             <UIcon name="i-lucide-clock" class="mt-0.5 size-4 flex-none text-(--ui-text-muted)" />
             <span class="min-w-0">{{ t("messages.merchantStore.hours") }} {{ store.businessHours }}</span>
@@ -101,7 +124,7 @@ function navigateToStore() {
             class="flex-1"
             icon="i-lucide-navigation"
             :label="t('messages.merchantStore.navigate')"
-            :disabled="!canNavigate"
+            :disabled="!store.address && !canNavigate"
             @click="navigateToStore"
           />
         </div>
@@ -115,6 +138,19 @@ function navigateToStore() {
   display: flex;
   align-items: flex-start;
   gap: 8px;
+}
+.addr {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+}
+.addr-link {
+  cursor: pointer;
+}
+.addr-link:active {
+  color: var(--ui-primary);
 }
 .tag {
   border: 1px solid var(--ui-border);
