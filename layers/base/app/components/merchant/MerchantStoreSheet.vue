@@ -33,6 +33,8 @@ const canNavigate = computed(
 function callStore() {
   const phone = props.store?.phoneNumber;
   if (!phone || typeof window === "undefined") return;
+  // 桌面浏览器无拨号器，tel: 不会产生任何可见反馈；先给 toast 说明号码，移动端再交给系统拨号
+  toast.add({ title: t("messages.merchantStore.call"), description: phone });
   window.location.href = `tel:${phone}`;
 }
 
