@@ -14,6 +14,8 @@ const CHANNEL_THEME_SSR_QUERY = `query GetChannelThemeSsr {
       serviceSchemes
       shareImageUrl
       shopName
+      shopLogo
+      billPayStoreImage
       shopIntro
       storefrontMode
       storefrontHomeLayout

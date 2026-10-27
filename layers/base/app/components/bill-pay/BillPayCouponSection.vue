@@ -12,6 +12,21 @@ import { localizeText } from "~~/layers/base/app/utils/detail-config";
  * 目录取 scene=IN_STORE（渠道隔离），SSR 预取（useAsyncData），失败静默降级为空态。
  */
 const { t, locale } = useI18n();
+// enabled 默认 true 兼容既有调用点；买单首页按 billPayConfig.couponEnabled 门控
+const props = withDefaults(defineProps<{ enabled?: boolean }>(), { enabled: true });
+const localePath = useTenantLocalePath();
+// 租户照片：渠道装修字段（billPayStoreImage 专用门店照片 → shareImageUrl 分享图 → shopLogo 头像 → 店名首字）
+const { customFields } = useChannelTheme();
+const tenantName = computed(() => String(customFields.value?.shopName ?? "").trim());
+const tenantLogo = computed(() => String(customFields.value?.shopLogo ?? "").trim());
+const tenantPhoto = computed(
+  () =>
+    String(customFields.value?.billPayStoreImage ?? "").trim() ||
+    String(customFields.value?.shareImageUrl ?? "").trim() ||
+    tenantLogo.value,
+);
+const tenantInitial = computed(() => (tenantName.value || "店").slice(0, 1));
+const photoFailed = ref(false);
 
 const { data: catalogue } = useAsyncData(
   "billpay-self-coupon",
@@ -63,7 +78,7 @@ function cardPromo(tpl: any): { yuan: string; kind: "firstBuy" | "student" } | n
 </script>
 
 <template>
-  <section class="self-section">
+  <section v-if="props.enabled" class="self-section">
     <div class="head">
       <span class="ico" aria-hidden="true">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -75,6 +90,8 @@ function cardPromo(tpl: any): { yuan: string; kind: "firstBuy" | "student" } | n
         <div class="tt">{{ t("messages.billpay.selfTitle") }}</div>
         <div class="ss">{{ t("messages.billpay.selfSub") }}</div>
       </div>
+      <!-- 买完知道去哪出示/查看：直达券包页（当前券包路由不支持 tab query，按整页进入） -->
+      <NuxtLink :to="localePath('/coupon')" class="wallet-link">{{ t("messages.billpay.myBillPayCoupons") }}</NuxtLink>
     </div>
 
     <!-- 有券：横滑推荐位（点卡 → 详情弹层直购） -->
@@ -84,6 +101,24 @@ function cardPromo(tpl: any): { yuan: string; kind: "firstBuy" | "student" } | n
         class="ccard" :class="{ soldout: soldOut(tpl) }"
         @click="openDetail(tpl)"
       >
+        <!-- 店铺封面卡：租户门头图/店招 + logo 叠加，空则店名首字兜底 -->
+        <div class="thumb">
+          <img
+            v-if="tenantPhoto && !photoFailed"
+            :src="tenantPhoto"
+            :alt="tenantName"
+            class="thumb-img"
+            loading="lazy"
+            decoding="async"
+            @error="photoFailed = true"
+          >
+          <div v-else class="thumb-fb" aria-hidden="true">{{ tenantInitial }}</div>
+          <span v-if="tenantLogo" class="thumb-logo">
+            <img :src="tenantLogo" :alt="tenantName" loading="lazy" decoding="async">
+          </span>
+          <span v-else class="thumb-logo thumb-logo-txt" aria-hidden="true">{{ tenantInitial }}</span>
+        </div>
+        <div v-if="tenantName" class="shop">{{ tenantName }}</div>
         <div class="deal">{{ dealText(tpl) }}</div>
         <div class="nm">{{ tplName(tpl) }}</div>
         <div class="price">
@@ -130,6 +165,8 @@ function cardPromo(tpl: any): { yuan: string; kind: "firstBuy" | "student" } | n
 <style scoped>
 .self-section { border: 1px solid var(--ui-border); border-radius: 12px; background: var(--ui-bg); padding: 12px; }
 .head { display: flex; align-items: center; gap: 8px; }
+.ht { flex: 1 1 auto; min-width: 0; }
+.wallet-link { flex: none; font-size: 12px; font-weight: 600; color: var(--ui-primary); white-space: nowrap; }
 .ico { flex: none; width: 30px; height: 30px; border-radius: 8px; background: color-mix(in oklab, var(--ui-primary) 12%, transparent); color: var(--ui-primary); display: flex; align-items: center; justify-content: center; }
 .tt { font-size: 14px; font-weight: 700; color: var(--ui-text); }
 .ss { margin-top: 1px; font-size: 12px; color: var(--ui-text-muted); }
@@ -137,6 +174,13 @@ function cardPromo(tpl: any): { yuan: string; kind: "firstBuy" | "student" } | n
 .crow::-webkit-scrollbar { display: none; }
 .ccard { flex: none; width: 104px; text-align: left; border: 1px solid var(--ui-border); border-radius: 10px; padding: 8px; background: var(--ui-bg); cursor: pointer; }
 .ccard.soldout { opacity: .55; }
+.thumb { position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; background: var(--ui-bg-muted); }
+.thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-fb { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: var(--ui-text-muted); }
+.thumb-logo { position: absolute; left: 4px; bottom: 4px; width: 20px; height: 20px; border-radius: 999px; overflow: hidden; border: 2px solid var(--ui-bg); background: var(--ui-bg-elevated); display: flex; align-items: center; justify-content: center; }
+.thumb-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-logo-txt { font-size: 10px; font-weight: 700; color: var(--ui-primary); }
+.shop { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--ui-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .deal { font-size: 15px; font-weight: 800; color: var(--ui-primary); white-space: nowrap; }
 .nm { margin-top: 2px; font-size: 12px; color: var(--ui-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .price { margin-top: 3px; font-size: 12px; font-weight: 600; color: var(--ui-text); display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }

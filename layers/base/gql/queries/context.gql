@@ -28,6 +28,7 @@ query GetChannelTheme {
       shareImageUrl
       shopName
       shopLogo
+      billPayStoreImage
       shopIntro
       servicePhone
       storefrontMode
