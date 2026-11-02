@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """配送档案「全局化」线上手机视口截图采集（web-admin e.joho.cn/guanli）。
 视口铁律: 390x844, dpr=2, is_mobile, has_touch, locale=zh-CN。
-用真实 UI 登录（超管 superadmin/<REDACTED> → 选 t2；非超管 sglobt2/<REDACTED> → 自动进 t2），
+用真实 UI 登录（超管 ADMIN_EMAIL/ADMIN_PASSWORD → 选 t2；租户管理员 sglobdef → 自动进 t2），
 使 auth.loadAccess() 正确判定 isSuperAdmin / 租户角色。
 """
 import json, os, re
@@ -10,6 +10,10 @@ from playwright.sync_api import sync_playwright
 WA = "https://e.joho.cn/guanli"
 PROFILE_PAGE = WA + "/#/pages/shipping/profile/index"
 OUT = r"d:\zhao\nshop\docs\superpowers\manual\shipping-profile-global\assets"
+# 凭证一律从环境变量读取（见 scripts/README.md），不要把口令写回仓库。
+ADMIN_USER = os.environ.get("ADMIN_EMAIL", "superadmin")
+ADMIN_PWD = os.environ.get("ADMIN_PASSWORD", "")
+TENANT_USER = "sglobdef"
 
 def shot(page, name, wait=900):
     page.wait_for_timeout(wait)
@@ -55,7 +59,7 @@ def main():
         b = p.chromium.launch(headless=True)
 
         # ===== 超管：新建档案「设为全局」=ON + 互斥提示 =====
-        su_ctx, sup = ui_login_and_enter(b, "superadmin", "<REDACTED>", want_t2=True, superRole=True)
+        su_ctx, sup = ui_login_and_enter(b, ADMIN_USER, ADMIN_PWD, want_t2=True, superRole=True)
         sup.get_by_text("＋ 新建配送档案").click()
         sup.wait_for_timeout(1300)
         # 点开「设为全局」开关（所在 field.row 含该文案 + uni-switch）
@@ -72,7 +76,7 @@ def main():
         su_ctx.close()
 
         # ===== 超管：编辑全局档案开关 + 超管列表 =====
-        su2, sp2 = ui_login_and_enter(b, "superadmin", "<REDACTED>", want_t2=True, superRole=True)
+        su2, sp2 = ui_login_and_enter(b, ADMIN_USER, ADMIN_PWD, want_t2=True, superRole=True)
         g = global_card(sp2)
         if not g:
             print("!! 超管列表未见全局卡片; body:", sp2.inner_text("body")[:500])
@@ -86,7 +90,7 @@ def main():
         su2.close()
 
         # ===== 非超管（默认渠道租户管理员，含配送档案只读权限）列表 =====
-        tu, tp = ui_login_and_enter(b, "sglobdef", "<REDACTED>", want_t2=True, superRole=False)
+        tu, tp = ui_login_and_enter(b, TENANT_USER, ADMIN_PWD, want_t2=True, superRole=False)
         shot(tp, "wa_profile_list_global_tenant", 900)
         print("tenant body:", tp.inner_text("body")[:800].replace("\n", " | "))
         tu.close()

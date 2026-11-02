@@ -18,14 +18,15 @@ SHOP = BASE + "/shop-api"
 ADMIN_API = "https://e.joho.cn/admin-api"
 CH = "cnx87ezvmjx8nn3bth6c"
 OUT = r"d:\zhao\vendure\e2e-shots"
-EMAIL = "split-e2e-a@joho.cn"
-PASSWORD = "<REDACTED>"
+# 凭证一律从环境变量读取（见 scripts/README.md），不要把口令写回仓库。
+EMAIL = os.environ.get("TEST_EMAIL", "split-e2e-a@joho.cn")
+PASSWORD = os.environ.get("TEST_PASSWORD", "")
 VARIANT_PICKUP = 48
 SHIP_METHOD = "1"
 PICKUP_LOC = "1"
 PICKUP_TYPE = "store"
-SUPERADMIN_USER = "superadmin"
-SUPERADMIN_PWDS = ["superadmin", "<REDACTED>"]  # 依 probe-admin.cjs; 回退 _shot_redemption.py
+SUPERADMIN_USER = os.environ.get("ADMIN_EMAIL", "superadmin")
+SUPERADMIN_PWDS = [os.environ.get("ADMIN_PASSWORD", "")]
 
 def http_json(url, q, v=None, headers=None, method="POST"):
     b = json.dumps({"query": q, "variables": v or {}}).encode()
