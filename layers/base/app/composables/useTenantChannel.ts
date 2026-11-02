@@ -36,15 +36,44 @@ export function useTenantChannel() {
     () => current.value?.token ?? ((pub.channelToken as string) ?? ""),
   );
 
+  /** 切店时清空 nuxt-graphql-client 的操作级缓存（key 为 gql:data:*）。
+   *  useAsyncGql 只按 operation+variables 缓存，不含渠道 token —— 不清会继续复用上一家店的数据。
+   *  仅在客户端需要（SSR 每次请求的 payload 天然隔离）。 */
+  function clearGqlCacheOnSwitch(next: string | null) {
+    if (activeTenant.value === next) return;
+    if (import.meta.client) {
+      clearNuxtData((key) => key.startsWith("gql:data:"));
+    }
+  }
+
   /** 写入解析结果并切换 GQL 渠道（插件 / 全局中间件共用） */
   function applyResolved(hit: { code: string; token: string; name: string }) {
     resolvedMap.value = {
       ...resolvedMap.value,
       [hit.code]: { code: hit.code, token: hit.token, name: hit.name },
     };
+    clearGqlCacheOnSwitch(hit.code);
     activeTenant.value = hit.code;
     useGqlHeaders({ "vendure-token": hit.token });
   }
 
-  return { code, token, current, activeTenant, tenants, resolvedMap, applyResolved };
+  /** 无租户命中：显式恢复默认渠道 token。
+   *  只把 activeTenant 置空是不够的 —— token computed 虽会回退默认值，
+   *  useGqlHeaders 写过的 vendure-token 仍是上一家店的，后续 GQL 会串店。 */
+  function applyDefault() {
+    clearGqlCacheOnSwitch(null);
+    activeTenant.value = null;
+    useGqlHeaders({ "vendure-token": (pub.channelToken as string) ?? "" });
+  }
+
+  return {
+    code,
+    token,
+    current,
+    activeTenant,
+    tenants,
+    resolvedMap,
+    applyResolved,
+    applyDefault,
+  };
 }

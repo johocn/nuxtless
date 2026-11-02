@@ -1,9 +1,10 @@
 // 给 t2（二月兰会员）补起步商品：createProduct → createProductVariants → assign 到 t2 渠道，
 // 再从默认渠道摘除（双轨隔离），使商品只出现在 t2。
 // 幂等：按 slug 判重，已存在则跳过该商品。
-const ADMIN_API = process.env.ADMIN_API || "https://e.joho.cn/admin-api";
-const EMAIL = process.env.ADMIN_EMAIL || "superadmin";
-const PWD = process.env.ADMIN_PASSWORD || "<REDACTED>";
+// 用法: ADMIN_EMAIL=<后台账号> ADMIN_PASSWORD=<后台密码> node scripts/seed-t2-products.mjs
+import { ADMIN_API, requireAdminCredentials } from "./_admin-auth.mjs";
+
+const { username: EMAIL, password: PWD } = requireAdminCredentials();
 const T2_CHANNEL_TOKEN = process.env.T2_TOKEN || "66ruvnhh34svhckaa2i"; // 仅用于定位 t2 channelId
 
 let tok = null;

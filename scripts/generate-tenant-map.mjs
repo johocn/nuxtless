@@ -5,16 +5,15 @@
 // 做 SWR 缓存），因此新增/启用渠道**无需**跑本脚本，也无需重新构建部署前端。
 // 本脚本保留用于：把线上渠道快照落盘，作为运行时拉取失败时的 last-known-good 种子。
 //
-// 用法: node scripts/generate-tenant-map.mjs
-// 环境变量: ADMIN_API(默认 https://e.joho.cn/admin-api) ADMIN_EMAIL ADMIN_PASSWORD
+// 用法: ADMIN_EMAIL=<后台账号> ADMIN_PASSWORD=<后台密码> node scripts/generate-tenant-map.mjs
+// 环境变量: ADMIN_API(默认 https://e.joho.cn/admin-api) ADMIN_EMAIL ADMIN_PASSWORD（必填，无默认值）
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ADMIN_API, requireAdminCredentials } from "./_admin-auth.mjs";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const ADMIN_API = process.env.ADMIN_API || "https://e.joho.cn/admin-api";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "superadmin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "<REDACTED>";
+const { username: ADMIN_EMAIL, password: ADMIN_PASSWORD } = requireAdminCredentials();
 let tok = null;
 
 async function gql(q, v = {}) {

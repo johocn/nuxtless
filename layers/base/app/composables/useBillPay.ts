@@ -1,4 +1,5 @@
 import { GraphQLClient } from "graphql-request";
+import { requestTimeoutSignal } from "../utils/request-timeout";
 
 /**
  * 代买单（委托单模式）API 编排（对标 useCoupon.ts 模式）：
@@ -142,6 +143,9 @@ export function billpayRequest<T, V extends Record<string, any> = Record<string,
 
   const client = new GraphQLClient(`${gqlHost}?languageCode=${toVendureLanguageCode(locale)}`, {
     headers,
+    // 每次请求独立 signal：SSR 5s / 客户端 10s，超时抛 AbortError 由调用方兜底
+    fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, { ...init, signal: requestTimeoutSignal() }),
     responseMiddleware: (response: any) => {
       const headersObj = response?.headers ?? response?.response?.headers;
       const sessionToken =

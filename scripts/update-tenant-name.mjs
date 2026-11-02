@@ -2,18 +2,17 @@
 // 用法:
 //   node scripts/update-tenant-name.mjs <code|id> <新名称> [--sync]   # 改单个租户名
 //   node scripts/update-tenant-name.mjs --list                         # 列出全部租户 code/id/当前名
-// 环境变量: ADMIN_API(默认 https://e.joho.cn/admin-api) ADMIN_EMAIL(默认 superadmin) ADMIN_PASSWORD(默认 <REDACTED>)
+// 环境变量: ADMIN_API(默认 https://e.joho.cn/admin-api) ADMIN_EMAIL / ADMIN_PASSWORD（必填，无默认值）
 // 说明: name 由后端 updateChannel 合并写入 customFields.shopName（只覆盖该字段，不动其它）。
 //       --sync 会重新生成 layers/base/data/tenant-channels.json（name=shopName），
 //       前端站点名依赖该文件，部署后生效（node scripts/deploy.mjs）。
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ADMIN_API, requireAdminCredentials } from "./_admin-auth.mjs";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const ADMIN_API = process.env.ADMIN_API || "https://e.joho.cn/admin-api";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "superadmin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "<REDACTED>";
+const { username: ADMIN_EMAIL, password: ADMIN_PASSWORD } = requireAdminCredentials();
 let tok = null;
 
 async function gql(q, v = {}) {

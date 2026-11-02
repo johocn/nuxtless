@@ -14,7 +14,8 @@ export const gql = async (q, vars = {}, headers = {}) => {
   return { body, token };
 };
 
-export async function loginAs(username = 'superadmin', password = '<REDACTED>') {
+export async function loginAs(username = process.env.ADMIN_EMAIL, password = process.env.ADMIN_PASSWORD) {
+  if (!username || !password) throw new Error('缺少环境变量 ADMIN_EMAIL / ADMIN_PASSWORD');
   const r = await gql(`mutation { login(username:"${username}", password:"${password}") {
     ... on CurrentUser { id identifier } ... on InvalidCredentialsError { message } } }`);
   if (!r.token) throw new Error('login failed ' + JSON.stringify(r.body));

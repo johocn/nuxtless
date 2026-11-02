@@ -1,16 +1,15 @@
 // 东利民粮油店（limin）站点品牌落地：创建/更新 ShopTemplate 并绑定渠道。
-// 用法: node scripts/apply-limin-brand.mjs
-// 环境变量: ADMIN_API(默认 https://e.joho.cn/admin-api) ADMIN_EMAIL / ADMIN_PASSWORD
+// 用法: ADMIN_EMAIL=<后台账号> ADMIN_PASSWORD=<后台密码> node scripts/apply-limin-brand.mjs
+// 环境变量: ADMIN_API(默认 https://e.joho.cn/admin-api) ADMIN_EMAIL / ADMIN_PASSWORD（必填，无默认值）
 // 幂等: 模板按 name+app 复用；重复运行只会新增一个版本快照，可 restoreTemplateVersion 回滚。
 // 数据源: scripts/limin-brand.json（门店信息 / 主题色 / 首页素材），改完重跑即可替换首屏文案。
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ADMIN_API, requireAdminCredentials } from "./_admin-auth.mjs";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const ADMIN_API = process.env.ADMIN_API || "https://e.joho.cn/admin-api";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "superadmin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "<REDACTED>";
+const { username: ADMIN_EMAIL, password: ADMIN_PASSWORD } = requireAdminCredentials();
 const APP = "nshop";
 let tok = null;
 

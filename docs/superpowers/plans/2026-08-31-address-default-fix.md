@@ -260,7 +260,7 @@ git commit -m "fix(address): 切换器预选中真实默认地址"
 # scripts/_verify_default_addr.py
 import json, urllib.request, http.cookiejar
 CHANNEL_TOKEN = "cnx87ezvmjx8nn3bth6c"; SHOP="https://www.youshop.cn/shop-api"
-EMAIL="split-e2e-a@joho.cn"; PASSWORD="<REDACTED>"
+EMAIL="split-e2e-a@joho.cn"; PASSWORD="<TEST_PASSWORD>"  # 从环境变量 TEST_PASSWORD 读取
 cj=http.cookiejar.CookieJar(); op=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
 def gql(q,v=None,h=None):
     b=json.dumps({"query":q,"variables":v or {}}).encode()

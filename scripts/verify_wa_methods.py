@@ -1,8 +1,16 @@
+import os
+import sys
 import time
 from playwright.sync_api import sync_playwright
 
 OUT = r"d:\zhao\nshop\scripts\shots"
 BASE = "https://e.joho.cn/guanli"
+
+USER = os.environ.get("ADMIN_EMAIL", "").strip()
+PWD = os.environ.get("ADMIN_PASSWORD", "").strip()
+if not USER or not PWD:
+    print("缺少环境变量 ADMIN_EMAIL / ADMIN_PASSWORD，已终止。", file=sys.stderr)
+    sys.exit(1)
 
 def snap(page, name):
     page.screenshot(path=f"{OUT}\\{name}.png"); print("saved", name)
@@ -12,8 +20,8 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport={"width":390,"height":844}, device_scale_factor=2)
     page = ctx.new_page()
     page.goto(BASE, wait_until="networkidle"); time.sleep(2)
-    page.locator("input").nth(0).fill("jiang")
-    page.locator("input").nth(1).fill("<REDACTED>")
+    page.locator("input").nth(0).fill(USER)
+    page.locator("input").nth(1).fill(PWD)
     time.sleep(0.5)
     page.get_by_text("登 录").first.click()
     time.sleep(3); page.wait_for_load_state("networkidle")

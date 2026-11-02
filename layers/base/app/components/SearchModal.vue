@@ -106,7 +106,11 @@ watch([products.error, knowledge.error], ([pe, ke]) => {
                       :alt="item.title"
                       class="size-10 shrink-0 rounded object-cover"
                     />
-                    <span class="min-w-0 flex-1 truncate" v-html="item._formatted?.title || item.title"></span>
+                    <SearchHighlight
+                      class="min-w-0 flex-1 truncate"
+                      :formatted="item._formatted?.title"
+                      :text="item.title"
+                    />
                     <span v-if="item.price != null" class="shrink-0 text-sm font-medium">
                       {{ formatCents(item.price) }}
                     </span>
@@ -133,7 +137,11 @@ watch([products.error, knowledge.error], ([pe, ke]) => {
                     <UBadge color="neutral" variant="soft" class="shrink-0">
                       {{ $t(kbTypeLabelKey(item.type)) }}
                     </UBadge>
-                    <span class="min-w-0 flex-1 truncate" v-html="item._formatted?.title || item.title"></span>
+                    <SearchHighlight
+                      class="min-w-0 flex-1 truncate"
+                      :formatted="item._formatted?.title"
+                      :text="item.title"
+                    />
                     <span class="shrink-0 text-xs text-(--ui-text-muted)">
                       {{ kbFormatDate(item.updatedAt) }}
                     </span>

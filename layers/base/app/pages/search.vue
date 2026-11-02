@@ -159,7 +159,7 @@ const isProduct = (hit: KbHit) => hit.type === "product";
                 class="size-14 shrink-0 rounded object-cover"
               />
               <span class="min-w-0 flex-1">
-                <span class="line-clamp-2" v-html="item._formatted?.title || item.title"></span>
+                <SearchHighlight class="line-clamp-2" :formatted="item._formatted?.title" :text="item.title" />
                 <span v-if="item.price != null" class="mt-1 block text-sm font-medium text-primary">
                   {{ formatCents(item.price) }}
                 </span>
@@ -174,16 +174,21 @@ const isProduct = (hit: KbHit) => hit.type === "product";
                 <UBadge color="neutral" variant="soft" class="shrink-0">
                   {{ $t(kbTypeLabelKey(item.type)) }}
                 </UBadge>
-                <span class="min-w-0 flex-1 truncate" v-html="item._formatted?.title || item.title"></span>
+                <SearchHighlight
+                  class="min-w-0 flex-1 truncate"
+                  :formatted="item._formatted?.title"
+                  :text="item.title"
+                />
                 <span class="shrink-0 text-xs text-(--ui-text-muted)">
                   {{ $t("messages.search.updatedAt", { date: kbFormatDate(item.updatedAt) }) }}
                 </span>
               </span>
-              <span
+              <SearchHighlight
                 v-if="item._formatted?.body || item.body"
                 class="line-clamp-2 text-sm font-normal text-(--ui-text-muted)"
-                v-html="item._formatted?.body || item.body"
-              ></span>
+                :formatted="item._formatted?.body"
+                :text="item.body"
+              />
             </span>
           </UButton>
         </li>

@@ -1,9 +1,13 @@
-// 创建超级管理员 jiang / <REDACTED>，绑定 __super_admin_role__（id=1），与 superadmin 同级全局超管。
-const ADMIN_API = "https://e.joho.cn/admin-api";
-const TOKEN = "superadmin", PWD = "<REDACTED>";
+// 创建超级管理员 jiang，绑定 __super_admin_role__（id=1），与 superadmin 同级全局超管。
+// 用法: ADMIN_EMAIL=<现有超管账号> ADMIN_PASSWORD=<现有超管密码> NEW_ADMIN_PASSWORD=<新超管密码> node scripts/create-superadmin-jiang.mjs
+// 环境变量: ADMIN_API(默认 https://e.joho.cn/admin-api)
+//           NEW_ADMIN_EMAIL(默认 jiang) / NEW_ADMIN_PASSWORD（必填，无默认值）
+import { ADMIN_API, requireAdminCredentials, requireEnv } from "./_admin-auth.mjs";
+
+const { username: TOKEN, password: PWD } = requireAdminCredentials();
 const SUPER_ROLE_ID = "1";
-const USERNAME = "jiang";
-const PASS = "<REDACTED>";
+const USERNAME = process.env.NEW_ADMIN_EMAIL || "jiang";
+const PASS = requireEnv("NEW_ADMIN_PASSWORD", "新超管登录密码");
 
 let tok = null;
 async function gql(q, v = {}) {

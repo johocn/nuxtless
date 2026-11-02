@@ -81,7 +81,7 @@
 
 ## 6. 验证脚本清单
 
-运行方式均为 `node tmp/<script>.mjs`（线上 admin API `https://e.joho.cn/admin-api`，superadmin/<REDACTED>）：
+运行方式均为 `node tmp/<script>.mjs`（线上 admin API `https://e.joho.cn/admin-api`，账号/密码从环境变量 `ADMIN_EMAIL` / `ADMIN_PASSWORD` 读取）：
 
 | 脚本 | 用途 |
 |---|---|

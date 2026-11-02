@@ -22,7 +22,7 @@ const gql = async (q, vars = {}, headers = {}) => {
 };
 
 (async () => {
-  const r = await gql(`mutation { login(username:"superadmin", password:"<REDACTED>"){ ... on CurrentUser { id identifier } ... on InvalidCredentialsError { message } } }`);
+  const r = await gql(`mutation { login(username:"${process.env.ADMIN_EMAIL}", password:"${process.env.ADMIN_PASSWORD}"){ ... on CurrentUser { id identifier } ... on InvalidCredentialsError { message } } }`);
   if (!r.token) throw new Error('login failed ' + JSON.stringify(r.body));
   auth = r.token;
   const h = { Authorization: `Bearer ${auth}` };

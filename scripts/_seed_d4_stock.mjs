@@ -1,4 +1,8 @@
 // 方案2-D 回归数据准备：主站开物理库存 → 物理仓 → 绑定变体57 → 双仓库存；变体58 纯虚拟库存
+// 用法: ADMIN_EMAIL=<账号> ADMIN_PASSWORD=<密码> node scripts/_seed_d4_stock.mjs
+import { requireAdminCredentials } from "./_admin-auth.mjs";
+
+const { username: ADMIN_USER, password: ADMIN_PASSWORD } = requireAdminCredentials();
 const base = "https://e.joho.cn";
 let token = null;
 async function gql(path, query, vars, raw = false) {
@@ -22,7 +26,7 @@ const V = (label, r, min = 1) => {
 };
 
 (async () => {
-  const lr = await gql("/admin-api", `mutation{ login(username:"superadmin", password:"<REDACTED>", rememberMe:true){ __typename ...on ErrorResult{ errorCode message } } }`);
+  const lr = await gql("/admin-api", `mutation($u:String!,$p:String!){ login(username:$u, password:$p, rememberMe:true){ __typename ...on ErrorResult{ errorCode message } } }`, { u: ADMIN_USER, p: ADMIN_PASSWORD });
   if (lr?.data?.login?.__typename !== "CurrentUser") { console.log("[FAIL] login"); process.exit(1); }
   console.log("[OK] login");
 

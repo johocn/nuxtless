@@ -1,6 +1,7 @@
 import { resolveSsoReturnUrl } from "../utils/sso-return-url";
 import { readVendureTokenWithContext } from "../utils/vendure-session";
 import { selectPrimaryProvider, type ProviderSource } from "../utils/sso-provider";
+import { requestTimeoutSignal } from "../utils/request-timeout";
 
 export interface SsoProviderInfo {
   name: string;
@@ -89,22 +90,28 @@ export function useSso() {
     }
 
     if (!gqlHost) return [];
-    const res = await fetch(gqlHost, {
-      method: "POST",
-      headers: baseHeaders(),
-      body: JSON.stringify({
-        query: `{ ssoProviders { name providerKey protocol baseUrl authorizeUrl clientId channelCode } }`,
-      }),
-    });
-    const json = await res.json();
-    const list: SsoProviderInfo[] = json?.data?.ssoProviders ?? [];
-    const filtered = list.filter((p) => p.protocol === "zhao-sso");
     try {
-      localStorage.setItem(cacheKey, JSON.stringify({ at: Date.now(), list: filtered }));
+      const res = await fetch(gqlHost, {
+        method: "POST",
+        headers: baseHeaders(),
+        body: JSON.stringify({
+          query: `{ ssoProviders { name providerKey protocol baseUrl authorizeUrl clientId channelCode } }`,
+        }),
+        signal: requestTimeoutSignal(),
+      });
+      const json = await res.json();
+      const list: SsoProviderInfo[] = json?.data?.ssoProviders ?? [];
+      const filtered = list.filter((p) => p.protocol === "zhao-sso");
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({ at: Date.now(), list: filtered }));
+      } catch {
+        // 存储不可用（如隐私模式）忽略，下次仍走网络
+      }
+      return filtered;
     } catch {
-      // 存储不可用（如隐私模式）忽略，下次仍走网络
+      // 超时/网络错误：返回空列表，隐藏 SSO 入口，不阻断账号页
+      return [];
     }
-    return filtered;
   }
 
   /** 共享预取结果 state：SSR/首次客户端尽早拉取，跳转直接复用（避免跳转前再等网络）。 */
@@ -238,7 +245,9 @@ export function useSso() {
         }`,
         variables: { input: { sso: { providerKey, accessToken } } },
       }),
-    });
+      signal: requestTimeoutSignal(),
+    }).catch(() => null);
+    if (!res) return null;
     const newToken = res.headers.get("vendure-auth-token");
     if (newToken) authStore.setSession(newToken);
     const json = await res.json();
@@ -261,6 +270,7 @@ export function useSso() {
           app_code: provider.clientId,
           redirect_uri: redirectUriStr,
         }),
+        signal: requestTimeoutSignal(),
       });
       if (!res.ok) return null;
       return await res.json();
@@ -307,6 +317,7 @@ export function useSso() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, appType: "official_account" }),
+        signal: requestTimeoutSignal(),
       });
       if (!res.ok) return null;
       return await res.json();

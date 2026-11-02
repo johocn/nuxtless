@@ -1,6 +1,7 @@
 import type { ActiveOrder } from "~~/types/order";
 import type { LogInResult } from "~~/types/customer";
 import { readVendureTokenWithContext } from "../utils/vendure-session";
+import { requestTimeoutSignal } from "../utils/request-timeout";
 
 // 统一会话入口：login 返回登录结果（CurrentUser | ErrorResult），default 返回活跃订单。
 // token 捕获依赖手写 fetch 读取 vendure-auth-token 响应头（typed client 无此能力）。
@@ -80,6 +81,8 @@ export async function useGqlSession(
       credentials: "include",
       headers,
       body: JSON.stringify({ query, variables }),
+      // SSR 5s / 客户端 10s；超时走下方 catch 返回 null（页面按未登录/无活跃订单降级）
+      signal: requestTimeoutSignal(),
     });
 
     const newToken = res.headers.get("vendure-auth-token");

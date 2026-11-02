@@ -100,6 +100,20 @@ function ssh(remoteCmd) {
   run("远端执行", [...["ssh", ...SSH_ARGS, target, remoteCmd]]);
 }
 
+/** 通过 ssh 捕获远端 stdout（探活用，不继承 stdio）。 */
+function sshCapture(remoteCmd) {
+  const res = spawnSync("ssh", [...SSH_ARGS, target, remoteCmd], { encoding: "utf8" });
+  return { ok: res.status === 0, out: (res.stdout || "").trim(), err: (res.stderr || "").trim() };
+}
+
+/** 部署备份根目录：<REMOTE_DIR>.bak/<时间戳> */
+const BACKUP_ROOT = `${REMOTE_DIR}.bak`;
+const DEPLOY_STAMP = new Date()
+  .toISOString()
+  .replace(/[:.]/g, "-")
+  .replace("T", "_")
+  .slice(0, 19);
+
 const requires = [
   ["SERVER_HOST", SERVER_HOST],
   ["REMOTE_DIR", REMOTE_DIR],
@@ -132,6 +146,17 @@ const tarFile = resolve(cwd, ".output-deploy.tar.gz");
 run("本地打包产物", ["tar", "-czf", tarFile.replace(/\\/g, "/"), "-C", outputDir.replace(/\\/g, "/"), "."]);
 run("准备暂存目录", ["ssh", ...SSH_ARGS, target, `rm -rf ${STAGING} && mkdir -p ${STAGING}`]);
 run("SCP 上传产物包", ["scp", ...SSH_ARGS, tarFile, `${target}:${STAGING}/output.tar.gz`]);
+
+// 3.1) 覆盖前备份当前线上目录（保留最近 3 份），供探活失败回滚
+ssh(
+  `if [ -d ${REMOTE_DIR} ]; then ` +
+    `sudo mkdir -p ${BACKUP_ROOT} && sudo rm -rf ${BACKUP_ROOT}/${DEPLOY_STAMP} && ` +
+    `sudo cp -a ${REMOTE_DIR} ${BACKUP_ROOT}/${DEPLOY_STAMP}; ` +
+    `sudo sh -c 'ls -1dt ${BACKUP_ROOT}/* 2>/dev/null | tail -n +4 | xargs -r rm -rf'; ` +
+    `fi`,
+);
+console.log(`[deploy] 已备份线上目录 → ${BACKUP_ROOT}/${DEPLOY_STAMP}`);
+
 ssh(
   `sudo rm -rf ${REMOTE_DIR} && sudo mkdir -p ${REMOTE_DIR} && ` +
     `sudo tar -xzf ${STAGING}/output.tar.gz -C ${REMOTE_DIR} && ` +
@@ -147,6 +172,45 @@ const restartCmd =
   `cd ${REMOTE_DIR} && PORT=${PORT} NODE_ENV=production pm2 restart ${APP_NAME} --update-env; ` +
   `else cd ${REMOTE_DIR} && PORT=${PORT} NODE_ENV=production pm2 start server/index.mjs --name ${APP_NAME} --update-env -i 1; fi`;
 ssh(restartCmd);
+
+// 4.1) 探活：首页 200 + 商品接口可用；失败自动回滚到本部署前的备份
+const { setTimeout: sleep } = await import("node:timers/promises");
+const HOME_CMD = `curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:${PORT}/`;
+const PRODUCT_CMD =
+  `curl -s -o /dev/null -w '%{http_code}' --max-time 8 -X POST ` +
+  `-H 'content-type: application/json' -H 'vendure-token: ${env.CHANNEL_TOKEN || ""}' ` +
+  `-d '{"query":"{ products(options: { take: 1 }) { totalItems } }"}' '${env.GQL_HOST || ""}'`;
+
+async function waitFor(label, cmd, attempts = 12) {
+  let last = "";
+  for (let i = 1; i <= attempts; i++) {
+    const res = sshCapture(cmd);
+    last = res.ok ? res.out : res.err || "ssh 退出码非 0";
+    if (res.ok && res.out === "200") return true;
+    if (i < attempts) await sleep(2000);
+  }
+  console.warn(`[deploy] ${label} 探活失败（最后输出：${last || "空"}）`);
+  return false;
+}
+
+const homeOk = await waitFor("首页 /", HOME_CMD);
+let productOk = true;
+if (env.GQL_HOST && env.CHANNEL_TOKEN) {
+  productOk = await waitFor("商品接口", PRODUCT_CMD);
+} else {
+  console.warn("[deploy] 缺少 GQL_HOST / CHANNEL_TOKEN，跳过商品接口探活");
+}
+
+if (!homeOk || !productOk) {
+  console.error(`[deploy] 探活未通过，回滚到 ${BACKUP_ROOT}/${DEPLOY_STAMP}`);
+  ssh(
+    `if [ -d ${BACKUP_ROOT}/${DEPLOY_STAMP} ]; then ` +
+      `sudo rm -rf ${REMOTE_DIR} && sudo cp -a ${BACKUP_ROOT}/${DEPLOY_STAMP} ${REMOTE_DIR} && ` +
+      `cd ${REMOTE_DIR} && PORT=${PORT} NODE_ENV=production pm2 restart ${APP_NAME} --update-env; fi`,
+  );
+  fail("部署后探活失败，已回滚到部署前备份");
+}
+console.log("[deploy] 探活通过：首页 200，商品接口 200");
 
 // 5) 输出状态
 ssh(`pm2 status ${APP_NAME}`);

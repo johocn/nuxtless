@@ -1,8 +1,10 @@
 // 修正 t2 配送配置：
 //  1) t2 默认档案(id12) 绑定 mode=store 的门店自提 + 自提点 id4(自由大路 store)
 //  2) 清理 2 条陈记测试残留档案(id9, id10)：先检查商品引用，无引用才删
-const ADMIN_API = "https://e.joho.cn/admin-api";
-const EMAIL = "superadmin", PWD = "<REDACTED>";
+// 用法: ADMIN_EMAIL=<后台账号> ADMIN_PASSWORD=<后台密码> node scripts/fix-t2-shipping.mjs
+import { ADMIN_API, requireAdminCredentials } from "./_admin-auth.mjs";
+
+const { username: EMAIL, password: PWD } = requireAdminCredentials();
 const T2_TOKEN = "66ruvnhh34svhckaa2i";
 let tok = null;
 async function gql(q, v = {}, t2 = true) {

@@ -170,7 +170,7 @@ Expected: 每行返回 1+ 匹配。若某符号改名/不存在，以实际代�
 
 ## 6. 验证脚本清单
 
-运行方式均为 `node tmp/<script>.mjs`（线上 admin API `https://e.joho.cn/admin-api`，superadmin/<REDACTED>）：
+运行方式均为 `node tmp/<script>.mjs`（线上 admin API `https://e.joho.cn/admin-api`，账号/密码从环境变量 `ADMIN_EMAIL` / `ADMIN_PASSWORD` 读取）：
 
 | 脚本 | 用途 |
 |---|---|
@@ -232,7 +232,7 @@ export const gql = async (q, vars = {}, headers = {}) => {
   return { body, token };
 };
 
-export async function loginAs(username = 'superadmin', password = '<REDACTED>') {
+export async function loginAs(username = process.env.ADMIN_EMAIL, password = process.env.ADMIN_PASSWORD) {
   const r = await gql(`mutation { login(username:"${username}", password:"${password}") {
     ... on CurrentUser { id identifier } ... on InvalidCredentialsError { message } } }`);
   if (!r.token) throw new Error('login failed ' + JSON.stringify(r.body));

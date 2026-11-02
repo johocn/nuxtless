@@ -1,5 +1,9 @@
 // task2 验收数据：物理仓 serviceCities 三态演示
 // W1(id5)=上海(50, 已绑定), 新建 W2=北京(10), 绑定 variant57 到 W1+W2, 镜像虚拟仓=60
+// 用法: ADMIN_EMAIL=<账号> ADMIN_PASSWORD=<密码> node scripts/_seed_t2_phys_city.mjs
+import { requireAdminCredentials } from "./_admin-auth.mjs";
+
+const { username: ADMIN_USER, password: ADMIN_PASSWORD } = requireAdminCredentials();
 const base = "https://e.joho.cn";
 let token = null;
 async function gql(path, query, vars, raw = false) {
@@ -23,7 +27,7 @@ const V = (label, r) => {
 };
 
 (async () => {
-  const lr = await gql("/admin-api", `mutation{ login(username:"superadmin", password:"<REDACTED>", rememberMe:true){ __typename } }`);
+  const lr = await gql("/admin-api", `mutation($u:String!,$p:String!){ login(username:$u, password:$p, rememberMe:true){ __typename } }`, { u: ADMIN_USER, p: ADMIN_PASSWORD });
   if (lr?.data?.login?.__typename !== "CurrentUser") { console.log("[FAIL] login"); process.exit(1); }
   console.log("[OK] login");
 

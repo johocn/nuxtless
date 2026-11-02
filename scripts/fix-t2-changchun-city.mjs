@@ -13,15 +13,14 @@
 // 幂等：已是目标值的实体跳过（仍记录）；重复执行结果一致。
 // 备份：写前把每个待改实体的完整原值 customFields 落到
 //       d:\zhao\_backup\p0-t2-changchun-<yyyyMMdd-HHmmss>\backup.json
+// 用法: ADMIN_EMAIL=<后台账号> ADMIN_PASSWORD=<后台密码> node scripts/fix-t2-changchun-city.mjs
 import fs from "node:fs";
 import path from "node:path";
+import { ADMIN_API as ADMIN_API_DEFAULT, requireAdminCredentials } from "./_admin-auth.mjs";
 
-const ADMIN_API = process.env.WA_API || "https://e.joho.cn/admin-api";
+const ADMIN_API = process.env.WA_API || ADMIN_API_DEFAULT;
+const { username: USERNAME, password: PASSWORD } = requireAdminCredentials();
 const VENDURE_TOKEN = "66ruvnhh34svhckaa2i"; // t2「二月兰会员」
-const USERNAME = "superadmin";
-const PASSWORD = "<REDACTED>";
-
-const TARGET_CITY = "长春市";
 const PRODUCT_IDS = ["59", "60", "61", "71", "73", "76", "77", "79"];
 const STOCK_LOCATION_IDS = ["6"]; // t2 虚拟仓；id=3 默认仓不动
 const READONLY_REPORT_STOCK_ID = "3"; // 仅读回用于报告，绝不写
@@ -66,9 +65,10 @@ async function gql(query, variables = {}) {
 
 async function login() {
   const d = await gql(
-    `mutation { login(username:"${USERNAME}", password:"${PASSWORD}") {
+    `mutation($u:String!,$p:String!){ login(username:$u, password:$p) {
        __typename ... on CurrentUser { id identifier }
        ... on InvalidCredentialsError { errorCode message } } }`,
+    { u: USERNAME, p: PASSWORD },
   );
   if (d?.login?.__typename !== "CurrentUser" || !auth) throw new Error("login failed: " + JSON.stringify(d));
 }

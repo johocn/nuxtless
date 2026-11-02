@@ -1,6 +1,8 @@
-// 验证：用 jiang / <REDACTED> 登录，确认超管身份、可见渠道（全局）
-const ADMIN_API = "https://e.joho.cn/admin-api";
-const USERNAME = "jiang", PASS = "<REDACTED>";
+// 验证超管账号登录，确认超管身份、可见渠道（全局）
+// 用法: ADMIN_EMAIL=<账号> ADMIN_PASSWORD=<密码> node scripts/verify-superadmin-jiang.mjs
+import { ADMIN_API, requireAdminCredentials } from "./_admin-auth.mjs";
+
+const { username: USERNAME, password: PASS } = requireAdminCredentials();
 let tok = null;
 async function gql(q, v = {}, t2 = false) {
   const h = { "Content-Type": "application/json" };

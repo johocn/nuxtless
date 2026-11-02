@@ -18,7 +18,7 @@ const gql = async (q, vars = {}, headers = {}) => {
   return { body, token };
 };
 (async () => {
-  const login = await gql(`mutation { login(username:"superadmin", password:"<REDACTED>") {
+  const login = await gql(`mutation { login(username:"${process.env.ADMIN_EMAIL}", password:"${process.env.ADMIN_PASSWORD}") {
     ... on CurrentUser { id identifier } ... on InvalidCredentialsError { errorCode message } } }`);
   if (!login.token) { console.error('login failed', JSON.stringify(login.body)); return; }
   auth = login.token;

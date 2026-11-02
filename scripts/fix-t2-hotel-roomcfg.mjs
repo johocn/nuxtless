@@ -18,13 +18,14 @@
 //       提交前用「不存在的 id」探针 mutation 探测实际可写字段（失败发生在实体查找阶段，不产生写入）。
 // 幂等：目标值一致则跳过（仍记录）；重复执行结果一致。
 // 备份：写前把每个目标变体的完整原值落盘 d:\zhao\_backup\p1-hotel-roomcfg-<yyyyMMdd-HHmm>\backup.json
+// 用法: ADMIN_EMAIL=<后台账号> ADMIN_PASSWORD=<后台密码> node scripts/fix-t2-hotel-roomcfg.mjs
 import fs from "node:fs";
 import path from "node:path";
+import { ADMIN_API as ADMIN_API_DEFAULT, requireAdminCredentials } from "./_admin-auth.mjs";
 
-const ADMIN_API = process.env.WA_API || "https://e.joho.cn/admin-api";
+const ADMIN_API = process.env.WA_API || ADMIN_API_DEFAULT;
+const { username: USERNAME, password: PASSWORD } = requireAdminCredentials();
 const VENDURE_TOKEN = "66ruvnhh34svhckaa2i"; // t2「二月兰会员」
-const USERNAME = "superadmin";
-const PASSWORD = "<REDACTED>";
 
 const ROOM_PRODUCT_IDS = ["60", "61"];        // 需要补房型的房间商品
 const TICKET_VARIANT_IDS = ["57"];            // 需要清空的误挂变体（门票商品 59）
@@ -55,8 +56,8 @@ async function gql(query, variables = {}) {
   return json.data;
 }
 async function login() {
-  const d = await gql(`mutation { login(username:"${USERNAME}", password:"${PASSWORD}") {
-    __typename ... on CurrentUser { id identifier } ... on InvalidCredentialsError { message } } }`);
+  const d = await gql(`mutation($u:String!,$p:String!){ login(username:$u, password:$p) {
+    __typename ... on CurrentUser { id identifier } ... on InvalidCredentialsError { message } } }`, { u: USERNAME, p: PASSWORD });
   if (d?.login?.__typename !== "CurrentUser" || !auth) throw new Error("login failed: " + JSON.stringify(d));
 }
 const firstMessage = (e) => (e?.[gqlErrors] ?? []).map((x) => x.message).join(" | ") || String(e?.message ?? e);

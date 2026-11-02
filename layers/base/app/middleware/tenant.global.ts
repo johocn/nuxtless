@@ -26,12 +26,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   const code = (to.params.tenantCode as string) || "";
   const state = useState<TenantResolve | null>("tenantResolve", () => null);
-  const { activeTenant, applyResolved } = useTenantChannel();
+  const { applyResolved, applyDefault } = useTenantChannel();
 
   if (!code) {
     // 无租户段 = 平台默认店（站内链接均由 useTenantLocalePath 带租户前缀，此处仅命中直链）
+    // 软导航从 /t2/... 回首页时必须显式恢复默认渠道 token，否则沿用上一家店的 vendure-token
     state.value = { status: "none" };
-    activeTenant.value = null;
+    applyDefault();
     return;
   }
 
@@ -89,7 +90,7 @@ async function couponStoreGuard(
   const segs = to.path.split("/").filter(Boolean);
   let i = 0;
   let localePrefix = "";
-  if (segs[i] && LOCALE_CODES.has(segs[i].toLowerCase())) {
+  if (segs[i] && LOCALE_CODES.has(segs[i]!.toLowerCase())) {
     localePrefix = `/${segs[i]}`;
     i++;
   }

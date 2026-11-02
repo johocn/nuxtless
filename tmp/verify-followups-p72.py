@@ -1,15 +1,21 @@
 # -*- coding: utf-8 -*-
 """T8 Step3 商品72 图片保存回归（管理端 UI → 保存 → API 断言 → C 端 9 图）
-流程：登录 web-admin（superadmin/<REDACTED>）→ 选 t2 店铺 → 打开商品72编辑页
+流程：登录 web-admin（账号/密码走 ADMIN_EMAIL / ADMIN_PASSWORD 环境变量）→ 选 t2 店铺 → 打开商品72编辑页
 → 媒体库选图到 9 张 → 确定 → 保存 → API 断言 assets=9 → C 端 t2 详情页画廊断言 9/9
 """
 import json
+import os
 import sys
 import time
 import urllib.request
 from playwright.sync_api import sync_playwright
 
 WA = "https://e.joho.cn/guanli"
+ADMIN_USER = os.environ.get("ADMIN_EMAIL", "").strip()
+ADMIN_PWD = os.environ.get("ADMIN_PASSWORD", "").strip()
+if not ADMIN_USER or not ADMIN_PWD:
+    print("缺少环境变量 ADMIN_EMAIL / ADMIN_PASSWORD，已终止。", file=sys.stderr)
+    sys.exit(1)
 EDIT_URL = WA + "/#/pages/product/edit/index?id=72"
 C_DOMAIN = "https://www.youshop.cn"
 OUT = r"d:\zhao\nshop\tmp-shots"
@@ -28,7 +34,7 @@ def gql(q, variables=None, extra_headers=None):
         return json.loads(r.read().decode())
 
 def admin_state():
-    st = admin_login_state("superadmin", "<REDACTED>", channel_code="t2")
+    st = admin_login_state(ADMIN_USER, ADMIN_PWD, channel_code="t2")
     return st
 
 def main():
@@ -52,8 +58,8 @@ def main():
         pg.wait_for_load_state("networkidle"); pg.wait_for_timeout(1500)
         inputs = pg.locator("input.uni-input-input")
         print("login inputs:", inputs.count())
-        inputs.nth(0).fill("superadmin")
-        inputs.nth(1).fill("<REDACTED>")
+        inputs.nth(0).fill(ADMIN_USER)
+        inputs.nth(1).fill(ADMIN_PWD)
         pg.get_by_text("登 录", exact=True).click()
         pg.wait_for_timeout(4000)
         body = pg.inner_text("body")

@@ -15,7 +15,7 @@
  */
 
 import { appLocales } from "../../i18n/locales";
-import type { TenantHit, TenantResolve } from "../composables/useTenantChannel";
+import type { TenantResolve } from "../composables/useTenantChannel";
 
 const LOCALE_CODES = new Set(appLocales.map((l) => String(l.code)));
 
@@ -29,7 +29,7 @@ function tenantCodeFromPath(pathname: string): string {
 
 export default defineNuxtPlugin(async () => {
   const state = useState<TenantResolve | null>("tenantResolve", () => null);
-  const { activeTenant, applyResolved } = useTenantChannel();
+  const { applyResolved, applyDefault } = useTenantChannel();
 
   if (!state.value) {
     const pathname = import.meta.server ? useRequestURL().pathname : window.location.pathname;
@@ -38,7 +38,7 @@ export default defineNuxtPlugin(async () => {
     if (!code) {
       state.value = { status: "none" };
     } else if (import.meta.server) {
-      const ctx = useRequestEvent()?.context as { tenant?: TenantHit } | undefined;
+      const ctx = useRequestEvent()?.context as { tenant?: TenantResolve } | undefined;
       state.value = ctx?.tenant ?? { status: "none" };
     } else {
       state.value = await $fetch<TenantResolve>("/api/tenant/resolve", { query: { code } }).catch(
@@ -47,6 +47,7 @@ export default defineNuxtPlugin(async () => {
     }
   }
 
-  if (state.value.status === "ok") applyResolved(state.value);
-  else activeTenant.value = null;
+  const resolved = state.value;
+  if (resolved?.status === "ok") applyResolved(resolved);
+  else applyDefault();
 });

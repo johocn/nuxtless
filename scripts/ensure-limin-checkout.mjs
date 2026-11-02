@@ -6,16 +6,15 @@
 // limin 渠道（token official-20 / id 111）此前 shippingMethods 与 paymentMethods 均为空，
 // 也没有任何 ownerChannelId=111 的租户默认档案，故结算为 0。
 //
-// 用法: node scripts/ensure-limin-checkout.mjs
-// 环境变量: ADMIN_API(默认 https://e.joho.cn/admin-api) ADMIN_USER / ADMIN_PASSWORD
+// 用法: ADMIN_USER=<后台账号> ADMIN_PASSWORD=<后台密码> node scripts/ensure-limin-checkout.mjs
+// 环境变量: ADMIN_API(默认 https://e.joho.cn/admin-api) ADMIN_USER / ADMIN_PASSWORD（必填，无默认值）
 //           LIMIN_CHANNEL_TOKEN(默认 official-20) LIMIN_CHANNEL_ID(默认 111)
 // 幂等: 配送/支付方式与档案均按 code 复用，重复运行只做 update + 重设租户默认。
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ADMIN_API, requireAdminCredentials } from "./_admin-auth.mjs";
 
-const ADMIN_API = process.env.ADMIN_API || "https://e.joho.cn/admin-api";
-const ADMIN_USER = process.env.ADMIN_USER || "superadmin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "<REDACTED>";
+const { username: ADMIN_USER, password: ADMIN_PASSWORD } = requireAdminCredentials();
 const CHANNEL_TOKEN = process.env.LIMIN_CHANNEL_TOKEN || "official-20";
 const CHANNEL_ID = process.env.LIMIN_CHANNEL_ID || "111";
 

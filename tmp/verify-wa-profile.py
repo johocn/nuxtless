@@ -3,11 +3,16 @@
 配送档案 → 编辑「门店自提配送档案」→ 自提点分组应显示 自由大路店 + 国信南山温泉酒店（均勾选）。
 """
 from playwright.sync_api import sync_playwright
+import os
+import sys
 
 DOMAIN = "https://e.joho.cn/guanli"
 OUT = r"d:\zhao\nshop\tmp-shots"
-USER = "superadmin"
-PWD = "<REDACTED>"
+USER = os.environ.get("ADMIN_EMAIL", "").strip()
+PWD = os.environ.get("ADMIN_PASSWORD", "").strip()
+if not USER or not PWD:
+    print("缺少环境变量 ADMIN_EMAIL / ADMIN_PASSWORD，已终止。", file=sys.stderr)
+    sys.exit(1)
 
 def shot(pg, name, wait=1500):
     pg.wait_for_timeout(wait)

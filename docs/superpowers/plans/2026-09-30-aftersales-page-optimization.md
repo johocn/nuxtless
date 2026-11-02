@@ -3525,7 +3525,7 @@ from playwright.sync_api import sync_playwright
 BASE = "http://localhost:8080"
 OUT = r"d:\zhao\nshop\docs\superpowers\manual\aftersales-page-optimization\shots"
 EMAIL = "orders-layout-shot@joho.cn"
-PASSWORD = "<REDACTED>"
+PASSWORD = "<TEST_PASSWORD>"  # 从环境变量 TEST_PASSWORD 读取，禁止写死
 CHROME = "C:/Users/lenovo/AppData/Local/ms-playwright/chromium-1234/chrome-win64/chrome.exe"
 LIST_URL = BASE + "/account/after-sales"
 
@@ -3652,7 +3652,7 @@ from playwright.sync_api import sync_playwright
 BASE = "http://localhost:5280"
 OUT = r"d:\zhao\nshop\docs\superpowers\manual\aftersales-page-optimization\shots"
 USER = "superadmin"
-PWD = "<REDACTED>"
+PWD = "<ADMIN_PASSWORD>"  # 从环境变量 ADMIN_PASSWORD 读取，禁止写死
 CHROME = "C:/Users/lenovo/AppData/Local/ms-playwright/chromium-1234/chrome-win64/chrome.exe"
 
 

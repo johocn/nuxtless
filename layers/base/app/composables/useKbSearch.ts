@@ -10,8 +10,13 @@
  *  - 浏览器（CSR/hydration 后）：同源相对路径 /search-api/，由 nginx 反代。
  *
  * 降级：key 缺失 / 网络错误 / 索引 404 一律吞错返回空结果（EMPTY_RESPONSE），页面渲染空态。
- * 高亮：Meili 原生 attributesToHighlight（_formatted.title/_formatted.body，已转义，可安全 v-html）。
+ * 高亮：Meili 原生 attributesToHighlight（_formatted.title/_formatted.body）。
+ *       注意：_formatted 只是给命中词插入 <mark> 标签，**不会转义原文 HTML**，
+ *       渲染前必须走 sanitizeSearchHighlight（见 utils/sanitize-html.ts）。
  */
+
+import type { WatchSource } from "vue";
+import { requestTimeoutSignal } from "../utils/request-timeout";
 
 export interface KbHit {
   id: string;
@@ -30,7 +35,7 @@ export interface KbHit {
   tags?: string[];
   channelId?: string;
   status?: string;
-  /** Meili 高亮副本（highlightPre/PostTag 包裹，已转义，v-html 安全） */
+  /** Meili 高亮副本（highlightPre/PostTag 包裹；原文未转义，渲染前须 sanitizeSearchHighlight） */
   _formatted?: Partial<{ title: string; body: string }>;
 }
 
@@ -100,6 +105,8 @@ function useKbEnv() {
       return await $fetch<KbSearchResponse>(`${base}/indexes/${index.value}/search`, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}` },
+        // SSR 5s / 客户端 10s；超时由下方 catch 降级为空结果（页面渲染空态）
+        signal: requestTimeoutSignal(),
         body: {
           q: params.q ?? "",
           limit: params.limit ?? 10,
@@ -170,6 +177,8 @@ export function useKbDocument(type: () => string, sourceId: () => string, opts: 
     try {
       return await $fetch<KbHit>(`${base}/indexes/${index}/documents/${docId}`, {
         headers: { Authorization: `Bearer ${apiKey}` },
+        // 超时/404 一律降级为 null，由页面抛 404
+        signal: requestTimeoutSignal(),
       });
     } catch (e) {
       console.error(`[kb-doc] 获取文档失败 ${docId}（降级为 null）`, e);

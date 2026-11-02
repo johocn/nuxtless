@@ -5,18 +5,18 @@
  * 遵守仓库数据脚本约定：执行前先备份原值到 d:\zhao\_backup\，只合并 shopContent 一个字段
  * （读回完整 customFields 后合并提交），绝不清掉 detailConfig / shopName 等其它字段。
  *
- * 用法：
- *   node scripts/verify-t2-blocks-config.mjs on-a     # 写入 A(紧凑) + C(一大二小)
- *   node scripts/verify-t2-blocks-config.mjs on-b     # 写入 B(横滑)
- *   node scripts/verify-t2-blocks-config.mjs off      # 还原（清除 shopContent，回到京东兜底楼层）
- *   node scripts/verify-t2-blocks-config.mjs show     # 只读打印当前值
+ * 用法（所有模式都需先导出管理员凭证）：
+ *   ADMIN_EMAIL=<账号> ADMIN_PASSWORD=<密码> node scripts/verify-t2-blocks-config.mjs on-a|on-b|off|show
+ *   on-a = A(紧凑)+C(一大二小)；on-b = B(横滑)；off = 还原（清除 shopContent）；show = 只读打印当前值
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { ADMIN_API, requireAdminCredentials } from './_admin-auth.mjs';
 
-const ADMIN = process.env.WA_API || 'https://e.joho.cn/admin-api';
+const ADMIN = process.env.WA_API || ADMIN_API;
 const TOKEN = process.env.T2_TOKEN || '66ruvnhh34svhckaa2i';
-const LOGIN = 'mutation { login(username:"superadmin", password:"<REDACTED>") { ... on CurrentUser { id } } }';
+const { username: ADMIN_USER, password: ADMIN_PASSWORD } = requireAdminCredentials();
+const LOGIN = 'mutation($u:String!,$p:String!){ login(username:$u, password:$p) { ... on CurrentUser { id } } }';
 const READ_CF = `query { activeChannel { id code customFields { shopContent } } }`;
 const WRITE_CF = `mutation ($input: UpdateChannelInput!) {
   updateChannel(input: $input) {
@@ -67,7 +67,7 @@ async function gql(query, variables, auth) {
 }
 
 (async () => {
-  const login = await gql(LOGIN);
+  const login = await gql(LOGIN, { u: ADMIN_USER, p: ADMIN_PASSWORD });
   const auth = login.token;
   if (!auth) {
     console.error('登录失败', JSON.stringify(login.body));

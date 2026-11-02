@@ -2,6 +2,10 @@
 //  A) id71 国信南山温泉门票 → 仅自提，belongCity=长春（北京隐藏/长春显示/邮寄隐藏）
 //  B) id75 黄金珠宝 → 仅邮寄，全国可寄（邮寄可见/自提隐藏）
 //  C) id59 温泉门票 → 仅邮寄，仅长春/吉林可寄（区间品）
+// 用法: ADMIN_EMAIL=<账号> ADMIN_PASSWORD=<密码> node scripts/_seed_delivery_methods.mjs
+import { requireAdminCredentials } from "./_admin-auth.mjs";
+
+const { username: ADMIN_USER, password: ADMIN_PASSWORD } = requireAdminCredentials();
 const base = "https://e.joho.cn";
 let token = null;
 async function gql(path, query, vars) {
@@ -22,7 +26,7 @@ const V = (label, r) => {
   return val;
 };
 (async () => {
-  const lr = await gql("/admin-api", `mutation{ login(username:"superadmin", password:"<REDACTED>", rememberMe:true){ __typename } }`);
+  const lr = await gql("/admin-api", `mutation($u:String!,$p:String!){ login(username:$u, password:$p, rememberMe:true){ __typename } }`, { u: ADMIN_USER, p: ADMIN_PASSWORD });
   if (lr?.data?.login?.__typename !== "CurrentUser") { console.log("[FAIL] login"); process.exit(1); }
 
   const targets = [

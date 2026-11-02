@@ -2,14 +2,18 @@
 // → L3 店铺覆盖（channel customFields）→ L4 页面/模块内建默认。
 // 三个 useAsyncData 各自 handler 内单次 useAsyncGql（SSR 安全）；
 // GetChannelTheme 与 useDetailConfig/useShopContent 同操作名共享 payload 去重。
+// key 带租户 code：软导航切店时 Nuxt 会按新 key 重新取数，避免沿用上一家店的模板/配置。
 import { mergePageConfig, mergeThemeTokens, parseThemeTokensOverride } from "../utils/merge-config";
 import type { ShopGlobalConfigData, ShopTemplateData, ThemeTokens } from "../utils/merge-config";
 
 const APP = "nshop";
 
 export function useThemeConfig() {
+  const { code: tenantCode } = useTenantChannel();
+  const tenantKey = () => tenantCode.value ?? "default";
+
   const { data: templateData, refresh: refreshTemplate } = useAsyncData(
-    "theme-template",
+    () => `theme-template-${tenantKey()}`,
     async () => {
       const res = await useAsyncGql("GetShopTemplate", { app: APP }, { server: true });
       return res.data.value?.shopTemplate ?? null;
@@ -18,7 +22,7 @@ export function useThemeConfig() {
   );
 
   const { data: globalData, refresh: refreshGlobal } = useAsyncData(
-    "theme-global-config",
+    () => `theme-global-config-${tenantKey()}`,
     async () => {
       const res = await useAsyncGql("GetShopGlobalConfig", { app: APP }, { server: true });
       return res.data.value?.shopGlobalConfig ?? null;
@@ -27,7 +31,7 @@ export function useThemeConfig() {
   );
 
   const { data: channelData, refresh: refreshChannel } = useAsyncData(
-    "theme-channel-cfs",
+    () => `theme-channel-cfs-${tenantKey()}`,
     async () => {
       const res = await useAsyncGql("GetChannelTheme", {}, { server: true });
       return res.data.value?.activeChannel?.customFields ?? null;

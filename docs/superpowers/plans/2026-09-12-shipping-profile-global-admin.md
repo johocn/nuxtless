@@ -27,7 +27,7 @@
 ## 共享 API / 常量（供各 Task 复用）
 
 - 登录凭证（C 端 vendor 与 admin 同套账号体系）：
-  - admin：`https://e.joho.cn/admin-api`，`superadmin / <REDACTED>`，`Authorization: Bearer <token>`。
+  - admin：`https://e.joho.cn/admin-api`，`ADMIN_EMAIL / ADMIN_PASSWORD`（环境变量，禁止写死），`Authorization: Bearer <token>`。
   - 渠道 token：default `cnx87ezvmjx8nn3bth6c`，t2 `66ruvnhh34svhckaa2i`。
 - admin GraphQL 变更（`shipping-profile-admin.resolver.ts`）：
   - 登录 `mutation { login(username,$u,password,$p){ ... on CurrentUser { id } ... on InvalidCredentialsError { message } } }`（`vendure-auth-token` 响应头即 token）。
@@ -440,7 +440,7 @@ const gql = async (q, vars = {}, headers = {}) => {
   return { body, token };
 };
 const login = async () => {
-  const r = await gql(`mutation { login(username:"superadmin", password:"<REDACTED>"){ ... on CurrentUser { id identifier } ... on InvalidCredentialsError { message } } }`);
+  const r = await gql(`mutation { login(username:"${process.env.ADMIN_EMAIL}", password:"${process.env.ADMIN_PASSWORD}"){ ... on CurrentUser { id identifier } ... on InvalidCredentialsError { message } } }`);
   if (!r.token) throw new Error('login failed ' + JSON.stringify(r.body));
   auth = r.token;
 };

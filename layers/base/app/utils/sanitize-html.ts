@@ -92,3 +92,21 @@ export function sanitizeRichText(html?: string | null): string {
     ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
   });
 }
+
+// 搜索高亮只允许强调标签：Meili 的 highlightPre/PostTag 配置为 <mark>，
+// 兼容常见的 <em>。其余标签（img/script/iframe…）与全部属性一律剥离。
+const SEARCH_HIGHLIGHT_TAGS = ["em", "mark"];
+
+/**
+ * 搜索高亮净化：Meilisearch 的 `_formatted` 只是把命中词包上 mark 标签，
+ * **不会转义原文里的 HTML**，因此渲染前必须走本函数。
+ * 无高亮副本时调用方应改为纯文本插值，禁止直接 v-html 原始字段。
+ */
+export function sanitizeSearchHighlight(html?: string | null): string {
+  if (!html) return "";
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: SEARCH_HIGHLIGHT_TAGS,
+    ALLOWED_ATTR: [],
+    KEEP_CONTENT: true,
+  });
+}

@@ -20,6 +20,12 @@ const { config: themeConfig, loadTheme, customFields } = useChannelTheme();
 useHead(() => ({ htmlAttrs: { "data-theme": themeConfig.value } }));
 await loadTheme();
 
+// 切店复位：软导航（如 /t2/... → 默认店首页）时 app.vue setup 不会重跑，
+// 渠道 token 变化后必须重新拉取渠道主题，否则沿用上一家店的 data-theme / customFields。
+watch(channelToken, () => {
+  loadTheme(true);
+});
+
 // 模板级主题令牌（L1 全局配置 → L2 风格模板合并）：内联 CSS 变量叠加在
 // data-theme 之上（模板库为上层覆盖）。
 // 特异性说明：theme.css 用 :root[data-theme]（(0,2,0)）定义 --ui-primary/--ui-radius，
@@ -28,7 +34,7 @@ await loadTheme();
 function darken(hex: string, pct = 0.1): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
   if (!m) return hex;
-  const n = parseInt(m[1], 16);
+  const n = parseInt(m[1]!, 16);
   const r = Math.round(((n >> 16) & 255) * (1 - pct));
   const g = Math.round(((n >> 8) & 255) * (1 - pct));
   const b = Math.round((n & 255) * (1 - pct));

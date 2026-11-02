@@ -21,7 +21,7 @@ const errContains = (body, sub) => JSON.stringify(body?.errors || body).includes
 
 (async () => {
   // 登录超管
-  const login = await gql(`mutation { login(username:"superadmin", password:"<REDACTED>") {
+  const login = await gql(`mutation { login(username:"${process.env.ADMIN_EMAIL}", password:"${process.env.ADMIN_PASSWORD}") {
     ... on CurrentUser { id identifier } ... on InvalidCredentialsError { errorCode message } } }`);
   if (!login.token) { console.log('[FAIL] 登录失败: ' + JSON.stringify(login.body)); process.exit(1); }
   auth = login.token;
