@@ -174,8 +174,27 @@ const RESOLVE_BY_DOMAIN_QUERY = `query ResolveChannelByDomainForRegistry($host: 
   resolveChannelByDomain(host: $host) { token code }
 }`;
 
-/** 域名 → 渠道（含负向缓存），TTL 与租户表一致 */
+/**
+ * 域名 → 渠道（含负向缓存），TTL 与租户表一致。
+ * Host 由请求头驱动（可被任意构造），因此必须：格式校验 + 容量上限（LRU 淘汰），
+ * 否则任意 Host 可触发上游 GraphQL 请求并让 Map 无限增长（审计第 10 条）。
+ */
+const DOMAIN_CACHE_MAX = 200;
+/** 合法主机名：小写字母/数字/连字符/点（不含协议、端口、下划线、控制字符） */
+const HOST_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))*$/;
+const HOST_MAX_LEN = 253;
+
 const domainCache = new Map<string, { token: string; code: string; at: number }>();
+
+/** 写入缓存并维护 LRU 顺序（命中时先删后插）；超限淘汰最久未使用的一项 */
+function rememberDomain(key: string, value: { token: string; code: string; at: number }): void {
+  domainCache.delete(key);
+  if (domainCache.size >= DOMAIN_CACHE_MAX) {
+    const oldest = domainCache.keys().next().value;
+    if (oldest !== undefined) domainCache.delete(oldest);
+  }
+  domainCache.set(key, value);
+}
 
 async function fetchChannelByDomain(host: string): Promise<{ token: string; code: string } | null> {
   const endpoint = gqlEndpoint();
@@ -215,18 +234,19 @@ async function fetchChannelByDomain(host: string): Promise<{ token: string; code
  * 因此按 host 逐条做 60s 缓存，未命中同样写入负向缓存。
  */
 export async function resolveTenantByDomain(host: string): Promise<TenantHit | null> {
-  const h = host.split(":")[0]?.toLowerCase() ?? "";
-  if (!h) return null;
+  const h = host.split(":")[0]?.trim().toLowerCase() ?? "";
+  if (!h || h.length > HOST_MAX_LEN || !HOST_RE.test(h)) return null;
 
   const cached = domainCache.get(h);
   if (cached && Date.now() - cached.at < TENANT_TTL_MS) {
+    rememberDomain(h, cached);
     if (!cached.code) return null;
     const name = (await getTenantRegistry()).get(cached.code)?.name || cached.code;
     return { status: "ok", code: cached.code, token: cached.token, name };
   }
 
   const found = await fetchChannelByDomain(h);
-  domainCache.set(h, found ? { ...found, at: Date.now() } : { token: "", code: "", at: Date.now() });
+  rememberDomain(h, found ? { ...found, at: Date.now() } : { token: "", code: "", at: Date.now() });
   if (!found) return null;
 
   const name = (await getTenantRegistry()).get(found.code)?.name || found.code;

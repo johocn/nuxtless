@@ -80,6 +80,11 @@ export default defineNuxtConfig({
   ogImage: {
     security: {
       secret: process.env.OG_IMAGE_SECRET,
+      // 有 secret 时开启 strict（审计第 2 条）：/_og 仅接受带签名的站内 URL——
+      // 强制 URL keyed-hash 签名、query 长度上限 2048、仅允许站点 Host、
+      // 禁用 html 选项（阻断内联 HTML 触发的 SSRF/冷渲染）。secret 缺失时保持旧行为，
+      // 由 server/plugins/og-secret-check.ts 在启动时告警。
+      strict: Boolean(process.env.OG_IMAGE_SECRET),
     },
     compatibility: {
       runtime: {

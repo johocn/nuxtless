@@ -1,8 +1,9 @@
-﻿export default defineNuxtRouteMiddleware(() => {
-  // persistedstate 默认走 cookies storage，SSR 阶段 useCookie 可读请求头 Cookie，
-  // 因此服务端即可准确判断认证状态并直接重定向，避免客户端闪烁与竞态。
-  const { isAuthenticated } = storeToRefs(useAuthStore());
-  if (isAuthenticated.value) {
+﻿import { ensureSession } from "../utils/session-guard";
+
+export default defineNuxtRouteMiddleware(async () => {
+  // 只用「有效登录态」判定：token 失效时 ensureSession 会清会话并返回 false，
+  // 登录/注册页因此可以正常进入（不再被旧的 Pinia 用户信息弹回 /account）。
+  if (await ensureSession()) {
     return navigateTo(useTenantLocalePath()("/account"), { replace: true });
   }
 });

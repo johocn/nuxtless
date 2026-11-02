@@ -72,7 +72,16 @@ function filterStyleAttr(node: Element): void {
 // DOMPurify hook 为全局挂载，仅影响本仓唯一的 sanitizeRichText 调用面。
 DOMPurify.addHook("afterSanitizeAttributes", (node) => {
   const el = node as Element;
-  if (el && typeof el.getAttribute === "function" && el.hasAttribute?.("style")) {
+  if (!el || typeof el.getAttribute !== "function") return;
+  // 外链新窗口统一补 rel（审计第 8 条）：target=_blank 缺 noopener 时，
+  // 被打开的页面可通过 window.opener 反控本站（tabnabbing）。
+  if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
+    const parts = new Set((el.getAttribute("rel") || "").split(/\s+/).filter(Boolean));
+    parts.add("noopener");
+    parts.add("noreferrer");
+    el.setAttribute("rel", Array.from(parts).join(" "));
+  }
+  if (el.hasAttribute?.("style")) {
     filterStyleAttr(el);
   }
 });
