@@ -18,10 +18,10 @@ export function selectPrimaryProvider<T extends SsoProviderCandidate>(
   live: T[] | null | undefined,
 ): ResolvedProvider<T> {
   if (prefetched && prefetched.length > 0) {
-    return { provider: prefetched[0], source: "prefetched" };
+    return { provider: prefetched[0]!, source: "prefetched" };
   }
   if (live && live.length > 0) {
-    return { provider: live[0], source: "live" };
+    return { provider: live[0]!, source: "live" };
   }
   return { provider: null, source: "none" };
 }

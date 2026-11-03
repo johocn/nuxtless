@@ -96,30 +96,38 @@ function bundleSave(b: CouponBundle): number {
         </UButton>
       </div>
 
-      <!-- 单券卡 -->
+      <!-- 单券卡（沉浸海报卡：活动图头图 + 折扣大字 + 价格 + 抢购） -->
       <div
         v-for="c in templates"
         :key="'t-' + c.id"
-        class="flex flex-col rounded-xl border border-(--ui-border) p-4"
+        class="flex flex-col overflow-hidden rounded-xl border border-(--ui-border)"
       >
-        <div class="flex items-stretch gap-4">
-          <CouponFace :type="c.type" :value="c.discountValue" />
-          <div class="flex min-w-0 flex-1 flex-col">
-            <p class="font-semibold">{{ c.name }}</p>
-            <p class="mt-1 text-sm text-(--ui-text-muted)">{{ formatCondition(c) }}</p>
-            <p class="mt-1 text-xs text-(--ui-text-muted)">
-              {{ t("messages.coupon.validity") }}：{{ formatDateRange(c) }}
-            </p>
+        <CouponActivityImage
+          :name="c.name"
+          :src="c.activityImage"
+          ratio="banner"
+          :rounded="false"
+        />
+        <div class="flex flex-1 flex-col p-4">
+          <div class="flex flex-wrap items-baseline gap-1">
+            <span class="text-xl font-bold text-primary">
+              <template v-if="c.type === 'FIXED' || c.type === 'FULL'">¥</template>{{ formatAmount(c.type, c.discountValue) }}<span class="text-sm">{{ formatUnit(c.type) }}</span>
+            </span>
+            <span class="text-xs text-(--ui-text-muted)">{{ formatCondition(c) }}</span>
           </div>
+          <p class="mt-1 font-semibold">{{ c.name }}</p>
+          <p class="mt-1 text-xs text-(--ui-text-muted)">
+            {{ t("messages.coupon.validity") }}：{{ formatDateRange(c) }}
+          </p>
+          <UButton
+            class="mt-4 w-full justify-center"
+            :loading="buyingId === c.id"
+            :disabled="!!buyingId"
+            @click="emit('buy', { kind: 'template', id: c.id, name: c.name, amount: c.salePrice })"
+          >
+            {{ t("messages.coupon.buyNow") }} ¥{{ couponYuan(c.salePrice) }}
+          </UButton>
         </div>
-        <UButton
-          class="mt-4 w-full justify-center"
-          :loading="buyingId === c.id"
-          :disabled="!!buyingId"
-          @click="emit('buy', { kind: 'template', id: c.id, name: c.name, amount: c.salePrice })"
-        >
-          {{ t("messages.coupon.buyNow") }} ¥{{ couponYuan(c.salePrice) }}
-        </UButton>
       </div>
     </div>
     <p v-else>{{ t("messages.coupon.saleEmpty") }}</p>

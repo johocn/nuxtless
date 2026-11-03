@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { calcNightPrices } from '../hotel-pricing';
+import { calcNightPrices, type HotelPricingInput } from '../hotel-pricing';
 
-const cfg = {
+const cfg: HotelPricingInput = {
   basePriceCent: 88800,
   priceCalendar: [
     { type: 'weekday', rate: 1.0 },
@@ -44,8 +44,18 @@ describe('calcNightPrices', () => {
       '2026-09-18',
       '2026-09-19', // 周五 1 晚
     );
-    expect(r!.nights[0].type).toBe('weekend');
+    expect(r!.nights[0]!.type).toBe('weekend');
     expect(r!.totalCent).toBe(99900);
+  });
+  it('连住档位为空 / 未达门槛：rate 回落 1，总额为原价', () => {
+    const noDiscount: HotelPricingInput = {
+      basePriceCent: 88800,
+      priceCalendar: [{ type: 'weekday', rate: 1.0 }],
+      longStayDiscount: [],
+    };
+    expect(calcNightPrices(noDiscount, '2026-09-14', '2026-09-16')!.totalCent).toBe(88800 * 2);
+    // 2 晚 < minNights=3，不触发 9 折
+    expect(calcNightPrices(cfg, '2026-09-14', '2026-09-16')!.totalCent).toBe(88800 * 2);
   });
   it('坏 JSON / 缺字段返回 null', () => {
     expect(calcNightPrices(null as any, '2026-09-14', '2026-09-16')).toBeNull();
@@ -72,7 +82,7 @@ describe('calcNightPrices × ratePlan（P2 房价方案，与后端同语义）'
   });
   it('ratePlan 作用于日类型换算后的段价（weekend rate 1.2 再打折）', () => {
     const r = calcNightPrices(cfg, '2026-09-18', '2026-09-19', { adjustType: 'discount', adjustValue: 500 }); // 周五 1 晚
-    expect(r!.nights[0].priceCent).toBe(Math.round(88800 * 1.2 * 0.5));
+    expect(r!.nights[0]!.priceCent).toBe(Math.round(88800 * 1.2 * 0.5));
   });
   it('ratePlan=null 等价不传（基线口径不变）', () => {
     const a = calcNightPrices(cfg, '2026-09-14', '2026-09-17');

@@ -19,6 +19,9 @@ describe("selectPrimaryProvider", () => {
     expect(r.source).toBe("none");
     expect(r.provider).toBeNull();
   });
+  it("入参 undefined 也返回 none", () => {
+    expect(selectPrimaryProvider(undefined, undefined)).toEqual({ provider: null, source: "none" });
+  });
 });
 
 describe("shouldShowOverlay", () => {

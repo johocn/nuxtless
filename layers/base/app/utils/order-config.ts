@@ -2,6 +2,8 @@
 // 兜底链：块级定制字段 → 块内建默认 → 全局默认(true / 'jd' / 占位)
 // 文案兜底链：当前 locale → defaultLocale → 首值 → ''（块内建占位 / i18n 兜底）
 
+import { resolveLocalizedText } from "./content-lang";
+
 /** 订单版式视觉变体（共享积木据此选择圆角/配色） */
 export type OrderVisualVariant = "cn" | "jd" | "mall";
 export type OrderDetailLayout = "jd" | "classic" | "confirmation" | "cn" | "mall";
@@ -83,7 +85,7 @@ export function localizeOrderText(
 ): string {
   if (!text) return "";
   if (typeof text === "string") return text;
-  return text[locale] ?? text[defaultLocale] ?? Object.values(text)[0] ?? "";
+  return resolveLocalizedText(text, locale, defaultLocale);
 }
 
 // 核销码块定制取值（L4 兜底：块定制 → 内建默认）

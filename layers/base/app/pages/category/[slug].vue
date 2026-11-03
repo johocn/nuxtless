@@ -24,7 +24,7 @@ const menuItems = computed<TopLevelCollection[]>(() =>
   (menuCollections.value?.collections?.items ?? []) as TopLevelCollection[],
 );
 
-const currentCollection = computed<TopLevelCollection | null>(() =>
+const currentCollection = computed<TopLevelCollection | ChildCollection | null>(() =>
   menuItems.value.find((top) => top.slug === slug) ??
   menuItems.value.flatMap((top) => top.children ?? []).find((child) => child.slug === slug) ??
   null,

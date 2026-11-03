@@ -75,6 +75,14 @@ describe("toVendureLanguageCode", () => {
     expect(toVendureLanguageCode(undefined)).toBe("zh_Hans");
   });
 
+  it("i18n locale code（en/de/ja…）与 BCP47 同样命中", () => {
+    expect(toVendureLanguageCode("en")).toBe("en");
+    expect(toVendureLanguageCode("zh")).toBe("zh_Hans");
+    expect(toVendureLanguageCode("de")).toBe("de");
+    expect(toVendureLanguageCode("ja")).toBe("ja");
+    expect(toVendureLanguageCode("zh_Hans")).toBe("zh_Hans");
+  });
+
   it("fallback 参数可覆盖（默认语言为 en 时）", () => {
     expect(toVendureLanguageCode("de-DE", "en")).toBe("de");
     expect(toVendureLanguageCode("xx-YY", "en")).toBe("en");

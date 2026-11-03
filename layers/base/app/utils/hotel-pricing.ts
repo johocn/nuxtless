@@ -81,12 +81,12 @@ export function calcNightPrices(
       price = seg.priceCent != null ? seg.priceCent : Math.round(cfg.basePriceCent * (seg.rate ?? 1));
     }
     nightsOut.push({ date: dateStr, priceCent: applyNightlyAdjustment(price, ratePlan), type });
-    baseTotal += nightsOut[nightsOut.length - 1].priceCent;
+    baseTotal += nightsOut[nightsOut.length - 1]!.priceCent;
   }
 
   // 连住折扣：fixed 方案为固定价直接生效，不再叠加；discount/surcharge 继续叠加
   const discounts = (cfg.longStayDiscount ?? []).filter(d => nights >= d.minNights).sort((a, b) => b.minNights - a.minNights);
-  const rate = ratePlan?.adjustType === 'fixed' ? 1 : discounts.length ? discounts[0].rate : 1;
+  const rate = ratePlan?.adjustType === 'fixed' ? 1 : discounts.length ? discounts[0]!.rate : 1;
   const totalCent = Math.round(baseTotal * rate);
   return { nights: nightsOut, totalCent, avgCent: Math.round(totalCent / nights) };
 }

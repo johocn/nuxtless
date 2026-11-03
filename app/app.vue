@@ -128,11 +128,16 @@ onBeforeMount(async () => {
 watch(locale, (val, oldVal) => {
   if (val === oldVal) return;
 
-  useGqlHost(`?languageCode=${toVendureLanguageCode(val)}`);
+  useGqlHost(`${useGqlHostUrl()}?languageCode=${toVendureLanguageCode(val)}`);
   // Workaround for refreshing Vendure data
+  if (!import.meta.client) return;
   const route = useRoute();
   const localePath = useTenantLocalePath();
-  window.location.href = localePath(route.fullPath);
+  // route.fullPath 已带旧语言前缀（prefix_except_default：/en/...），再次 localePath 会
+  // 二次加前缀（/en/en/...）→ 404。先剥掉语言前缀段，再按新语言重建地址。
+  const segs = route.fullPath.split("/");
+  if (segs[1] && (segs[1] === oldVal || segs[1] === val)) segs.splice(1, 1);
+  window.location.href = localePath(segs.join("/") || "/");
 });
 
 // Watch for order processing errors

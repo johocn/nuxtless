@@ -39,6 +39,9 @@ describe("detail-config", () => {
     expect(localizeText("共用", "de-DE")).toBe("共用");   // 字符串 = 各语言共用
     expect(localizeText(null, "de-DE")).toBe("");         // 缺省 → 空
     expect(localizeText({ "en-US": "Only EN" }, "fr-FR")).toBe("Only EN"); // 首值兜底
+    // 界面 locale 是 i18n code（en），后台文案键是 BCP47（en-US）→ 主语言兜底命中
+    expect(localizeText(obj, "en")).toBe("English");
+    expect(localizeText({ en: "English" }, "en-US")).toBe("English");
   });
 
   it("parseHotelRoomConfig：JSON 字符串 / 对象 / 坏值", () => {

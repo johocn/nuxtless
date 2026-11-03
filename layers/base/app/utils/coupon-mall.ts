@@ -64,8 +64,9 @@ export function couponSavingsExample(
   tpl: { type?: string | null; discountValue?: number | null },
   spend = 100,
 ): { spend: number; save: number; after: number } | null {
-  if (tpl?.type !== "PERCENT" || !(tpl.discountValue > 0) || !(spend > 0)) return null;
-  const save = Math.round(spend * (1 - tpl.discountValue / 100));
+  const dv = tpl?.discountValue;
+  if (tpl?.type !== "PERCENT" || dv == null || !(dv > 0) || !(spend > 0)) return null;
+  const save = Math.round(spend * (1 - dv / 100));
   return { spend, save, after: spend - save };
 }
 

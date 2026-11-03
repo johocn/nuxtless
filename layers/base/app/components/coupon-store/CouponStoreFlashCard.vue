@@ -128,10 +128,10 @@ async function grab(tplId: string | number) {
         await goLogin();
         break;
       default:
-        toast.add({ title: t("messages.couponList.opFailed"), color: "error" });
+        toast.add({ title: t("messages.couponStore.opFailed"), color: "error" });
     }
   } catch {
-    toast.add({ title: t("messages.couponList.opFailed"), color: "error" });
+    toast.add({ title: t("messages.couponStore.opFailed"), color: "error" });
   } finally {
     claimingId.value = null;
   }

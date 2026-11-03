@@ -46,7 +46,7 @@ describe("groupSaleTemplates", () => {
       ["PERCENT", 2],
       ["FULL", 1],
     ]);
-    expect(groups[0].title).toBeNull();
+    expect(groups[0]!.title).toBeNull();
   });
 
   it("超阈值且已配 category：按配置顺序分组，未命中/未分类落「更多」", () => {
@@ -66,15 +66,15 @@ describe("groupSaleTemplates", () => {
     const tpls = Array.from({ length: 21 }, (_, i) => mk(i + 1, "FIXED", "food"));
     const groups = groupSaleTemplates(tpls, null, { lang: "zh-CN", moreTitle: "更多" });
     expect(groups.length).toBe(1);
-    expect(groups[0].key).toBe("more");
-    expect(groups[0].items.length).toBe(21);
+    expect(groups[0]!.key).toBe("more");
+    expect(groups[0]!.items.length).toBe(21);
   });
 
   it("多语言标题：locale 缺失回退默认语言 → 首值", () => {
     const tpls = Array.from({ length: 21 }, (_, i) => mk(i + 1, "FIXED", "food"));
     const config = parseFloorGroups('[{"key":"food","title":{"zh-CN":"美食","en":"Food"}}]');
-    expect(groupSaleTemplates(tpls, config, { lang: "en", moreTitle: "More" })[0].title).toBe("Food");
-    expect(groupSaleTemplates(tpls, config, { lang: "ja", moreTitle: "More" })[0].title).toBe("美食");
+    expect(groupSaleTemplates(tpls, config, { lang: "en", moreTitle: "More" })[0]!.title).toBe("Food");
+    expect(groupSaleTemplates(tpls, config, { lang: "ja", moreTitle: "More" })[0]!.title).toBe("美食");
   });
 
   it("空目录返回空数组", () => {
@@ -166,6 +166,16 @@ describe("formatCouponDiscount", () => {
   it("缺字段不抛错", () => {
     expect(formatCouponDiscount({})).toEqual({ kind: "fixed", amount: "0" });
   });
+  it("discountValue 为 null：非 PERCENT 仍返回 amount（详情页不再有永远走不到的金额分支）", () => {
+    expect(formatCouponDiscount({ type: "FIXED", discountValue: null })).toEqual({
+      kind: "fixed",
+      amount: "0",
+    });
+    expect(formatCouponDiscount({ type: "FULL", discountValue: null })).toEqual({
+      kind: "full",
+      amount: "0",
+    });
+  });
 });
 
 describe("couponSavingsExample", () => {
@@ -187,6 +197,10 @@ describe("couponSavingsExample", () => {
     expect(couponSavingsExample({ type: "FIXED", discountValue: 500 })).toBeNull();
     expect(couponSavingsExample({ type: "PERCENT", discountValue: 0 })).toBeNull();
     expect(couponSavingsExample({ type: "PERCENT", discountValue: 80 }, 0)).toBeNull();
+  });
+  it("discountValue 缺失 / null 返回 null（不产生 NaN 省额）", () => {
+    expect(couponSavingsExample({ type: "PERCENT" })).toBeNull();
+    expect(couponSavingsExample({ type: "PERCENT", discountValue: null })).toBeNull();
   });
 });
 

@@ -261,7 +261,10 @@ flow.submitFns.submitPayment = async () => {
           class="flex items-center justify-between rounded-lg border border-neutral-200 px-3 py-2 dark:border-neutral-800"
         >
           <div class="flex items-center gap-2">
-            <URadio :model-value="g.methods[0]!.code" :value="g.methods[0]!.code" disabled />
+            <span
+              class="size-4 shrink-0 rounded-full border border-primary bg-primary/10"
+              aria-hidden="true"
+            />
             <span class="text-sm text-neutral-600 dark:text-neutral-300">{{ g.methods[0]!.name }}</span>
           </div>
           <span class="text-xs text-neutral-500">{{ t("messages.checkout.uniqueMethodLocked") }}</span>

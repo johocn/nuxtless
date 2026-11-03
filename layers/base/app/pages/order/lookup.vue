@@ -29,12 +29,12 @@ async function submit() {
     <UAlert v-if="state === 'error'" color="error" :title="$t('messages.order.lookupNotFoundClass')" variant="outline" class="mb-4" />
 
     <form v-if="state !== 'found'" class="max-w-md space-y-3" @submit.prevent="submit">
-      <UFormGroup :label="$t('messages.order.orderCodeLabel')">
+      <UFormField :label="$t('messages.order.orderCodeLabel')">
         <UInput v-model="form.orderCode" :placeholder="$t('messages.order.orderCodePlaceholder')" :disabled="state==='loading'" />
-      </UFormGroup>
-      <UFormGroup :label="$t('messages.order.phoneLabel')">
+      </UFormField>
+      <UFormField :label="$t('messages.order.phoneLabel')">
         <UInput v-model="form.phone" type="tel" maxlength="11" :placeholder="$t('messages.order.phonePlaceholder')" :disabled="state==='loading'" />
-      </UFormGroup>
+      </UFormField>
       <UButton type="submit" :loading="state==='loading'" :label="$t('messages.order.lookupSubmit')" class="px-7" />
     </form>
 

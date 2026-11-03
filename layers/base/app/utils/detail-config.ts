@@ -2,6 +2,8 @@
 // 兜底链：块级定制字段 → 块内建默认 → 全局默认（true / 'classic' / 占位文案）
 // 文案兜底链：当前 locale → defaultLocale → 无语言对象首个值 → 块内建占位 → i18n 字典静态文案
 
+import { resolveLocalizedText } from './content-lang';
+
 export type DetailLayout = 'classic' | 'floor' | 'dualBuy' | 'hotel' | 'mall';
 
 // 可翻译文案：string = 各语言共用；Record<language,string> = 逐语言
@@ -128,5 +130,5 @@ export function localizeText(
 ): string {
   if (!text) return '';
   if (typeof text === 'string') return text;
-  return text[locale] ?? text[defaultLocale] ?? Object.values(text)[0] ?? '';
+  return resolveLocalizedText(text, locale, defaultLocale);
 }

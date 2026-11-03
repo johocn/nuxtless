@@ -62,8 +62,8 @@ const shopName = computed(() => customFields.value?.shopName || t("messages.bill
     <!-- 提交委托表单 -->
     <BillPaySubmitForm :config="config" :history-merchants="historyMerchants" />
 
-    <!-- 「自己到店」买单券推荐位（券板块断点修复） -->
-    <BillPayCouponSection class="mt-5" />
+    <!-- 「自己到店」买单券推荐位（按 billPayConfig.couponEnabled 门控） -->
+    <BillPayCouponSection class="mt-5" :enabled="config?.couponEnabled ?? false" />
 
     <!-- 服务说明 -->
     <section class="mt-5 rounded-xl bg-(--ui-bg-muted) p-4 text-xs leading-relaxed text-(--ui-text-muted)">

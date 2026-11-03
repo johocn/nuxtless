@@ -577,6 +577,12 @@ export default defineI18nLocale(() =>
       selfSub: "Buy a voucher, show the code at the store to pay",
       selfEmpty: "Vouchers coming soon — stay tuned",
       selfPerCard: " each",
+      couponSectionTitle: "Use a bill-pay voucher",
+      couponNoUse: "None",
+      couponNone: "No bill-pay vouchers available",
+      couponNotEligible: "No voucher meets this amount",
+      couponPreviewDiscount: "Estimated ¥{amount} off (final quote applies)",
+      myBillPayCoupons: "My bill-pay vouchers",
     },
     billpayAgreement: {
       title: "Entrusted Service Agreement",

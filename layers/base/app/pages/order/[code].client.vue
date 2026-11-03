@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import type { GuestOrderLookupQuery } from "#gql/default";
-import OrderDetailConfirmation from "../../../components/order/OrderDetailConfirmation.vue";
-import GuestOrderConfirmation from "../../../components/order/GuestOrderConfirmation.vue";
+import OrderDetailConfirmation from "../../components/order/OrderDetailConfirmation.vue";
+import GuestOrderConfirmation from "../../components/order/GuestOrderConfirmation.vue";
 
 definePageMeta({
-  alias: ["/order/:code"],
+  // 主路径为 /order/:code（支付回跳与分享短链），旧链接 /checkout/confirmation/:code 保留为别名。
+  // 不要反过来把 /order/:code 设为别名：vue-router 5 下动态别名会优先于静态路由，
+  // 会吞掉 /order/lookup（订单查询页）。
+  alias: ["/checkout/confirmation/:code"],
 });
 
 const { t } = useI18n();

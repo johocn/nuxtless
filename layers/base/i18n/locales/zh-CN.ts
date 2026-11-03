@@ -445,6 +445,8 @@ export const zhMessages = {
       fissionShareWechatHint: '点击右上角「···」转发给好友即可得券',
       fissionLinkCopied: '分享链接已复制，粘贴给好友即可',
       fissionLoginUnavailable: '暂未配置登录方式，无法领取',
+      opFailed: '操作失败，请稍后重试',
+      reasonPerUserLimit: '已达每人限领数量',
       // —— FR-F1 每日领券 ——
       dailyClaim: '领取',
       dailyClaimOk: '领取成功，已放入「我的券」',
@@ -589,6 +591,12 @@ export const zhMessages = {
       selfSub: '领张买单券，到店出示券码结算',
       selfEmpty: '买单券即将上架，敬请期待',
       selfPerCard: '/张',
+      couponSectionTitle: '使用买单券',
+      couponNoUse: '不使用',
+      couponNone: '暂无可用买单券',
+      couponNotEligible: '当前金额不满足买单券使用门槛',
+      couponPreviewDiscount: '预计再减 ¥{amount}（最终以实际报价为准）',
+      myBillPayCoupons: '我的买单券',
     },
     billpayAgreement: {
       title: '委托服务协议',

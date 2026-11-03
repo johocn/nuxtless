@@ -60,7 +60,7 @@ function onIn(v: string) {
       <label class="flex-1">
         <span class="text-xs text-gray-400">{{ t("messages.detail.checkIn") }}</span>
         <input v-model="checkIn" type="date" class="mt-1 block w-full rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700"
-               :min="minDate" :max="maxAdvance" @change="onIn($event.target.value)" />
+               :min="minDate" :max="maxAdvance" @change="onIn(($event.target as HTMLInputElement).value)" />
       </label>
       <label class="flex-1">
         <span class="text-xs text-gray-400">{{ t("messages.detail.checkOut") }}</span>

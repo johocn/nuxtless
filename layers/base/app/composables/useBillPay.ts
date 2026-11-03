@@ -42,6 +42,10 @@ export interface BillPayOrder {
   remark?: string | null;
   quoteNote?: string | null;
   quoteExpireAt?: string | null;
+  /** 下单时使用的买单券码（后端校验/预占；未用券为 null） */
+  couponCode?: string | null;
+  /** 买单券抵扣金额（分）；quoteAmount 已为抵扣后应付 */
+  couponDiscount?: number | null;
   proofUrl?: string | null;
   paymentMethod?: string | null;
   paidAt?: string | null;
@@ -164,8 +168,8 @@ export function billpayRequest<T, V extends Record<string, any> = Record<string,
 
 const ORDER_FIELDS = `
   id createdAt updatedAt code merchantName expectedAmount quoteAmount actualAmount
-  discountDetail status remark quoteNote quoteExpireAt proofUrl paymentMethod
-  paidAt completedAt settledAt refundedAt
+  discountDetail status remark quoteNote quoteExpireAt couponCode couponDiscount
+  proofUrl paymentMethod paidAt completedAt settledAt refundedAt
 `;
 
 const CONFIG_FIELDS = `
@@ -208,6 +212,8 @@ export async function createBillPayOrder(input: {
   merchantName: string;
   expectedAmount: number;
   remark?: string;
+  /** 买单券码（可选）；券校验/抵扣/预占由后端完成 */
+  couponCode?: string;
 }): Promise<BillPayOrder> {
   const data = await billpayRequest<{ createBillPayOrder: BillPayOrder }>(
     `mutation CreateBillPayOrder($input: CreateBillPayOrderInput!) {

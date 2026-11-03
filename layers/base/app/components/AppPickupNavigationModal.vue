@@ -147,7 +147,8 @@ function goNavigate() {
     });
     return;
   }
-  if (typeof window !== "undefined") window.open(uri, "_blank");
+  // 移动端当前页跳转、桌面端新标签页（与门店弹层导航一致，避免内置浏览器拦截）
+  nav.openNavigation(uri);
 }
 </script>
 

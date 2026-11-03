@@ -59,7 +59,7 @@ function fmtShort(value?: string | null): string | null {
 /** 节点精确时间：取该状态最后一次历史行 */
 function historyTime(state: string): string | null {
   const rows = (props.request.history ?? []).filter((h) => h.toState === state);
-  return rows.length ? fmtShort(rows[rows.length - 1].createdAt) : null;
+  return rows.length ? fmtShort(rows[rows.length - 1]?.createdAt) : null;
 }
 
 const nodes = computed<Node[]>(() => {

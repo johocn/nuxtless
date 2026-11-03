@@ -26,6 +26,8 @@ const progress = computed(() => saleCardProgress(props.tpl));
 const discount = computed(() => formatCouponDiscount(props.tpl));
 const savings = computed(() => couponSavingsExample(props.tpl));
 const scene = computed(() => couponSceneArt(String(localizeText(props.tpl.name, locale.value) ?? "")));
+/** 后台配置的活动照片；空 = 继续用场景插画兜底 */
+const activityImage = computed(() => String(props.tpl.activityImage ?? "").trim());
 const soldOut = computed(() => progress.value.soldOut);
 
 /** PERCENT → i18n 折扣文案（zh「8折」/ en「Save 20%」）；FIXED/FULL → 面额 ¥ */
@@ -70,10 +72,18 @@ function goDetail() {
 </script>
 
 <template>
-  <div class="sale-card" :class="{ soldout }" @click="goDetail">
-    <!-- 头图区：场景插画 + 到店可用 pill（插画抽取为 CouponStoreSceneArt，与详情页共用） -->
+  <div class="sale-card" :class="{ soldout: soldOut }" @click="goDetail">
+    <!-- 头图区：后台活动照片优先，空则回退场景插画；到店可用 pill -->
     <div class="art">
-      <CouponStoreSceneArt :scene="scene" />
+      <img
+        v-if="activityImage"
+        :src="activityImage"
+        :alt="String(localizeText(tpl.name, locale) ?? '')"
+        class="art-img"
+        loading="lazy"
+        decoding="async"
+      >
+      <CouponStoreSceneArt v-else :scene="scene" />
       <span v-if="marketingLabel" class="art-tag">{{ marketingLabel }}</span>
       <span class="art-pill">{{ t("messages.coupon.storeUsable") }}</span>
     </div>
@@ -131,6 +141,7 @@ function goDetail() {
 .sale-card { display: flex; flex-direction: column; gap: 8px; background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 12px; padding: 10px; cursor: pointer; }
 .sale-card.soldout { opacity: 0.55; }
 .art { position: relative; height: 72px; border-radius: 10px; overflow: hidden; flex: none; }
+.art-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .art-pill { position: absolute; top: 6px; right: 6px; border-radius: 999px; background: rgb(255 255 255 / .92); color: #9a3412; font-size: 10px; font-weight: 500; padding: 1px 8px; white-space: nowrap; }
 .name-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
 .name { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

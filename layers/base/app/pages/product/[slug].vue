@@ -201,7 +201,7 @@ if (product.value && selectedVariant.value) {
     <WechatShare
       :title="product?.name"
       :description="stripHtmlToText(product?.description ?? '')"
-      :image-url="shareCardSrc.value"
+      :image-url="shareCardSrc"
     />
   </main>
 </template>

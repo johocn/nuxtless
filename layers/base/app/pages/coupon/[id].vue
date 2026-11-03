@@ -109,7 +109,9 @@ const promo = computed(() => {
   if (!target.value) return null;
   return isBundle.value
     ? couponPromoPrice({ salePrice: target.value.salePrice }, promoCtx.value)
-    : couponPromoPrice(tpl.value, promoCtx.value);
+    : tpl.value
+      ? couponPromoPrice(tpl.value, promoCtx.value)
+      : null;
 });
 const baseFen = computed(() => Number(target.value?.salePrice ?? 0));
 const displayPrice = computed(() => promo.value?.yuan ?? couponYuan(baseFen.value));
@@ -164,8 +166,7 @@ const bundleItems = computed(() =>
                 s: Math.max(0, 100 - Number(it.template.discountValue ?? 0)),
               });
             }
-            if (d.kind === "amount") return `¥${d.amount}`;
-            return `¥${couponYuan(it.template.discountValue)}`;
+            return `¥${d.amount}`;
           })(),
         }),
       )

@@ -27,12 +27,12 @@ async function onSubmit() {
   <div :class="props.embedded ? '' : 'rounded-lg border border-neutral-200 p-4 dark:border-neutral-800'">
     <h3 class="mb-3 font-medium">{{ t("messages.afterSales.trackTitle") }}</h3>
     <div class="grid grid-cols-2 gap-3">
-      <UFormGroup :label="t('messages.afterSales.carrier')" required>
+      <UFormField :label="t('messages.afterSales.carrier')" required>
         <UInput v-model="carrier" :placeholder="t('messages.afterSales.carrierPlaceholder')" />
-      </UFormGroup>
-      <UFormGroup :label="t('messages.afterSales.trackingNo')" required>
+      </UFormField>
+      <UFormField :label="t('messages.afterSales.trackingNo')" required>
         <UInput v-model="trackingNo" :placeholder="t('messages.afterSales.trackingPlaceholder')" />
-      </UFormGroup>
+      </UFormField>
     </div>
     <p v-if="errorMsg" class="mt-2 text-sm text-error">{{ errorMsg }}</p>
     <UButton class="mt-3" color="primary" :loading="loading" @click="onSubmit">

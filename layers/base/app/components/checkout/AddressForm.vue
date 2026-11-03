@@ -296,7 +296,7 @@ async function onError() {
     <!-- 设为默认收货地址 -->
     <div class="col-span-2 flex items-center">
       <UFormField name="isDefault">
-        <UToggle v-model="state.isDefault" />
+        <USwitch v-model="state.isDefault" />
       </UFormField>
       <span class="ml-2 text-sm text-neutral-600 dark:text-neutral-400">
         {{ t("messages.billing.isDefault") }}

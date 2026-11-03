@@ -157,7 +157,7 @@ function openLightbox(imgs: string[], index: number) {
 
 // ---------- 新建反馈表单（UModal 弹窗，不跳页） ----------
 const createOpen = ref(false);
-const submitType = ref<string | undefined>(undefined);
+const submitType = ref<(typeof TYPE_KEYS)[number] | undefined>(undefined);
 const submitTitle = ref("");
 const submitContent = ref("");
 const submitContact = ref("");

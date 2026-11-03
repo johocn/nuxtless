@@ -46,7 +46,17 @@ const bundleItems = computed(() =>
     : [],
 );
 const introImageFailed = ref(false);
-watch(() => props.open, () => { introImageFailed.value = false; });
+/** 顶部活动大图加载失败标记（换券/重开弹层时重置） */
+const heroFailed = ref(false);
+watch(() => [props.open, props.tpl], () => {
+  introImageFailed.value = false;
+  heroFailed.value = false;
+});
+/** 活动大图 URL：无图或加载失败返回空，不渲染占位 */
+const heroSrc = computed(() => {
+  const src = String(props.tpl?.activityImage ?? "").trim();
+  return src && !heroFailed.value ? src : "";
+});
 
 // ── 头部面额槽语义化（修复：PERCENT 折数 80 被直渲染成 ¥0.80、券包缺 discountValue 渲染成 NaN）──
 /** 券包→「共N张」；单券 PERCENT→「8折」；FIXED/FULL→面额元；免邮→免邮文案 */
@@ -162,6 +172,16 @@ watch(
 <template>
   <div v-if="open && tpl" class="sheet-mask" @click.self="emit('close')">
     <div class="sheet">
+      <!-- 活动大图：有图顶部通栏，加载失败/无图不占位 -->
+      <img
+        v-if="heroSrc"
+        class="hero"
+        :src="heroSrc"
+        :alt="localizeText(tpl.name, locale)"
+        loading="lazy"
+        decoding="async"
+        @error="heroFailed = true"
+      >
       <div class="head">
         <div class="head-left">
           <span class="amount">{{ faceText }}</span>
@@ -273,6 +293,7 @@ watch(
 .sheet-mask { position: fixed; inset: 0; z-index: 70; display: flex; align-items: flex-end; justify-content: center; background: rgb(0 0 0 / 0.4); }
 .sheet { width: 100%; max-width: 28rem; padding: 16px; display: flex; flex-direction: column; gap: 10px; max-height: 70vh; overflow-y: auto; border-radius: 16px 16px 0 0; background: var(--ui-bg); }
 .head { display: flex; gap: 12px; }
+.hero { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; border-radius: 10px; background: var(--ui-bg-muted); }
 .head-left { min-width: 64px; display: flex; flex-direction: column; align-items: center; border-right: 1px dashed var(--ui-border); padding-right: 12px; }
 .amount { font-size: 22px; font-weight: 700; color: var(--ui-primary); }
 .cond { font-size: 11px; color: var(--ui-text-muted); }

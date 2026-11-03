@@ -299,7 +299,7 @@ watch(isAuthenticated, async (nowAuth) => {
             />
 
             <!-- Pickup Location (门店自提) -->
-            <PickupLocationSelect class="mt-4" />
+            <CheckoutPickupLocationSelect class="mt-4" />
           </section>
 
           <!-- Payment -->

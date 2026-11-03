@@ -83,19 +83,26 @@ function sceneLabel(s: CouponSceneKey): string {
       class="relative rounded-xl border border-(--ui-border) p-4"
       :class="[mc.status !== 'UNUSED' && 'opacity-60', couponIsExpiring(mc) && 'border-primary-400 ring-2 ring-primary-200 dark:ring-primary-900/50']"
     >
-      <div class="flex items-stretch gap-4">
-        <CouponFace :type="mc.template?.type" :value="mc.template?.discountValue ?? 0" width-class="w-32" />
+      <div class="flex items-stretch gap-3">
+        <CouponActivityImage
+          :name="mc.template?.name"
+          :src="mc.template?.activityImage"
+          class="w-20 shrink-0"
+        />
         <div class="flex min-w-0 flex-1 flex-col">
-          <div class="flex flex-wrap items-center gap-1">
+          <div class="flex flex-wrap items-baseline gap-1">
+            <span class="text-xl font-bold text-primary">
+              <template v-if="mc.template?.type === 'FIXED' || mc.template?.type === 'FULL'">¥</template>{{ formatAmount(mc.template?.type, mc.template?.discountValue ?? 0) }}<span class="text-sm">{{ formatUnit(mc.template?.type) }}</span>
+            </span>
+            <span class="text-xs text-(--ui-text-muted)">{{ formatCondition(mc.template) }}</span>
+          </div>
+          <div class="mt-1 flex flex-wrap items-center gap-1">
             <p class="font-semibold">{{ mc.template?.name || t("messages.coupon.voucher") }}</p>
             <span
               v-if="couponIsStoreScene(mc.template?.usageScene)"
               class="rounded bg-primary/10 px-1 py-px text-[0.625rem] font-semibold text-primary"
             >{{ t("messages.coupon.storeUsable") }}</span>
           </div>
-          <p class="mt-1 text-sm text-(--ui-text-muted)">
-            {{ formatCondition(mc.template) }}
-          </p>
           <p class="mt-1 text-xs text-(--ui-text-muted)">
             {{ t("messages.coupon.code") }}：{{ mc.code }}
           </p>

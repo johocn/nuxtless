@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import type { GetOrderByCodeQuery } from "#gql/default";
 
+/** 配送行：订单详情查询（OrderDetail fragment）已刻意不查 shippingLines，
+ * 运行时通常不存在，这里仅声明为可选字段供模板做空值兜底。 */
+type OrderDetail = NonNullable<GetOrderByCodeQuery["orderByCode"]> & {
+  shippingLines?: Array<{ shippingMethod?: { name?: string } | null }> | null;
+};
+
 defineProps<{
-  order: NonNullable<GetOrderByCodeQuery["orderByCode"]>;
+  order: OrderDetail;
 }>();
 const { t, locale } = useI18n();
 
-function paymentLine(order: NonNullable<GetOrderByCodeQuery["orderByCode"]>): string {
+function paymentLine(order: OrderDetail): string {
   const method = order.payments?.[0]?.method || "";
   const cf = (order.customFields as any) ?? {};
   const cod = ["cash-on-delivery", "cod", "cod-payment-template", "cloud-payment-template"].includes(method) || cf.paymentType === "cod";

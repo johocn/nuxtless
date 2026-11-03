@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { UButton, UTextarea } from "#components";
-import { invokeWechatPay, isWechatBrowser } from "../../utils/coupon";
+import { couponExpiry, invokeWechatPay, isWechatBrowser } from "../../utils/coupon";
+import { walletFormatAmount } from "~~/layers/base/app/composables/useCouponFormat";
+import { getMyCoupons, type CustomerCoupon } from "~~/layers/base/app/composables/useCoupon";
 import CouponPaySheet from "../coupon/PaySheet.vue";
 import {
   billpayYuan,
@@ -61,6 +63,85 @@ const canSubmit = computed(
   () => Boolean(merchantName.value.trim()) && amountCents.value > 0 && agreed.value && !submitting.value,
 );
 
+// ── 买单券（仅 couponEnabled 开启时展示；券校验/抵扣/预占均由后端创建时完成）──
+const myCoupons = ref<CustomerCoupon[]>([]);
+const selectedCoupon = ref<CustomerCoupon | null>(null);
+
+async function loadCoupons() {
+  // 匿名查询券包会报错，登录后再拉；这里只作为候选展示，最终以后端校验为准
+  if (!props.config?.couponEnabled || !isAuthenticated.value) {
+    myCoupons.value = [];
+    return;
+  }
+  try {
+    myCoupons.value = await getMyCoupons("UNUSED");
+  } catch {
+    // 券包拉取失败不阻断买单主流程，降级为空态
+    myCoupons.value = [];
+  }
+}
+onMounted(loadCoupons);
+// 登录态或配置（SSR 预取可能晚于挂载）就绪后补拉一次
+watch(isAuthenticated, (ok) => {
+  if (ok) loadCoupons();
+  else {
+    myCoupons.value = [];
+    selectedCoupon.value = null;
+  }
+});
+watch(() => props.config?.couponEnabled, (ok) => { if (ok) loadCoupons(); });
+
+/** 到店可用的买单券候选（运费券不适用买单；过期/非未使用/模板下架一并剔除） */
+const storeCoupons = computed(() => {
+  if (!props.config?.couponEnabled) return [];
+  const now = Date.now();
+  return myCoupons.value.filter((c) => {
+    if (c.status !== "UNUSED") return false;
+    if (c.expiredAt && new Date(c.expiredAt).getTime() <= now) return false;
+    const tpl = c.template;
+    if (!tpl || !tpl.enabled) return false;
+    const scene = String(tpl.usageScene ?? "").toUpperCase();
+    if (scene !== "IN_STORE" && scene !== "ALL") return false;
+    return tpl.type !== "FREE_SHIPPING";
+  });
+});
+
+/** 当前金额下满足门槛的券；金额未填时不列候选，避免出现「0 元即可用」的误导 */
+const usableCoupons = computed(() => {
+  if (amountCents.value <= 0) return [];
+  return storeCoupons.value.filter(
+    (c) => Number(c.template?.minSpend ?? 0) <= amountCents.value,
+  );
+});
+
+// 金额改到低于所选券门槛时自动取消选择，避免展示与实际可用状态不一致
+watch(usableCoupons, (list) => {
+  if (selectedCoupon.value && !list.some((c) => c.id === selectedCoupon.value!.id)) {
+    selectedCoupon.value = null;
+  }
+});
+
+/** 预计抵扣（分）：仅前端预估展示，最终以创建返回的 quoteAmount 为准 */
+const couponPreviewDiscount = computed(() => {
+  const tpl = selectedCoupon.value?.template;
+  if (!tpl || amountCents.value <= 0) return 0;
+  const value = Number(tpl.discountValue ?? 0);
+  if (!(value > 0)) return 0;
+  if (tpl.type === "PERCENT") {
+    return Math.min(amountCents.value, Math.round((amountCents.value * (100 - value)) / 100));
+  }
+  return Math.min(amountCents.value, Math.round(value));
+});
+
+function couponValueText(c: CustomerCoupon): string {
+  return walletFormatAmount(t, c);
+}
+
+function couponExpiryText(c: CustomerCoupon): string {
+  const end = couponExpiry(c);
+  return end ? t("messages.coupon.dateUntil", { end: String(end).slice(0, 10) }) : "";
+}
+
 // 支付弹层（复用 CouponPaySheet）
 const paySheetOpen = ref(false);
 const payMode = ref<"WECHAT" | "BALANCE">("WECHAT");
@@ -82,6 +163,8 @@ async function submit() {
       merchantName: merchantName.value.trim(),
       expectedAmount: amountCents.value,
       remark: remark.value.trim() || undefined,
+      // 券码由后端校验/抵扣/预占；用券失败的错误沿用下方 toast 路径，不吞错
+      couponCode: selectedCoupon.value?.code || undefined,
     });
     emit("created", order);
     if (order.status === "PENDING_QUOTE") {
@@ -228,6 +311,41 @@ function closePaySheet() {
       />
     </div>
 
+    <!-- 买单券：couponEnabled 关闭时整块不渲染 -->
+    <div v-if="config?.couponEnabled" class="field">
+      <label class="f-label">{{ t("messages.billpay.couponSectionTitle") }}</label>
+      <div v-if="usableCoupons.length" class="c-row" role="list">
+        <button
+          type="button"
+          class="c-chip"
+          :class="{ active: !selectedCoupon }"
+          @click="selectedCoupon = null"
+        >
+          {{ t("messages.billpay.couponNoUse") }}
+        </button>
+        <button
+          v-for="c in usableCoupons"
+          :key="c.id"
+          type="button"
+          role="listitem"
+          class="c-chip c-card"
+          :class="{ active: selectedCoupon?.id === c.id }"
+          @click="selectedCoupon = c"
+        >
+          <span class="c-name">{{ c.template?.name }}</span>
+          <span class="c-val">{{ couponValueText(c) }}</span>
+          <span v-if="couponExpiryText(c)" class="c-exp">{{ couponExpiryText(c) }}</span>
+        </button>
+      </div>
+      <p v-else class="c-tip">
+        {{ storeCoupons.length ? t("messages.billpay.couponNotEligible") : t("messages.billpay.couponNone") }}
+      </p>
+      <!-- 仅前端预估；最终抵扣以创建返回的 quoteAmount 为准 -->
+      <p v-if="selectedCoupon && couponPreviewDiscount > 0" class="c-preview">
+        {{ t("messages.billpay.couponPreviewDiscount", { amount: billpayYuan(couponPreviewDiscount) }) }}
+      </p>
+    </div>
+
     <!-- 报价卡 -->
     <BillPayQuoteCard :config="config" :preview="preview" :base-amount="amountCents" :hint="quoteHint" />
 
@@ -273,4 +391,15 @@ function closePaySheet() {
 .identity-note { border-radius: 10px; background: var(--ui-bg-muted); color: var(--ui-text-muted); font-size: 12px; line-height: 1.6; padding: 10px 12px; }
 .agree-row { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--ui-text-muted); line-height: 1.5; }
 .agree-link { color: var(--ui-primary); }
+/* 买单券横滑候选：沿用表单 token，选中态以主色描边区分 */
+.c-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.c-row::-webkit-scrollbar { display: none; }
+.c-chip { flex: none; display: flex; flex-direction: column; gap: 2px; text-align: left; border-radius: 12px; border: 1px solid var(--ui-border); background: var(--ui-bg-muted); padding: 8px 12px; font-size: 12px; color: var(--ui-text-muted); cursor: pointer; }
+.c-chip.active { border-color: var(--ui-primary); background: color-mix(in oklab, var(--ui-primary) 8%, transparent); color: var(--ui-primary); }
+.c-card { min-width: 108px; }
+.c-name { font-size: 12px; font-weight: 600; color: var(--ui-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+.c-val { font-size: 15px; font-weight: 800; color: var(--ui-primary); }
+.c-exp { font-size: 11px; color: var(--ui-text-muted); }
+.c-tip { font-size: 12px; color: var(--ui-text-muted); }
+.c-preview { font-size: 12px; font-weight: 600; color: var(--ui-primary); }
 </style>

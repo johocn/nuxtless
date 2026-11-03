@@ -25,6 +25,24 @@ export const VENDURE_LOCALE_MAP: Record<string, string> = {
 /** Vendure 默认语言码（映射缺失时的回退终点） */
 export const DEFAULT_VENDURE_LANGUAGE_CODE = "zh_Hans";
 
+/** 主语言子标签 → Vendure LanguageCode：i18n 的 locale 是 code（en/de/ja…，见 i18n/locales.ts），
+ *  而 VENDURE_LOCALE_MAP 的键是 BCP47（en-US/de-DE/ja-JP…）。缺少这层兜底时，
+ *  非默认语言全部落到 defaultLocale → Vendure 内容恒为中文。 */
+const VENDURE_PRIMARY_LANGUAGE_MAP: Record<string, string> = {
+  zh: "zh_Hans",
+  en: "en",
+  bg: "bg",
+  ru: "ru",
+  fa: "fa",
+  de: "de",
+  es: "es",
+  fr: "fr",
+  it: "it",
+  pt: "pt",
+  ja: "ja",
+  ko: "ko",
+};
+
 /**
  * locale → Vendure LanguageCode。
  * 未命中时回退 fallback（默认 zh_Hans），**不透传**——Vendure 对 ?languageCode
@@ -35,7 +53,11 @@ export function toVendureLanguageCode(
   fallback: string = DEFAULT_VENDURE_LANGUAGE_CODE,
 ): string {
   if (!locale) return fallback;
-  return VENDURE_LOCALE_MAP[locale] ?? fallback;
+  const direct = VENDURE_LOCALE_MAP[locale];
+  if (direct) return direct;
+  // 兼容 i18n code（en/de/ja…）、Vendure 码（zh_Hans）与 BCP47（en-US）三种写法
+  const primary = locale.trim().toLowerCase().replace(/_/g, "-").split("-")[0] ?? "";
+  return VENDURE_PRIMARY_LANGUAGE_MAP[primary] ?? fallback;
 }
 
 export function parseSchemeList(raw: string | null | undefined): Scheme[] | null {

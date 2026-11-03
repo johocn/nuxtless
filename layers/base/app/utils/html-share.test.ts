@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { stripHtmlToText, toAbsoluteUrl, buildShareMeta } from './html-share.ts';
+import { stripHtmlToText, toAbsoluteUrl, buildShareMeta } from './html-share';
 
 test('stripHtmlToText: 剥离标签解实体压缩空白', () => {
   expect(stripHtmlToText('<p><b>Hi</b>&nbsp;there</p>')).toBe('Hi there');

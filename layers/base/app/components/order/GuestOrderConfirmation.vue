@@ -89,7 +89,7 @@ async function copyCode(code: string) {
         </dd>
       </div>
       <div>
-        <dt class="text-neutral-500">{{ t("messages.shop.shipping") }}</dt>
+        <dt class="text-neutral-500">{{ t("messages.checkout.shipping") }}</dt>
         <dd>{{ shippingWithTax }}</dd>
       </div>
     </dl>

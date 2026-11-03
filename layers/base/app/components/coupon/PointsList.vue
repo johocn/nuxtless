@@ -22,6 +22,14 @@ const { formatCondition } = useCouponFormat();
       :key="c.id"
       class="flex flex-col rounded-xl border border-(--ui-border) p-4"
     >
+      <!-- 活动照片：有图则顶部通栏，缺图不占位（积分券以面额块为主视觉） -->
+      <CouponActivityImage
+        v-if="c.activityImage"
+        :name="c.name"
+        :src="c.activityImage"
+        ratio="banner"
+        class="mb-3"
+      />
       <div class="flex items-stretch gap-4">
         <CouponFace :type="c.type" :value="c.discountValue" />
         <div class="flex min-w-0 flex-1 flex-col">
