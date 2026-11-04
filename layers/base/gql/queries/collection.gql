@@ -1,5 +1,7 @@
+# take 必填：Vendure HardenPlugin 对未带 take 的 PaginatedList 按默认 1000 计算复杂度，
+# 线上会直接返回 500 "Query is too complex"（分类导航整块为空）。20 覆盖现有 7 个顶级分类。
 query GetMenuCollections {
-  collections(options: { topLevelOnly: true }) {
+  collections(options: { topLevelOnly: true, take: 20 }) {
     items {
       ...CollectionMenuFragment
     }

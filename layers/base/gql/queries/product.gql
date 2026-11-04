@@ -12,7 +12,7 @@ query GetProductDetail($slug: String!) {
 
 query GetProductVariantStock($productId: ID!, $variantId: String!) {
   product(id: $productId) {
-    variantList(options: { filter: { id: { eq: $variantId } } }) {
+    variantList(options: { filter: { id: { eq: $variantId } }, take: 1 }) {
       items {
         stockLevel
       }
@@ -53,8 +53,10 @@ query SearchProducts(
   }
 }
 
+# take 必填：未带 take 的 PaginatedList 会按默认 1000 计复杂度，线上 500 "Query is too complex"
+# → 首页楼层/品类页补价整批失败（商品卡只剩搜索态数据或为空）。
 query GetProductsByIds($ids: [String!]) {
-  products(options: { filter: { id: { in: $ids } } }) {
+  products(options: { filter: { id: { in: $ids } }, take: 100 }) {
     items {
       ...ProductBaseFragment
     }
@@ -64,7 +66,7 @@ query GetProductsByIds($ids: [String!]) {
 # 装修积木「推荐商品」按 slug 直取（source='slugs'）：一次请求返回商品主数据 +
 # 变体含税价 / listPrice，供 useCuratedGoods 组装商品卡（SearchItem 无 customFields）。
 query GetProductsBySlugs($slugs: [String!]) {
-  products(options: { filter: { slug: { in: $slugs } } }) {
+  products(options: { filter: { slug: { in: $slugs } }, take: 100 }) {
     items {
       id
       name
