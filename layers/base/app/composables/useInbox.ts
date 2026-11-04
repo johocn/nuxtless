@@ -32,5 +32,10 @@ export async function getInboxUnreadCount(): Promise<number> {
 
 export async function markInboxRead(id: string): Promise<void> {
   const client = resolveClient();
-  await client.request(`mutation MarkInboxRead($id: ID!) { markInboxRead(id: $id) }`, { id });
+  // markInboxRead 返回 InboxMessage!，必须带选择集，否则 GraphQL 校验失败（已读状态无法同步）。
+  // 字段已对生产 schema 校验：id / isRead 均存在于 InboxMessage。
+  await client.request<{ markInboxRead: { id: string; isRead: boolean } }>(
+    `mutation MarkInboxRead($id: ID!) { markInboxRead(id: $id) { id isRead } }`,
+    { id },
+  );
 }
