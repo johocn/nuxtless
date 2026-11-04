@@ -62,11 +62,35 @@ async function onSubmit(event: FormSubmitEvent<LoginForm>) {
 
     emit("success");
   } else if (result && "errorCode" in result) {
-    toast.add({
-      title: t("messages.account.loginFail"),
-      description: t("messages.account.failMessage"),
-      color: "error",
-    });
+    const code = String(result.errorCode);
+
+    if (code === "LOGIN_RATE_LIMITED") {
+      const retryAfterSeconds = "retryAfterSeconds" in result ? result.retryAfterSeconds : undefined;
+      const minutes =
+        typeof retryAfterSeconds === "number" && retryAfterSeconds > 0
+          ? Math.max(1, Math.ceil(retryAfterSeconds / 60))
+          : null;
+
+      toast.add({
+        title: t("messages.account.loginRateLimited"),
+        description: minutes
+          ? t("messages.account.loginRateLimitedMessage", { minutes })
+          : t("messages.account.loginRateLimitedFallback"),
+        color: "error",
+      });
+    } else if (code === "INVALID_CREDENTIALS_ERROR") {
+      toast.add({
+        title: t("messages.account.loginFail"),
+        description: t("messages.account.invalidCredentialsMessage"),
+        color: "error",
+      });
+    } else {
+      toast.add({
+        title: t("messages.account.loginFail"),
+        description: t("messages.account.failMessage"),
+        color: "error",
+      });
+    }
   } else {
     toast.add({
       title: t("messages.error.general"),

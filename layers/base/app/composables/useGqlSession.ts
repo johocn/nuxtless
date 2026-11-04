@@ -3,6 +3,37 @@ import type { LogInResult } from "~~/types/customer";
 import { readVendureTokenWithContext } from "../utils/vendure-session";
 import { requestTimeoutSignal } from "../utils/request-timeout";
 
+// 后端以 GraphQL errors 返回的登录失败（如 LOGIN_RATE_LIMITED），无 data.login。
+export type LoginGraphQLError = {
+  errorCode: string;
+  message: string;
+  retryAfterSeconds?: number;
+};
+
+type LoginResponse = {
+  data?: { login?: LogInResult };
+  errors?: Array<{
+    message?: string;
+    extensions?: { code?: string; retryAfterSeconds?: number };
+  }>;
+};
+
+/** 解析 login 响应：成功取 data.login；失败取 GraphQL errors（如 LOGIN_RATE_LIMITED）。 */
+export function parseLoginResponse(json: LoginResponse): LogInResult | LoginGraphQLError | null {
+  if (json.data?.login) return json.data.login;
+
+  const gqlError = json.errors?.[0];
+  if (!gqlError) return null;
+
+  return {
+    errorCode: gqlError.extensions?.code ?? "UNKNOWN_ERROR",
+    message: gqlError.message ?? "",
+    ...(typeof gqlError.extensions?.retryAfterSeconds === "number"
+      ? { retryAfterSeconds: gqlError.extensions.retryAfterSeconds }
+      : {}),
+  };
+}
+
 // 统一会话入口：login 返回登录结果（CurrentUser | ErrorResult），default 返回活跃订单。
 // token 捕获依赖手写 fetch 读取 vendure-auth-token 响应头（typed client 无此能力）。
 export async function useGqlSession(
@@ -17,14 +48,14 @@ export async function useGqlSession(
   channelToken: string,
   queryType: "login",
   variables: Record<string, unknown>,
-): Promise<LogInResult | null>;
+): Promise<LogInResult | LoginGraphQLError | null>;
 export async function useGqlSession(
   locale: string,
   gqlHost: string | undefined,
   channelToken: string,
   queryType: "default" | "login" = "default",
   variables?: Record<string, unknown>,
-): Promise<ActiveOrder | LogInResult | null> {
+): Promise<ActiveOrder | LogInResult | LoginGraphQLError | null> {
   if (!gqlHost) {
     console.error("useGqlSession: GQL_HOST is not defined");
     return null;
@@ -93,13 +124,12 @@ export async function useGqlSession(
 
     useGqlHeaders(headers);
 
-    const json = (await res.json()) as {
+    const json = (await res.json()) as LoginResponse & {
       data?: { login?: LogInResult; activeOrder?: ActiveOrder };
     };
 
-    if (queryType === "login") {
-      return json.data?.login ?? null;
-    }
+    // 限流等失败以 GraphQL errors 返回（无 data），需透传给登录界面，否则会被当成通用失败。
+    if (queryType === "login") return parseLoginResponse(json);
     return json.data?.activeOrder ?? null;
   } catch (error) {
     console.error("Failed to fetch session token:", error);
