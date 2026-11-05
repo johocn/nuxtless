@@ -6,7 +6,9 @@
  * 此处对运行环境做二次确认：缺失则显式报错提醒补配，不做行为变更（避免阻断启动）。
  */
 export default defineNitroPlugin(() => {
-  const buildSecret = useRuntimeConfig()?.ogImage?.security?.secret as string | undefined;
+  // nuxt-og-image 把配置写入 runtimeConfig 的 "nuxt-og-image" 键（非顶层 ogImage），
+  // 读错键会在已配置 secret 时仍误报「未配置」。
+  const buildSecret = (useRuntimeConfig() as any)?.["nuxt-og-image"]?.security?.secret as string | undefined;
   if (!buildSecret) {
     console.error(
       "[og-image] OG_IMAGE_SECRET 未配置：/_og 渲染端点无签名校验，存在 CPU/缓存滥用风险。" +

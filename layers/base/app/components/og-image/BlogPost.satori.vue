@@ -36,6 +36,7 @@ function normSrc(src?: string) {
     class="flex h-full w-full flex-col justify-between bg-neutral-50 p-15 text-neutral-900 dark:bg-neutral-900 dark:text-white"
   >
     <img
+      v-if="backgroundImage"
       :src="normSrc(backgroundImage)"
       class="absolute inset-0 w-full object-cover opacity-[0.7]"
     />
