@@ -1073,6 +1073,7 @@ export default defineI18nLocale(() =>
       savePhone: 'Save',
       phoneSaved: 'Phone saved. You can look up the order anytime with phone and order code',
       phoneSaveFailed: 'Failed to save phone, please retry',
+      phoneSaveBlocked: 'Could not save: order not found, time window expired, or the order is bound to another phone number',
       orderItems: 'Items',
       viewDetail: 'View',
       empty: 'No orders yet',

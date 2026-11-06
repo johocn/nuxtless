@@ -30,7 +30,8 @@ export interface TenantHit {
 export type TenantResolve =
   | TenantHit
   | { status: "unknown"; code: string }
-  | { status: "none" };
+  | { status: "none" }
+  | { status: "rate_limited"; retryAfterSeconds: number };
 
 const TENANT_TTL_MS = 60_000;
 const FETCH_TIMEOUT_MS = 3_000;

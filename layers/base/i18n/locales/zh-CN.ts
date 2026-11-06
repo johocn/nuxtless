@@ -1095,6 +1095,7 @@ export const zhMessages = {
       savePhone: '保存',
       phoneSaved: '手机号已保存，后续可凭手机号和订单号查询订单',
       phoneSaveFailed: '手机号保存失败，请重试',
+      phoneSaveBlocked: '无法保存：订单不存在、已超过补录时限，或该订单已绑定其他手机号',
       orderItems: '商品明细',
       viewDetail: '查看详情',
       empty: '暂无订单',

@@ -103,9 +103,13 @@ async function savePhone() {
     savedPhoneMsgOpen.value = true;
     showAddPhone.value = false;
   } catch (err) {
+    const raw = err instanceof Error ? err.message : "";
+    // 后端对「已绑定其他手机号/超窗口/订单不存在」统一返回 GUEST_ORDER_NOT_FOUND，
+    // 不区分具体原因（避免订单枚举），前端翻译成可读提示
+    const blocked = raw.includes("GUEST_ORDER_NOT_FOUND");
     toast.add({
       title: t("messages.order.phoneSaveFailed"),
-      description: err instanceof Error ? err.message : undefined,
+      description: blocked ? t("messages.order.phoneSaveBlocked") : raw || undefined,
       color: "error",
     });
   } finally {
