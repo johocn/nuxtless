@@ -86,14 +86,28 @@ watch(order, async (o) => {
 }, { immediate: true });
 
 async function savePhone() {
-  if (!addPhoneForm.phone.trim()) return;
+  const phone = addPhoneForm.phone.trim();
+  if (!phone) return;
   savingPhone.value = true;
   try {
-    await GqlInstance('GuestSetOrderCustomFields', {
-      input: { orderCode: code, phone: addPhoneForm.phone.trim() },
+    const res = await GqlInstance('GuestSetOrderCustomFields', {
+      input: { orderCode: code, phone },
     });
+    // 写后回读：以服务端返回的 hasPhone 为准，未落库不能当成功
+    if (!res?.guestSetOrderCustomFields?.hasPhone) {
+      throw new Error(t("messages.order.phoneSaveFailed"));
+    }
+    if (pickupOverview.value) {
+      pickupOverview.value = { ...pickupOverview.value, hasPhone: true };
+    }
     savedPhoneMsgOpen.value = true;
     showAddPhone.value = false;
+  } catch (err) {
+    toast.add({
+      title: t("messages.order.phoneSaveFailed"),
+      description: err instanceof Error ? err.message : undefined,
+      color: "error",
+    });
   } finally {
     savingPhone.value = false;
   }

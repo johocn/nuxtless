@@ -11,8 +11,9 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
-const { loading, info, refresh } = useProductStockInfo();
+const { loading, info, error, refresh } = useProductStockInfo();
 const { cityName } = storeToRefs(useLocationStore());
+const failed = computed(() => !!error.value);
 
 const saleable = computed(() => info.value?.saleableStock ?? 0);
 const inStock = computed(() => saleable.value > 0);
@@ -50,7 +51,18 @@ watch(
     <div class="flex items-center gap-1.5 text-sm">
       <UIcon name="i-lucide-boxes" class="size-3.5 text-gray-400" />
       <span class="text-gray-500">
-        <template v-if="pickupUnavailable">
+        <!-- 查询失败：不渲染「无货」，给可重试状态，避免把网络故障显示成缺货 -->
+        <template v-if="failed">
+          <span>{{ t("messages.detail.stockLoadFailed") }}</span>
+          <UButton
+            size="xs"
+            variant="link"
+            class="ml-1"
+            :label="t('messages.detail.retry')"
+            @click="load"
+          />
+        </template>
+        <template v-else-if="pickupUnavailable">
           {{ t("messages.detail.deliveryNoStock") }}
         </template>
         <template v-else-if="props.deliveryMethod === 'SELF_PICKUP'">

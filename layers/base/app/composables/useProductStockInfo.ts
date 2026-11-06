@@ -20,6 +20,8 @@ export type StockDeliveryMethod = 'MAIL' | 'SELF_PICKUP';
 export function useProductStockInfo() {
   const loading = ref(false);
   const info = ref<StockInfo | null>(null);
+  /** 最近一次查询是否失败：失败时不得渲染「无货」，由 UI 展示可重试状态 */
+  const error = ref<string | null>(null);
 
   async function refresh(
     variantId: string,
@@ -29,6 +31,7 @@ export function useProductStockInfo() {
     deliveryMethod?: StockDeliveryMethod | null,
   ): Promise<void> {
     loading.value = true;
+    error.value = null;
     try {
       const data = await GqlVariantStockInfo({
         variantId,
@@ -38,10 +41,14 @@ export function useProductStockInfo() {
         deliveryMethod: deliveryMethod ?? null,
       });
       info.value = (data.variantStockInfo ?? null) as StockInfo | null;
+    } catch (e) {
+      info.value = null;
+      error.value = e instanceof Error ? e.message : "stock query failed";
+      console.warn("[stock] variant stock query failed", e);
     } finally {
       loading.value = false;
     }
   }
 
-  return { loading: readonly(loading), info: readonly(info), refresh };
+  return { loading: readonly(loading), info: readonly(info), error: readonly(error), refresh };
 }

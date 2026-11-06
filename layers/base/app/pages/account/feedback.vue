@@ -88,6 +88,21 @@ function parseImgs(raw: unknown): string[] {
   }
 }
 
+/** 全部标记已读：失败时排队重试一次，避免未读角标因一次网络抖动一直不消失 */
+async function markAllRead(attempt = 0): Promise<void> {
+  try {
+    await markFeedbacksRead();
+  } catch (err) {
+    if (attempt >= 1) {
+      console.warn("[feedback] markFeedbacksRead failed after retry", err);
+      return;
+    }
+    setTimeout(() => {
+      void markAllRead(attempt + 1);
+    }, 3000);
+  }
+}
+
 async function loadFirstPage() {
   listLoading.value = true;
   listError.value = false;
@@ -95,8 +110,8 @@ async function loadFirstPage() {
     const raw = await fetchMyFeedbacks(0, PAGE_SIZE);
     items.value = parseFeedbacks(raw);
     totalItems.value = parseTotal(raw);
-    // 进入页面标记全部已读（幂等；失败静默，不影响列表展示）
-    markFeedbacksRead().catch(() => {});
+    // 进入页面标记全部已读（幂等；失败排队重试，不影响列表展示）
+    void markAllRead();
   } catch {
     items.value = [];
     totalItems.value = 0;

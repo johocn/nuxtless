@@ -21,6 +21,21 @@ const orderStore = useOrderStore();
 const { order } = storeToRefs(orderStore);
 const isMounted = ref(false);
 
+// 定位字段写入：挂载时 + 坐标/城市变化时重写；失败给出可重试提示（不阻断结算）
+const checkout = useCheckout();
+const { cityName, coords } = storeToRefs(useLocationStore());
+
+async function syncLocation() {
+  const res = await checkout.syncOrderLocation();
+  if (!res.ok) {
+    toast.add({
+      title: t("messages.checkout.locationSaveFailed"),
+      description: res.message,
+      color: "error",
+    });
+  }
+}
+
 // 重新进入结算页/切换用户时：清空自提点选择与行勾选单例，按当前用户定位就近重新默认（BoxPickupBlock 挂载时执行）
 usePickupSelection().resetSelection();
 usePerBoxSelection().resetPerBox();
@@ -193,8 +208,7 @@ async function onSubmit() {
 
 onMounted(() => {
   isMounted.value = true;
-  const checkout = useCheckout(); // recalc shipping under certain condtitions
-  checkout.syncOrderLocation(); // 写入定位字段（lat/lng/city/deliveryType）
+  void syncLocation(); // 写入定位字段（lat/lng/city/deliveryType），失败提示可重试
 
   if (isAuthenticated.value) {
     void fetchAddresses();
@@ -205,6 +219,11 @@ onMounted(() => {
   if (!isActiveOrderDetail(order.value)) {
     void orderStore.fetchOrder("detail");
   }
+});
+
+// 用户在结算页切换城市/重新定位后需重写定位字段，否则订单仍用旧锚点做就近履约
+watch([coords, cityName], () => {
+  void syncLocation();
 });
 
 // 登录态变化：清空旧选择 → 按当前用户重拉订单/分箱/地址簿 → 就近重新默认（不沿用上一用户）

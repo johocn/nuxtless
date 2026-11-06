@@ -15,6 +15,7 @@ definePageMeta({ title: "消息中心" });
 const { t } = useI18n();
 const localePath = useTenantLocalePath();
 const router = useRouter();
+const toast = useToast();
 const { isAuthenticated } = storeToRefs(useAuthStore());
 
 interface FeedItem {
@@ -30,6 +31,8 @@ interface FeedItem {
 
 const list = ref<FeedItem[]>([]);
 const loading = ref(false);
+/** 拉取失败标记：与「0 条消息」区分，失败时给错误态 + 重试 */
+const loadError = ref(false);
 
 function toFeed(messages: MyMessage[], inbox: InboxItem[]): FeedItem[] {
   const items: FeedItem[] = [
@@ -48,11 +51,23 @@ function toFeed(messages: MyMessage[], inbox: InboxItem[]): FeedItem[] {
 async function load() {
   if (!isAuthenticated.value) return;
   loading.value = true;
+  loadError.value = false;
   try {
-    const [messages, inbox] = await Promise.all([
-      getMyMessages().catch(() => [] as MyMessage[]),
-      getMyInbox().catch(() => [] as InboxItem[]),
+    const [messagesRes, inboxRes] = await Promise.allSettled([
+      getMyMessages(),
+      getMyInbox(),
     ]);
+    const failed = messagesRes.status === "rejected" || inboxRes.status === "rejected";
+    if (failed) {
+      loadError.value = true;
+      console.warn("[messages] load failed", {
+        messages: messagesRes.status === "rejected" ? messagesRes.reason : null,
+        inbox: inboxRes.status === "rejected" ? inboxRes.reason : null,
+      });
+    }
+    // 部分失败时保留另一侧已取回的数据，不把整体结果伪装成「空」
+    const messages = messagesRes.status === "fulfilled" ? messagesRes.value : [];
+    const inbox = inboxRes.status === "fulfilled" ? inboxRes.value : [];
     list.value = toFeed(messages, inbox);
   } finally {
     loading.value = false;
@@ -60,12 +75,20 @@ async function load() {
 }
 
 async function markRead(item: FeedItem) {
+  if (item.isRead) return;
   item.isRead = true;
   try {
     if (item.source === "inbox") await markInboxRead(item.id);
     else await markMessageRead(item.id);
-  } catch {
-    /* 标记已读失败不打断浏览 */
+  } catch (err) {
+    // 回滚本地状态：避免「刷新后又变回未读」的假象
+    item.isRead = false;
+    console.warn("[messages] mark read failed", err);
+    toast.add({
+      title: t("messages.account.markReadFailed"),
+      description: err instanceof Error ? err.message : undefined,
+      color: "error",
+    });
   }
 }
 
@@ -93,7 +116,18 @@ onMounted(load);
     </template>
     <div v-else class="mx-auto max-w-2xl">
       <h1 class="mb-6 text-2xl font-semibold">{{ t("messages.account.messages") }}</h1>
-      <div v-if="list.length" class="space-y-3">
+      <!-- 失败态：与「暂无消息」区分，可重试 -->
+      <div v-if="loadError" class="rounded-xl border border-(--ui-error)/40 p-6 text-center">
+        <p class="text-sm text-(--ui-text-muted)">{{ t("messages.account.loadFailed") }}</p>
+        <UButton
+          class="mt-3"
+          size="sm"
+          :loading="loading"
+          :label="t('messages.account.retry')"
+          @click="load"
+        />
+      </div>
+      <div v-else-if="list.length" class="space-y-3">
         <div
           v-for="m in list"
           :key="m.key"
