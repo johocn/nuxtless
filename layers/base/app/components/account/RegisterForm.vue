@@ -52,6 +52,7 @@ async function onSubmit(event: FormSubmitEvent<RegisterForm>) {
     :schema="RegisterForm"
     :state="state"
     class="space-y-4"
+    onsubmit="return false"
     @submit="onSubmit"
   >
     <UFormField

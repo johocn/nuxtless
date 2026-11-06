@@ -56,6 +56,7 @@ async function onSubmit(event: FormSubmitEvent<ResetPasswordForm>) {
     :schema="ResetPasswordForm"
     :state="state"
     class="space-y-4"
+    onsubmit="return false"
     @submit="onSubmit"
   >
     <UFormField

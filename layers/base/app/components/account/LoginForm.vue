@@ -106,6 +106,7 @@ async function onSubmit(event: FormSubmitEvent<LoginForm>) {
     :schema="LoginForm"
     :state="state"
     class="space-y-4"
+    onsubmit="return false"
     @submit="onSubmit"
   >
     <UFormField
