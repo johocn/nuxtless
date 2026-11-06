@@ -12,6 +12,47 @@
 export const VENDURE_AUTH_HEADER = "vendure-auth-token";
 export const VENDURE_SESSION_COOKIE = "vendure_shop_token";
 
+/** nshop 会话模式：cookie=Vendure 直发 vshop_sid；bearer=旧 token 方案（回退开关） */
+export type ShopAuthMode = "cookie" | "bearer";
+
+/**
+ * 当前会话模式。运行时读取 `NUXT_PUBLIC_SHOP_AUTH_MODE`（默认 cookie）。
+ * 回退一条命令：`NUXT_PUBLIC_SHOP_AUTH_MODE=bearer pm2 restart nshop`（无需重新构建）。
+ * 非 Nuxt 上下文（单测等）读不到 runtimeConfig 时按默认 cookie。
+ */
+export function getShopAuthMode(): ShopAuthMode {
+  try {
+    const mode = useRuntimeConfig().public.shopAuthMode as string | undefined;
+    return mode === "bearer" ? "bearer" : "cookie";
+  } catch {
+    return "cookie";
+  }
+}
+
+export function isCookieAuthMode(): boolean {
+  return getShopAuthMode() === "cookie";
+}
+
+/**
+ * 访问 Vendure 的鉴权头（统一入口，替代各处手写 Authorization）：
+ * - cookie 模式：客户端不注入 Authorization，交给同源浏览器自动携带 vshop_sid；
+ *   SSR 必须把浏览器请求的 `cookie` 头透传给 Vendure（Nitro 直连，不新造代理层）。
+ * - bearer 模式：沿用旧逻辑读取 vendure_shop_token 并注入 Bearer。
+ */
+export function vendureAuthHeaders(): Record<string, string> {
+  if (!isCookieAuthMode()) {
+    const token = readVendureTokenWithContext();
+    return token ? { authorization: `Bearer ${token}` } : {};
+  }
+  if (typeof document !== "undefined") return {};
+  try {
+    const cookie = useRequestHeaders(["cookie"]).cookie;
+    return cookie ? { cookie } : {};
+  } catch {
+    return {};
+  }
+}
+
 /** 会话 cookie 有效期：30 天（收敛自 1 年——缩小被窃 token 的可用窗口，
  *  与「复访免登」体验平衡；服务端会话另有 Vendure 自身 TTL） */
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;

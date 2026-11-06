@@ -5,12 +5,12 @@ import type { ActiveCustomerDetail } from "~~/types/customer";
 import { isActiveCustomerDetail } from "~~/types/guard";
 import { getInboxUnreadCount } from "~~/layers/base/app/composables/useInbox";
 import { getUnreadFeedbackCount } from "~~/layers/base/app/composables/useFeedback";
+import { isCookieAuthMode } from "~~/layers/base/app/utils/vendure-session";
 
 const { t } = useI18n();
 const localePath = useTenantLocalePath();
 const { customer } = storeToRefs(useCustomerStore());
 const { fetchCustomer } = useCustomerStore();
-const loading = ref(true);
 const { isAuthenticated } = storeToRefs(useAuthStore());
 const inboxUnread = ref(0);
 const feedbackUnread = ref(0);
@@ -18,6 +18,20 @@ const feedbackUnread = ref(0);
 const activeCustomer = computed<ActiveCustomerDetail | null>(() =>
   isActiveCustomerDetail(customer.value) ? customer.value : null,
 );
+
+// SSR 首屏身份（cookie 模式）：服务端透传 vshop_sid 直连 Vendure 拉客户资料，
+// 首屏 HTML 即带姓名/邮箱，不依赖客户端 hydration 后补。bearer 模式维持原行为。
+if (import.meta.server && isCookieAuthMode()) {
+  await useAsyncData("account-active-customer", async () => {
+    if (!isActiveCustomerDetail(customer.value)) {
+      await fetchCustomer("detail");
+    }
+    return activeCustomer.value;
+  });
+}
+
+// 首屏有资料直接展示；SSR 期间已完成拉取时客户端 hydration 不会闪 loading
+const loading = ref(!activeCustomer.value?.id);
 
 // 我的页装修（L1 全局 → L2 模板 → L3 店铺 pageProfileConfig 合并）
 const { pageConfig } = useThemeConfig();

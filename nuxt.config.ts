@@ -66,6 +66,9 @@ export default defineNuxtConfig({
     public: {
       GQL_HOST: process.env.GQL_HOST,
       channelToken: process.env.CHANNEL_TOKEN,
+      // 会话模式开关：cookie（默认，Vendure 直发 vshop_sid）/ bearer（旧 token 方案回退）。
+      // 运行时用 NUXT_PUBLIC_SHOP_AUTH_MODE=bearer 覆盖并重启进程即可，无需重新构建。
+      shopAuthMode: process.env.NUXT_PUBLIC_SHOP_AUTH_MODE === "bearer" ? "bearer" : "cookie",
       i18NBaseUrl: process.env.I18N_BASE_URL,
       stripeAccountId: process.env.STRIPE_ACCOUNT_ID,
       stripePublicKey: process.env.STRIPE_PUBLIC_KEY,

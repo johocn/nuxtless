@@ -1,6 +1,6 @@
 import type { ActiveOrder } from "~~/types/order";
 import type { LogInResult } from "~~/types/customer";
-import { readVendureTokenWithContext } from "../utils/vendure-session";
+import { isCookieAuthMode, vendureAuthHeaders } from "../utils/vendure-session";
 import { requestTimeoutSignal } from "../utils/request-timeout";
 
 // 后端以 GraphQL errors 返回的登录失败（如 LOGIN_RATE_LIMITED），无 data.login。
@@ -67,12 +67,9 @@ export async function useGqlSession(
     "Content-Type": "application/json",
   };
 
-  // 会话 token 单一来源 cookie（vendure_shop_token，登录态/游客共用），
-  // 保证 login 请求带上游客 token，Vendure 才能把游客购物车合并到登录用户。
-  const token = readVendureTokenWithContext();
-  if (token) {
-    headers.authorization = `Bearer ${token}`;
-  }
+  // cookie 模式：不带 Authorization（同源浏览器自动带 vshop_sid，SSR 透传 cookie）；
+  // bearer 模式：沿用 vendure_shop_token 注入，保证 login 时游客购物车能合并到登录用户。
+  Object.assign(headers, vendureAuthHeaders());
   if (channelToken) {
     headers["vendure-token"] = channelToken;
   }
@@ -116,10 +113,13 @@ export async function useGqlSession(
       signal: requestTimeoutSignal(),
     });
 
-    const newToken = res.headers.get("vendure-auth-token");
-    if (newToken) {
-      headers.authorization = `Bearer ${newToken}`;
-      authStore.setSession(newToken);
+    // cookie 模式凭证只留在 HttpOnly cookie，不读取/回写 token
+    if (!isCookieAuthMode()) {
+      const newToken = res.headers.get("vendure-auth-token");
+      if (newToken) {
+        headers.authorization = `Bearer ${newToken}`;
+        authStore.setSession(newToken);
+      }
     }
 
     useGqlHeaders(headers);

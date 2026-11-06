@@ -8,7 +8,8 @@ import { GraphQLClient } from "graphql-request";
 import { toVendureLanguageCode } from "../utils/schemes";
 import {
   VENDURE_AUTH_HEADER,
-  readVendureTokenWithContext,
+  isCookieAuthMode,
+  vendureAuthHeaders,
   writeVendureSessionToken,
 } from "../utils/vendure-session";
 
@@ -43,14 +44,14 @@ export function resolveClient(): GraphQLClient {
   const gqlHost = useGqlHostUrl();
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  const token = readVendureTokenWithContext();
-  if (token) headers.authorization = `Bearer ${token}`;
+  Object.assign(headers, vendureAuthHeaders());
   if (channelToken.value) headers["vendure-token"] = channelToken.value;
   if (locale) headers["Accept-Language"] = locale;
 
   const client = new GraphQLClient(`${gqlHost}?languageCode=${toVendureLanguageCode(locale)}`, {
     headers,
     responseMiddleware: (response: any) => {
+      if (isCookieAuthMode()) return;
       const h = response?.headers ?? response?.response?.headers;
       const st =
         h?.get?.(VENDURE_AUTH_HEADER) ??

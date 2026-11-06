@@ -1,5 +1,5 @@
 import { resolveSsoReturnUrl } from "../utils/sso-return-url";
-import { readVendureTokenWithContext } from "../utils/vendure-session";
+import { isCookieAuthMode, vendureAuthHeaders } from "../utils/vendure-session";
 import { selectPrimaryProvider, type ProviderSource } from "../utils/sso-provider";
 import { requestTimeoutSignal } from "../utils/request-timeout";
 
@@ -229,8 +229,8 @@ export function useSso() {
     if (!gqlHost) return null;
     const authStore = useAuthStore();
     const headers = baseHeaders();
-    const guestToken = readVendureTokenWithContext();
-    if (guestToken) headers.authorization = `Bearer ${guestToken}`;
+    // cookie 模式靠同源 cookie / SSR 透传；bearer 模式注入旧 token
+    Object.assign(headers, vendureAuthHeaders());
 
     const res = await fetch(gqlHost, {
       method: "POST",
@@ -248,8 +248,10 @@ export function useSso() {
       signal: requestTimeoutSignal(),
     }).catch(() => null);
     if (!res) return null;
-    const newToken = res.headers.get("vendure-auth-token");
-    if (newToken) authStore.setSession(newToken);
+    if (!isCookieAuthMode()) {
+      const newToken = res.headers.get("vendure-auth-token");
+      if (newToken) authStore.setSession(newToken);
+    }
     const json = await res.json();
     return json?.data?.authenticate ?? null;
   }

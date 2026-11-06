@@ -12,7 +12,8 @@ import { GraphQLClient } from "graphql-request";
 import { toVendureLanguageCode } from "../utils/schemes";
 import {
   VENDURE_AUTH_HEADER,
-  readVendureTokenWithContext,
+  isCookieAuthMode,
+  vendureAuthHeaders,
   writeVendureSessionToken,
 } from "../utils/vendure-session";
 
@@ -324,9 +325,8 @@ function resolveClient(): GraphQLClient {
   const gqlHost = useGqlHostUrl();
   const headers: Record<string, string> = { "Content-Type": "application/json" };
 
-  // 会话 token 单一来源 cookie（vendure_shop_token，登录态/游客共用，与 useGqlSession 一致）
-  const token = readVendureTokenWithContext();
-  if (token) headers.authorization = `Bearer ${token}`;
+  // 鉴权头统一入口：cookie 模式不注入 Authorization（同源浏览器带 vshop_sid / SSR 透传 cookie）
+  Object.assign(headers, vendureAuthHeaders());
   if (channelToken.value) headers["vendure-token"] = channelToken.value;
   if (locale) headers["Accept-Language"] = locale;
 
@@ -336,6 +336,7 @@ function resolveClient(): GraphQLClient {
       headers,
       // 复刻 gql-session 插件：捕获响应头 `vendure-auth-token` 持久化，保证游客/登录同会话
       responseMiddleware: (response: any) => {
+        if (isCookieAuthMode()) return;
         const headersObj = response?.headers ?? response?.response?.headers;
         const sessionToken =
           headersObj?.get?.(VENDURE_AUTH_HEADER) ??

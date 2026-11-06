@@ -5,7 +5,12 @@
 // - token 缺失 / 失效 / 上游返回未登录 → 清 cookie + 清 Pinia，按未登录处理，放行登录页；
 // - 网络错误或超时 → 降级放行（不清会话），避免把用户误踢下线。
 import { requestTimeoutSignal } from "./request-timeout";
-import { VENDURE_SESSION_COOKIE, readVendureTokenWithContext } from "./vendure-session";
+import {
+  VENDURE_SESSION_COOKIE,
+  isCookieAuthMode,
+  readVendureTokenWithContext,
+  vendureAuthHeaders,
+} from "./vendure-session";
 
 const ME_QUERY = "query SessionMe { activeCustomer { id } }";
 
@@ -33,13 +38,16 @@ function isSessionError(errors: Array<{ message?: string; extensions?: { code?: 
  */
 export async function ensureSession(): Promise<boolean> {
   const store = useAuthStore();
-  // 未登录（可能仅持有游客 token）：无需网络校验
-  if (!store.session?.user?.id) return false;
+  // bearer 模式：Pinia 无用户即视为未登录（可能仅持有游客 token），无需网络校验
+  if (!isCookieAuthMode() && !store.session?.user?.id) return false;
 
-  const token = readVendureTokenWithContext();
-  if (!token) {
-    clearSessionEverywhere();
-    return false;
+  // bearer 模式才依赖本地 token；cookie 模式直接由服务端会话判定（SSR 透传 cookie）
+  if (!isCookieAuthMode()) {
+    const token = readVendureTokenWithContext();
+    if (!token) {
+      clearSessionEverywhere();
+      return false;
+    }
   }
 
   const { public: cfg } = useRuntimeConfig();
@@ -54,7 +62,7 @@ export async function ensureSession(): Promise<boolean> {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        ...vendureAuthHeaders(),
         ...(channelToken ? { "vendure-token": channelToken } : {}),
       },
       body: JSON.stringify({ query: ME_QUERY }),

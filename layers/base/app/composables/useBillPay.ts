@@ -1,5 +1,6 @@
 import { GraphQLClient } from "graphql-request";
 import { requestTimeoutSignal } from "../utils/request-timeout";
+import { isCookieAuthMode, vendureAuthHeaders } from "../utils/vendure-session";
 
 /**
  * 代买单（委托单模式）API 编排（对标 useCoupon.ts 模式）：
@@ -140,8 +141,7 @@ export function billpayRequest<T, V extends Record<string, any> = Record<string,
   const locale = readLocale();
   const gqlHost = useGqlHostUrl();
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  const token = readVendureTokenWithContext();
-  if (token) headers.authorization = `Bearer ${token}`;
+  Object.assign(headers, vendureAuthHeaders());
   if (channelToken.value) headers["vendure-token"] = channelToken.value;
   if (locale) headers["Accept-Language"] = locale;
 
@@ -151,6 +151,7 @@ export function billpayRequest<T, V extends Record<string, any> = Record<string,
     fetch: (input: RequestInfo | URL, init?: RequestInit) =>
       fetch(input, { ...init, signal: requestTimeoutSignal() }),
     responseMiddleware: (response: any) => {
+      if (isCookieAuthMode()) return;
       const headersObj = response?.headers ?? response?.response?.headers;
       const sessionToken =
         headersObj?.get?.(VENDURE_AUTH_HEADER) ??

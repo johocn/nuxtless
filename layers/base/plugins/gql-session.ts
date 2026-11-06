@@ -1,5 +1,6 @@
 import {
   VENDURE_AUTH_HEADER,
+  isCookieAuthMode,
   readVendureTokenWithContext,
   writeVendureSessionToken,
 } from "./../app/utils/vendure-session";
@@ -12,17 +13,29 @@ type GqlResponse = {
 /**
  * Vendure shop 会话统一管理：
  *
- * 1. 请求注入 —— 在每个 GraphQL 请求发出前（nuxt-graphql-client 触发
- *    `gql:auth:init` 钩子）注入 `Authorization: Bearer <token>`。
- *    token 来源：vendure_shop_token cookie 单一来源（登录态/游客共用）。
+ * cookie 模式（默认）：
+ * - 客户端同源请求由浏览器自动携带 vshop_sid，不注入 Authorization；
+ * - SSR 把浏览器请求的 `cookie` 头透传给 Vendure（Nitro 直连，不新造代理层），
+ *   保证首屏 HTML 就带登录身份；
+ * - 不把 `vendure-auth-token` 回写到 JS 可读 cookie（凭证只留在 HttpOnly cookie 里）。
  *
- * 2. 响应捕获 —— 通过 graphql-request `responseMiddleware` 读取响应头
- *    `vendure-auth-token` 并持久化到 cookie，使游客加购/页面刷新/登录切换
- *    都保持同一 Vendure 会话（缺失则每次都是新匿名会话，购物车会丢）。
+ * bearer 模式（回退开关 NUXT_PUBLIC_SHOP_AUTH_MODE=bearer）：
+ * - 保持旧逻辑：请求注入 `Authorization: Bearer <token>`，响应头 token 持久化到
+ *   vendure_shop_token，游客加购/刷新/登录切换保持同一会话。
  */
 export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.hook("gql:auth:init", ({ token, client }) => {
     if (client !== "default") return;
+
+    // cookie 模式：不注入 Authorization，也不捕获 token 回写；
+    // SSR 侧把浏览器请求的 cookie（含 vshop_sid）透传给 Vendure，首屏即可带身份。
+    if (isCookieAuthMode()) {
+      if (import.meta.server) {
+        const cookie = useRequestHeaders(["cookie"]).cookie;
+        if (cookie) useGqlHeaders({ cookie });
+      }
+      return;
+    }
 
     // 首次请求时把响应头捕获器挂到 default client 上（此刻实例已就绪，
     // 且响应捕获与请求注入同源，保证顺序/时机正确）。
